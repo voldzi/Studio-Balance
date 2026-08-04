@@ -30,7 +30,8 @@ require('fs').writeFileSync(destination, JSON.stringify(realm));
 NODE
 
 scp "$realm_file" "docker.home.cz:$remote_file"
-printf '%s\n' "$admin_password" | ssh docker.home.cz "docker exec -i keycloak /opt/keycloak/bin/kcadm.sh config credentials --config /tmp/studiobalance-kcadm.config --server https://$issuer_host --realm master --user '$admin_user'"
+printf '%s\n' "$admin_password" | ssh docker.home.cz \
+  "docker exec -i keycloak sh -c 'IFS= read -r KC_CLI_PASSWORD; export KC_CLI_PASSWORD; exec /opt/keycloak/bin/kcadm.sh config credentials --config /tmp/studiobalance-kcadm.config --server https://$issuer_host --realm master --user '\''$admin_user'\'''"
 if ssh docker.home.cz "docker exec keycloak /opt/keycloak/bin/kcadm.sh get --config /tmp/studiobalance-kcadm.config realms/$realm >/dev/null 2>&1"; then
   echo "Realm $realm already exists; refusing to overwrite it."
 else
