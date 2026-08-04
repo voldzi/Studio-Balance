@@ -3,10 +3,11 @@
 ## Status a účel
 
 Studio Balance potřebuje jedno API pro veřejný web, klientský účet a administraci.
-REST a katalog níže jsou doporučený návrh odvozený ze zadání. Závazným
-strojovým kontraktem je pouze `openapi/openapi.json`. Aktuálně obsahuje
-systémové endpointy a `GET /api/v1/me` pro ověření serverové webové relace.
-Funkční endpoint se smí implementovat až po doplnění do OpenAPI.
+Závazným strojovým kontraktem je `openapi/openapi.json`. Aktuální první
+vertikální řez implementuje health/readiness, veřejné typy lekcí a termíny,
+profil klienta, vytvoření a výpis vlastních rezervací a bezpečné storno s
+preview důsledku. Ostatní katalog v tomto dokumentu je roadmapa; funkční
+endpoint se smí implementovat až po doplnění do OpenAPI.
 
 ## Zdroje pravdy
 
@@ -42,10 +43,10 @@ Identita používá Keycloak/OIDC podle ADR 0004. Kontrakt musí podporovat:
 Veřejný obsah a rozvrh jsou anonymní. Rezervace a `me` cesty vyžadují klienta;
 `admin` cesty vyžadují příslušnou administrativní roli.
 
-`GET /api/v1/me` je první implementovaná chráněná cesta. Čte pouze relaci
+`GET /api/v1/me` a `PATCH /api/v1/me` jsou implementované chráněné cesty. Čtou pouze relaci
 vydanou webovou BFF po OIDC callbacku, nikdy OIDC token z browser JavaScriptu.
-Vrací Keycloak subject, e-mail, stav ověření e-mailu a realm role; neprovádí
-ještě správu klientského profilu.
+Profil je svázaný s Keycloak subjectem a ukládá jméno, příjmení, telefon,
+ověřený e-mail a přijatou verzi podmínek.
 
 ## Konvence
 
@@ -93,7 +94,10 @@ Doporučené doménové kódy:
 | 429 | `RATE_LIMITED` | ochranný limit |
 | 503 | `DEPENDENCY_UNAVAILABLE` | potřebná závislost není připravena |
 
-## Veřejný endpoint katalog – návrh
+## Veřejný endpoint katalog
+
+Implementované jsou `class-types`, seznam termínů a detail termínu. Další
+řádky jsou plánované a nejsou součástí aktuálního OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
@@ -134,7 +138,7 @@ poznámka, seznam klientů a jakýkoli waitlist údaj.
 `availability` je jeden z `bookable`, `full`, `closed`, `cancelled`,
 `completed`.
 
-## Identita a profil – návrh
+## Identita a profil
 
 Registrace, login, logout, reset a ověření e-mailu jsou Keycloak
 OIDC/browser workflow, nikoli vlastní password endpointy doménového API. Webová
@@ -151,7 +155,11 @@ Issuer je `https://login.zeleznalady.cz/realms/studio-balance`;
 klienti jsou `studiobalance-web` a `studiobalance-admin`. Callback/logout URL
 mají přesný allowlist. Reset nesmí prozradit existenci e-mailu.
 
-## Rezervace – návrh
+## Rezervace
+
+V aktuálním řezu jsou implementované vytvoření rezervace, výpis vlastních
+rezervací, cancellation preview a storno. Samostatný detail rezervace je
+roadmapa a zatím není v OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |

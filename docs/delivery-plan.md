@@ -28,6 +28,12 @@ rezervační pravidla nebo klíčové obrazovky.
 
 ## Fáze 1 – design systém a ověřený prototyp
 
+Stav k 2026-08-04: první zákaznické webové preview je implementované podle
+kompozitního návrhu a používá klientem dodané logo a fotografie. Úvod, veřejný
+rozvrh, detail termínu, vstup do rezervace a klientský přehled jsou responzivní;
+vizuální QA prošla na desktopu a mobilu. Finální jednotlivé fotografie lekcí,
+průhledné logo a schválení provozovatelkou zůstávají exit gate této fáze.
+
 Výstupy:
 
 - potvrzené barvy, typografie, spacing, radius, elevation a motion tokeny;
@@ -42,12 +48,14 @@ nikde neukazuje počet míst, platba ani waitlist.
 
 ## Fáze 2 – aplikační základ, backend a administrace
 
-Stav k 2026-08-04: body 1–2 mají první implementovaný řez — spustitelný
-scaffold, health/readiness, validaci konfigurace, PostgreSQL 18 migraci,
-request ID, strukturované logy, auditní tabulku a OIDC BFF relaci s
-`GET /api/v1/me`. Image web/API/worker a izolovaný interní preview deployment
-na `docker.home.cz` jsou připravené podle ADR 0006. Produkční integrace,
-veřejný deployment ani kompletní auditní doména tím nejsou uzavřené.
+Stav k 2026-08-04: body 1–2 a první část bodů 3–6 mají implementovaný řez —
+spustitelný scaffold, health/readiness, konfiguraci, PostgreSQL 18 migrace,
+request ID, strukturované logy, auditní základ, OIDC BFF relaci, veřejný katalog
+termínů, klientský profil, transakční rezervaci, idempotenci, klientský přehled
+a včasné/pozdní storno. Image web/API/worker a oddělené preview/produkční
+Compose deploymenty jsou připravené podle ADR 0006. Administrace, plný auditní
+workflow, e-mail, S3 media workflow a všechny produkční release gates tím nejsou
+uzavřené.
 
 Pořadí vertikálních řezů:
 

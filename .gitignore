@@ -11,6 +11,7 @@ node_modules/
 dist/
 build/
 coverage/
+artifacts/design-qa/*.png
 *.tsbuildinfo
 .pnpm-debug.log
 .pytest_cache/

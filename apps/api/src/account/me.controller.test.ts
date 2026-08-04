@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { SessionAuthGuard } from "../auth/session-auth.guard.js";
 import { RuntimeConfigService, type RuntimeConfig } from "../config/runtime-config.js";
 import { configureHttp } from "../http/configure-http.js";
+import { AccountService } from "./account.service.js";
 import { MeController } from "./me.controller.js";
 
 const config: RuntimeConfig = {
@@ -29,7 +30,25 @@ describe("GET /api/v1/me", () => {
   async function createApplication(): Promise<NestFastifyApplication> {
     const module = await Test.createTestingModule({
       controllers: [MeController],
-      providers: [SessionAuthGuard, { provide: RuntimeConfigService, useValue: { value: config } }]
+      providers: [
+        SessionAuthGuard,
+        { provide: RuntimeConfigService, useValue: { value: config } },
+        {
+          provide: AccountService,
+          useValue: {
+            ensureProfile: async () => ({
+              id: "f491172b-5c71-4972-b7ff-3983b2ea65fe",
+              oidc_subject: "4887f1a5-6023-4b9c-9291-7e84f2f5be69",
+              email: "client@example.test",
+              email_verified: true,
+              first_name: null,
+              last_name: null,
+              phone: null,
+              terms_version: null
+            })
+          }
+        }
+      ]
     }).compile();
     const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), {
       logger: false
@@ -65,7 +84,12 @@ describe("GET /api/v1/me", () => {
       subject: "4887f1a5-6023-4b9c-9291-7e84f2f5be69",
       email: "client@example.test",
       emailVerified: true,
-      roles: ["client"]
+      roles: ["client"],
+      firstName: null,
+      lastName: null,
+      phone: null,
+      termsVersion: null,
+      profileComplete: false
     });
   });
 

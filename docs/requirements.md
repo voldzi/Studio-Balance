@@ -86,6 +86,11 @@ Veřejný stav termínu je pouze `bookable`, `full`, `closed`, `cancelled` nebo
 `completed`. Interní kapacita ani počet rezervací nesmí proniknout do veřejné
 odpovědi, analytiky v prohlížeči ani přístupnostního popisku.
 
+Rezervace se standardně otevírá 30 dní a zavírá 30 minut před začátkem.
+Administrátor může obě hodnoty přepsat na konkrétním termínu. Po začátku lekce
+může rezervaci změnit nebo zrušit už jen administrátor. Neuhrazený storno
+poplatek rezervaci neblokuje.
+
 ## Storno, docházka a poplatek
 
 ```text
@@ -125,6 +130,10 @@ v detailu, potvrzení, e-mailu, klientském účtu a kalendáři.
 | NTF-005 | P0 | změna nebo zrušení rezervace zneplatní neaktuální naplánované zprávy |
 | NTF-006 | P1 | odkaz v e-mailu otevře po bezpečném přihlášení konkrétní rezervaci nebo novinku |
 | NTF-007 | P1 | marketingová komunikace má samostatný odvolatelný souhlas a neblokuje službu |
+
+Zákaznické preview e-mailového poskytovatele neaktivuje a žádné skutečné
+zprávy neodesílá. Tento preview režim nemění produkční požadavky NTF-001 až
+NTF-005; před produkčním vydáním se musí doplnit a ověřit doručování.
 
 ## Web-only rozsah
 

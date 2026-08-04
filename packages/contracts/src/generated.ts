@@ -38,6 +38,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/class-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active class types */
+        get: operations["listClassTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List public class sessions */
+        get: operations["listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a public class session */
+        get: operations["getSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -45,10 +96,79 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read the current authenticated account identity */
+        /** Read the authenticated client profile */
         get: operations["getCurrentAccount"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update the authenticated client profile */
+        patch: operations["updateCurrentAccount"];
+        trace?: never;
+    };
+    "/api/v1/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create an idempotent booking */
+        post: operations["createBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated client's bookings */
+        get: operations["listMyBookings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/bookings/{bookingId}/cancellation-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview the consequence of cancelling a booking */
+        get: operations["previewBookingCancellation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/bookings/{bookingId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a client booking */
+        post: operations["cancelBooking"];
         delete?: never;
         options?: never;
         head?: never;
@@ -62,37 +182,134 @@ export interface components {
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
-            /** @example studio-balance-api */
             service: string;
-            /** @example 0.1.0 */
             version: string;
             /** Format: date-time */
             timestamp: string;
         };
         ErrorResponse: {
             error: {
-                /** @example DEPENDENCY_UNAVAILABLE */
                 code: string;
-                /** @example The service is temporarily unavailable. */
                 message: string;
                 details?: {
                     [key: string]: unknown;
                 }[];
-                /** @example req_abc123 */
                 requestId: string;
             };
         };
-        MeResponse: {
+        Money: {
+            amount: string;
+            /** @constant */
+            currency: "CZK";
+        };
+        ClassTypeSummary: {
+            name: string;
+            slug: string;
+            tagline: string;
+        };
+        ClassType: components["schemas"]["ClassTypeSummary"] & {
             /** Format: uuid */
+            id: string;
+            description: string;
+            durationMinutes: number;
+            arrivalLeadMinutes: number;
+        };
+        InstructorSummary: {
+            /** Format: uuid */
+            id: string;
+            displayName: string;
+        };
+        Location: {
+            name: string;
+            address: string;
+        };
+        PublicSession: {
+            /** Format: uuid */
+            id: string;
+            classType: components["schemas"]["ClassTypeSummary"];
+            instructor: components["schemas"]["InstructorSummary"];
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @constant */
+            timezone: "Europe/Prague";
+            /** Format: date-time */
+            arrivalAt: string;
+            /** @enum {string} */
+            availability: "bookable" | "full" | "closed" | "cancelled" | "completed";
+            price: components["schemas"]["Money"];
+            location: components["schemas"]["Location"];
+            equipment: string;
+            suitability: string;
+            changeNotice?: string | null;
+        };
+        MeResponse: {
             subject: string;
             /** Format: email */
             email: string;
             emailVerified: boolean;
             roles: ("client" | "admin" | "super_admin")[];
+            firstName: string | null;
+            lastName: string | null;
+            phone: string | null;
+            termsVersion: string | null;
+            profileComplete: boolean;
+        };
+        UpdateMeRequest: {
+            firstName: string;
+            lastName: string;
+            phone: string;
+        };
+        CreateBookingRequest: {
+            /** Format: uuid */
+            sessionId: string;
+            /** @constant */
+            termsVersion: "2026-08-04";
+            /** @constant */
+            termsAccepted: true;
+        };
+        Booking: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "reserved" | "cancelled_on_time" | "cancelled_late" | "attended" | "no_show" | "cancelled_by_studio";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            cancellationCutoffAt: string;
+            fee: components["schemas"]["Money"] | null;
+            session: components["schemas"]["PublicSession"];
+        };
+        CancellationPreview: {
+            /** @enum {string} */
+            mode: "on_time" | "late" | "free_change_window";
+            /** Format: date-time */
+            cutoffAt: string;
+            fee: components["schemas"]["Money"] | null;
+            /** @constant */
+            paymentMethod: "at_studio";
+        };
+        CancelBookingRequest: {
+            lateCancellationConfirmed: boolean;
         };
     };
-    responses: never;
-    parameters: never;
+    responses: {
+        /** @description Request failed. */
+        Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
+    parameters: {
+        SessionId: string;
+        BookingId: string;
+        IdempotencyKey: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;
@@ -128,7 +345,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The service is ready to serve traffic. */
+            /** @description The service is ready. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -137,15 +354,80 @@ export interface operations {
                     "application/json": components["schemas"]["HealthResponse"];
                 };
             };
-            /** @description A required dependency is not ready. */
-            503: {
+            503: components["responses"]["Error"];
+        };
+    };
+    listClassTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active class types in display order. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
+                    "application/json": {
+                        items: components["schemas"]["ClassType"][];
+                    };
                 };
             };
+        };
+    };
+    listSessions: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public schedule without capacity numbers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["PublicSession"][];
+                        /** @constant */
+                        timezone: "Europe/Prague";
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: components["parameters"]["SessionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Public session detail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSession"];
+                };
+            };
+            404: components["responses"]["Error"];
         };
     };
     getCurrentAccount: {
@@ -157,7 +439,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The current Studio Balance session identity. */
+            /** @description Current Studio Balance profile. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -166,15 +448,144 @@ export interface operations {
                     "application/json": components["schemas"]["MeResponse"];
                 };
             };
-            /** @description No valid Studio Balance session is present. */
-            401: {
+            401: components["responses"]["Error"];
+        };
+    };
+    updateCurrentAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated profile. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
+                    "application/json": components["schemas"]["MeResponse"];
                 };
             };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+        };
+    };
+    createBooking: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBookingRequest"];
+            };
+        };
+        responses: {
+            /** @description Booking created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            410: components["responses"]["Error"];
+        };
+    };
+    listMyBookings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Client bookings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Booking"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    previewBookingCancellation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookingId: components["parameters"]["BookingId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authoritative cancellation mode and fee. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancellationPreview"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    cancelBooking: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                bookingId: components["parameters"]["BookingId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelBookingRequest"];
+            };
+        };
+        responses: {
+            /** @description Cancelled booking. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
 }

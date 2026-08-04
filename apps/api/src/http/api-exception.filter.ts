@@ -25,6 +25,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
 
     writeLog(this.config, status >= 500 ? "error" : "warn", "request_failed", request.id, {
       errorCode: code,
+      exceptionName: status >= 500 && exception instanceof Error ? exception.name : undefined,
       method: request.method,
       path: request.routeOptions?.url ?? request.url,
       statusCode: status

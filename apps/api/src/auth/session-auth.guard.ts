@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { CanActivate, ExecutionContext, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 
 import { RuntimeConfigService } from "../config/runtime-config.js";
@@ -8,7 +8,7 @@ export type SessionRequest = FastifyRequest & { studioSession?: StudioSession };
 
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
-  constructor(private readonly config: RuntimeConfigService) {}
+  constructor(@Inject(RuntimeConfigService) private readonly config: RuntimeConfigService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<SessionRequest>();

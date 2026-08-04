@@ -48,6 +48,12 @@ na DMZ a předání instalačního skriptu kvůli nedostupnému SSH zaznamenáv�
 zaznamenána v `infrastructure-assessment.md`; neobsahuje credentials ani změny
 provozu.
 
+Pro zákaznické preview zadavatel 2026-08-04 výslovně schválil použití jím
+dodaných rastrových obrázků a dočasné vypnutí e-mailové komunikace. Preview
+proto používá dodaný raster loga a samostatné fotografie studia. Toto rozhodnutí
+neprohlašuje rastry za finální produkční assety a nemění požadavek na jednotlivé
+originální fotografie lekcí a průhledné logo před finálním vydáním.
+
 ## Analyzované textové podklady
 
 ### Závazný Markdown

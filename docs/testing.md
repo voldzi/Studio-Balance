@@ -8,6 +8,22 @@ jen render happy path. Scaffold používá Vitest pro unit/API testy, Fastify
 Component/E2E a automatizovaný accessibility nástroj se vyberou s prvním
 interaktivním workflow; scénáře a release gate jsou závazné už nyní.
 
+## Stav ověření zákaznického preview (2026-08-04)
+
+- doménové unit testy pokrývají dostupnost a přesnou 24hodinovou hranici;
+- lokální PostgreSQL 18 smoke prošel pro doplnění profilu, vytvoření rezervace,
+  opakování se stejným idempotency key, výpis, cancellation preview a včasné storno;
+- browser smoke prošel pro veřejný úvod, rozvrh, přepnutí dne, detail termínu a
+  návrat z chráněné rezervace do přihlášení se zachovaným cílem;
+- vizuální kontrola prošla na 1536 × 1024 a 390 × 844, bez horizontálního
+  přetečení a bez číselné kapacity; důkaz je v `design-qa.md`;
+- preview neposílá e-maily skutečným adresátům; vytváří pouze interní zprávu v
+  účtu. E-mailové TC zůstávají release gate před ostrým provozem.
+
+Automatizovaný DB concurrency test posledního místa, plný Keycloak browser E2E,
+e-mail, administrace, S3 média a reálná zařízení zůstávají předprodukčními
+branami; zákaznické preview je nesmí vydávat za uzavřené.
+
 ## Vrstvy
 
 | Vrstva | Co ověřuje |

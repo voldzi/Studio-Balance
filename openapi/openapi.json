@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Studio Balance API",
-    "version": "0.1.0",
-    "description": "Initial machine-readable contract for the shared Studio Balance API. Product endpoints remain proposed until added to this file."
+    "version": "0.2.0",
+    "description": "Shared API for the Studio Balance public schedule, client profile and transactional booking flow."
   },
   "servers": [
     {
@@ -25,13 +25,7 @@
         "responses": {
           "200": {
             "description": "The process is alive.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
           }
         }
       }
@@ -44,21 +38,29 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "The service is ready to serve traffic.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
+            "description": "The service is ready.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
           },
-          "503": {
-            "description": "A required dependency is not ready.",
+          "503": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/class-types": {
+      "get": {
+        "summary": "List active class types",
+        "operationId": "listClassTypes",
+        "tags": ["Schedule"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Active class types in display order.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/ClassType" } } }
                 }
               }
             }
@@ -66,56 +68,206 @@
         }
       }
     },
+    "/api/v1/sessions": {
+      "get": {
+        "summary": "List public class sessions",
+        "operationId": "listSessions",
+        "tags": ["Schedule"],
+        "security": [],
+        "parameters": [
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public schedule without capacity numbers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items", "timezone"],
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/PublicSession" } },
+                    "timezone": { "type": "string", "const": "Europe/Prague" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/sessions/{sessionId}": {
+      "get": {
+        "summary": "Read a public class session",
+        "operationId": "getSession",
+        "tags": ["Schedule"],
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/SessionId" }],
+        "responses": {
+          "200": {
+            "description": "Public session detail.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublicSession" } } }
+          },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
-        "summary": "Read the current authenticated account identity",
+        "summary": "Read the authenticated client profile",
         "operationId": "getCurrentAccount",
         "tags": ["Account"],
         "security": [{ "studioSession": [] }],
         "responses": {
           "200": {
-            "description": "The current Studio Balance session identity.",
+            "description": "Current Studio Balance profile.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "summary": "Update the authenticated client profile",
+        "operationId": "updateCurrentAccount",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMeRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "summary": "Create an idempotent booking",
+        "operationId": "createBooking",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateBookingRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Booking" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/bookings": {
+      "get": {
+        "summary": "List the authenticated client's bookings",
+        "operationId": "listMyBookings",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": {
+            "description": "Client bookings.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/MeResponse" }
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Booking" } } }
+                }
               }
             }
           },
-          "401": {
-            "description": "No valid Studio Balance session is present.",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/bookings/{bookingId}/cancellation-preview": {
+      "get": {
+        "summary": "Preview the consequence of cancelling a booking",
+        "operationId": "previewBookingCancellation",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/BookingId" }],
+        "responses": {
+          "200": {
+            "description": "Authoritative cancellation mode and fee.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CancellationPreview" } } }
+          },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/bookings/{bookingId}/cancel": {
+      "post": {
+        "summary": "Cancel a client booking",
+        "operationId": "cancelBooking",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/BookingId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CancelBookingRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Cancelled booking.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Booking" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
         }
       }
     }
   },
   "components": {
+    "responses": {
+      "Error": {
+        "description": "Request failed.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      }
+    },
+    "parameters": {
+      "SessionId": { "name": "sessionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "BookingId": { "name": "bookingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": { "type": "string", "minLength": 16, "maxLength": 100 }
+      }
+    },
     "schemas": {
       "HealthResponse": {
         "type": "object",
         "additionalProperties": false,
         "required": ["status", "service", "version", "timestamp"],
         "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["ok"]
-          },
-          "service": {
-            "type": "string",
-            "examples": ["studio-balance-api"]
-          },
-          "version": {
-            "type": "string",
-            "examples": ["0.1.0"]
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "status": { "type": "string", "enum": ["ok"] },
+          "service": { "type": "string" },
+          "version": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
         }
       },
       "ErrorResponse": {
@@ -128,42 +280,152 @@
             "additionalProperties": false,
             "required": ["code", "message", "requestId"],
             "properties": {
-              "code": {
-                "type": "string",
-                "examples": ["DEPENDENCY_UNAVAILABLE"]
-              },
-              "message": {
-                "type": "string",
-                "examples": ["The service is temporarily unavailable."]
-              },
-              "details": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              },
-              "requestId": {
-                "type": "string",
-                "examples": ["req_abc123"]
-              }
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "details": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+              "requestId": { "type": "string" }
             }
           }
+        }
+      },
+      "Money": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount", "currency"],
+        "properties": {
+          "amount": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$" },
+          "currency": { "type": "string", "const": "CZK" }
+        }
+      },
+      "ClassTypeSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "slug", "tagline"],
+        "properties": {
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "tagline": { "type": "string" }
+        }
+      },
+      "ClassType": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ClassTypeSummary" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description", "durationMinutes", "arrivalLeadMinutes"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "description": { "type": "string" },
+              "durationMinutes": { "type": "integer" },
+              "arrivalLeadMinutes": { "type": "integer" }
+            }
+          }
+        ]
+      },
+      "InstructorSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "displayName": { "type": "string" }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "address"],
+        "properties": {
+          "name": { "type": "string" },
+          "address": { "type": "string" }
+        }
+      },
+      "PublicSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "classType", "instructor", "startAt", "endAt", "timezone", "arrivalAt", "availability", "price", "location", "equipment", "suitability"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "classType": { "$ref": "#/components/schemas/ClassTypeSummary" },
+          "instructor": { "$ref": "#/components/schemas/InstructorSummary" },
+          "startAt": { "type": "string", "format": "date-time" },
+          "endAt": { "type": "string", "format": "date-time" },
+          "timezone": { "type": "string", "const": "Europe/Prague" },
+          "arrivalAt": { "type": "string", "format": "date-time" },
+          "availability": { "type": "string", "enum": ["bookable", "full", "closed", "cancelled", "completed"] },
+          "price": { "$ref": "#/components/schemas/Money" },
+          "location": { "$ref": "#/components/schemas/Location" },
+          "equipment": { "type": "string" },
+          "suitability": { "type": "string" },
+          "changeNotice": { "type": ["string", "null"] }
         }
       },
       "MeResponse": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["subject", "email", "emailVerified", "roles"],
+        "required": ["subject", "email", "emailVerified", "roles", "firstName", "lastName", "phone", "termsVersion", "profileComplete"],
         "properties": {
-          "subject": { "type": "string", "format": "uuid" },
+          "subject": { "type": "string" },
           "email": { "type": "string", "format": "email" },
           "emailVerified": { "type": "boolean" },
-          "roles": {
-            "type": "array",
-            "items": { "type": "string", "enum": ["client", "admin", "super_admin"] }
-          }
+          "roles": { "type": "array", "items": { "type": "string", "enum": ["client", "admin", "super_admin"] } },
+          "firstName": { "type": ["string", "null"] },
+          "lastName": { "type": ["string", "null"] },
+          "phone": { "type": ["string", "null"] },
+          "termsVersion": { "type": ["string", "null"] },
+          "profileComplete": { "type": "boolean" }
         }
+      },
+      "UpdateMeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["firstName", "lastName", "phone"],
+        "properties": {
+          "firstName": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "lastName": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "phone": { "type": "string", "minLength": 7, "maxLength": 30 }
+        }
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sessionId", "termsVersion", "termsAccepted"],
+        "properties": {
+          "sessionId": { "type": "string", "format": "uuid" },
+          "termsVersion": { "type": "string", "const": "2026-08-04" },
+          "termsAccepted": { "type": "boolean", "const": true }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "createdAt", "cancellationCutoffAt", "fee", "session"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["reserved", "cancelled_on_time", "cancelled_late", "attended", "no_show", "cancelled_by_studio"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "cancellationCutoffAt": { "type": "string", "format": "date-time" },
+          "fee": { "oneOf": [{ "$ref": "#/components/schemas/Money" }, { "type": "null" }] },
+          "session": { "$ref": "#/components/schemas/PublicSession" }
+        }
+      },
+      "CancellationPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mode", "cutoffAt", "fee", "paymentMethod"],
+        "properties": {
+          "mode": { "type": "string", "enum": ["on_time", "late", "free_change_window"] },
+          "cutoffAt": { "type": "string", "format": "date-time" },
+          "fee": { "oneOf": [{ "$ref": "#/components/schemas/Money" }, { "type": "null" }] },
+          "paymentMethod": { "type": "string", "const": "at_studio" }
+        }
+      },
+      "CancelBookingRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["lateCancellationConfirmed"],
+        "properties": { "lateCancellationConfirmed": { "type": "boolean" } }
       }
     },
     "securitySchemes": {
@@ -176,13 +438,9 @@
     }
   },
   "tags": [
-    {
-      "name": "System",
-      "description": "Liveness and readiness endpoints."
-    },
-    {
-      "name": "Account",
-      "description": "Authenticated client account operations."
-    }
+    { "name": "System", "description": "Liveness and readiness." },
+    { "name": "Schedule", "description": "Public class catalogue and schedule." },
+    { "name": "Account", "description": "Authenticated client profile." },
+    { "name": "Booking", "description": "Transactional client booking and cancellation." }
   ]
 }

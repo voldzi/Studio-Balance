@@ -26,6 +26,13 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-013 | Identita používá Keycloak, realm `studio-balance`, oddělené web/admin OIDC policies, PKCE, email verification před bookingem a povinné admin MFA | ADR 0004, CD-007 |
 | RD-014 | Infrastrukturní realizace postupuje interní Docker preview → DMZ publikace → produkční PostgreSQL a Keycloak | ADR 0006, CD-008 |
 | RD-015 | DMZ Nginx publikace se připraví verzovaným validačním skriptem; při nedostupném SSH/sudo ji spustí správce serveru | ADR 0007, CD-009 |
+| RD-016 | Rezervace se otevírá 30 dní a zavírá 30 minut před lekcí; termín může obě hodnoty přepsat | CD-004, CD-011 |
+| RD-017 | Po začátku lekce mění nebo ruší rezervaci pouze administrátor | CD-011 |
+| RD-018 | Administrátor může po významné změně času nebo místa aktivovat dočasné bezplatné storno | CD-011 |
+| RD-019 | Podmínky se přijímají při první rezervaci a po vydání nové verze; shrnutí se zobrazuje vždy | CD-011 |
+| RD-020 | Připomenutí jsou volitelná, provozní změny povinné; zákaznické preview skutečné e-maily neodesílá | CD-011, CD-012 |
+| RD-021 | Neuhrazený storno poplatek rezervaci neblokuje; administrátor eviduje úhradu hotově nebo terminálem | CD-011 |
+| RD-022 | Administrátor může pozvat nového klienta a účet se propojí až po ověření e-mailu | CD-011 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -37,22 +44,11 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | OQ-004 | Které kontakty, sociální profily, adresa, parkování a otevírací informace jsou aktuální? | údaje z vizitky pouze ověřit, nekopírovat automaticky |
 | OQ-005 | Kdy budou dodány ceny, aktuální rozvrh, instruktoři, recenze, popisy, zdravotní upozornění a právní texty? | potřeba pro prototyp s reálným obsahem i launch |
 
-## P0 – produktová pravidla
+## Uzavřená produktová pravidla
 
-Připravené znění pro zadavatele je v
-`client-questionnaire-booking-rules.md`. Otázky zůstávají otevřené, dokud
-nepřijde výslovná odpověď.
-
-| ID | Otázka | Dopad / doporučený výchozí návrh |
-| --- | --- | --- |
-| OQ-006 | Kdy se rezervace otevírá a zavírá vůči začátku termínu? | definovat globální default s přepisem na termínu |
-| OQ-007 | Smí klient zrušit rezervaci po začátku lekce, nebo už jen administrátor? | doporučení: po začátku pouze administrátor |
-| OQ-008 | Jaké bezplatné storno platí po významné změně času/místa studiem? | definovat automatické časové okno nebo explicitní admin přepínač |
-| OQ-009 | Má být potvrzení storno podmínky checkboxem při každé rezervaci, nebo jen při první a nové verzi? | brief připouští obě varianty; doporučení: první rezervace + každá nová verze |
-| OQ-010 | Která připomenutí může klient vypnout: 24 h, 2 h, 30 min a po-lekční zpráva? | změna/zrušení zůstávají povinný provozní e-mail |
-| OQ-011 | Má neuhrazený storno poplatek pouze zobrazit upozornění, nebo někdy blokovat rezervaci? | první verze podle briefu neblokuje; potvrdit provozní očekávání |
-| OQ-012 | Je interní poznámka „zaplaceno hotově/terminálem“ součástí první verze? | nejde o platební integraci, ale zvyšuje provozní rozsah a audit |
-| OQ-013 | Má administrátor rezervovat i zcela nového klienta, nebo jen existující účet? | ovlivní minimální data, souhlasy a deduplikaci |
+Otázky OQ-006 až OQ-013 byly 2026-08-04 uzavřeny rozhodnutími CD-004,
+CD-011 a CD-012. Dotazník zůstává auditním podkladem, nikoli otevřeným
+blokátorem implementace.
 
 ## P0 – technická a provozní rozhodnutí
 

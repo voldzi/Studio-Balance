@@ -51,6 +51,9 @@ importers:
       '@studiobalance/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@studiobalance/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       fastify:
         specifier: 5.11.2
         version: 5.11.2
