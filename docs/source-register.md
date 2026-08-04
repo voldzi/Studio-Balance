@@ -42,7 +42,9 @@ implementační baseline zaznamenává ADR 0005; nemění produktový rozsah.
 Zadavatel určil pořadí dalších kroků: interní náhled na `docker.home.cz`, potom
 DMZ publikace a následně produkční PostgreSQL a Keycloak. Izolovaný preview
 mechanismus zaznamenává ADR 0006. Databázové TLS/role parametry a veřejný
-produkční deployment mechanismus zůstávají otevřené. Read-only inventura hostitele je
+produkční deployment mechanismus zůstávají otevřené. Přípravu Nginx publikace
+na DMZ a předání instalačního skriptu kvůli nedostupnému SSH zaznamenává ADR
+0007. Read-only inventura hostitele je
 zaznamenána v `infrastructure-assessment.md`; neobsahuje credentials ani změny
 provozu.
 

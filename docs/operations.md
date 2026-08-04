@@ -59,6 +59,29 @@ nespouští down migration ani obnovu databáze. Před použitím se musí ově�
 zpětná kompatibilita migrací. Veřejná DMZ, produkční databáze, produkční
 Keycloak a S3 mají vlastní pozdější change plan.
 
+## Publikace preview přes DMZ
+
+DNS A záznam `studiobalance.zeleznalady.cz` existuje, ale na `dmz.home.cz`
+nebyl z vývojového prostředí přijat SSH klíč. Aktivaci proto provede správce
+serveru verzovaným skriptem z `infra/nginx/install-studiobalance.sh`:
+
+```bash
+sudo ./install-studiobalance.sh --activate-preview --email ADMIN_EMAIL
+```
+
+Skript proxyuje `/` na interní web port 3280 a `/api/` na API port 4280,
+technické health endpointy veřejně blokuje, získá Let's Encrypt certifikát,
+ověří konfiguraci a při chybě obnoví předchozí site. Před spuštěním je nutné
+nahradit `ADMIN_EMAIL` skutečným provozním kontaktem. Dokud správce skript
+nespustí a neprojde externí HTTPS smoke test, nesmí se DMZ publikace označit
+za aktivní.
+
+Pro dočasné udělení přístupu lze na DMZ spustit
+`infra/nginx/bootstrap-codex-dmz-access.sh`. Přidává samostatný omezený SSH
+klíč a sudo povoluje pouze pro rootem vlastněný instalátor Nginx s ověřeným
+SHA-256; neuděluje obecné `NOPASSWD: ALL`. Po dokončení se přístup odvolá
+volbou `--revoke`. Postup a fingerprint jsou v `infra/nginx/README.md`.
+
 Základní ověření repozitáře:
 
 ```bash
@@ -243,7 +266,7 @@ isolated preview deploy to docker.home.cz: pnpm deploy:preview -- <git-sha>
 isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
 production Docker deploy to docker.home.cz: TBD
 Keycloak realm/client provision: TBD
-Nginx publish through dmz.home.cz: TBD
+Nginx preview publish through dmz.home.cz: infra/nginx/install-studiobalance.sh
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD
 production deploy/rollback: TBD

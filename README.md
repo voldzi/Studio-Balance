@@ -112,6 +112,11 @@ API na 4280 a vlastním nepublikovaným PostgreSQL 18 volume. Jde pouze o intern
 náhled bez DMZ, produkčního Keycloaku, HAProxy databáze a S3. Ověření a rollback
 popisuje [provozní dokumentace](docs/operations.md).
 
+Publikaci tohoto preview přes Nginx připravuje
+[ADR 0007](docs/adr/0007-dmz-nginx-publication.md). Protože dostupný SSH klíč
+není na `dmz.home.cz` přijat, aktivaci provede správce serveru pomocí
+`infra/nginx/install-studiobalance.sh` a následného externího HTTPS smoke testu.
+
 ## Dokumentace
 
 Aktivní sada začíná v [docs/README.md](docs/README.md). Základní orientace:

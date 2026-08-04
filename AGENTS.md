@@ -124,6 +124,11 @@ with `pnpm rollback:preview -- <previous-git-sha>`. It uses host ports 3280 and
 connect it to DMZ, HAProxy PostgreSQL, production Keycloak, or S3 without the
 separate accepted change described in ADR 0006.
 
+DMZ publication is prepared by `infra/nginx/install-studiobalance.sh` according
+to ADR 0007. It must be run on `dmz.home.cz` with sudo, an explicit
+`--activate-preview` flag, and the real ACME contact email. Never bypass its
+upstream checks, Nginx validation, backup, TLS, or rollback behavior.
+
 ## Product and UI Work
 
 - Read `docs/product-design.md` before changing any user-facing surface.

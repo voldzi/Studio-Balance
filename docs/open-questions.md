@@ -25,6 +25,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-012 | Produkt je pouze responzivní web; nativní iOS/Android aplikace ani app-store release nevznikají | ADR 0003, CD-006 |
 | RD-013 | Identita používá Keycloak, realm `studio-balance`, oddělené web/admin OIDC policies, PKCE, email verification před bookingem a povinné admin MFA | ADR 0004, CD-007 |
 | RD-014 | Infrastrukturní realizace postupuje interní Docker preview → DMZ publikace → produkční PostgreSQL a Keycloak | ADR 0006, CD-008 |
+| RD-015 | DMZ Nginx publikace se připraví verzovaným validačním skriptem; při nedostupném SSH/sudo ji spustí správce serveru | ADR 0007, CD-009 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -60,7 +61,7 @@ nepřijde výslovná odpověď.
 | OQ-015 | Jaké jsou rozpočtové a provozní limity e-mailu, monitoringu a případné CDN vrstvy? | ovlivní poskytovatele i SLA; runtime a DB topologie jsou už schválené |
 | OQ-020 | Jaké RPO/RTO a retenční dobu mají databázové zálohy? | baseline je denní záloha a pravidelný test obnovy; čísla chybí |
 | OQ-030 | Jaký database name, TLS režim, admin role, credentials policy a failover očekávání platí za `haproxy.home.cz:5000`? | major 18 je potvrzený; tyto údaje jsou nutné pro bezpečný produkční bootstrap skript |
-| OQ-031 | Jaký image registry, Nginx upstream/TLS/certifikát a produkční rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | interní SHA-tagovaný Compose preview a rollback jsou uzavřené ADR 0006; veřejná release konfigurace ještě ne |
+| OQ-031 | Jaký image registry a finální produkční rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | preview Compose/rollback řeší ADR 0006 a Nginx upstream, TLS a instalační rollback ADR 0007; skript ještě musí spustit správce DMZ |
 | OQ-032 | Jak se provisionuje vyhrazená Studio Balance gateway nad `shared-seaweedfs`? | S3 použití je schválené; potvrdit interní endpoint, bucket, credentials, pinned image, healthcheck, backup/restore, vlastníka a lifecycle |
 | OQ-033 | Kdo vlastní kapacitní alerty `docker.home.cz`, jaké jsou jejich prahy a jak se vyřeší téměř vyčerpaný swap? | disk byl 2026-08-04 přeměřen na přibližně 73 GiB volno, swap však zůstává produkčním rizikem; interní preview má resource limits a preflight |
 
