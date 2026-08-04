@@ -12,6 +12,7 @@
     "build": "pnpm generate:contracts && pnpm -r --if-present build",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm validate:repo",
     "db:migrate": "pnpm --filter @studiobalance/api db:migrate",
+    "deploy:production": "bash scripts/deploy-production-remote.sh",
     "deploy:preview": "bash scripts/deploy-preview-remote.sh",
     "dev": "pnpm --parallel --filter @studiobalance/web --filter @studiobalance/api --filter @studiobalance/worker dev",
     "dev:api": "pnpm --filter @studiobalance/api dev",

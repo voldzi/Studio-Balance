@@ -4,8 +4,9 @@
 
 Repozitář obsahuje první spustitelný TypeScript monorepo scaffold: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, lokální PostgreSQL 18,
-migraci a Keycloak realm. Izolovaný interní náhled lze nasadit na cílový Docker
-host podle ADR 0006; veřejné ani produkčně integrované nasazení zatím nevzniklo.
+migraci a Keycloak realm. Izolovaný interní náhled je aktivní přes DMZ. Vedle
+něj existuje oddělený produkční kandidát, který používá skutečnou produkční DB
+přes HAProxy, ale není ještě směrován z veřejného Nginxu.
 Směr je schválený v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový
 kontrakt.
 
@@ -87,7 +88,27 @@ Nginx publikace je aktivní pro interní preview revizi `e10a7ad`:
 - Nginx proxyuje `/` na web 3280 a `/api/` na API 4280.
 
 Jde stále o vývojový preview s izolovanou databází, nikoli o dokončené
-produkční vydání. Produkční PostgreSQL, Keycloak a S3 zůstávají nezapojené.
+produkční vydání. Produkční PostgreSQL je připraveno pro kandidátní Compose
+stack; přihlášení Keycloak, S3 a e-mail zůstávají aplikačně nezapojené.
+
+## Produkční kandidát (neveřejný)
+
+`docker-compose.production.yml` netvoří vlastní databázi. Spustí stejný obraz
+aplikace proti `DATABASE_URL_MIGRATOR` pro migrace a následně proti
+`DATABASE_URL` pro API; obě hodnoty jsou čtené výhradně z chráněného souboru
+na Docker hostu. Kandidát používá interní host porty 3281 (web) a 4281 (API),
+aby nemohl samovolně převzít stávající veřejný preview na portech 3280/4280.
+
+```bash
+pnpm deploy:production -- <git-sha>
+curl --fail http://docker.home.cz:4281/ready
+curl --fail --head http://docker.home.cz:3281/
+```
+
+Nasazení odmítne nepřítomný nebo příliš otevřený runtime soubor (vyžaduje
+`0600`), nízkou diskovou/RAM rezervu a neúspěšný health check. Nevypisuje
+konfigurační hodnoty a nemění DMZ. Přepnutí veřejného Nginxu je samostatný
+change po ověření autentizace, e-mailu, záloh a provozní readiness.
 
 Pro dočasné udělení přístupu z lokální administrátorské stanice slouží
 `scripts/grant-dmz-codex-access.sh`. Interaktivně využije existující SSH a sudo
@@ -290,11 +311,11 @@ Docker Desktop Compose: pnpm infra:up | pnpm infra:down
 Keycloak dev realm import: automatic during pnpm infra:up
 OpenAPI validate/generate: pnpm validate:openapi | pnpm generate:contracts
 all pre-merge checks: pnpm check
-production database bootstrap: TBD (interactive; no committed password)
+production database bootstrap: scripts/bootstrap-production-postgres.sh
 isolated preview deploy to docker.home.cz: pnpm deploy:preview -- <git-sha>
 isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
-production Docker deploy to docker.home.cz: TBD
-Keycloak realm/client provision: TBD
+production Docker candidate deploy to docker.home.cz: pnpm deploy:production -- <git-sha>
+Keycloak realm/client provision: scripts/bootstrap-production-keycloak.sh
 Nginx preview publish through dmz.home.cz: infra/nginx/install-studiobalance.sh
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD
