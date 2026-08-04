@@ -76,11 +76,13 @@ nahradit `ADMIN_EMAIL` skutečným provozním kontaktem. Dokud správce skript
 nespustí a neprojde externí HTTPS smoke test, nesmí se DMZ publikace označit
 za aktivní.
 
-Pro dočasné udělení přístupu lze na DMZ spustit
-`infra/nginx/bootstrap-codex-dmz-access.sh`. Přidává samostatný omezený SSH
-klíč a sudo povoluje pouze pro rootem vlastněný instalátor Nginx s ověřeným
-SHA-256; neuděluje obecné `NOPASSWD: ALL`. Po dokončení se přístup odvolá
-volbou `--revoke`. Postup a fingerprint jsou v `infra/nginx/README.md`.
+Pro dočasné udělení přístupu z lokální administrátorské stanice slouží
+`scripts/grant-dmz-codex-access.sh`. Interaktivně využije existující SSH a sudo
+uživatele, přenese ověřený bootstrap a ihned ověří nový oddělený přístup.
+Bootstrap přidává samostatný omezený SSH klíč a sudo povoluje pouze pro rootem
+vlastněný instalátor Nginx s ověřeným SHA-256; neuděluje obecné
+`NOPASSWD: ALL`. Po dokončení se přístup odvolá volbou `--revoke`. Postup a
+fingerprint jsou v `infra/nginx/README.md`.
 
 Základní ověření repozitáře:
 

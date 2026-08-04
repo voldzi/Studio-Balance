@@ -7,8 +7,22 @@ API `/health` a `/ready` blokuje na veřejném virtual hostu.
 
 ## Jednorázové udělení správcovského přístupu
 
-Na `dmz.home.cz` přeneste celý obsah této složky a v existující administrátorské
-relaci spusťte:
+Z připravené lokální administrátorské stanice spusťte:
+
+```bash
+bash scripts/grant-dmz-codex-access.sh
+```
+
+Pokud DMZ používá jiný stávající klíč, předejte ho explicitně:
+
+```bash
+bash scripts/grant-dmz-codex-access.sh --identity ~/.ssh/EXISTUJICI_KLIC
+```
+
+Skript interaktivně využije váš současný SSH a sudo přístup, přenese oba
+ověřené pomocné soubory na DMZ a okamžitě otestuje nový omezený přístup. Pokud
+je nutné provést bootstrap přímo na serveru, přeneste celý obsah této složky a
+v existující administrátorské relaci spusťte:
 
 ```bash
 sudo bash bootstrap-codex-dmz-access.sh
