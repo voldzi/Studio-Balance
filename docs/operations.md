@@ -339,6 +339,7 @@ isolated preview deploy to docker.home.cz: pnpm deploy:preview -- <git-sha>
 isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
 production Docker candidate deploy to docker.home.cz: pnpm deploy:production -- <git-sha>
 Keycloak realm/client provision: scripts/bootstrap-production-keycloak.sh
+Keycloak production preview accounts: scripts/provision-production-preview-accounts.sh
 Nginx preview publish through dmz.home.cz: infra/nginx/install-studiobalance.sh
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD
