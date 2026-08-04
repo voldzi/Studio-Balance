@@ -17,24 +17,23 @@ zůstávají beze změny jako auditní stopa.
 | CD-004 | Odložená rezervační pravidla se nyní neuzavírají | implementace dotčených částí počká na odpovědi; připravený podklad je v `client-questionnaire-booking-rules.md` |
 | CD-005 | Produkční binární média se ukládají do S3-kompatibilního úložiště | S3 už není volitelné pro produkční media workflow; platí tenant izolace, backup a readiness podmínky z ADR 0002 |
 | CD-006 | Produkt bude pouze responzivní webová aplikace | nevzniká nativní iOS/Android aplikace, Expo/React Native, App Store/Google Play release ani mobilní push infrastruktura |
+| CD-007 | Schvaluje se doporučený Keycloak/OIDC identity model | vlastní realm `studio-balance`, oddělené web/admin policies, Authorization Code + PKCE, serverová HTTP-only relace, ověření e-mailu před rezervací, povinné admin MFA, issuer přes DMZ a lokální projektová instance |
 
-## Zjištění k identitě
+## Schválená identita
 
 Zadavatel upozornil na dostupný Keycloak. Read-only kontrola našla na
 `docker.home.cz` samostatný Keycloak 26.1.5 na host portu 8081. Kontejner nemá
 Docker healthcheck. V aktuálním Docker Desktop contextu `desktop-linux` nebyl
 Keycloak při kontrole spuštěný.
 
-Keycloak je preferovaný kandidát, nikoli zatím dokončené rozhodnutí o auth
-konfiguraci. Před implementací identity je nutné potvrdit:
+Keycloak je schválený identity provider. Závazné rozhodnutí je v ADR 0004:
 
-- vyhrazený realm a oddělené OIDC klienty/policies pro klientskou a admin část;
-- stabilní HTTPS issuer URL publikovanou bezpečně přes `dmz.home.cz`;
-- povinné ověření e-mailu před rezervací;
+- realm `studio-balance` a oddělené klientské/admin OIDC policies;
+- produkční issuer `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance`;
+- povinné ověření e-mailu před první rezervací;
 - povinné MFA pro `admin` a `super_admin`;
-- vlastnictví, zálohy, upgrade a healthcheck služby;
-- projektovou lokální instanci stejné hlavní verze v Docker Desktop, aby vývoj
-  nebyl závislý na sdílené produkční službě.
+- lokální projektová instance stejné hlavní verze v Docker Desktop;
+- provozní healthcheck, záloha, restore, upgrade a vlastnictví.
 
 ## Dopad na původní brief
 

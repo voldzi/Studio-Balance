@@ -85,6 +85,10 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
 - role a objektová autorizace pro každou `me/admin` cestu;
 - pagination/filters/invalid ranges mají deterministické výsledky;
 - CSRF/CORS/cache headers odpovídají auth modelu;
+- Keycloak issuer/audience/signature/expiry validace, neověřený e-mail a
+  odhlášení mají pozitivní i negativní testy;
+- admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
+  projeví v relaci a auditu;
 - web, API a worker zůstávají kompatibilní během rollout/rollback okna.
 
 ## UI a přístupnost
@@ -148,6 +152,8 @@ relevantní connection semantics musí odpovídat produkčnímu PostgreSQL za
 Lokální S3-kompatibilní služba běží také v Docker Desktop s testovacím bucketem
 a credentials. Test nikdy nezapisuje
 do produkčního bucketu na `docker.home.cz`.
+Identity testy používají projektový lokální Keycloak stejné hlavní verze a
+syntetický realm; nikdy se nepřipojují k produkčnímu realmu.
 
 ## Traceability a report
 

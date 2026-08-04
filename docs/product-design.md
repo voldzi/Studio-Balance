@@ -227,6 +227,11 @@ Každá znovupoužitelná komponenta definuje:
 Formuláře mají trvalé labely, zachovají data po chybě, formátují telefon,
 umožní zobrazit heslo a nepředvyplní marketingový souhlas.
 
+Keycloak přihlášení vizuálně navazuje na Studio Balance, ale neskrývá význam
+bezpečnostních kroků. Neověřený klient po registraci dostane jasný další krok a
+po ověření se vrátí k vybranému termínu. Admin MFA vysvětlí nastavení faktoru,
+recovery a chybu bez možnosti bezpečnostní krok přeskočit.
+
 ## Interakce a motion
 
 - motion slouží orientaci a zpětné vazbě, ne dekorativnímu předvádění;

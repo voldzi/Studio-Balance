@@ -31,10 +31,11 @@ strategii a ADR.
 
 ## Autentizace
 
-Preferovaným kandidátem je Keycloak/OIDC. Kontrakt musí podporovat:
+Identita používá Keycloak/OIDC podle ADR 0004. Kontrakt musí podporovat:
 
 - OIDC Authorization Code flow s PKCE a bezpečnou HTTP-only serverovou relaci;
 - oddělené klientské a admin přihlášení/policies a admin MFA;
+- ověřený e-mail jako podmínku vytvoření rezervace;
 - reset hesla s krátkou jednorázovou platností;
 - serverovou objektovou autorizaci každé chráněné operace.
 
@@ -130,7 +131,7 @@ poznámka, seznam klientů a jakýkoli waitlist údaj.
 
 ## Identita a profil – návrh
 
-Registrace, login, logout, reset a ověření e-mailu jsou při použití Keycloaku
+Registrace, login, logout, reset a ověření e-mailu jsou Keycloak
 OIDC/browser workflow, nikoli vlastní password endpointy doménového API. Webová
 BFF vrstva drží tokeny mimo browser JavaScript. Do OpenAPI patří až skutečně
 implementované aplikační operace:
@@ -141,9 +142,9 @@ implementované aplikační operace:
 | PATCH | `/api/v1/me` | povolené doménové profilové změny |
 | DELETE | `/api/v1/me` | žádost/proces zrušení účtu |
 
-Konkrétní issuer, realm, klienti, callback/logout URL, email verification a MFA
-se doplní po uzavření identity rozhodnutí. Reset nesmí prozradit existenci
-e-mailu.
+Issuer je `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance`;
+klienti jsou `studiobalance-web` a `studiobalance-admin`. Callback/logout URL
+mají přesný allowlist. Reset nesmí prozradit existenci e-mailu.
 
 ## Rezervace – návrh
 

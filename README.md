@@ -50,6 +50,8 @@ TypeScript monorepo s Next.js, NestJS/Fastify, workerem, PostgreSQL 18 a `pnpm`
 je schválený. Poskytovatelé e-mailu a monitoringu zatím nejsou uzavření.
 Architektonické rozhodnutí je v
 [ADR 0003](docs/adr/0003-web-only-application-stack.md).
+Identita používá Keycloak/OIDC podle
+[ADR 0004](docs/adr/0004-keycloak-identity.md).
 
 Schválená infrastrukturní topologie je v
 [ADR 0002](docs/adr/0002-deployment-and-storage-topology.md):

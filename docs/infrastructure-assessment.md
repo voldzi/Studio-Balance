@@ -78,7 +78,7 @@ upgradu, credential scope a smazání. Proto není výchozím kandidátem.
 | --- | --- | --- |
 | existující OpenTelemetry/Prometheus/Loki/Tempo/Grafana stack | logy, metriky, trace a alerty | potvrdit vlastníka, tenant/label izolaci, retenci, přístup a kapacitu |
 | běžící ClamAV | sken uploadovaných médií | potvrdit síťový přístup, SLA, limity a vlastnictví služby |
-| Keycloak 26.1.5 na `docker.home.cz` | preferovaný OIDC identity provider | vlastní realm/klienti, HTTPS issuer přes DMZ, admin MFA, healthcheck, backup a projektová lokální instance ještě vyžadují rozhodnutí |
+| Keycloak 26.1.5 na `docker.home.cz` | schválený OIDC identity provider | vlastní realm/klienti, HTTPS issuer přes DMZ, admin MFA a lokální instance jsou rozhodnuté; healthcheck, backup a provisioning zbývá realizovat |
 | Redis/Valkey kontejnery | queue/cache | jsou projektově specifické; nezapojují se bez vlastní instance nebo schváleného sdíleného provozu |
 
 Tyto služby nejsou přijetím této inventury automaticky schválené pro aplikaci.
@@ -93,9 +93,9 @@ healthcheck. Kontrola nečetla environment hodnoty, realm konfiguraci ani
 credentials. V aktuálním lokálním Docker Desktop contextu `desktop-linux`
 nebyl Keycloak při kontrole spuštěný.
 
-Pro Studio Balance lze službu využít až po vytvoření vlastního realm/clients,
-bezpečné HTTPS issuer cesty přes DMZ, rozhodnutí o email verification a admin
-MFA, doplnění healthchecku a potvrzení backup/upgrade odpovědnosti. Lokální
+Studio Balance použije vlastní realm/clients, HTTPS issuer cestu přes DMZ,
+email verification a admin MFA podle ADR 0004. Před produkcí zbývá doplnění
+healthchecku a potvrzení backup/upgrade odpovědnosti. Lokální
 vývoj má mít reprodukovatelnou projektovou instanci stejné hlavní verze, nikoli
 záviset na dostupnosti sdíleného serveru.
 
@@ -105,6 +105,8 @@ Před prvním rolloutem na `docker.home.cz` musí být doloženo:
 
 - volná disková a paměťová rezerva s alert prahy a jmenovitým vlastníkem;
 - Compose project name, privátní sítě, porty, resource limits a restart policy;
+- Keycloak realm/clients, DNS/TLS issuer, healthcheck, backup/restore a admin
+  recovery smoke;
 - registry, immutable image tag/digest, deploy a rollback postup;
 - žádný přímý PostgreSQL node mimo `haproxy.home.cz:5000`;
 - vlastní S3 gateway/bucket/credentials, pinned image, healthcheck,

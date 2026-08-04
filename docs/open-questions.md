@@ -23,6 +23,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-010 | Produkční databázová major verze je PostgreSQL 18; `patroni1` potvrdil 18.4 | ADR 0002, CD-002 |
 | RD-011 | Produkční binární média se ukládají do vyhrazeného S3-kompatibilního tenant úložiště | ADR 0002, CD-005 |
 | RD-012 | Produkt je pouze responzivní web; nativní iOS/Android aplikace ani app-store release nevznikají | ADR 0003, CD-006 |
+| RD-013 | Identita používá Keycloak, realm `studio-balance`, oddělené web/admin OIDC policies, PKCE, email verification před bookingem a povinné admin MFA | ADR 0004, CD-007 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -56,14 +57,11 @@ nepřijde výslovná odpověď.
 | ID | Otázka | Dopad / návrh |
 | --- | --- | --- |
 | OQ-015 | Jaké jsou rozpočtové a provozní limity e-mailu, monitoringu a případné CDN vrstvy? | ovlivní poskytovatele i SLA; runtime a DB topologie jsou už schválené |
-| OQ-018 | Je admin MFA povinné už v první verzi? | doporučení: povinné pro `super_admin`, nejméně silně doporučené pro `admin` |
-| OQ-019 | Musí být e-mail ověřen před první rezervací, nebo lze rezervaci vytvořit a ověření dokončit následně? | trade-off konverze vs. doručitelnost/zneužití |
 | OQ-020 | Jaké RPO/RTO a retenční dobu mají databázové zálohy? | baseline je denní záloha a pravidelný test obnovy; čísla chybí |
 | OQ-030 | Jaký database name, TLS režim, admin role, credentials policy a failover očekávání platí za `haproxy.home.cz:5000`? | major 18 je potvrzený; tyto údaje jsou nutné pro bezpečný produkční bootstrap skript |
 | OQ-031 | Jaký Docker deployment mechanismus, image registry, Nginx upstream/TLS/certifikát a rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | veřejná cesta je schválená, přesná release konfigurace ještě ne |
 | OQ-032 | Jak se provisionuje vyhrazená Studio Balance gateway nad `shared-seaweedfs`? | S3 použití je schválené; potvrdit interní endpoint, bucket, credentials, pinned image, healthcheck, backup/restore, vlastníka a lifecycle |
 | OQ-033 | Kdo a jak bezpečně uvolní nebo rozšíří kapacitu `docker.home.cz` a jaké alert prahy budou platit? | inventura 2026-08-04 zjistila 96% zaplnění root filesystému a vyčerpaný swap; blokuje produkční readiness, nic se automaticky nemaže |
-| OQ-034 | Použije se existující Keycloak 26.1.5 s vlastním realm a jaká bude HTTPS issuer URL, klientské/admin policies, MFA, backup a upgrade odpovědnost? | doporučení: ano, vlastní realm, oddělené policies, Authorization Code + PKCE, povinné admin MFA a lokální Compose instance stejné hlavní verze |
 
 ## P0 – právo, data a analytika
 
@@ -82,7 +80,7 @@ nepřijde výslovná odpověď.
 | OQ-026 | Má být ruční sekce recenzí zdrojem hvězdiček, nebo pouze textových citací? | hvězdičky jen u skutečně doložených hodnocení |
 | OQ-027 | Které sociální sítě se zobrazí, zejména TikTok? | prázdná síť se nesmí zobrazit |
 | OQ-028 | Má být po lekci výzva k hodnocení už v první verzi? | vyžaduje pravidlo četnosti a marketing/provozní klasifikaci |
-| OQ-029 | Má „Přidat do kalendáře“ používat stažitelný ICS, nativní kalendář mobilu, nebo obojí? | ovlivní web, aplikaci a časové testy |
+| OQ-029 | Má „Přidat do kalendáře“ nabídnout stažitelný ICS, webové odkazy Google/Outlook/Apple, nebo obojí? | ovlivní webový tok a časové testy |
 
 ## Co lze dělat před uzavřením otázek
 
@@ -90,6 +88,6 @@ Lze dokončit doménový model, transakční pravidla rezervace, veřejné stavy
 bezpečnostní baseline, wireframy bez finálních assetů, testovací scénáře a
 detailnější OpenAPI návrh. Produkční host, databázová cesta a možnost S3 jsou
 rozhodnuté, ale nelze tvrdit, že je připraven produkční design, kapacita
-hostitele, tenant médií, identity workflow, deployment workflow ani právní
+hostitele, tenant médií, identity provisioning, deployment workflow ani právní
 soulad, dokud nejsou uzavřeny odpovídající P0
 položky.

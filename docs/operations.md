@@ -16,6 +16,8 @@ Schválená topologie:
 - produkční PostgreSQL 18 jen přes `haproxy.home.cz:5000`;
 - produkční S3-kompatibilní úložiště médií na `docker.home.cz` přes vyhrazený
   Studio Balance bucket/gateway;
+- Keycloak realm `studio-balance` na `docker.home.cz`, publikovaný jako
+  `https://auth.studiobalance.zeleznalady.cz` přes Nginx na `dmz.home.cz`;
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
 Read-only inventura hostitele a readiness omezení jsou v
@@ -34,7 +36,7 @@ python3 -m json.tool openapi/openapi.json >/dev/null
 
 | Prostředí | Účel | Pravidla |
 | --- | --- | --- |
-| development | lokální vývoj v Docker Desktop | lokální PostgreSQL 18, projektový S3 emulator/tenant a po schválení identity Keycloak stejné hlavní verze; syntetická data |
+| development | lokální vývoj v Docker Desktop | lokální PostgreSQL 18, projektový S3 tenant a Keycloak stejné hlavní verze s dev realm; syntetická data |
 | test/staging | integrace, akceptace a restore test | oddělená DB/sender, produkčně podobná konfigurace |
 | production | Nginx DMZ → Docker na `docker.home.cz` | DB přes `haproxy.home.cz:5000`, audit, alerty, backup |
 
@@ -59,6 +61,11 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `S3_ACCESS_KEY_ID` | production media runtime | prázdné | ano | identifikátor dedikovaných credentials |
 | `S3_SECRET_ACCESS_KEY` | production media runtime | prázdné | ano | tajná část dedikovaných credentials |
 | `S3_FORCE_PATH_STYLE` | ne | `true` | ne | kompatibilita s lokální a SeaweedFS S3 implementací |
+| `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance` |
+| `OIDC_WEB_CLIENT_ID` | ano | `studiobalance-web` | ne | OIDC klient veřejné/klientské webové plochy |
+| `OIDC_WEB_CLIENT_SECRET` | runtime | prázdné | ano | serverový secret webového OIDC klienta |
+| `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |
+| `OIDC_ADMIN_CLIENT_SECRET` | runtime | prázdné | ano | serverový secret admin OIDC klienta |
 | `SESSION_SECRET` | runtime | prázdné | ano | podpis/šifrování relace dle architektury |
 | `EMAIL_FROM` | runtime | prázdné | ne | ověřený odesílatel transakčních zpráv |
 | `EMAIL_PROVIDER_API_KEY` | runtime | prázdné | ano | e-mail provider credential |
@@ -73,17 +80,21 @@ interním logu, ale nesmí vypsat hodnotu secretu.
 
 - PostgreSQL jako transakční zdroj pravdy;
 - S3-kompatibilní úložiště produkčních binárních médií s odděleným tenantem;
-- Keycloak/OIDC po schválení realm, issuer a provozního modelu;
+- Keycloak/OIDC s realm `studio-balance`, oddělenými web/admin policies,
+  email verification a admin MFA;
 - Nginx reverse proxy na `dmz.home.cz` pro internetovou publikaci;
 - transakční e-mail;
 - observability/error monitoring;
 - DNS/TLS a případně queue runtime.
 
 S3 je schválené pro produkční media workflow, ale služba zatím není pro Studio
-Balance připravená. Před použitím je nutné vytvořit vlastní gateway/bucket/credentials,
+Balance připravená. Před použitím je nutné vytvořit vlastní
+gateway/bucket/credentials,
 připnout image, doplnit healthcheck, vyřešit kapacitu hostitele a prokázat
-backup/restore. PostgreSQL major je 18; otevřené jsou TLS/auth, Docker deployment,
-registry, Nginx upstream/TLS konfigurace, poskytovatelé, ceny a limity. Žádná
+backup/restore. Keycloak vyžaduje healthcheck, zálohu realm/databáze, bezpečný
+admin recovery a TLS issuer přes DMZ. PostgreSQL major je 18; otevřené jsou
+databázové TLS/auth, Docker deployment, registry, Nginx upstream/TLS
+konfigurace, poskytovatelé, ceny a limity. Žádná
 platební služba není potřeba.
 
 ## Deployment kontrakt
@@ -97,11 +108,13 @@ Budoucí pipeline musí:
 5. provést migraci bezpečným pořadím expand → deploy → contract;
 6. nasadit Docker image API/worker/web na `docker.home.cz`, aktualizovat Nginx
    upstream na `dmz.home.cz` bezpečným postupem a ověřit `/health` a `/ready`;
-7. provést smoke kritické anonymní a autentizované cesty;
-8. sledovat error rate, latency a notification queue;
-9. ověřit zápis/čtení testovacího S3 objektu a stav zálohy bez
+7. ověřit Keycloak discovery/login/logout, email verification, klientskou relaci
+   a admin MFA přes produkční issuer;
+8. provést smoke kritické anonymní a autentizované cesty;
+9. sledovat error rate, latency a notification queue;
+10. ověřit zápis/čtení testovacího S3 objektu a stav zálohy bez
    zveřejnění originálu;
-10. umožnit rollback aplikace bez ztráty nově zapsaných rezervací.
+11. umožnit rollback aplikace bez ztráty nově zapsaných rezervací.
 
 API změny se nasazují backward-compatible pořadím, aby web, API a worker mohly
 být bezpečně rolloutovány a rollbackovány bez výpadku rezervací.
@@ -187,7 +200,9 @@ typecheck: TBD
 database migrate/seed: TBD
 production database bootstrap: TBD (interactive; no committed password)
 Docker Desktop Compose: TBD
+Keycloak dev realm import: TBD
 production Docker deploy to docker.home.cz: TBD
+Keycloak realm/client provision: TBD
 Nginx publish through dmz.home.cz: TBD
 OpenAPI validate/generate: TBD
 backup/restore test: TBD

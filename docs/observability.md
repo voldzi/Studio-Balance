@@ -42,6 +42,8 @@ Pravidla:
 - S3 gateway/bucket availability, request latency/error, kapacita a stáří
   poslední ověřené zálohy;
 - media delivery/cache a externí provider latency/error;
+- Keycloak discovery/login/logout latency/error, session validation failure a
+  dostupnost produkčního issueru;
 - deploy/version a readiness stav.
 
 ### Doména rezervací
@@ -96,6 +98,7 @@ kritické booking/notification flow, ale respektuje náklady a privacy.
 | P1 | booking API je nedostupné nebo systematicky porušuje konzistenci | okamžitě on-call, případně stop změnového provozu |
 | P1 | DB unavailable, poškození dat, outbox se nezapisuje | okamžitá eskalace |
 | P1 | zrušení/změna termínu se trvale nedoručuje e-mailem | ruční kontakt a oprava fronty |
+| P1 | Keycloak nebo issuer je nedostupný a klienti/admini se nemohou bezpečně přihlásit | zachovat veřejné čtení, zastavit neautorizované změny a eskalovat identity službu |
 | P2 | významný růst 5xx/latency, queue age nebo crash rate | šetření během provozní doby |
 | P2 | záloha selhala nebo je starší než povolený limit | oprava a ověření obnovitelnosti |
 | P3 | jednotlivý provider retry/bounce | agregovat a řešit trend |

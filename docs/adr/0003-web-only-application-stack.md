@@ -108,3 +108,9 @@ Před produkcí:
 - bezpečně vytvořit produkční DB/role interaktivním verzovaným skriptem;
 - zprovoznit vyhrazený S3 tenant a prokázat backup/restore;
 - vyřešit kapacitu `docker.home.cz` a všechny readiness blokery.
+
+## Následné rozhodnutí
+
+Identity podmínky tohoto ADR uzavírá ADR 0004. Keycloak, realm, klienti, issuer,
+email verification a admin MFA jsou schválené; zbývá jejich implementace a
+provozní provisioning.

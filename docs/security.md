@@ -2,9 +2,9 @@
 
 ## Status a cíle
 
-Dokument definuje bezpečnostní baseline před implementací. Keycloak 26.1.5 je
-preferovaný OIDC kandidát; konkrétní realm, klienti a policies se doplní po
-schválení identity modelu. Systém zpracovává
+Dokument definuje bezpečnostní baseline před implementací. Identita používá
+Keycloak 26.1.5, realm `studio-balance` a oddělené web/admin OIDC policies podle
+ADR 0004. Systém zpracovává
 kontaktní údaje, rezervace, docházku a administrativní fee, ale nikdy platební
 karty nebo online platební tokeny.
 
@@ -31,7 +31,7 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 
 ## Autentizace
 
-- při použití Keycloaku aplikace hesla neukládá; identity provider je chrání
+- aplikace hesla neukládá; Keycloak je chrání
   moderním adaptivním hashem a schválenou password policy;
 - login a reset jsou rate-limited, monitorované a odolné proti enumeraci účtů;
 - reset token je náhodný, jednorázový, krátkodobý a v úložišti chráněný;
@@ -39,7 +39,8 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 - webová session je `HttpOnly`, `Secure`, vhodné `SameSite`, rotovaná po loginu;
 - OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
   vrstva mimo browser JavaScript;
-- admin vstup je oddělený; MFA rozhodnutí je P0 v `open-questions.md`;
+- admin vstup je oddělený a MFA je povinné pro `admin` i `super_admin`;
+- klient musí mít před první rezervací ověřený e-mail;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 
 ## Autorizace
@@ -68,6 +69,8 @@ scénáři.
   `haproxy.home.cz:5000`, nikdy na přímý databázový uzel;
 - produkční S3 access key/secret patří pouze serveru a vyhrazenému Studio
   Balance bucketu; nesdílí se s jiným projektem ani klientským bundlem;
+- OIDC web/admin client secrets a session secret patří pouze serveru; produkční
+  issuer je přes HTTPS na `auth.studiobalance.zeleznalady.cz`;
 - lokální Docker Desktop používá pouze lokální credentials a syntetická data;
 - rotace credentialu má dokumentovaný postup a nevyžaduje změnu zdrojového kódu;
 - logy, error tracking a build artefakty nesmí obsahovat server secret;
@@ -173,6 +176,6 @@ Závislost se nepřidává bez účelu, licence a maintenance kontroly.
 - [ ] upload a rich text jsou omezené a testované;
 - [ ] žádný secret, karta, payment token nebo nadbytečné PII v repo/logu;
 - [ ] privacy texty, retence, export a smazání jsou schválené;
-- [ ] admin MFA rozhodnutí a auditní retence jsou uzavřené;
+- [ ] admin MFA, email verification, role mapping a recovery prošly testy;
 - [ ] záloha i obnova byly bezpečně ověřeny;
 - [ ] kritické dependency/secret scan nálezy jsou nulové.

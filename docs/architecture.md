@@ -20,7 +20,7 @@ flowchart LR
   admin([Administrátor]) --> adminui[Webová administrace]
   web --> api[Studio Balance API]
   adminui --> api
-  web --> oidc[Keycloak / OIDC kandidát]
+  web --> oidc[Keycloak / OIDC]
   adminui --> oidc
   api --> dbproxy[PostgreSQL endpoint]
   dbproxy --> db[(PostgreSQL)]
@@ -39,7 +39,7 @@ flowchart LR
 | API | jednotná autorizace, validace, doménová pravidla a kontrakt klientů |
 | Booking Service | kapacita, idempotence, stavový automat, cutoff a fee |
 | Schedule Service | typy lekcí, série, výjimky, lokální čas a veřejná dostupnost |
-| Identity Service | Keycloak/OIDC kandidát pro klientské a oddělené admin policies, reset, ověření a MFA |
+| Identity Service | Keycloak realm `studio-balance`, oddělené web/admin policies, reset, email verification a MFA |
 | Content Service | lekce, instruktoři, stránky, ceník, FAQ, recenze, novinky, média |
 | Notification Orchestrator | plán, zrušení, retry a stav doručení e-mailu/provozní zprávy |
 | Worker | asynchronní e-mail, media processing a plánované úlohy |
@@ -195,12 +195,13 @@ autorizací, nikoli jen skrytým menu.
 - klientská a administrativní přihlašovací plocha jsou oddělené;
 - hesla používají moderní adaptivní hash, reset je krátkodobý a jednorázový;
 - web používá OIDC Authorization Code flow s PKCE a serverovou HTTP-only relací;
-- preferovaný kandidát je Keycloak 26.1.5 s vlastním realm a oddělenými
-  klientskými/admin policies; konkrétní issuer a client model ještě vyžaduje
-  potvrzení;
+- identity provider je Keycloak 26.1.5, realm `studio-balance`, oddělené
+  confidential klienty `studiobalance-web` a `studiobalance-admin` a produkční
+  issuer `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance`;
+- e-mail musí být ověřen před bookingem a role `admin`/`super_admin` vyžadují
+  MFA nejméně pomocí TOTP;
 - authorization je objektová i rolová: klient pouze vlastní objekt, admin podle
   role a akce, super admin spravuje privilege;
-- admin MFA je doporučené a před produkcí musí být explicitně rozhodnuto;
 - citlivé akce a autorizace se kontrolují na API, nikdy pouze v UI.
 
 ## Média a obsah
@@ -232,11 +233,13 @@ kontejnerů na `docker.home.cz`. Ty přistupují k PostgreSQL pouze přes
 ```mermaid
 flowchart TB
   internet["studiobalance.zeleznalady.cz"] --> dmz["dmz.home.cz / Nginx"]
+  authinternet["auth.studiobalance.zeleznalady.cz"] --> dmz
   subgraph dockerhost["docker.home.cz / Docker"]
     dmz --> webdeploy[Web + Admin]
     webdeploy --> apideploy[API]
     apideploy --> workerdeploy[Worker / Outbox]
-    webdeploy --> keycloak["Keycloak 26.1.5 / OIDC kandidát"]
+    dmz --> keycloak["Keycloak 26.1.5 / studio-balance realm"]
+    webdeploy --> keycloak
   end
   apideploy --> dbproxy["haproxy.home.cz:5000"]
   workerdeploy --> dbproxy
@@ -251,7 +254,7 @@ flowchart TB
 Veřejná doména, Nginx DMZ, Docker host a databázový endpoint jsou závazné.
 Otevřené zůstávají certifikát/TLS konfigurace, Nginx upstream porty, image
 registry, Docker orchestrace, PostgreSQL 18 TLS/auth, S3 tenant konfigurace,
-Keycloak realm/issuer/MFA,
+Keycloak backup/restore, healthcheck a recovery provoz,
 SLA a rollback.
 Aplikace nesmí používat přímé adresy databázových uzlů. Produkční účty a data
 vlastní Studio Balance.
@@ -276,6 +279,6 @@ bez restore testu se nepovažuje za ověřený.
 ## Otevřené architektonické body
 
 Stack a PostgreSQL major verze jsou rozhodnuté. Docker/Nginx release workflow,
-PostgreSQL TLS/role provisioning, Keycloak realm/issuer/MFA, poskytovatel
+PostgreSQL TLS/role provisioning, Keycloak provozní provisioning, poskytovatel
 e-mailu, media cache model, analytika a RPO/RTO jsou evidovány v
 `open-questions.md`.

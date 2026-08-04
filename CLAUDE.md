@@ -56,6 +56,9 @@ before encoding one interpretation in code.
   source, not hardcoded client lists.
 - The product is responsive web only. Do not add a native iOS/Android app,
   Expo/React Native workspace, app-store release, or mobile push provider.
+- Identity uses the dedicated Keycloak `studio-balance` realm with separate
+  web/admin OIDC policies, Authorization Code + PKCE, server-side HTTP-only
+  sessions, verified email before booking, and mandatory admin MFA. See ADR 0004.
 - Production application workloads run as Docker containers on
   `docker.home.cz`.
 - Public traffic for `https://studiobalance.zeleznalady.cz` is published

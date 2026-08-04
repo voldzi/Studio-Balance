@@ -16,6 +16,8 @@ Výstupy:
   PostgreSQL přes `haproxy.home.cz:5000`;
 - potvrzený produkční S3 bucket/gateway, credentials, kapacita, záloha a
   restore test;
+- implementovaný Keycloak realm/clients, issuer přes DMZ, email verification,
+  admin MFA, lokální dev realm a provozní restore/recovery;
 - produkční logo a prvotní fotografické/content balíčky;
 - potvrzené ceny, kontakty, storno znění a právní odpovědnosti;
 - vlastnictví domény, identity, e-mailu a infrastrukturních účtů;

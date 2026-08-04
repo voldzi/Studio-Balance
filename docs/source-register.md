@@ -35,8 +35,10 @@ Dne 2026-08-04 zadavatel doplnil provozní zadání:
 
 Zadavatel následně schválil TypeScript web-only stack, vyřadil nativní
 iOS/Android aplikaci a určil PostgreSQL major 18. Patroni API potvrdilo na
-`patroni1.home.cz` verzi 18.4. Rozhodnutí jsou v `client-decisions.md`, ADR 0003
-a ADR 0002. TLS/auth parametry a Docker deployment mechanismus zůstávají
+`patroni1.home.cz` verzi 18.4. Schválil také Keycloak/OIDC model, email
+verification před bookingem a admin MFA. Rozhodnutí jsou v
+`client-decisions.md`, ADR 0002, ADR 0003 a ADR 0004. Databázové TLS/role
+parametry a Docker deployment mechanismus zůstávají
 otevřené. Read-only inventura hostitele je
 zaznamenána v `infrastructure-assessment.md`; neobsahuje credentials ani změny
 provozu.

@@ -63,6 +63,9 @@ Power jóga. Jde o data spravovaná administrací, ne enum nebo pevné karty v k
 | IDN-004 | P0 | verze podmínek a čas přijetí jsou evidovány; marketingový souhlas je oddělený a nepředvyplněný |
 | IDN-005 | P0 | klient vidí a mění jen vlastní profil a rezervace; administrátor používá oddělený vstup |
 | IDN-006 | P1 | klient může požádat o export údajů a zrušení účtu |
+| IDN-007 | P0 | identita používá Keycloak realm `studio-balance`, OIDC Authorization Code + PKCE a serverovou HTTP-only relaci |
+| IDN-008 | P0 | neověřený e-mail nemůže vytvořit rezervaci; veřejné prohlížení zůstává dostupné |
+| IDN-009 | P0 | `admin` a `super_admin` musí dokončit MFA; klientská MFA není v první verzi povinná |
 
 Datum narození a nouzový kontakt se v první verzi nesbírají.
 
