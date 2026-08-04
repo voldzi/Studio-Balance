@@ -2,9 +2,13 @@
 
 ## Status a cíle
 
-Dokument definuje bezpečnostní baseline před implementací. Identita používá
-Keycloak 26.1.5, realm `studio-balance` a oddělené web/admin OIDC policies podle
-ADR 0004. Systém zpracovává
+Identita používá Keycloak 26.1.5, realm `studio-balance` a oddělené web/admin
+OIDC policies podle ADR 0004. Implementovaný webový řez používá Authorization
+Code + PKCE, jednorázový state/nonce cookie a osmihodinovou `HttpOnly` relaci
+`sb_session`, podepsanou pouze serverovým `SESSION_SECRET`. API ověřuje tuto
+relaci pro `GET /api/v1/me`. Registrace doplněná o klientský telefon, správa
+profilu, admin MFA enforcement a rezervační autorizace jsou navazující řezy.
+Systém zpracovává
 kontaktní údaje, rezervace, docházku a administrativní fee, ale nikdy platební
 karty nebo online platební tokeny.
 

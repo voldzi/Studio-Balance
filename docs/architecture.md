@@ -9,8 +9,10 @@ Neexistující komponenty se v tomto dokumentu nesmějí prezentovat jako nasaze
 
 Aktuálně implementovaný řez obsahuje Next.js web, NestJS/Fastify API,
 samostatný worker, generované OpenAPI typy, PostgreSQL migraci, request ID,
-strukturované logy a lokální PostgreSQL/Keycloak Compose. Rezervace, obsahová
-data, OIDC webová relace, produkční S3 a e-mail zatím implementované nejsou.
+strukturované logy a lokální PostgreSQL/Keycloak Compose. Identity řez obsahuje
+Keycloak Authorization Code + PKCE, serverovou HTTP-only relaci a chráněné
+`GET /api/v1/me`. Rezervace, obsahová data, profilové údaje, produkční S3 a
+e-mail zatím implementované nejsou.
 
 ## Kontext a hranice systému
 

@@ -42,12 +42,12 @@ nikde neukazuje počet míst, platba ani waitlist.
 
 ## Fáze 2 – aplikační základ, backend a administrace
 
-Stav k 2026-08-04: bod 1 má první implementovaný řez — spustitelný scaffold,
-health/readiness, validaci konfigurace, PostgreSQL 18 migraci, request ID,
-strukturované logy a auditní tabulku. Image web/API/worker a izolovaný interní
-preview deployment na `docker.home.cz` jsou připravené podle ADR 0006.
-Produkční integrace, veřejný deployment ani kompletní auditní doména tím nejsou
-uzavřené.
+Stav k 2026-08-04: body 1–2 mají první implementovaný řez — spustitelný
+scaffold, health/readiness, validaci konfigurace, PostgreSQL 18 migraci,
+request ID, strukturované logy, auditní tabulku a OIDC BFF relaci s
+`GET /api/v1/me`. Image web/API/worker a izolovaný interní preview deployment
+na `docker.home.cz` jsou připravené podle ADR 0006. Produkční integrace,
+veřejný deployment ani kompletní auditní doména tím nejsou uzavřené.
 
 Pořadí vertikálních řezů:
 

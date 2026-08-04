@@ -17,6 +17,7 @@ export default function HomePage() {
           <Link href="#studio">O studiu</Link>
           <Link href="#lekce">Lekce</Link>
           <Link href="/rozvrh">Rozvrh</Link>
+          <Link href="/prihlaseni">Přihlásit se</Link>
         </nav>
         <Link className="button button-small" href="/rozvrh">
           Rezervovat lekci

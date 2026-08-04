@@ -65,6 +65,32 @@
           }
         }
       }
+    },
+    "/api/v1/me": {
+      "get": {
+        "summary": "Read the current authenticated account identity",
+        "operationId": "getCurrentAccount",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": {
+            "description": "The current Studio Balance session identity.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MeResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid Studio Balance session is present.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -124,14 +150,39 @@
             }
           }
         }
+      },
+      "MeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "email", "emailVerified", "roles"],
+        "properties": {
+          "subject": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "emailVerified": { "type": "boolean" },
+          "roles": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["client", "admin", "super_admin"] }
+          }
+        }
       }
     },
-    "securitySchemes": {}
+    "securitySchemes": {
+      "studioSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb_session",
+        "description": "Short-lived HTTP-only Studio Balance BFF session."
+      }
+    }
   },
   "tags": [
     {
       "name": "System",
       "description": "Liveness and readiness endpoints."
+    },
+    {
+      "name": "Account",
+      "description": "Authenticated client account operations."
     }
   ]
 }

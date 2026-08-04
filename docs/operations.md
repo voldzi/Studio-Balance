@@ -161,7 +161,7 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `OIDC_WEB_CLIENT_SECRET` | runtime | `local-web-client-only` | ano | veřejná lokální fixture; produkčně serverový secret webového OIDC klienta |
 | `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |
 | `OIDC_ADMIN_CLIENT_SECRET` | runtime | `local-admin-client-only` | ano | veřejná lokální fixture; produkčně serverový secret admin OIDC klienta |
-| `SESSION_SECRET` | runtime | prázdné | ano | podpis/šifrování relace dle architektury |
+| `SESSION_SECRET` | ano pro identity runtime | lokální veřejná fixture | ano | podpis serverové HTTP-only relace; produkce vyžaduje unikátní hodnotu alespoň 32 znaků |
 | `EMAIL_FROM` | runtime | prázdné | ne | ověřený odesílatel transakčních zpráv |
 | `EMAIL_PROVIDER_API_KEY` | runtime | prázdné | ano | e-mail provider credential |
 | `LOG_LEVEL` | ne | `info` | ne | minimální úroveň logování |

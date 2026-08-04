@@ -83,6 +83,12 @@ services:
     environment:
       APP_VERSION: ${APP_VERSION:?application version is required}
       NODE_ENV: production
+      APP_ENV: production
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}
+      SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
     ports:
       - "3281:3000"
     healthcheck:

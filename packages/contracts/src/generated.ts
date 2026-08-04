@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the current authenticated account identity */
+        get: operations["getCurrentAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -64,6 +81,14 @@ export interface components {
                 /** @example req_abc123 */
                 requestId: string;
             };
+        };
+        MeResponse: {
+            /** Format: uuid */
+            subject: string;
+            /** Format: email */
+            email: string;
+            emailVerified: boolean;
+            roles: ("client" | "admin" | "super_admin")[];
         };
     };
     responses: never;
@@ -114,6 +139,35 @@ export interface operations {
             };
             /** @description A required dependency is not ready. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCurrentAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current Studio Balance session identity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description No valid Studio Balance session is present. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

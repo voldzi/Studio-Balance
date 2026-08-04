@@ -9,6 +9,7 @@ const schema = z.object({
     .string()
     .url()
     .default("postgresql://studio_balance:local-development-only@localhost:5433/studio_balance"),
+  SESSION_SECRET: z.string().min(32).optional(),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info")
 });
 
@@ -17,6 +18,7 @@ export type RuntimeConfig = {
   databaseUrl: string;
   environment: z.infer<typeof schema>["APP_ENV"];
   logLevel: z.infer<typeof schema>["LOG_LEVEL"];
+  sessionSecret: string;
   version: string;
 };
 
@@ -36,11 +38,16 @@ export function loadRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
     throw new Error("Production DATABASE_URL must use haproxy.home.cz:5000");
   }
 
+  if (result.data.APP_ENV === "production" && !result.data.SESSION_SECRET) {
+    throw new Error("Production SESSION_SECRET is required");
+  }
+
   return {
     apiPort: result.data.API_PORT,
     databaseUrl: result.data.DATABASE_URL,
     environment: result.data.APP_ENV,
     logLevel: result.data.LOG_LEVEL,
+    sessionSecret: result.data.SESSION_SECRET ?? "local-development-session-secret-change-before-sharing",
     version: result.data.APP_VERSION
   };
 }

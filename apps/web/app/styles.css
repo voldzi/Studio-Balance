@@ -105,6 +105,64 @@ nav a:hover,
   font-size: 0.88rem;
 }
 
+button.button {
+  cursor: pointer;
+  font: inherit;
+}
+
+.auth-page,
+.account-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 5vw, 4rem);
+}
+
+.auth-page > .brand {
+  margin-inline: auto;
+  width: min(100%, 32rem);
+}
+
+.auth-card,
+.account-card {
+  width: min(100%, 32rem);
+  margin: clamp(3rem, 12vw, 8rem) auto;
+  padding: clamp(2rem, 6vw, 4rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  box-shadow: var(--shadow-soft);
+}
+
+.auth-card h1,
+.account-card h1 {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+}
+
+.auth-card > .button {
+  width: 100%;
+  margin-top: var(--space-6);
+}
+
+.auth-help {
+  margin: var(--space-6) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.status-success,
+.status-warning {
+  margin-block: var(--space-6);
+  padding: var(--space-4);
+  border-radius: var(--radius-sm);
+}
+
+.status-success {
+  background: #e8f1e8;
+}
+
+.status-warning {
+  background: #f6ead8;
+}
+
 .hero {
   width: min(calc(100% - 2rem), var(--content-max));
   min-height: clamp(34rem, 70vh, 49rem);

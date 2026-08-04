@@ -14,6 +14,7 @@ const config: RuntimeConfig = {
   databaseUrl: "postgresql://unused",
   environment: "test",
   logLevel: "error",
+  sessionSecret: "test-session-secret-that-is-long-enough-to-be-safe",
   version: "test"
 };
 

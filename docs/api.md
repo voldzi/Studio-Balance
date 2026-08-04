@@ -4,9 +4,9 @@
 
 Studio Balance potřebuje jedno API pro veřejný web, klientský účet a administraci.
 REST a katalog níže jsou doporučený návrh odvozený ze zadání. Závazným
-strojovým kontraktem je pouze `openapi/openapi.json`; v počátečním stavu
-obsahuje systémové endpointy `/health` a `/ready`. Funkční endpoint se smí
-implementovat až po doplnění do OpenAPI.
+strojovým kontraktem je pouze `openapi/openapi.json`. Aktuálně obsahuje
+systémové endpointy a `GET /api/v1/me` pro ověření serverové webové relace.
+Funkční endpoint se smí implementovat až po doplnění do OpenAPI.
 
 ## Zdroje pravdy
 
@@ -41,6 +41,11 @@ Identita používá Keycloak/OIDC podle ADR 0004. Kontrakt musí podporovat:
 
 Veřejný obsah a rozvrh jsou anonymní. Rezervace a `me` cesty vyžadují klienta;
 `admin` cesty vyžadují příslušnou administrativní roli.
+
+`GET /api/v1/me` je první implementovaná chráněná cesta. Čte pouze relaci
+vydanou webovou BFF po OIDC callbacku, nikdy OIDC token z browser JavaScriptu.
+Vrací Keycloak subject, e-mail, stav ověření e-mailu a realm role; neprovádí
+ještě správu klientského profilu.
 
 ## Konvence
 
