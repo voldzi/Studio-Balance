@@ -19,7 +19,7 @@ Schválená topologie:
 - produkční S3-kompatibilní úložiště médií na `docker.home.cz` přes vyhrazený
   Studio Balance bucket/gateway;
 - Keycloak realm `studio-balance` na `docker.home.cz`, publikovaný jako
-  `https://auth.studiobalance.zeleznalady.cz` přes Nginx na `dmz.home.cz`;
+  `https://login.zeleznalady.cz` přes Nginx na `dmz.home.cz`;
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
 Read-only inventura hostitele a readiness omezení jsou v
@@ -134,7 +134,7 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `S3_ACCESS_KEY_ID` | production media runtime | prázdné | ano | identifikátor dedikovaných credentials |
 | `S3_SECRET_ACCESS_KEY` | production media runtime | prázdné | ano | tajná část dedikovaných credentials |
 | `S3_FORCE_PATH_STYLE` | ne | `true` | ne | kompatibilita s lokální a SeaweedFS S3 implementací |
-| `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance` |
+| `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://login.zeleznalady.cz/realms/studio-balance` |
 | `OIDC_WEB_CLIENT_ID` | ano | `studiobalance-web` | ne | OIDC klient veřejné/klientské webové plochy |
 | `OIDC_WEB_CLIENT_SECRET` | runtime | `local-web-client-only` | ano | veřejná lokální fixture; produkčně serverový secret webového OIDC klienta |
 | `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |

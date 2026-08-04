@@ -25,7 +25,7 @@ token storage ani mobilní OAuth klienty.
    rotovaná po přihlášení nebo změně oprávnění. API validuje issuer, audience,
    podpis, expiraci a požadované claims.
 6. Produkční issuer je
-   `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance` a vede přes
+   `https://login.zeleznalady.cz/realms/studio-balance` a vede přes
    Nginx na `dmz.home.cz` do Keycloaku na `docker.home.cz`.
 7. E-mail musí být ověřen před první rezervací. Neověřený uživatel může dokončit
    registraci a prohlížet veřejný obsah, ale booking API jej odmítne bezpečným

@@ -203,7 +203,7 @@ autorizací, nikoli jen skrytým menu.
 - web používá OIDC Authorization Code flow s PKCE a serverovou HTTP-only relací;
 - identity provider je Keycloak 26.1.5, realm `studio-balance`, oddělené
   confidential klienty `studiobalance-web` a `studiobalance-admin` a produkční
-  issuer `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance`;
+  issuer `https://login.zeleznalady.cz/realms/studio-balance`;
 - e-mail musí být ověřen před bookingem a role `admin`/`super_admin` vyžadují
   MFA nejméně pomocí TOTP;
 - authorization je objektová i rolová: klient pouze vlastní objekt, admin podle
@@ -239,7 +239,7 @@ kontejnerů na `docker.home.cz`. Ty přistupují k PostgreSQL pouze přes
 ```mermaid
 flowchart TB
   internet["studiobalance.zeleznalady.cz"] --> dmz["dmz.home.cz / Nginx"]
-  authinternet["auth.studiobalance.zeleznalady.cz"] --> dmz
+  authinternet["login.zeleznalady.cz"] --> dmz
   subgraph dockerhost["docker.home.cz / Docker"]
     dmz --> webdeploy[Web + Admin]
     webdeploy --> apideploy[API]

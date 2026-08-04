@@ -70,7 +70,7 @@ scénáři.
 - produkční S3 access key/secret patří pouze serveru a vyhrazenému Studio
   Balance bucketu; nesdílí se s jiným projektem ani klientským bundlem;
 - OIDC web/admin client secrets a session secret patří pouze serveru; produkční
-  issuer je přes HTTPS na `auth.studiobalance.zeleznalady.cz`;
+  issuer je přes HTTPS na `login.zeleznalady.cz`;
 - lokální Docker Desktop používá pouze lokální credentials a syntetická data;
 - rotace credentialu má dokumentovaný postup a nevyžaduje změnu zdrojového kódu;
 - logy, error tracking a build artefakty nesmí obsahovat server secret;

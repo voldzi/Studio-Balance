@@ -142,7 +142,7 @@ implementované aplikační operace:
 | PATCH | `/api/v1/me` | povolené doménové profilové změny |
 | DELETE | `/api/v1/me` | žádost/proces zrušení účtu |
 
-Issuer je `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance`;
+Issuer je `https://login.zeleznalady.cz/realms/studio-balance`;
 klienti jsou `studiobalance-web` a `studiobalance-admin`. Callback/logout URL
 mají přesný allowlist. Reset nesmí prozradit existenci e-mailu.
 

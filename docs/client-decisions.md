@@ -32,7 +32,7 @@ Keycloak při kontrole spuštěný.
 Keycloak je schválený identity provider. Závazné rozhodnutí je v ADR 0004:
 
 - realm `studio-balance` a oddělené klientské/admin OIDC policies;
-- produkční issuer `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance`;
+- produkční issuer `https://login.zeleznalady.cz/realms/studio-balance`;
 - povinné ověření e-mailu před první rezervací;
 - povinné MFA pro `admin` a `super_admin`;
 - lokální projektová instance stejné hlavní verze v Docker Desktop;
