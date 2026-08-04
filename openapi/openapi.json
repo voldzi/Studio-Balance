@@ -1,0 +1,137 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Studio Balance API",
+    "version": "0.1.0",
+    "description": "Initial machine-readable contract for the shared Studio Balance API. Product endpoints remain proposed until added to this file."
+  },
+  "servers": [
+    {
+      "url": "https://studiobalance.zeleznalady.cz",
+      "description": "Production through Nginx on dmz.home.cz"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development placeholder"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Process health check",
+        "operationId": "getHealth",
+        "tags": ["System"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "The process is alive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Dependency readiness check",
+        "operationId": "getReadiness",
+        "tags": ["System"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "The service is ready to serve traffic.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required dependency is not ready.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "service", "version", "timestamp"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"]
+          },
+          "service": {
+            "type": "string",
+            "examples": ["studio-balance-api"]
+          },
+          "version": {
+            "type": "string",
+            "examples": ["0.1.0"]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "message", "requestId"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "examples": ["DEPENDENCY_UNAVAILABLE"]
+              },
+              "message": {
+                "type": "string",
+                "examples": ["The service is temporarily unavailable."]
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "requestId": {
+                "type": "string",
+                "examples": ["req_abc123"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {}
+  },
+  "tags": [
+    {
+      "name": "System",
+      "description": "Liveness and readiness endpoints."
+    }
+  ]
+}

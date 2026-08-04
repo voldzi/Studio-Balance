@@ -1,0 +1,244 @@
+# API
+
+## Status a účel
+
+Studio Balance potřebuje jedno API pro web, mobilní aplikaci a administraci.
+REST a katalog níže jsou doporučený návrh odvozený ze zadání. Závazným
+strojovým kontraktem je pouze `openapi/openapi.json`; v počátečním stavu
+obsahuje systémové endpointy `/health` a `/ready`. Funkční endpoint se smí
+implementovat až po doplnění do OpenAPI.
+
+## Zdroje pravdy
+
+- JSON-first kontrakt: `openapi/openapi.json`;
+- lidské záměry a pravidla: tento dokument;
+- obchodní pravidla: `docs/requirements.md`;
+- autorizace a ochrana dat: `docs/security.md`.
+
+YAML může existovat jen jako generovaný export označený jako generovaný.
+
+## Base URL a verzování
+
+| Prostředí | URL |
+| --- | --- |
+| lokální návrh | `http://localhost:3000` |
+| test/staging | TBD |
+| produkce | `https://studiobalance.zeleznalady.cz` |
+
+Systémové cesty `/health` a `/ready` nejsou verzované. Produktové REST cesty
+používají `/api/v1/...`. Breaking změna vyžaduje novou verzi nebo migrační
+strategii a ADR.
+
+## Autentizace
+
+Přesný session/token mechanismus je otevřený. Kontrakt musí podporovat:
+
+- bezpečnou HTTP-only webovou relaci;
+- bezpečné mobilní přihlášení s uložením credentialu v platformním secure
+  storage;
+- oddělené admin přihlášení a možnost MFA;
+- reset hesla s krátkou jednorázovou platností;
+- serverovou objektovou autorizaci každé chráněné operace.
+
+Veřejný obsah a rozvrh jsou anonymní. Rezervace a `me` cesty vyžadují klienta;
+`admin` cesty vyžadují příslušnou administrativní roli.
+
+## Konvence
+
+- JSON media type `application/json`; UTF-8;
+- veřejné identifikátory jsou neprůhledné UUID;
+- timestamps používají RFC 3339/ISO 8601 s offsetem;
+- session objekt nese IANA timezone `Europe/Prague`;
+- měnová částka je decimal string + `currency: "CZK"`, nikdy binární float;
+- klient posílá `Accept-Language`; první verze vrací české bezpečné texty;
+- každý request má nebo dostane `X-Request-ID`; response ho vrací;
+- změnové požadavky na rezervaci podporují `Idempotency-Key`;
+- seznamy používají cursor pagination tam, kde mohou růst;
+- neznámé pole se podle zvolené validační politiky buď odmítne konzistentně,
+  nebo ignoruje; politika se musí zafixovat v OpenAPI.
+
+## Jednotná chyba
+
+```json
+{
+  "error": {
+    "code": "SESSION_FULL",
+    "message": "Omlouváme se, lekce se právě obsadila. Vyberte si prosím jiný termín.",
+    "details": [],
+    "requestId": "req_abc123"
+  }
+}
+```
+
+`code`, `message` a `requestId` jsou povinné. `details` nesmí obsahovat stack,
+SQL, token, interní poznámku ani cizí osobní údaje.
+
+Doporučené doménové kódy:
+
+| HTTP | Code | Význam |
+| --- | --- | --- |
+| 400 | `VALIDATION_ERROR` | neplatný vstup |
+| 401 | `AUTHENTICATION_REQUIRED` | chybí/propadla identita |
+| 403 | `FORBIDDEN` | identita nemá oprávnění |
+| 404 | `RESOURCE_NOT_FOUND` | objekt neexistuje nebo nesmí být odhalen |
+| 409 | `SESSION_FULL` | kapacita byla mezitím naplněna |
+| 409 | `BOOKING_ALREADY_EXISTS` | klient už má aktivní rezervaci |
+| 409 | `BOOKING_STATE_CONFLICT` | operace neplatí pro aktuální stav |
+| 409 | `LATE_CANCELLATION_CONFIRMATION_REQUIRED` | nutné potvrdit známou částku fee |
+| 410 | `BOOKING_CLOSED` | rezervační okno skončilo |
+| 429 | `RATE_LIMITED` | ochranný limit |
+| 503 | `DEPENDENCY_UNAVAILABLE` | potřebná závislost není připravena |
+
+## Veřejný endpoint katalog – návrh
+
+| Metoda | Cesta | Účel |
+| --- | --- | --- |
+| GET | `/api/v1/class-types` | aktivní typy lekcí |
+| GET | `/api/v1/class-types/{slug}` | obsah typu a nejbližší termíny |
+| GET | `/api/v1/sessions?from=&to=` | veřejný rozvrh v omezeném intervalu |
+| GET | `/api/v1/sessions/{id}` | detail konkrétního termínu |
+| GET | `/api/v1/instructors` | veřejné profily aktivních instruktorů |
+| GET | `/api/v1/news` | publikované novinky |
+| GET | `/api/v1/gallery` | publikovaná galerie |
+| GET | `/api/v1/reviews` | aktivní seřazené recenze |
+| GET | `/api/v1/prices` | informační ceník bez nákupu |
+| GET | `/api/v1/faq` | aktivní FAQ |
+| GET | `/api/v1/studio` | kontakty, mapa, sítě a provozní texty |
+
+### Veřejný termín
+
+Minimální veřejná reprezentace:
+
+```json
+{
+  "id": "uuid",
+  "classType": { "name": "Balance Flow", "slug": "balance-flow" },
+  "instructor": { "id": "uuid", "displayName": "..." },
+  "startAt": "2026-08-06T17:00:00+02:00",
+  "endAt": "2026-08-06T18:00:00+02:00",
+  "timezone": "Europe/Prague",
+  "arrivalAt": "2026-08-06T16:50:00+02:00",
+  "availability": "bookable",
+  "price": { "amount": "260.00", "currency": "CZK" },
+  "location": { "name": "Studio Balance", "address": "..." }
+}
+```
+
+Zakázaná veřejná pole: `capacity`, `activeBookings`, `remaining`, interní
+poznámka, seznam klientů a jakýkoli waitlist údaj.
+
+`availability` je jeden z `bookable`, `full`, `closed`, `cancelled`,
+`completed`.
+
+## Autentizační endpointy – návrh
+
+| Metoda | Cesta | Účel |
+| --- | --- | --- |
+| POST | `/api/v1/auth/register` | registrace klienta |
+| POST | `/api/v1/auth/login` | přihlášení klienta |
+| POST | `/api/v1/auth/logout` | zneplatnění relace |
+| POST | `/api/v1/auth/forgot-password` | neutrální zahájení resetu |
+| POST | `/api/v1/auth/reset-password` | jednorázový reset |
+| POST | `/api/v1/auth/verify-email` | ověření e-mailu |
+| GET | `/api/v1/me` | profil klienta |
+| PATCH | `/api/v1/me` | povolené profilové změny |
+| DELETE | `/api/v1/me` | žádost/proces zrušení účtu |
+
+`forgot-password` vrací stejný výsledek bez ohledu na existenci e-mailu.
+
+## Rezervace – návrh
+
+| Metoda | Cesta | Účel |
+| --- | --- | --- |
+| POST | `/api/v1/bookings` | idempotentní vytvoření rezervace |
+| GET | `/api/v1/me/bookings` | nadcházející a historie |
+| GET | `/api/v1/me/bookings/{id}` | vlastní detail |
+| GET | `/api/v1/me/bookings/{id}/cancellation-preview` | on-time/late důsledek před akcí |
+| POST | `/api/v1/me/bookings/{id}/cancel` | idempotentní potvrzené storno |
+
+### Vytvoření rezervace
+
+Request nese `sessionId`, `termsVersion` a důkaz požadovaného potvrzení. Server
+znovu ověří termín, kapacitu, duplicitu a verzi podmínek v transakci.
+
+`Idempotency-Key` se váže na klienta, endpoint a normalizovaný request. Stejný
+key + stejný request vrátí původní výsledek; stejný key + jiný request je
+konflikt. Odlišný key pro již existující aktivní rezervaci vrátí
+`BOOKING_ALREADY_EXISTS`.
+
+### Storno
+
+Preview vrátí serverem vypočtený mód, cutoff a případnou částku:
+
+```json
+{
+  "mode": "late",
+  "cutoffAt": "2026-08-05T17:00:00+02:00",
+  "fee": { "amount": "260.00", "currency": "CZK" },
+  "paymentMethod": "at_studio"
+}
+```
+
+Late cancel request musí obsahovat potvrzení důsledku. Response uvádí stav
+rezervace, zda fee vznikl, jeho částku a že se řeší ve studiu. Online payment
+URL nebo payment token jsou zakázané.
+
+## Administrace – návrh
+
+| Oblast | Doporučené cesty |
+| --- | --- |
+| typy lekcí | `GET/POST /api/v1/admin/class-types`, `GET/PATCH /api/v1/admin/class-types/{id}` |
+| termíny | `GET/POST /api/v1/admin/sessions`, `GET/PATCH /api/v1/admin/sessions/{id}` |
+| série/výjimky | explicitní create/update occurrence endpoints dle finálního modelu recurrence |
+| zrušení | `POST /api/v1/admin/sessions/{id}/cancel` |
+| oznámení dopadu | `POST /api/v1/admin/sessions/{id}/notify` pouze pokud není automatickou součástí změny |
+| seznam rezervací | `GET /api/v1/admin/sessions/{id}/bookings` |
+| ruční rezervace | `POST /api/v1/admin/bookings` |
+| docházka/oprava | `POST /api/v1/admin/bookings/{id}/attendance`, explicitní audited correction |
+| fee | `POST /api/v1/admin/cancellation-fees/{id}/settle|waive|cancel` |
+| instruktoři | CRUD `/api/v1/admin/instructors` |
+| klienti | `GET/PATCH /api/v1/admin/users` + export/privacy operace |
+| obsah | zdrojově specifické CRUD cesty pod `/api/v1/admin/content/...` |
+| média | bezpečný upload/finalize model pod `/api/v1/admin/media` |
+| audit | read-only `GET /api/v1/admin/audit-log` |
+
+Generické wildcard endpointy se v OpenAPI nepoužívají; každý konkrétní resource
+dostane vlastní operaci, schema, oprávnění a auditní pravidlo.
+
+## Systémové endpointy
+
+- `GET /health`: liveness procesu, bez testování vzdálených závislostí;
+- `GET /ready`: 200 pouze pokud jsou povinné závislosti použitelné, jinak 503
+  `ErrorResponse`.
+
+Endpointy nesdělují secret, DSN, hostname databáze ani osobní data.
+
+## Cache a souběh
+
+Veřejné GET lze cacheovat s ETag/krátkým TTL. Změnové endpointy a `me/admin`
+odpovědi jsou privátní/no-store podle citlivosti. ETag není ochrana kapacity;
+rezervace vždy provede autoritativní serverovou transakci.
+
+## Client generation a změnový proces
+
+Web a mobil mají generovat nebo typově odvozovat klienty z
+`openapi/openapi.json`. Změna API probíhá v pořadí:
+
+1. aktualizovat požadavek a případně ADR;
+2. změnit OpenAPI JSON a lidský popis;
+3. spustit lint/diff a vygenerovat typy;
+4. implementovat server;
+5. doplnit kontraktní, autorizační a integrační testy;
+6. aktualizovat klienty a rollout/kompatibilitu.
+
+## Validace
+
+Aktuálně dostupné minimum:
+
+```bash
+python3 -m json.tool openapi/openapi.json >/dev/null
+bash scripts/validate-skeleton.sh
+```
+
+Po schválení stacku se přidá OpenAPI schema lint, breaking-change diff a test
+shody implementace.

@@ -1,0 +1,22 @@
+name: Repository contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  documentation-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repository skeleton
+        run: bash scripts/validate-skeleton.sh
+      - name: Validate OpenAPI JSON syntax
+        run: python3 -m json.tool openapi/openapi.json >/dev/null
+
+  # Stack-specific install, lint, typecheck, test, build, OpenAPI schema lint,
+  # secret scan and dependency scan are required after ADR 0001 is accepted.
