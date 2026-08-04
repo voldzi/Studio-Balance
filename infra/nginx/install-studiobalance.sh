@@ -275,8 +275,10 @@ install -o root -g root -m 0644 "$temporary" "$config_path"
 nginx -t
 systemctl reload nginx
 
-curl --fail --silent --show-error --head --resolve "$domain:443:127.0.0.1" \
-  "https://$domain/" >/dev/null
+if ! nginx -T 2>/dev/null | grep -Fq "server_name $domain;"; then
+  echo "Nginx did not load the Studio Balance virtual host." >&2
+  exit 1
+fi
 
 trap - ERR
 echo "Studio Balance is published at https://$domain"

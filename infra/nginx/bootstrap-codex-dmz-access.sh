@@ -4,7 +4,7 @@ set -euo pipefail
 target_user="${STUDIO_BALANCE_DMZ_USER:-voldzi}"
 public_key="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKz+tthsuPObT4nlipkNts2RXGxekxf7faP6bUc/6p+L codex@dmz.home.cz"
 key_fingerprint="SHA256:B9q6yLIlqgOPxY9mwnAvDCmmfks17CuMTJy471Brcwg"
-installer_sha256="fea5299cf90e32ab5aa78695388b2819970b33ae341552889014aab8f9cd6d75"
+installer_sha256="9f855e032491f2af6cf4c6d41c84e0c5c6ed3e808a91dc30c7fce15f466b30f4"
 installer_source="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/install-studiobalance.sh"
 installer_target="/usr/local/sbin/studiobalance-install-nginx"
 sudoers_path="/etc/sudoers.d/studiobalance-codex-dmz"
