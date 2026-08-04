@@ -18,6 +18,7 @@ RUN pnpm install --frozen-lockfile
 FROM dependencies AS builder
 COPY . .
 RUN pnpm generate:contracts \
+  && pnpm --filter @studiobalance/domain build \
   && pnpm --filter @studiobalance/api build \
   && pnpm --filter @studiobalance/web build \
   && pnpm --filter @studiobalance/worker build
