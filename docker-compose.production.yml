@@ -18,6 +18,7 @@ services:
       APP_ENV: production
       APP_VERSION: ${APP_VERSION:?application version is required}
       DATABASE_URL: ${DATABASE_URL_MIGRATOR:?production migrator URL is required}
+      SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     command: ["node", "dist/database/migrate.js"]
     restart: "no"
@@ -38,6 +39,7 @@ services:
       APP_ENV: production
       APP_VERSION: ${APP_VERSION:?application version is required}
       DATABASE_URL: ${DATABASE_URL:?production application URL is required}
+      SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "4281:3001"
