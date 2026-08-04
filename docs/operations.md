@@ -2,11 +2,12 @@
 
 ## Aktuální stav
 
-Repozitář obsahuje první spustitelný TypeScript monorepo scaffold: Next.js web,
-NestJS/Fastify API, worker, generované OpenAPI kontrakty, lokální PostgreSQL 18,
-migraci a Keycloak realm. Izolovaný interní náhled je aktivní přes DMZ. Vedle
-něj existuje oddělený produkční kandidát, který používá skutečnou produkční DB
-přes HAProxy, ale není ještě směrován z veřejného Nginxu.
+Repozitář obsahuje první funkční zákaznické preview: Next.js web,
+NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
+klientský profil a transakční rezervaci/storno. Izolovaný starší náhled je
+aktivní přes DMZ. Vedle něj běží ověřený produkční kandidát revize `d46b193`,
+který používá skutečnou produkční DB přes HAProxy a produkční Keycloak, ale
+zatím není směrován z veřejného Nginxu.
 Směr je schválený v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový
 kontrakt.
 
@@ -27,6 +28,11 @@ Read-only inventura hostitele a readiness omezení jsou v
 `docs/infrastructure-assessment.md`. Disková kapacita byla před náhledovým
 nasazením znovu ověřena; téměř vyčerpaný swap a neuzavřené produkční integrace
 nadále blokují veřejný produkční rollout.
+
+Zákaznické preview používá klientem dodané rastrové logo a fotografie. E-mail
+je pro tuto etapu záměrně vypnutý; potvrzení se ukládá pouze jako interní zpráva
+v účtu. S3 není pro tyto verzované statické preview assety potřeba a zůstává
+vyhrazené pro budoucí administrativní media workflow.
 
 ## Izolovaný preview deployment
 
@@ -69,7 +75,16 @@ verzovaný skript z `infra/nginx/install-studiobalance.sh`:
 sudo ./install-studiobalance.sh --activate-preview --email ADMIN_EMAIL
 ```
 
-Skript proxyuje `/` na interní web port 3280 a `/api/` na API port 4280,
+Po samostatném ověření produkčního kandidáta lze přepnout upstreamy na porty
+3281/4281 pouze s přesnou očekávanou revizí:
+
+```bash
+sudo ./install-studiobalance.sh --activate-production \
+  --expected-version GIT_SHA --email ADMIN_EMAIL
+```
+
+Preview režim proxyuje `/` na interní web port 3280 a `/api/` na API port 4280;
+produkční režim používá 3281/4281 a ověřuje revizi z API readiness. Skript
 technické health endpointy veřejně blokuje, získá Let's Encrypt certifikát,
 ověří konfiguraci a při chybě obnoví předchozí site. Před spuštěním je nutné
 nahradit `ADMIN_EMAIL` skutečným provozním kontaktem. Dokud správce skript
@@ -92,6 +107,11 @@ produkční vydání. Produkční PostgreSQL je připraveno pro kandidátní Com
 stack; přihlášení Keycloak, S3 a e-mail zůstávají aplikačně nezapojené.
 
 ## Produkční kandidát (neveřejný)
+
+Revize `d46b193` byla 2026-08-04 nasazena a ověřena: web 200, API health a
+readiness 200 s odpovídající verzí, veřejný rozvrh čte produkční PostgreSQL a
+OIDC login přesměruje na realm `studio-balance` s produkční callback URL.
+DMZ přepnutí zůstává samostatný krok s omezeným sudo přístupem.
 
 `docker-compose.production.yml` netvoří vlastní databázi. Spustí stejný obraz
 aplikace proti `DATABASE_URL_MIGRATOR` pro migrace a následně proti

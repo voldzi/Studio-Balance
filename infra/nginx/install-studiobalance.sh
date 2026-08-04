@@ -2,22 +2,25 @@
 set -euo pipefail
 
 domain="studiobalance.zeleznalady.cz"
-web_upstream="docker.home.cz:3280"
-api_upstream="docker.home.cz:4280"
 config_name="studiobalance.zeleznalady.cz.conf"
 activate_preview=false
+activate_production=false
 http_only=false
 email=""
+expected_version=""
 
 usage() {
   cat <<'USAGE'
 Usage:
   sudo bash install-studiobalance.sh --activate-preview [--email EMAIL]
-       [--http-only]
+       [--expected-version GIT_SHA] [--http-only]
+  sudo bash install-studiobalance.sh --activate-production [--email EMAIL]
+       --expected-version GIT_SHA [--http-only]
 
-The script publishes the current isolated preview through Nginx. It verifies
-the upstreams, backs up an existing site, validates every Nginx change and
-obtains a Let's Encrypt certificate unless --http-only is used.
+The script publishes either the isolated preview or the separately verified
+production candidate through Nginx. It verifies the selected upstreams and
+expected application version, backs up an existing site, validates every Nginx
+change and obtains a Let's Encrypt certificate unless --http-only is used.
 USAGE
 }
 
@@ -25,6 +28,13 @@ while (($#)); do
   case "$1" in
     --activate-preview)
       activate_preview=true
+      ;;
+    --activate-production)
+      activate_production=true
+      ;;
+    --expected-version)
+      shift
+      expected_version="${1:-}"
       ;;
     --email)
       shift
@@ -46,9 +56,28 @@ while (($#)); do
   shift
 done
 
-if [[ "$activate_preview" != true ]]; then
-  echo "Refusing to publish without the explicit --activate-preview flag." >&2
+if [[ "$activate_preview" == "$activate_production" ]]; then
+  echo "Select exactly one of --activate-preview or --activate-production." >&2
   exit 2
+fi
+
+if [[ -n "$expected_version" && ! "$expected_version" =~ ^[0-9a-f]{7,40}$ ]]; then
+  echo "Expected version must be a 7-40 character lowercase Git SHA." >&2
+  exit 2
+fi
+
+if [[ "$activate_production" == true ]]; then
+  if [[ -z "$expected_version" ]]; then
+    echo "Production activation requires --expected-version." >&2
+    exit 2
+  fi
+  web_upstream="docker.home.cz:3281"
+  api_upstream="docker.home.cz:4281"
+  deployment_mode="production"
+else
+  web_upstream="docker.home.cz:3280"
+  api_upstream="docker.home.cz:4280"
+  deployment_mode="preview"
 fi
 
 if ((EUID != 0)); then
@@ -75,6 +104,10 @@ ready_payload="$(curl --fail --silent --show-error --connect-timeout 5 \
   "http://$api_upstream/ready")"
 if [[ "$ready_payload" != *'"status":"ok"'* ]]; then
   echo "API readiness response is not healthy." >&2
+  exit 1
+fi
+if [[ -n "$expected_version" && "$ready_payload" != *'"version":"'"$expected_version"'"'* ]]; then
+  echo "API readiness response does not match expected version $expected_version." >&2
   exit 1
 fi
 
@@ -281,5 +314,5 @@ if ! nginx -T 2>/dev/null | grep -Fq "server_name $domain;"; then
 fi
 
 trap - ERR
-echo "Studio Balance is published at https://$domain"
+echo "Studio Balance $deployment_mode is published at https://$domain"
 echo "Backup, if an older site existed: $backup_path"
