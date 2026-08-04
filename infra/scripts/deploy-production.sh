@@ -43,7 +43,7 @@ if (( available_memory_kb < 2 * 1024 * 1024 )); then
 fi
 
 export APP_VERSION="$version"
-compose=(docker compose --env-file "$env_file" -f "$root/docker-compose.production.yml")
+compose=(docker compose --parallel 1 --env-file "$env_file" -f "$root/docker-compose.production.yml")
 
 "${compose[@]}" build --pull
 "${compose[@]}" up -d --remove-orphans

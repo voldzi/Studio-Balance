@@ -106,9 +106,10 @@ curl --fail --head http://docker.home.cz:3281/
 ```
 
 Nasazení odmítne nepřítomný nebo příliš otevřený runtime soubor (vyžaduje
-`0600`), nízkou diskovou/RAM rezervu a neúspěšný health check. Nevypisuje
-konfigurační hodnoty a nemění DMZ. Přepnutí veřejného Nginxu je samostatný
-change po ověření autentizace, e-mailu, záloh a provozní readiness.
+`0600`), nízkou diskovou/RAM rezervu a neúspěšný health check. Obrazy sestavuje
+sériově, aby nezvyšovalo tlak na omezený swap hostitele. Nevypisuje konfigurační
+hodnoty a nemění DMZ. Přepnutí veřejného Nginxu je samostatný change po ověření
+autentizace, e-mailu, záloh a provozní readiness.
 
 Pro dočasné udělení přístupu z lokální administrátorské stanice slouží
 `scripts/grant-dmz-codex-access.sh`. Interaktivně využije existující SSH a sudo
