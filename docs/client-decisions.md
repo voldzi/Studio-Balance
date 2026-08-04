@@ -20,7 +20,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-007 | Schvaluje se doporučený Keycloak/OIDC identity model | vlastní realm `studio-balance`, oddělené web/admin policies, Authorization Code + PKCE, serverová HTTP-only relace, ověření e-mailu před rezervací, povinné admin MFA, issuer přes DMZ a lokální projektová instance |
 | CD-008 | Realizace infrastruktury proběhne v pořadí interní Docker preview → DMZ publikace → produkční PostgreSQL a Keycloak | první řez na `docker.home.cz` musí zůstat neveřejný, bez produkčních dat/credentials a s izolovanou dočasnou databází podle ADR 0006 |
 | CD-009 | Má se připravit Nginx publikace na `dmz.home.cz`; pokud není dostupný SSH/sudo přístup, předá se instalační skript | verzovaný skript podle ADR 0007 vyžaduje explicitní aktivaci, zálohu, `nginx -t`, TLS a rollback; vlastní spuštění provede správce DMZ |
-| CD-010 | Produkční DB bootstrap dočasně použije přes HAProxy `sslmode=prefer&uselibpqcompat=true`; Keycloak realm použije stávající hostname `login.zeleznalady.cz` | CA pro `verify-full` nebyla dohledána; kompatibilní volba zachová u Node PostgreSQL ovladače přechodný fallback bez TLS. Režim je dočasný. Vyhrazený realm a přesné client callbacky jsou zachované |
+| CD-010 | Produkční DB bootstrap dočasně použije přes HAProxy `sslmode=disable`; Keycloak realm použije stávající hostname `login.zeleznalady.cz` | HAProxy neposkytuje TLS a Node PostgreSQL ovladač neumí bezpečný TLS fallback na prosté spojení. Výjimka je omezená na interní trasu a je dočasná do zprovoznění `verify-full` s vlastním CA. Vyhrazený realm a přesné client callbacky jsou zachované |
 
 ## Schválená identita
 

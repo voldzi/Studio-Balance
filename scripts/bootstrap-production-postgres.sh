@@ -16,7 +16,7 @@ printf '\n'
 
 app_password="$(openssl rand -hex 32)"
 migrator_password="$(openssl rand -hex 32)"
-connection="host=$host port=$port dbname=postgres user=$admin_user sslmode=prefer"
+connection="host=$host port=$port dbname=postgres user=$admin_user sslmode=disable"
 
 export PGPASSWORD="$admin_password"
 trap 'unset PGPASSWORD admin_password app_password migrator_password' EXIT
@@ -42,7 +42,7 @@ if [[ "$database_exists" != 1 ]]; then
   psql "$connection" -v ON_ERROR_STOP=1 -c "CREATE DATABASE $database OWNER studio_balance_migrator"
 fi
 
-database_connection="host=$host port=$port dbname=$database user=$admin_user sslmode=prefer"
+database_connection="host=$host port=$port dbname=$database user=$admin_user sslmode=disable"
 psql "$database_connection" -v ON_ERROR_STOP=1 <<'SQL'
 REVOKE ALL ON DATABASE studio_balance FROM PUBLIC;
 GRANT CONNECT ON DATABASE studio_balance TO studio_balance_app, studio_balance_migrator;
@@ -54,6 +54,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE studio_balance_migrator IN SCHEMA public GRANT
 SQL
 
 printf '\nStore these once in the production secret store; they are not written to disk.\n'
-printf 'DATABASE_URL (application): postgresql://studio_balance_app:%s@%s:%s/%s?sslmode=prefer&uselibpqcompat=true\n' "$app_password" "$host" "$port" "$database"
-printf 'DATABASE_URL (migrator):    postgresql://studio_balance_migrator:%s@%s:%s/%s?sslmode=prefer&uselibpqcompat=true\n' "$migrator_password" "$host" "$port" "$database"
+printf 'DATABASE_URL (application): postgresql://studio_balance_app:%s@%s:%s/%s?sslmode=disable\n' "$app_password" "$host" "$port" "$database"
+printf 'DATABASE_URL (migrator):    postgresql://studio_balance_migrator:%s@%s:%s/%s?sslmode=disable\n' "$migrator_password" "$host" "$port" "$database"
 echo "Created or updated production roles and database through HAProxy."
