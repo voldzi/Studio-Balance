@@ -36,3 +36,10 @@ nevracelo odpověď a TLS končilo chybou nerozpoznaného SNI jména.
 - po spuštění skriptu je nutné z internetu ověřit HTTPS, redirect, webové
   routes a `/api/` před tím, než se publikace označí jako dokončená;
 - současný obsah je vývojový preview, nikoli dokončený produkční web.
+
+## Realizace
+
+Aktivace proběhla 2026-08-04 pro preview image `e10a7ad`. Let's Encrypt vydal
+certifikát platný do 2026-11-02 a Certbot nastavil automatickou obnovu. Externí
+kontrola potvrdila HTTP → HTTPS redirect, HTTPS 200 a veřejné 404 pro `/health`
+i `/ready`.

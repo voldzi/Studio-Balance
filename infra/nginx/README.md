@@ -53,9 +53,12 @@ sudo ./install-studiobalance.sh --activate-preview --email ADMIN_EMAIL
 2. zazálohuje případnou předchozí konfiguraci;
 3. nainstaluje HTTP virtual host a provede `nginx -t`;
 4. získá nebo znovu použije Let's Encrypt certifikát;
-5. vytvoří HTTPS konfiguraci, reloaduje Nginx a provede lokální TLS smoke test;
+5. vytvoří HTTPS konfiguraci, reloaduje Nginx a ověří načtení virtual hostu;
 6. při chybě obnoví předchozí Nginx konfiguraci.
 
 Volba `--http-only` je určena pouze pro diagnostiku challenge/routingu. Běžná
 publikace musí používat HTTPS. Skript zveřejňuje současný preview základ s
 izolovanou databází; produkční PostgreSQL, Keycloak a S3 tím nejsou zapojené.
+
+Aktivace 2026-08-04 ověřila redirect HTTP → HTTPS, webovou odpověď 200,
+Let's Encrypt certifikát a veřejné blokování `/health` a `/ready`.

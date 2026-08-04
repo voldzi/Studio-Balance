@@ -61,9 +61,8 @@ Keycloak a S3 mají vlastní pozdější change plan.
 
 ## Publikace preview přes DMZ
 
-DNS A záznam `studiobalance.zeleznalady.cz` existuje, ale na `dmz.home.cz`
-nebyl z vývojového prostředí přijat SSH klíč. Aktivaci proto provede správce
-serveru verzovaným skriptem z `infra/nginx/install-studiobalance.sh`:
+DNS A záznam `studiobalance.zeleznalady.cz` existuje. Nginx publikaci aktivuje
+verzovaný skript z `infra/nginx/install-studiobalance.sh`:
 
 ```bash
 sudo ./install-studiobalance.sh --activate-preview --email ADMIN_EMAIL
@@ -75,6 +74,20 @@ ověří konfiguraci a při chybě obnoví předchozí site. Před spuštěním 
 nahradit `ADMIN_EMAIL` skutečným provozním kontaktem. Dokud správce skript
 nespustí a neprojde externí HTTPS smoke test, nesmí se DMZ publikace označit
 za aktivní.
+
+### Stav aktivace 2026-08-04
+
+Nginx publikace je aktivní pro interní preview revizi `e10a7ad`:
+
+- `http://studiobalance.zeleznalady.cz` vrací 301 na HTTPS;
+- `https://studiobalance.zeleznalady.cz` vrací web 200;
+- certifikát Let's Encrypt pro tento hostname platí do 2026-11-02 a Certbot
+  má aktivní plán obnovy;
+- veřejné `/health` a `/ready` vracejí 404;
+- Nginx proxyuje `/` na web 3280 a `/api/` na API 4280.
+
+Jde stále o vývojový preview s izolovanou databází, nikoli o dokončené
+produkční vydání. Produkční PostgreSQL, Keycloak a S3 zůstávají nezapojené.
 
 Pro dočasné udělení přístupu z lokální administrátorské stanice slouží
 `scripts/grant-dmz-codex-access.sh`. Interaktivně využije existující SSH a sudo

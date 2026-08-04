@@ -61,7 +61,7 @@ nepřijde výslovná odpověď.
 | OQ-015 | Jaké jsou rozpočtové a provozní limity e-mailu, monitoringu a případné CDN vrstvy? | ovlivní poskytovatele i SLA; runtime a DB topologie jsou už schválené |
 | OQ-020 | Jaké RPO/RTO a retenční dobu mají databázové zálohy? | baseline je denní záloha a pravidelný test obnovy; čísla chybí |
 | OQ-030 | Jaký database name, TLS režim, admin role, credentials policy a failover očekávání platí za `haproxy.home.cz:5000`? | major 18 je potvrzený; tyto údaje jsou nutné pro bezpečný produkční bootstrap skript |
-| OQ-031 | Jaký image registry a finální produkční rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | preview Compose/rollback řeší ADR 0006 a Nginx upstream, TLS a instalační rollback ADR 0007; skript ještě musí spustit správce DMZ |
+| OQ-031 | Jaký image registry a finální produkční rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | preview Compose/rollback řeší ADR 0006 a Nginx upstream, TLS i instalační rollback ADR 0007; preview publikace je aktivní, finální produkční workflow ještě ne |
 | OQ-032 | Jak se provisionuje vyhrazená Studio Balance gateway nad `shared-seaweedfs`? | S3 použití je schválené; potvrdit interní endpoint, bucket, credentials, pinned image, healthcheck, backup/restore, vlastníka a lifecycle |
 | OQ-033 | Kdo vlastní kapacitní alerty `docker.home.cz`, jaké jsou jejich prahy a jak se vyřeší téměř vyčerpaný swap? | disk byl 2026-08-04 přeměřen na přibližně 73 GiB volno, swap však zůstává produkčním rizikem; interní preview má resource limits a preflight |
 
