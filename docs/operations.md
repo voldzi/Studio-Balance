@@ -237,8 +237,9 @@ secret-store postupu.
 Přechodný bootstrap `scripts/bootstrap-production-postgres.sh` je připraven
 pro `postgres@haproxy.home.cz:5000`. HAProxy při kontrole neposkytlo ověřitelný
 TLS certifikát, proto skript používá pouze výslovně schválený dočasný
-`sslmode=prefer`; před produkčním označením musí být nahrazen `verify-full` s
-vlastním CA. Vytváří databázi `studio_balance`, role `studio_balance_app` a
+`sslmode=prefer&uselibpqcompat=true`; druhý parametr zachovává očekávaný fallback
+bez TLS i v aktuálním Node PostgreSQL ovladači. Před produkčním označením musí
+být nahrazen `verify-full` s vlastním CA. Vytváří databázi `studio_balance`, role `studio_balance_app` a
 `studio_balance_migrator` a jednorázově vypíše aplikační secrety pro vložení do
 secret store.
 

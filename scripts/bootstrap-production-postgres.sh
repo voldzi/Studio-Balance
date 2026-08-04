@@ -54,6 +54,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE studio_balance_migrator IN SCHEMA public GRANT
 SQL
 
 printf '\nStore these once in the production secret store; they are not written to disk.\n'
-printf 'DATABASE_URL (application): postgresql://studio_balance_app:%s@%s:%s/%s?sslmode=prefer\n' "$app_password" "$host" "$port" "$database"
-printf 'DATABASE_URL (migrator):    postgresql://studio_balance_migrator:%s@%s:%s/%s?sslmode=prefer\n' "$migrator_password" "$host" "$port" "$database"
+printf 'DATABASE_URL (application): postgresql://studio_balance_app:%s@%s:%s/%s?sslmode=prefer&uselibpqcompat=true\n' "$app_password" "$host" "$port" "$database"
+printf 'DATABASE_URL (migrator):    postgresql://studio_balance_migrator:%s@%s:%s/%s?sslmode=prefer&uselibpqcompat=true\n' "$migrator_password" "$host" "$port" "$database"
 echo "Created or updated production roles and database through HAProxy."
