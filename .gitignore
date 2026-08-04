@@ -5,9 +5,13 @@
 .venv/
 .chroma-state/
 node_modules/
+.next/
+.turbo/
 dist/
 build/
 coverage/
+*.tsbuildinfo
+.pnpm-debug.log
 .pytest_cache/
 __pycache__/
 *.pyc

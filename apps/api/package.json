@@ -1,0 +1,33 @@
+{
+  "name": "@studiobalance/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "db:migrate": "tsx src/database/migrate.ts",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.1.28",
+    "@nestjs/core": "11.1.28",
+    "@nestjs/platform-fastify": "11.1.28",
+    "@studiobalance/contracts": "workspace:*",
+    "fastify": "5.11.2",
+    "pg": "8.22.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "11.1.28",
+    "@types/node": "26.1.2",
+    "@types/pg": "8.20.3",
+    "tsx": "4.23.5",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

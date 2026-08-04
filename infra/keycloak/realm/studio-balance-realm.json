@@ -1,0 +1,48 @@
+{
+  "realm": "studio-balance",
+  "enabled": true,
+  "displayName": "Studio Balance",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "verifyEmail": true,
+  "rememberMe": true,
+  "roles": {
+    "realm": [
+      { "name": "client", "description": "Studio Balance client" },
+      { "name": "admin", "description": "Studio Balance administrator" },
+      { "name": "super_admin", "description": "Studio Balance super administrator" }
+    ]
+  },
+  "defaultRoles": ["client"],
+  "clients": [
+    {
+      "clientId": "studiobalance-web",
+      "name": "Studio Balance web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-web-client-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    },
+    {
+      "clientId": "studiobalance-admin",
+      "name": "Studio Balance administration",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-admin-client-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/admin/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    }
+  ]
+}

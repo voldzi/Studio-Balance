@@ -1,0 +1,38 @@
+{
+  "name": "studio-balance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24 <27",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "build": "pnpm generate:contracts && pnpm -r --if-present build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm validate:repo",
+    "db:migrate": "pnpm --filter @studiobalance/api db:migrate",
+    "dev": "pnpm --parallel --filter @studiobalance/web --filter @studiobalance/api --filter @studiobalance/worker dev",
+    "dev:api": "pnpm --filter @studiobalance/api dev",
+    "dev:web": "pnpm --filter @studiobalance/web dev",
+    "dev:worker": "pnpm --filter @studiobalance/worker dev",
+    "generate:contracts": "pnpm --filter @studiobalance/contracts generate",
+    "infra:down": "docker compose down",
+    "infra:up": "docker compose up -d postgres keycloak",
+    "lint": "eslint .",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm generate:contracts && pnpm -r --if-present typecheck",
+    "validate:openapi": "python3 -m json.tool openapi/openapi.json >/dev/null",
+    "validate:repo": "bash scripts/validate-skeleton.sh && pnpm validate:openapi"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "16.3.0",
+    "@types/node": "26.1.2",
+    "eslint": "10.8.0",
+    "openapi-typescript": "7.13.0",
+    "tsx": "4.23.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.66.0",
+    "vitest": "4.1.10"
+  }
+}

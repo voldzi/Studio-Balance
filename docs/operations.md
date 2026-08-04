@@ -2,10 +2,10 @@
 
 ## Aktuální stav
 
-Repozitář je dokumentační základ bez aplikačního scaffoldu a bez nasazené
-aplikace. TypeScript/Next.js/NestJS/Fastify/worker/pnpm směr je schválený v
-ADR 0003. Níže je cílový provozní kontrakt. Přesné install/run/build/test/deploy
-příkazy vzniknou současně se scaffoldem.
+Repozitář obsahuje první spustitelný TypeScript monorepo scaffold: Next.js web,
+NestJS/Fastify API, worker, generované OpenAPI kontrakty, lokální PostgreSQL 18,
+migraci a Keycloak realm. Produkční nasazení zatím nevzniklo. Směr je schválený
+v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový kontrakt.
 
 Schválená topologie:
 
@@ -25,11 +25,10 @@ Read-only inventura hostitele a readiness omezení jsou v
 vyčerpaný swap blokují produkční rollout, dokud správce infrastruktury bezpečně
 neuvolní nebo nerozšíří kapacitu a znovu ji neověří.
 
-Aktuálně lze spustit pouze:
+Základní ověření repozitáře:
 
 ```bash
-bash scripts/validate-skeleton.sh
-python3 -m json.tool openapi/openapi.json >/dev/null
+pnpm check
 ```
 
 ## Prostředí
@@ -51,10 +50,12 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | Název | Povinné | Výchozí | Secret | Účel |
 | --- | --- | --- | --- | --- |
 | `APP_ENV` | ano | `development` | ne | runtime prostředí |
-| `APP_PORT` | ano | `3000` | ne | lokální/API port |
+| `APP_VERSION` | ano | `0.1.0` | ne | verze v health response a strukturovaných logách |
+| `API_PORT` | ano | `3001` | ne | lokální port API |
 | `PUBLIC_APP_URL` | ano | `http://localhost:3000` | ne | kanonická veřejná URL a odkazy |
 | `ADMIN_APP_URL` | ano | `http://localhost:3000/admin` | ne | povolený admin origin a návratové URL |
-| `DATABASE_URL` | runtime | prázdné | ano | lokálně Docker PostgreSQL 18; produkčně host `haproxy.home.cz`, port `5000` |
+| `API_URL` | ano | `http://localhost:3001` | ne | serverový endpoint sdíleného API |
+| `DATABASE_URL` | runtime | lokální fixture na `localhost:5433/studio_balance` | ano | lokálně Docker PostgreSQL 18; produkčně host `haproxy.home.cz`, port `5000` |
 | `S3_ENDPOINT` | production media runtime | prázdné | podle URL | interní S3-kompatibilní endpoint schválené Studio Balance gateway |
 | `S3_REGION` | production media runtime | prázdné | ne | region očekávaný S3 klientem/službou |
 | `S3_BUCKET` | production media runtime | prázdné | ne | vyhrazený Studio Balance bucket, ne bucket jiného projektu |
@@ -63,9 +64,9 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `S3_FORCE_PATH_STYLE` | ne | `true` | ne | kompatibilita s lokální a SeaweedFS S3 implementací |
 | `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://auth.studiobalance.zeleznalady.cz/realms/studio-balance` |
 | `OIDC_WEB_CLIENT_ID` | ano | `studiobalance-web` | ne | OIDC klient veřejné/klientské webové plochy |
-| `OIDC_WEB_CLIENT_SECRET` | runtime | prázdné | ano | serverový secret webového OIDC klienta |
+| `OIDC_WEB_CLIENT_SECRET` | runtime | `local-web-client-only` | ano | veřejná lokální fixture; produkčně serverový secret webového OIDC klienta |
 | `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |
-| `OIDC_ADMIN_CLIENT_SECRET` | runtime | prázdné | ano | serverový secret admin OIDC klienta |
+| `OIDC_ADMIN_CLIENT_SECRET` | runtime | `local-admin-client-only` | ano | veřejná lokální fixture; produkčně serverový secret admin OIDC klienta |
 | `SESSION_SECRET` | runtime | prázdné | ano | podpis/šifrování relace dle architektury |
 | `EMAIL_FROM` | runtime | prázdné | ne | ověřený odesílatel transakčních zpráv |
 | `EMAIL_PROVIDER_API_KEY` | runtime | prázdné | ano | e-mail provider credential |
@@ -188,24 +189,30 @@ e-mail senderu, analytice a monitoringu. Předání obsahuje
 účet/službu, vlastníka, fakturaci,
 rotaci credentials, náklady, export a postup ukončení služby.
 
-## Přesné příkazy k doplnění po scaffoldu
+## Vývojové příkazy
 
 ```text
-install: TBD
-run web/api/worker: TBD
-build: TBD
-test: TBD
-lint: TBD
-typecheck: TBD
-database migrate/seed: TBD
+install: pnpm install --frozen-lockfile
+run web/api/worker: pnpm dev
+run individually: pnpm dev:web | pnpm dev:api | pnpm dev:worker
+build: pnpm build
+test: pnpm test
+lint: pnpm lint
+typecheck: pnpm typecheck
+database migrate: pnpm db:migrate
+Docker Desktop Compose: pnpm infra:up | pnpm infra:down
+Keycloak dev realm import: automatic during pnpm infra:up
+OpenAPI validate/generate: pnpm validate:openapi | pnpm generate:contracts
+all pre-merge checks: pnpm check
 production database bootstrap: TBD (interactive; no committed password)
-Docker Desktop Compose: TBD
-Keycloak dev realm import: TBD
 production Docker deploy to docker.home.cz: TBD
 Keycloak realm/client provision: TBD
 Nginx publish through dmz.home.cz: TBD
-OpenAPI validate/generate: TBD
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD
 deploy/rollback: TBD
 ```
+
+První lokální spuštění používá `cp .env.example .env`, `pnpm infra:up`,
+`pnpm db:migrate` a `pnpm dev`. Compose credentials a OIDC client secrets jsou
+záměrně veřejné lokální fixtures. Nesmějí být převzaty do produkce.

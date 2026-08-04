@@ -93,23 +93,29 @@ before encoding one interpretation in code.
 
 ## Environment
 
-The repository is currently documentation-first. ADR 0003 approves a
-TypeScript monorepo with Next.js, NestJS/Fastify, worker, PostgreSQL and
-`pnpm`, but the application scaffold does not yet exist. The canonical remote is
-`git@github.com:voldzi/Studio-Balance.git`; production runs in Docker on
-`docker.home.cz`, public traffic for `https://studiobalance.zeleznalady.cz`
-passes through Nginx on `dmz.home.cz`, production PostgreSQL is reached only
-through `haproxy.home.cz:5000`, and local services run in Docker Desktop. Do
-not invent run, build, lint, typecheck, or deployment commands. When the
-scaffold is created, update this section, `README.md`, and `docs/operations.md`
-together.
+The repository is a pnpm TypeScript monorepo with Next.js web, NestJS/Fastify
+API, a worker, shared packages, PostgreSQL 18 migrations, and a local Keycloak
+realm. The canonical remote is `git@github.com:voldzi/Studio-Balance.git`;
+production runs in Docker on `docker.home.cz`, public traffic for
+`https://studiobalance.zeleznalady.cz` passes through Nginx on `dmz.home.cz`,
+production PostgreSQL is reached only through `haproxy.home.cz:5000`, and local
+services run in Docker Desktop.
 
-Currently valid checks:
+Required local tooling is Node.js 24–26, pnpm 11, and Docker Desktop. Use:
 
 ```bash
-bash scripts/validate-skeleton.sh
-python3 -m json.tool openapi/openapi.json >/dev/null
+pnpm install --frozen-lockfile
+cp .env.example .env
+pnpm infra:up
+pnpm db:migrate
+pnpm dev
 ```
+
+The web runs on port 3000, the API on 3001, and local Keycloak on 8081. Main
+checks are `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`,
+`pnpm validate:repo`, or the complete `pnpm check` gate. Never point local
+configuration at production data, credentials, or the production Keycloak
+realm.
 
 ## Product and UI Work
 

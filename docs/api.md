@@ -21,7 +21,7 @@ YAML může existovat jen jako generovaný export označený jako generovaný.
 
 | Prostředí | URL |
 | --- | --- |
-| lokální návrh | `http://localhost:3000` |
+| lokální vývoj | `http://localhost:3001` |
 | test/staging | TBD |
 | produkce | `https://studiobalance.zeleznalady.cz` |
 
@@ -240,5 +240,6 @@ python3 -m json.tool openapi/openapi.json >/dev/null
 bash scripts/validate-skeleton.sh
 ```
 
-Při vytvoření scaffoldu se přidá OpenAPI schema lint, breaking-change diff a test
+Scaffold generuje TypeScript kontrakty z OpenAPI příkazem
+`pnpm generate:contracts`. OpenAPI schema lint, breaking-change diff a test
 shody implementace.

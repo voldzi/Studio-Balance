@@ -1,0 +1,19 @@
+{
+  "name": "@studiobalance/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.2",
+    "tsx": "4.23.5",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

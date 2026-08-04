@@ -3,8 +3,10 @@
 ## Cíl
 
 Testy dokazují hlavně správnost rezervace, času, autorizace a komunikace – ne
-jen render happy path. Konkrétní testovací frameworky a příkazy se doplní při
-scaffoldu; scénáře a release gate jsou závazné už nyní.
+jen render happy path. Scaffold používá Vitest pro unit/API testy, Fastify
+`inject` pro HTTP kontrakt a `pnpm check` jako souhrnnou lokální/CI bránu.
+Component/E2E a automatizovaný accessibility nástroj se vyberou s prvním
+interaktivním workflow; scénáře a release gate jsou závazné už nyní.
 
 ## Vrstvy
 

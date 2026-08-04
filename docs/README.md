@@ -21,9 +21,9 @@ zapíše do `open-questions.md` a vyřeší před implementací.
 | `architecture.md` | hranice systému, komponenty, data, integrace a nasazení | schválený směr |
 | `api.md` | lidsky čitelný popis REST API a kontraktních pravidel | návrh |
 | `security.md` | autentizace, oprávnění, soukromí a bezpečnostní minimum | baseline |
-| `operations.md` | konfigurace, prostředí, zálohy, nasazení a rollback | před implementací |
-| `observability.md` | logy, metriky, trace, health a alerty | před implementací |
-| `runbook.md` | provozní incidenty a ověření nápravy | před implementací |
+| `operations.md` | konfigurace, prostředí, zálohy, nasazení a rollback | první vývojový řez |
+| `observability.md` | logy, metriky, trace, health a alerty | baseline + základ logů |
+| `runbook.md` | provozní incidenty a ověření nápravy | baseline |
 | `testing.md` | testovací vrstvy, kritické scénáře a release gate | baseline |
 | `client-questionnaire-booking-rules.md` | připravený dotaz k odloženým rezervačním pravidlům | čeká na odeslání |
 | `infrastructure-assessment.md` | inventura hostitele, využitelné služby a readiness podmínky | ověřeno 2026-08-04 |

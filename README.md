@@ -9,10 +9,10 @@ vlastník a technický správce musí být před zahájením implementace potvrz
 
 ## Stav projektu
 
-Projekt je ve fázi přípravy a analýzy. Technologický stack je schválený,
-repozitář ale zatím neobsahuje aplikační scaffold. Obsahuje závazné podklady zadavatele,
-výchozí pravidla pro vývoj a první sadu aktivní produktové, technické a
-provozní dokumentace.
+Projekt přešel z analýzy do vývoje. Repozitář obsahuje první aplikační základ:
+Next.js web, NestJS/Fastify API, worker, sdílené balíčky, lokální PostgreSQL 18
+a Keycloak. Rezervační pravidla se začnou implementovat až po uzavření
+připraveného dotazu zadavateli.
 
 ## Hlavní schopnosti
 
@@ -52,6 +52,8 @@ Architektonické rozhodnutí je v
 [ADR 0003](docs/adr/0003-web-only-application-stack.md).
 Identita používá Keycloak/OIDC podle
 [ADR 0004](docs/adr/0004-keycloak-identity.md).
+První spustitelný platformní základ popisuje
+[ADR 0005](docs/adr/0005-initial-platform-baseline.md).
 
 Schválená infrastrukturní topologie je v
 [ADR 0002](docs/adr/0002-deployment-and-storage-topology.md):
@@ -72,18 +74,34 @@ Aktuální inventura, využitelné služby a podmínky produkční připravenost
 
 ## Lokální práce
 
-Scaffold aplikace ještě nevznikl. Lze ověřit kostru repozitáře a
-strojový kontrakt:
+Požadavky: Node.js 24–26, pnpm 11 a Docker Desktop. První spuštění:
 
 ```bash
-bash scripts/validate-skeleton.sh
-python3 -m json.tool openapi/openapi.json >/dev/null
+pnpm install
+cp .env.example .env
+pnpm infra:up
+pnpm db:migrate
+pnpm dev
 ```
 
-Při vytvoření scaffoldu musí být tato sekce nahrazena přesnými příkazy pro
-instalaci, vývoj, build, testy, lint a typovou kontrolu. Lokální databáze a další potřebné
-služby budou definovány v Docker Compose pro Docker Desktop; lokální vývoj se
-nesmí připojovat k produkční databázi.
+Web běží na `http://localhost:3000`, API na `http://localhost:3001` a lokální
+Keycloak na `http://localhost:8081`. Vývojové hodnoty v `.env.example` a realm
+importu jsou veřejné lokální fixtures, nikoli produkční credentials.
+
+Hlavní kontroly:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm validate:repo
+pnpm check
+```
+
+Jednotlivé procesy lze spustit přes `pnpm dev:web`, `pnpm dev:api` a
+`pnpm dev:worker`. Lokální vývoj se nikdy nesmí připojovat k produkční databázi
+nebo produkčnímu Keycloak realmu.
 
 ## Dokumentace
 
@@ -103,7 +121,7 @@ Aktivní sada začíná v [docs/README.md](docs/README.md). Základní orientace
 
 ## Vývojový postup
 
-Vývoj nezačíná implementací obrazovek. Nejprve je nutné uzavřít blokující
-rozhodnutí, převzít produkční logo a fotografie a schválit klíčové prototypy.
-Každá změna musí současně udržet aktuální požadavky, API kontrakt, testy,
-bezpečnostní pravidla a provozní dokumentaci.
+Vývoj probíhá po vertikálních řezech z `docs/delivery-plan.md`. Neověřené
+fotografie ani logo se v produkčním povrchu nepoužívají a otevřená rezervační
+pravidla se neodhadují. Každá změna musí současně udržet aktuální požadavky,
+API kontrakt, testy, bezpečnostní pravidla a provozní dokumentaci.

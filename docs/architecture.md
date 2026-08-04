@@ -3,8 +3,14 @@
 ## Status
 
 Toto je cílová architektura odvozená ze zadání. Aplikační stack je `Accepted` v
-ADR 0003. Produkční a lokální topologie je schválená v ADR 0002.
+ADR 0003, identita v ADR 0004 a první platformní baseline v ADR 0005. Produkční
+a lokální topologie je schválená v ADR 0002.
 Neexistující komponenty se v tomto dokumentu nesmějí prezentovat jako nasazené.
+
+Aktuálně implementovaný řez obsahuje Next.js web, NestJS/Fastify API,
+samostatný worker, generované OpenAPI typy, PostgreSQL migraci, request ID,
+strukturované logy a lokální PostgreSQL/Keycloak Compose. Rezervace, obsahová
+data, OIDC webová relace, produkční S3 a e-mail zatím implementované nejsou.
 
 ## Kontext a hranice systému
 

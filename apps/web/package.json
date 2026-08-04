@@ -1,0 +1,25 @@
+{
+  "name": "@studiobalance/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --hostname 0.0.0.0 --port 3000",
+    "start": "next start --hostname 0.0.0.0 --port 3000",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@studiobalance/domain": "workspace:*",
+    "@studiobalance/ui-tokens": "workspace:*",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "typescript": "5.9.3"
+  }
+}

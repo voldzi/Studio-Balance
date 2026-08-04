@@ -42,6 +42,11 @@ nikde neukazuje počet míst, platba ani waitlist.
 
 ## Fáze 2 – aplikační základ, backend a administrace
 
+Stav k 2026-08-04: bod 1 má první implementovaný řez — spustitelný scaffold,
+health/readiness, validaci konfigurace, PostgreSQL 18 migraci, request ID,
+strukturované logy a auditní tabulku. Produkční deployment ani kompletní auditní
+doména tím nejsou uzavřené.
+
 Pořadí vertikálních řezů:
 
 1. health/readiness, konfigurace, databáze, migrace, request ID a audit základ;
@@ -107,7 +112,7 @@ Výstupy:
 
 Každý merge musí projít buildem, lintem, typovou kontrolou, relevantními testy,
 kontrolou kostry, OpenAPI validací a secret/dependency scanem. Konkrétní příkazy
-se doplní při vytvoření scaffoldu. Vývojový stav nelze označit jako hotový, pokud
+jsou v `README.md` a `docs/operations.md`. Vývojový stav nelze označit jako hotový, pokud
 chybí související dokumentace nebo nebyla spuštěna relevantní kontrola.
 
 ## Hlavní rizika

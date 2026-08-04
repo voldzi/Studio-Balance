@@ -11,8 +11,8 @@
       "description": "Production through Nginx on dmz.home.cz"
     },
     {
-      "url": "http://localhost:3000",
-      "description": "Local development placeholder"
+      "url": "http://localhost:3001",
+      "description": "Local API development server"
     }
   ],
   "paths": {
