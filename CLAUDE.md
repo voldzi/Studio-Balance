@@ -117,6 +117,13 @@ checks are `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`,
 configuration at production data, credentials, or the production Keycloak
 realm.
 
+An isolated non-public preview may be deployed from a clean Git commit with
+`pnpm deploy:preview -- <git-sha>` and rolled back to an already built revision
+with `pnpm rollback:preview -- <previous-git-sha>`. It uses host ports 3280 and
+4280 plus its own unexposed PostgreSQL volume. Do not treat it as production or
+connect it to DMZ, HAProxy PostgreSQL, production Keycloak, or S3 without the
+separate accepted change described in ADR 0006.
+
 ## Product and UI Work
 
 - Read `docs/product-design.md` before changing any user-facing surface.

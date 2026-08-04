@@ -1,0 +1,13 @@
+.git
+.github
+.chroma-state
+.env
+.env.*
+!.env.example
+**/.next
+**/coverage
+**/dist
+**/node_modules
+**/*.tsbuildinfo
+docs
+node_modules

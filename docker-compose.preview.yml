@@ -1,0 +1,119 @@
+name: studio-balance-preview
+
+x-runtime-defaults: &runtime-defaults
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  postgres:
+    <<: *runtime-defaults
+    image: postgres:18.4-alpine
+    environment:
+      POSTGRES_DB: studio_balance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?preview password is required}
+      POSTGRES_USER: studio_balance
+    volumes:
+      - preview-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio_balance -d studio_balance"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    cpus: 0.5
+    mem_limit: 384m
+
+  migrate:
+    image: studiobalance/api:${APP_VERSION:-preview}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-runtime
+    environment:
+      API_PORT: 3001
+      APP_ENV: staging
+      APP_VERSION: ${APP_VERSION:-preview}
+      DATABASE_URL: postgresql://studio_balance:${POSTGRES_PASSWORD}@postgres:5432/studio_balance
+      LOG_LEVEL: info
+    command: ["node", "dist/database/migrate.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    cpus: 0.5
+    mem_limit: 256m
+
+  api:
+    <<: *runtime-defaults
+    image: studiobalance/api:${APP_VERSION:-preview}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-runtime
+    environment:
+      API_PORT: 3001
+      APP_ENV: staging
+      APP_VERSION: ${APP_VERSION:-preview}
+      DATABASE_URL: postgresql://studio_balance:${POSTGRES_PASSWORD}@postgres:5432/studio_balance
+      LOG_LEVEL: info
+    ports:
+      - "4280:3001"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 0.5
+    mem_limit: 256m
+
+  worker:
+    <<: *runtime-defaults
+    image: studiobalance/worker:${APP_VERSION:-preview}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker-runtime
+    environment:
+      APP_ENV: staging
+      APP_VERSION: ${APP_VERSION:-preview}
+      LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.kill(1, 0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    cpus: 0.25
+    mem_limit: 128m
+
+  web:
+    <<: *runtime-defaults
+    image: studiobalance/web:${APP_VERSION:-preview}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web-runtime
+    environment:
+      APP_VERSION: ${APP_VERSION:-preview}
+      NODE_ENV: production
+    ports:
+      - "3280:3000"
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 0.5
+    mem_limit: 256m
+
+volumes:
+  preview-postgres-data:

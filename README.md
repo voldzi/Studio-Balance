@@ -53,7 +53,8 @@ Architektonické rozhodnutí je v
 Identita používá Keycloak/OIDC podle
 [ADR 0004](docs/adr/0004-keycloak-identity.md).
 První spustitelný platformní základ popisuje
-[ADR 0005](docs/adr/0005-initial-platform-baseline.md).
+[ADR 0005](docs/adr/0005-initial-platform-baseline.md) a izolované ověření na
+cílovém Docker hostiteli [ADR 0006](docs/adr/0006-isolated-preview-deployment.md).
 
 Schválená infrastrukturní topologie je v
 [ADR 0002](docs/adr/0002-deployment-and-storage-topology.md):
@@ -102,6 +103,14 @@ pnpm check
 Jednotlivé procesy lze spustit přes `pnpm dev:web`, `pnpm dev:api` a
 `pnpm dev:worker`. Lokální vývoj se nikdy nesmí připojovat k produkční databázi
 nebo produkčnímu Keycloak realmu.
+
+## Interní náhled na Docker hostiteli
+
+Přesný čistý Git commit lze nasadit příkazem `pnpm deploy:preview -- <sha>`.
+Na `docker.home.cz` vznikne izolovaný Compose projekt s webem na portu 3280,
+API na 4280 a vlastním nepublikovaným PostgreSQL 18 volume. Jde pouze o interní
+náhled bez DMZ, produkčního Keycloaku, HAProxy databáze a S3. Ověření a rollback
+popisuje [provozní dokumentace](docs/operations.md).
 
 ## Dokumentace
 

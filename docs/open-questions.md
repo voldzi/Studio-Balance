@@ -24,6 +24,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-011 | Produkční binární média se ukládají do vyhrazeného S3-kompatibilního tenant úložiště | ADR 0002, CD-005 |
 | RD-012 | Produkt je pouze responzivní web; nativní iOS/Android aplikace ani app-store release nevznikají | ADR 0003, CD-006 |
 | RD-013 | Identita používá Keycloak, realm `studio-balance`, oddělené web/admin OIDC policies, PKCE, email verification před bookingem a povinné admin MFA | ADR 0004, CD-007 |
+| RD-014 | Infrastrukturní realizace postupuje interní Docker preview → DMZ publikace → produkční PostgreSQL a Keycloak | ADR 0006, CD-008 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -59,9 +60,9 @@ nepřijde výslovná odpověď.
 | OQ-015 | Jaké jsou rozpočtové a provozní limity e-mailu, monitoringu a případné CDN vrstvy? | ovlivní poskytovatele i SLA; runtime a DB topologie jsou už schválené |
 | OQ-020 | Jaké RPO/RTO a retenční dobu mají databázové zálohy? | baseline je denní záloha a pravidelný test obnovy; čísla chybí |
 | OQ-030 | Jaký database name, TLS režim, admin role, credentials policy a failover očekávání platí za `haproxy.home.cz:5000`? | major 18 je potvrzený; tyto údaje jsou nutné pro bezpečný produkční bootstrap skript |
-| OQ-031 | Jaký Docker deployment mechanismus, image registry, Nginx upstream/TLS/certifikát a rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | veřejná cesta je schválená, přesná release konfigurace ještě ne |
+| OQ-031 | Jaký image registry, Nginx upstream/TLS/certifikát a produkční rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | interní SHA-tagovaný Compose preview a rollback jsou uzavřené ADR 0006; veřejná release konfigurace ještě ne |
 | OQ-032 | Jak se provisionuje vyhrazená Studio Balance gateway nad `shared-seaweedfs`? | S3 použití je schválené; potvrdit interní endpoint, bucket, credentials, pinned image, healthcheck, backup/restore, vlastníka a lifecycle |
-| OQ-033 | Kdo a jak bezpečně uvolní nebo rozšíří kapacitu `docker.home.cz` a jaké alert prahy budou platit? | inventura 2026-08-04 zjistila 96% zaplnění root filesystému a vyčerpaný swap; blokuje produkční readiness, nic se automaticky nemaže |
+| OQ-033 | Kdo vlastní kapacitní alerty `docker.home.cz`, jaké jsou jejich prahy a jak se vyřeší téměř vyčerpaný swap? | disk byl 2026-08-04 přeměřen na přibližně 73 GiB volno, swap však zůstává produkčním rizikem; interní preview má resource limits a preflight |
 
 ## P0 – právo, data a analytika
 

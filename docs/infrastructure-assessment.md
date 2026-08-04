@@ -20,8 +20,9 @@ produkčním nasazením musí znovu ověřit.
   credentials nad backendem `shared-seaweedfs`.
 - MinIO instance `toilet-minio-1` se bez výslovné změny vlastnictví a provozního
   modelu nepoužije, protože její lifecycle je svázaný s projektem Toilet.
-- Produkční rollout je blokovaný kapacitou hostitele: root filesystem byl
-  zaplněný z 96 % a swap byl plně využitý.
+- Původní diskový blocker byl před interním preview deploymentem odstraněn;
+  veřejný produkční rollout nadále blokuje téměř vyčerpaný swap a neuzavřené
+  produkční integrace.
 
 ## Stav hostitele
 
@@ -33,6 +34,15 @@ produkčním nasazením musí znovu ověřit.
 | Disk `/` | 195 GiB celkem, 180 GiB použito, přibližně 7,6 GiB volno (96 %) | blokující riziko pro image pull, build, logy, databáze i objekty |
 | Docker objekty | 111 běžících kontejnerů, 3 zastavené, 542 images | host je sdílený a vyžaduje izolaci názvů, sítí a zdrojů |
 | Potenciálně uvolnitelné místo | Docker hlásil desítky GiB reclaimable images/cache/volumes | pouze podklad pro správce; žádné automatické mazání bez inventury a schválení |
+
+### Kontrolní přeměření před preview deploymentem
+
+Dne 2026-08-04 byla kapacita znovu ověřena bez změn hostitele: root filesystem
+měl přibližně 73 GiB volno (61 % využití), dostupná paměť byla přibližně
+7,1 GiB a Docker hlásil 105 kontejnerů, z toho 104 aktivních. Swap zůstal téměř
+vyčerpaný (přibližně 3,0 z 3,1 GiB). Porty 3280 a 4280 byly volné. Tento stav
+umožňuje pouze omezený interní preview workload s resource limits; neuzavírá
+produkční readiness gate.
 
 Před nasazením správce infrastruktury bezpečně prověří aktivní využití image,
 cache a volumes, určí retenci a teprve potom uvolní nebo rozšíří kapacitu.

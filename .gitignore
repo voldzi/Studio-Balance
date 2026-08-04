@@ -5,6 +5,7 @@
 .venv/
 .chroma-state/
 node_modules/
+.pnpm-store/
 .next/
 .turbo/
 dist/

@@ -24,3 +24,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint, typecheck, test, build and validate contracts
         run: pnpm check
+      - name: Validate preview Compose contract
+        env:
+          POSTGRES_PASSWORD: ci-preview-only
+        run: APP_VERSION=${{ github.sha }} docker compose -f docker-compose.preview.yml config --quiet
+      - name: Build production container targets
+        run: |
+          docker build --target web-runtime --tag studiobalance/web:${{ github.sha }} .
+          docker build --target api-runtime --tag studiobalance/api:${{ github.sha }} .
+          docker build --target worker-runtime --tag studiobalance/worker:${{ github.sha }} .

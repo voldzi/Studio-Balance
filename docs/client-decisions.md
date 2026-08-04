@@ -18,6 +18,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-005 | Produkční binární média se ukládají do S3-kompatibilního úložiště | S3 už není volitelné pro produkční media workflow; platí tenant izolace, backup a readiness podmínky z ADR 0002 |
 | CD-006 | Produkt bude pouze responzivní webová aplikace | nevzniká nativní iOS/Android aplikace, Expo/React Native, App Store/Google Play release ani mobilní push infrastruktura |
 | CD-007 | Schvaluje se doporučený Keycloak/OIDC identity model | vlastní realm `studio-balance`, oddělené web/admin policies, Authorization Code + PKCE, serverová HTTP-only relace, ověření e-mailu před rezervací, povinné admin MFA, issuer přes DMZ a lokální projektová instance |
+| CD-008 | Realizace infrastruktury proběhne v pořadí interní Docker preview → DMZ publikace → produkční PostgreSQL a Keycloak | první řez na `docker.home.cz` musí zůstat neveřejný, bez produkčních dat/credentials a s izolovanou dočasnou databází podle ADR 0006 |
 
 ## Schválená identita
 

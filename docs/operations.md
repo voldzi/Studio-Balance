@@ -4,8 +4,10 @@
 
 Repozitář obsahuje první spustitelný TypeScript monorepo scaffold: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, lokální PostgreSQL 18,
-migraci a Keycloak realm. Produkční nasazení zatím nevzniklo. Směr je schválený
-v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový kontrakt.
+migraci a Keycloak realm. Izolovaný interní náhled lze nasadit na cílový Docker
+host podle ADR 0006; veřejné ani produkčně integrované nasazení zatím nevzniklo.
+Směr je schválený v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový
+kontrakt.
 
 Schválená topologie:
 
@@ -21,9 +23,41 @@ Schválená topologie:
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
 Read-only inventura hostitele a readiness omezení jsou v
-`docs/infrastructure-assessment.md`. Zjištěné 96% zaplnění root filesystému a
-vyčerpaný swap blokují produkční rollout, dokud správce infrastruktury bezpečně
-neuvolní nebo nerozšíří kapacitu a znovu ji neověří.
+`docs/infrastructure-assessment.md`. Disková kapacita byla před náhledovým
+nasazením znovu ověřena; téměř vyčerpaný swap a neuzavřené produkční integrace
+nadále blokují veřejný produkční rollout.
+
+## Izolovaný preview deployment
+
+Náhled používá Compose projekt `studio-balance-preview`, web na interním host
+portu 3280, API na 4280 a vlastní PostgreSQL 18 volume bez host portu. Neobsahuje
+produkční data, S3, Keycloak ani HAProxy připojení a není publikovaný přes DMZ.
+
+Nasazuje se pouze čistý commit dostupný v lokálním repozitáři:
+
+```bash
+pnpm deploy:preview -- <git-sha>
+curl --fail http://docker.home.cz:4280/health
+curl --fail http://docker.home.cz:4280/ready
+curl --fail --head http://docker.home.cz:3280/
+```
+
+Nasazovací skript přenese přesný archiv commitu, sestaví image označené SHA,
+spustí migraci a čeká na Compose dependency health. Náhodné databázové heslo je
+uložené jen na hostiteli v
+`/home/voldzi/deployments/studio-balance/.env.preview` s módem 0600. Hodnota se
+nesmí vypisovat ani kopírovat do repozitáře.
+
+Rollback na předchozí již sestavenou revizi:
+
+```bash
+pnpm rollback:preview -- <previous-git-sha>
+```
+
+Rollback znovu aktivuje starší aplikační image nad stejným preview volume a
+nespouští down migration ani obnovu databáze. Před použitím se musí ověřit
+zpětná kompatibilita migrací. Veřejná DMZ, produkční databáze, produkční
+Keycloak a S3 mají vlastní pozdější change plan.
 
 Základní ověření repozitáře:
 
@@ -205,12 +239,14 @@ Keycloak dev realm import: automatic during pnpm infra:up
 OpenAPI validate/generate: pnpm validate:openapi | pnpm generate:contracts
 all pre-merge checks: pnpm check
 production database bootstrap: TBD (interactive; no committed password)
+isolated preview deploy to docker.home.cz: pnpm deploy:preview -- <git-sha>
+isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
 production Docker deploy to docker.home.cz: TBD
 Keycloak realm/client provision: TBD
 Nginx publish through dmz.home.cz: TBD
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD
-deploy/rollback: TBD
+production deploy/rollback: TBD
 ```
 
 První lokální spuštění používá `cp .env.example .env`, `pnpm infra:up`,
