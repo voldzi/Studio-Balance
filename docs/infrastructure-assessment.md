@@ -11,10 +11,11 @@ produkčním nasazením musí znovu ověřit.
 ## Shrnutí rozhodnutí
 
 - Aplikace může běžet na existujícím Docker Engine/Compose hostiteli.
-- PostgreSQL zůstává dostupný pouze přes `haproxy.home.cz:5000`; lokální
+- PostgreSQL 18 zůstává dostupný pouze přes `haproxy.home.cz:5000`; lokální
   PostgreSQL kontejnery jiných projektů nejsou zdrojem pravdy pro Studio
   Balance.
-- Pro média lze využít existující S3-kompatibilní infrastrukturu.
+- Produkční média využijí existující S3-kompatibilní infrastrukturu po splnění
+  readiness podmínek.
 - Preferovaná cesta je samostatná Studio Balance S3 gateway, bucket a
   credentials nad backendem `shared-seaweedfs`.
 - MinIO instance `toilet-minio-1` se bez výslovné změny vlastnictví a provozního
@@ -77,11 +78,26 @@ upgradu, credential scope a smazání. Proto není výchozím kandidátem.
 | --- | --- | --- |
 | existující OpenTelemetry/Prometheus/Loki/Tempo/Grafana stack | logy, metriky, trace a alerty | potvrdit vlastníka, tenant/label izolaci, retenci, přístup a kapacitu |
 | běžící ClamAV | sken uploadovaných médií | potvrdit síťový přístup, SLA, limity a vlastnictví služby |
-| běžící Keycloak | identity provider | samostatné produktové a bezpečnostní rozhodnutí; současný auth model je stále otevřený |
+| Keycloak 26.1.5 na `docker.home.cz` | preferovaný OIDC identity provider | vlastní realm/klienti, HTTPS issuer přes DMZ, admin MFA, healthcheck, backup a projektová lokální instance ještě vyžadují rozhodnutí |
 | Redis/Valkey kontejnery | queue/cache | jsou projektově specifické; nezapojují se bez vlastní instance nebo schváleného sdíleného provozu |
 
 Tyto služby nejsou přijetím této inventury automaticky schválené pro aplikaci.
 Pouze S3-kompatibilní uložení médií bylo zadavatelem výslovně povoleno.
+
+### Keycloak
+
+Následná read-only kontrola potvrdila samostatný Compose projekt `keycloak` s
+image `quay.io/keycloak/keycloak:26.1` (metadata verze 26.1.5), běžící na
+`docker.home.cz` a publikovaný na host portu 8081. Kontejner nemá Docker
+healthcheck. Kontrola nečetla environment hodnoty, realm konfiguraci ani
+credentials. V aktuálním lokálním Docker Desktop contextu `desktop-linux`
+nebyl Keycloak při kontrole spuštěný.
+
+Pro Studio Balance lze službu využít až po vytvoření vlastního realm/clients,
+bezpečné HTTPS issuer cesty přes DMZ, rozhodnutí o email verification a admin
+MFA, doplnění healthchecku a potvrzení backup/upgrade odpovědnosti. Lokální
+vývoj má mít reprodukovatelnou projektovou instanci stejné hlavní verze, nikoli
+záviset na dostupnosti sdíleného serveru.
 
 ## Produkční readiness gate
 
@@ -91,7 +107,7 @@ Před prvním rolloutem na `docker.home.cz` musí být doloženo:
 - Compose project name, privátní sítě, porty, resource limits a restart policy;
 - registry, immutable image tag/digest, deploy a rollback postup;
 - žádný přímý PostgreSQL node mimo `haproxy.home.cz:5000`;
-- při aktivním S3 vlastní gateway/bucket/credentials, pinned image, healthcheck,
+- vlastní S3 gateway/bucket/credentials, pinned image, healthcheck,
   quota/lifecycle, monitoring a úspěšný restore test;
 - Nginx upstream a TLS publikace přes `dmz.home.cz` pouze pro veřejné aplikační
   endpointy; administrační S3 konzole se nepublikuje;
@@ -101,10 +117,12 @@ Před prvním rolloutem na `docker.home.cz` musí být doloženo:
 ## Co inventura neověřila
 
 - obsah ani platnost credentials a secrets;
-- PostgreSQL major/TLS/failover semantics za HAProxy;
+- PostgreSQL TLS/failover semantics za HAProxy; major 18 a konkrétní verze 18.4
+  na `patroni1` byly ověřené;
 - garantovanou kapacitu, RPO/RTO nebo SLA existujících služeb;
 - backup retenci a poslední úspěšný restore S3 dat;
 - DNS, certifikát a konkrétní Nginx upstream konfiguraci na `dmz.home.cz`;
 - bezpečnostní zpevnění hostitele a síťových ACL mimo Docker metadata.
+- Keycloak realm/client konfiguraci, databázi, backup a veřejnou issuer URL.
 
 Tyto body zůstávají v `open-questions.md` a provozním readiness gate.

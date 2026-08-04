@@ -2,7 +2,7 @@
 
 ## Status a účel
 
-Studio Balance potřebuje jedno API pro web, mobilní aplikaci a administraci.
+Studio Balance potřebuje jedno API pro veřejný web, klientský účet a administraci.
 REST a katalog níže jsou doporučený návrh odvozený ze zadání. Závazným
 strojovým kontraktem je pouze `openapi/openapi.json`; v počátečním stavu
 obsahuje systémové endpointy `/health` a `/ready`. Funkční endpoint se smí
@@ -31,12 +31,10 @@ strategii a ADR.
 
 ## Autentizace
 
-Přesný session/token mechanismus je otevřený. Kontrakt musí podporovat:
+Preferovaným kandidátem je Keycloak/OIDC. Kontrakt musí podporovat:
 
-- bezpečnou HTTP-only webovou relaci;
-- bezpečné mobilní přihlášení s uložením credentialu v platformním secure
-  storage;
-- oddělené admin přihlášení a možnost MFA;
+- OIDC Authorization Code flow s PKCE a bezpečnou HTTP-only serverovou relaci;
+- oddělené klientské a admin přihlášení/policies a admin MFA;
 - reset hesla s krátkou jednorázovou platností;
 - serverovou objektovou autorizaci každé chráněné operace.
 
@@ -130,21 +128,22 @@ poznámka, seznam klientů a jakýkoli waitlist údaj.
 `availability` je jeden z `bookable`, `full`, `closed`, `cancelled`,
 `completed`.
 
-## Autentizační endpointy – návrh
+## Identita a profil – návrh
+
+Registrace, login, logout, reset a ověření e-mailu jsou při použití Keycloaku
+OIDC/browser workflow, nikoli vlastní password endpointy doménového API. Webová
+BFF vrstva drží tokeny mimo browser JavaScript. Do OpenAPI patří až skutečně
+implementované aplikační operace:
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
-| POST | `/api/v1/auth/register` | registrace klienta |
-| POST | `/api/v1/auth/login` | přihlášení klienta |
-| POST | `/api/v1/auth/logout` | zneplatnění relace |
-| POST | `/api/v1/auth/forgot-password` | neutrální zahájení resetu |
-| POST | `/api/v1/auth/reset-password` | jednorázový reset |
-| POST | `/api/v1/auth/verify-email` | ověření e-mailu |
-| GET | `/api/v1/me` | profil klienta |
-| PATCH | `/api/v1/me` | povolené profilové změny |
+| GET | `/api/v1/me` | profil klienta spojený s OIDC subjectem |
+| PATCH | `/api/v1/me` | povolené doménové profilové změny |
 | DELETE | `/api/v1/me` | žádost/proces zrušení účtu |
 
-`forgot-password` vrací stejný výsledek bez ohledu na existenci e-mailu.
+Konkrétní issuer, realm, klienti, callback/logout URL, email verification a MFA
+se doplní po uzavření identity rozhodnutí. Reset nesmí prozradit existenci
+e-mailu.
 
 ## Rezervace – návrh
 
@@ -221,7 +220,7 @@ rezervace vždy provede autoritativní serverovou transakci.
 
 ## Client generation a změnový proces
 
-Web a mobil mají generovat nebo typově odvozovat klienty z
+Web, administrace a serverové integrace mají generovat nebo typově odvozovat klienty z
 `openapi/openapi.json`. Změna API probíhá v pořadí:
 
 1. aktualizovat požadavek a případně ADR;
@@ -240,5 +239,5 @@ python3 -m json.tool openapi/openapi.json >/dev/null
 bash scripts/validate-skeleton.sh
 ```
 
-Po schválení stacku se přidá OpenAPI schema lint, breaking-change diff a test
+Při vytvoření scaffoldu se přidá OpenAPI schema lint, breaking-change diff a test
 shody implementace.

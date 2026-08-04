@@ -2,10 +2,10 @@
 
 ## Aktuální stav
 
-Repozitář je dokumentační základ bez zvoleného runtime a bez nasazené
-aplikace. Níže je cílový provozní kontrakt, nikoli tvrzení o existujícím
-prostředí. Přesné install/run/build/test/deploy příkazy se doplní po přijetí
-ADR 0001 a vytvoření aplikačního scaffoldu.
+Repozitář je dokumentační základ bez aplikačního scaffoldu a bez nasazené
+aplikace. TypeScript/Next.js/NestJS/Fastify/worker/pnpm směr je schválený v
+ADR 0003. Níže je cílový provozní kontrakt. Přesné install/run/build/test/deploy
+příkazy vzniknou současně se scaffoldem.
 
 Schválená topologie:
 
@@ -13,8 +13,8 @@ Schválená topologie:
 - veřejná URL `https://studiobalance.zeleznalady.cz`;
 - internetový Nginx reverse proxy na `dmz.home.cz`;
 - produkční Docker kontejnery na `docker.home.cz`;
-- produkční PostgreSQL jen přes `haproxy.home.cz:5000`;
-- volitelné S3-kompatibilní úložiště médií na `docker.home.cz` přes vyhrazený
+- produkční PostgreSQL 18 jen přes `haproxy.home.cz:5000`;
+- produkční S3-kompatibilní úložiště médií na `docker.home.cz` přes vyhrazený
   Studio Balance bucket/gateway;
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
@@ -34,7 +34,7 @@ python3 -m json.tool openapi/openapi.json >/dev/null
 
 | Prostředí | Účel | Pravidla |
 | --- | --- | --- |
-| development | lokální vývoj v Docker Desktop | lokální PostgreSQL, syntetická data, ne produkční credentials |
+| development | lokální vývoj v Docker Desktop | lokální PostgreSQL 18, projektový S3 emulator/tenant a po schválení identity Keycloak stejné hlavní verze; syntetická data |
 | test/staging | integrace, akceptace a restore test | oddělená DB/sender, produkčně podobná konfigurace |
 | production | Nginx DMZ → Docker na `docker.home.cz` | DB přes `haproxy.home.cz:5000`, audit, alerty, backup |
 
@@ -51,19 +51,17 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `APP_ENV` | ano | `development` | ne | runtime prostředí |
 | `APP_PORT` | ano | `3000` | ne | lokální/API port |
 | `PUBLIC_APP_URL` | ano | `http://localhost:3000` | ne | kanonická veřejná URL a odkazy |
-| `ADMIN_APP_URL` | ano | `http://localhost:3000/admin` | ne | povolený admin origin/deep links |
-| `MOBILE_DEEP_LINK_SCHEME` | ano | `studiobalance` | ne | schéma mobilních deep linků |
-| `DATABASE_URL` | runtime | prázdné | ano | lokálně Docker PostgreSQL; produkčně host `haproxy.home.cz`, port `5000` |
-| `S3_ENDPOINT` | při použití médií | prázdné | podle URL | interní S3-kompatibilní endpoint schválené Studio Balance gateway |
-| `S3_REGION` | při použití médií | prázdné | ne | region očekávaný S3 klientem/službou |
-| `S3_BUCKET` | při použití médií | prázdné | ne | vyhrazený Studio Balance bucket, ne bucket jiného projektu |
-| `S3_ACCESS_KEY_ID` | při použití médií | prázdné | ano | identifikátor dedikovaných credentials |
-| `S3_SECRET_ACCESS_KEY` | při použití médií | prázdné | ano | tajná část dedikovaných credentials |
+| `ADMIN_APP_URL` | ano | `http://localhost:3000/admin` | ne | povolený admin origin a návratové URL |
+| `DATABASE_URL` | runtime | prázdné | ano | lokálně Docker PostgreSQL 18; produkčně host `haproxy.home.cz`, port `5000` |
+| `S3_ENDPOINT` | production media runtime | prázdné | podle URL | interní S3-kompatibilní endpoint schválené Studio Balance gateway |
+| `S3_REGION` | production media runtime | prázdné | ne | region očekávaný S3 klientem/službou |
+| `S3_BUCKET` | production media runtime | prázdné | ne | vyhrazený Studio Balance bucket, ne bucket jiného projektu |
+| `S3_ACCESS_KEY_ID` | production media runtime | prázdné | ano | identifikátor dedikovaných credentials |
+| `S3_SECRET_ACCESS_KEY` | production media runtime | prázdné | ano | tajná část dedikovaných credentials |
 | `S3_FORCE_PATH_STYLE` | ne | `true` | ne | kompatibilita s lokální a SeaweedFS S3 implementací |
 | `SESSION_SECRET` | runtime | prázdné | ano | podpis/šifrování relace dle architektury |
 | `EMAIL_FROM` | runtime | prázdné | ne | ověřený odesílatel transakčních zpráv |
 | `EMAIL_PROVIDER_API_KEY` | runtime | prázdné | ano | e-mail provider credential |
-| `PUSH_PROVIDER_CREDENTIALS` | mobile runtime | prázdné | ano | serverová push credentials/reference |
 | `LOG_LEVEL` | ne | `info` | ne | minimální úroveň logování |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | ne | prázdné | podle URL | cíl telemetrie |
 
@@ -74,17 +72,17 @@ interním logu, ale nesmí vypsat hodnotu secretu.
 ## Externí závislosti
 
 - PostgreSQL jako transakční zdroj pravdy;
-- volitelné S3-kompatibilní úložiště binárních médií s odděleným tenantem;
+- S3-kompatibilní úložiště produkčních binárních médií s odděleným tenantem;
+- Keycloak/OIDC po schválení realm, issuer a provozního modelu;
 - Nginx reverse proxy na `dmz.home.cz` pro internetovou publikaci;
 - transakční e-mail;
-- push infrastruktura pro iOS/Android;
 - observability/error monitoring;
 - DNS/TLS a případně queue runtime.
 
-S3 je schválené jako volitelná schopnost, nikoli jako automaticky připravená
-služba. Před použitím je nutné vytvořit vlastní gateway/bucket/credentials,
+S3 je schválené pro produkční media workflow, ale služba zatím není pro Studio
+Balance připravená. Před použitím je nutné vytvořit vlastní gateway/bucket/credentials,
 připnout image, doplnit healthcheck, vyřešit kapacitu hostitele a prokázat
-backup/restore. Otevřené jsou PostgreSQL major/TLS/auth, Docker deployment,
+backup/restore. PostgreSQL major je 18; otevřené jsou TLS/auth, Docker deployment,
 registry, Nginx upstream/TLS konfigurace, poskytovatelé, ceny a limity. Žádná
 platební služba není potřeba.
 
@@ -101,16 +99,17 @@ Budoucí pipeline musí:
    upstream na `dmz.home.cz` bezpečným postupem a ověřit `/health` a `/ready`;
 7. provést smoke kritické anonymní a autentizované cesty;
 8. sledovat error rate, latency a notification queue;
-9. při aktivním S3 ověřit zápis/čtení testovacího objektu a stav zálohy bez
+9. ověřit zápis/čtení testovacího S3 objektu a stav zálohy bez
    zveřejnění originálu;
 10. umožnit rollback aplikace bez ztráty nově zapsaných rezervací.
 
-Mobilní release musí počítat se souběhem více verzí klienta. API změna je
-zpětně kompatibilní po celé podporované mobilní rollout okno.
+API změny se nasazují backward-compatible pořadím, aby web, API a worker mohly
+být bezpečně rolloutovány a rollbackovány bez výpadku rezervací.
 
 ## Databázové migrace
 
 - migrace jsou verzované a součástí repozitáře;
+- lokální vývoj a CI používají PostgreSQL 18 v Docker Desktop;
 - produkční migrace neběží z vývojářského notebooku bez kontrolovaného postupu;
 - produkční connection konfigurace i migrace používají schválený HAProxy
   endpoint, ne přímý PostgreSQL node;
@@ -120,11 +119,18 @@ zpětně kompatibilní po celé podporované mobilní rollout okno.
   smazat data;
 - změna statusu nebo peněžního snapshotu má migrační a auditní plán.
 
+Produkční DB, vlastník a aplikační role se založí až podle skutečného schématu
+verzovaným idempotentním skriptem. Skript použije `psql` přes
+`haproxy.home.cz:5000`, admin heslo si vyžádá interaktivně bez echo, nepřijme je
+v argumentu, nezapíše je do souboru/repozitáře a po chybě nezanechá napůl
+vytvořená oprávnění. Přesný skript vznikne až po potvrzení názvů rolí, DB, TLS a
+secret-store postupu.
+
 ## Health a readiness
 
 - `GET /health`: 200, pokud proces běží; nekontroluje vzdálené služby;
 - `GET /ready`: 200 jen pokud lze bezpečně obsloužit provoz; jinak 503;
-- readiness minimálně zohlední DB a kritickou inicializaci. E-mail/push může
+- readiness minimálně zohlední DB a kritickou inicializaci. E-mail může
   degradovat asynchronně, pokud outbox bezpečně drží zprávy; přesné pravidlo se
   zafixuje implementací;
 - S3 nedostupnost degraduje upload a media processing, ale nesmí zastavit
@@ -137,7 +143,7 @@ zpětně kompatibilní po celé podporované mobilní rollout okno.
 Baseline:
 
 - denní automatická záloha databáze;
-- při použití S3 samostatná záloha/verzování binárních objektů, monitoring stáří
+- samostatná záloha/verzování S3 binárních objektů, monitoring stáří
   a prokázaná konzistentní obnova s PostgreSQL metadata;
 - šifrování a přístup nejmenších oprávnění;
 - monitoring stáří a úspěchu zálohy;
@@ -151,7 +157,7 @@ RPO, RTO a retence nejsou schválené a musí se uzavřít před produkcí.
 
 Před spuštěním se stanoví: maximální interval veřejného rozvrhu, velikost a
 rozměry uploadu, page size/export limit, rate limits, počet opakování série,
-timeouty, retry policy e-mailu/push a maximální stáří mobilní offline cache.
+timeouty a retry policy e-mailu a media processingu.
 Limity jsou serverové a dokumentované v API; nesmí se objevit náhodně v UI.
 
 ## Rollback
@@ -164,8 +170,8 @@ zápis testovací rezervace v bezpečném prostředí, queue/outbox a stav migra
 ## Vlastnictví a předání
 
 Studio Balance musí vlastnit nebo mít plný přístup k doméně, DNS, Nginx DMZ,
-Docker hostu, GitHub repozitáři, databázi, případnému S3 bucketu/gateway,
-e-mail senderu, push/mobile účtům, analytice a monitoringu. Předání obsahuje
+Docker hostu, GitHub repozitáři, databázi, S3 bucketu/gateway, identitě,
+e-mail senderu, analytice a monitoringu. Předání obsahuje
 účet/službu, vlastníka, fakturaci,
 rotaci credentials, náklady, export a postup ukončení služby.
 
@@ -173,12 +179,13 @@ rotaci credentials, náklady, export a postup ukončení služby.
 
 ```text
 install: TBD
-run web/api/worker/mobile: TBD
+run web/api/worker: TBD
 build: TBD
 test: TBD
 lint: TBD
 typecheck: TBD
 database migrate/seed: TBD
+production database bootstrap: TBD (interactive; no committed password)
 Docker Desktop Compose: TBD
 production Docker deploy to docker.home.cz: TBD
 Nginx publish through dmz.home.cz: TBD

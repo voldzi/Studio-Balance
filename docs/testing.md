@@ -3,8 +3,8 @@
 ## Cíl
 
 Testy dokazují hlavně správnost rezervace, času, autorizace a komunikace – ne
-jen render happy path. Konkrétní frameworky a příkazy se doplní po volbě
-stacku; scénáře a release gate jsou závazné už nyní.
+jen render happy path. Konkrétní testovací frameworky a příkazy se doplní při
+scaffoldu; scénáře a release gate jsou závazné už nyní.
 
 ## Vrstvy
 
@@ -14,7 +14,7 @@ stacku; scénáře a release gate jsou závazné už nyní.
 | DB/domain integration | constraints, transakce, outbox, recurrence, fee uniqueness |
 | API contract | OpenAPI, schema, status/error, auth a idempotency |
 | component | všechny UI stavy, formuláře, keyboard/focus a copy |
-| end-to-end | kritické cesty web/admin/mobile proti test backendu |
+| end-to-end | kritické cesty veřejného/klientského webu a administrace proti test backendu |
 | security | IDOR, role, CSRF/XSS, rate limit, reset, upload a secret leakage |
 | performance/concurrency smoke | poslední místo, schedule read, booking latency |
 | visual/accessibility | breakpointy, real device/browser, AA smoke a regrese |
@@ -32,7 +32,7 @@ stacku; scénáře a release gate jsou závazné už nyní.
 | TC-06 | zrušení studiem | `cancelled_by_studio`, žádný fee, nové booking blokovány, zprávy |
 | TC-07 | změna času | stará/nová hodnota, nový arrival/cutoff/reminders, klient informován |
 | TC-08 | DST | lokální čas, offset, cutoff a reminders správné na obou přechodech |
-| TC-09 | změna obsahu | web i app vidí změnu bez mobilního release |
+| TC-09 | změna obsahu | veřejný web i klientský účet vidí změnu bez aplikačního release |
 | TC-10 | přístup k cizí rezervaci | zamítnuto bez úniku, bezpečný log/request ID |
 
 ## Hraniční matice storna
@@ -85,7 +85,7 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
 - role a objektová autorizace pro každou `me/admin` cestu;
 - pagination/filters/invalid ranges mají deterministické výsledky;
 - CSRF/CORS/cache headers odpovídají auth modelu;
-- starší podporovaná mobilní verze funguje během API rollout okna.
+- web, API a worker zůstávají kompatibilní během rollout/rollback okna.
 
 ## UI a přístupnost
 
@@ -97,7 +97,7 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - keyboard-only, viditelný fokus a dialog focus restore;
 - automated WCAG audit + ruční formuláře/live region/zoom/reduced motion;
 - žádný capacity count, waitlist, payment CTA nebo permanentka v DOM,
-  accessible name, deep link payloadu ani analytics eventu;
+  accessible name, URL payloadu ani analytics eventu;
 - schválené logo/fotografie, crop a layout bez překryvu/shiftu.
 
 ## Oznámení
@@ -108,14 +108,14 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - cancellation zruší budoucí reminders;
 - retry je idempotentní a neprodukuje nekontrolované duplicity;
 - permanent e-mail failure důležité změny vyvolá alert/ruční fallback;
-- push deep link otevře správný objekt po loginu i bez aktivní session;
+- odkaz z e-mailu otevře správný objekt po loginu i bez aktivní session;
 - marketing preference neblokuje provozní komunikaci a naopak.
 
 ## Admin, CMS a média
 
 - recurrence create/edit/exception/cancel bez hardcodovaného rozvrhu;
 - preview dopadu významné změny;
-- obsahová změna se projeví webu i app bez release;
+- obsahová změna se projeví veřejnému webu i klientskému účtu bez release;
 - publish/unpublish/order a audit;
 - upload type/signature/size/dimensions/malware a nebezpečné SVG/rich text;
 - CSV export má autorizaci, escaping, encoding a ochranu proti formula injection;
@@ -128,7 +128,7 @@ Konkrétní SLO prahy jsou TBD, ale před produkcí se provede:
 - schedule read na realistickém týdnu a cache miss/hit;
 - burst booking na stejný session;
 - velký admin seznam/export v definovaném limitu;
-- výpadek DB, e-mailu, push a storage;
+- výpadek DB, e-mailu a storage;
 - S3 permission denial, nedostupnost, zaplnění a chybějící objekt bez dopadu na
   rezervace;
 - worker restart uprostřed jobu;
@@ -138,15 +138,15 @@ Konkrétní SLO prahy jsou TBD, ale před produkcí se provede:
 ## Testovací data
 
 Používat syntetické české profily, deterministické UUID a explicitní timezone.
-Žádné produkční e-maily/telefony/fotografie v CI. E-mail/push sandbox nesmí
+Žádné produkční e-maily/telefony/fotografie v CI. E-mail sandbox nesmí
 kontaktovat reálné klienty. Seed rozlišuje běžný, full, closed, cancelled,
 historický a DST termín.
 
-Lokální integrační testy běží proti PostgreSQL v Docker Desktop. Verze a
+Lokální integrační testy běží proti PostgreSQL 18 v Docker Desktop. Verze a
 relevantní connection semantics musí odpovídat produkčnímu PostgreSQL za
 `haproxy.home.cz:5000`; testy se nikdy nepřipojují k produkční databázi.
-Pokud implementace aktivuje media storage, lokální S3-kompatibilní služba běží
-také v Docker Desktop s testovacím bucketem a credentials. Test nikdy nezapisuje
+Lokální S3-kompatibilní služba běží také v Docker Desktop s testovacím bucketem
+a credentials. Test nikdy nezapisuje
 do produkčního bucketu na `docker.home.cz`.
 
 ## Traceability a report
@@ -166,7 +166,7 @@ secret scan a dependency scan. PR musí výslovně uvést neprovedenou kontrolu.
 - [ ] všechny P0 requirement a TC scénáře prošly;
 - [ ] concurrency/idempotency/DST test běžel na produkčně ekvivalentní DB;
 - [ ] authorization a privacy negativní testy prošly;
-- [ ] podporované browsery a reálná mobilní zařízení prošly smoke;
+- [ ] podporované desktopové i mobilní browsery na reálných zařízeních prošly smoke;
 - [ ] záloha/obnova a rollback byly prakticky ověřeny;
 - [ ] žádná kritická/vysoká vada a známé nižší vady mají ownera/rozhodnutí;
 - [ ] akceptaci lze reprodukovat z verzovaného reportu a artefaktu.

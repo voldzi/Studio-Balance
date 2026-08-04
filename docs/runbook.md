@@ -2,7 +2,8 @@
 
 ## Jak runbook používat
 
-Konkrétní provider příkazy nelze doplnit před volbou stacku. Každý incident
+Konkrétní provider a deployment příkazy nelze doplnit před volbou služeb a
+vytvořením scaffoldu. Každý incident
 začíná zaznamenáním času, prostředí, verze a request ID; chraňte osobní údaje a
 nedělejte nevratnou databázovou opravu bez zálohy a auditu.
 
@@ -70,7 +71,7 @@ nezvyšovat kapacitu jen kvůli technické chybě bez rozhodnutí admina.
 
 **Ověření:** unique invariant, veřejný stav a klientský účet souhlasí.
 
-## E-mail nebo push neodchází
+## E-mail neodchází
 
 **Diagnostika:** outbox/queue age, provider status, credentials, sender/domain,
 rate limit, konkrétní job attempts. Rozlišit dočasné a permanentní chyby.
@@ -92,7 +93,7 @@ verzovaným skriptem/migrací s preview a auditním záznamem. Dotčené klienty
 informovat schváleným provozním postupem.
 
 **Ověření:** přesné boundary testy, pending reminder instants a zobrazení webu,
-mobilu i e-mailu souhlasí.
+klientského účtu i e-mailu souhlasí.
 
 ## Média nebo obrazová delivery vrstva selhává
 

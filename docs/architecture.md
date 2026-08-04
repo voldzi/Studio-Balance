@@ -2,8 +2,8 @@
 
 ## Status
 
-Toto je cílová architektura odvozená ze zadání. Přesný aplikační stack má stav
-`Proposed` v ADR 0001. Produkční a lokální topologie je schválená v ADR 0002.
+Toto je cílová architektura odvozená ze zadání. Aplikační stack je `Accepted` v
+ADR 0003. Produkční a lokální topologie je schválená v ADR 0002.
 Neexistující komponenty se v tomto dokumentu nesmějí prezentovat jako nasazené.
 
 ## Kontext a hranice systému
@@ -17,17 +17,16 @@ e-shop, permanentky, waitlist, SMS a instruktorův samostatný účet.
 flowchart LR
   visitor([Návštěvník]) --> web[Veřejný web]
   client([Klient]) --> web
-  client --> mobile[Mobilní aplikace]
   admin([Administrátor]) --> adminui[Webová administrace]
   web --> api[Studio Balance API]
-  mobile --> api
   adminui --> api
+  web --> oidc[Keycloak / OIDC kandidát]
+  adminui --> oidc
   api --> dbproxy[PostgreSQL endpoint]
   dbproxy --> db[(PostgreSQL)]
   api --> media[(S3 media storage)]
   api --> jobs[Fronta a worker]
   jobs --> email[Transakční e-mail]
-  jobs --> push[Push služba]
   api --> telemetry[Monitoring a audit]
 ```
 
@@ -36,18 +35,17 @@ flowchart LR
 | Komponenta | Odpovědnost |
 | --- | --- |
 | Public Web | SSR/SSG veřejného obsahu, SEO, veřejný rozvrh a klientský účet |
-| Mobile App | iOS/Android UX, push tokeny, deep links a omezená offline cache |
 | Admin UI | řízení provozu a obsahu podle rolí, bez platebních dat |
 | API | jednotná autorizace, validace, doménová pravidla a kontrakt klientů |
 | Booking Service | kapacita, idempotence, stavový automat, cutoff a fee |
 | Schedule Service | typy lekcí, série, výjimky, lokální čas a veřejná dostupnost |
-| Identity Service | klientské a oddělené admin identity, relace, reset, ověření |
+| Identity Service | Keycloak/OIDC kandidát pro klientské a oddělené admin policies, reset, ověření a MFA |
 | Content Service | lekce, instruktoři, stránky, ceník, FAQ, recenze, novinky, média |
-| Notification Orchestrator | plán, zrušení, retry, stav doručení a deep link payload |
-| Worker | asynchronní e-mail/push, media processing a plánované úlohy |
+| Notification Orchestrator | plán, zrušení, retry a stav doručení e-mailu/provozní zprávy |
+| Worker | asynchronní e-mail, media processing a plánované úlohy |
 | Audit Service | neměnná stopa privilegovaných a opravujících akcí |
 | PostgreSQL | transakční zdroj pravdy pro doménová data a metadata médií |
-| S3 media storage | volitelná binární perzistence originálů a variant ve vyhrazeném Studio Balance bucketu |
+| S3 media storage | produkční binární perzistence originálů a variant ve vyhrazeném Studio Balance bucketu |
 | Media delivery | autorizovaná aplikační/cache vrstva nad neveřejnými S3 originály |
 
 Komponenty jsou logické hranice; nemusí být samostatné deploye. První verze má
@@ -89,7 +87,8 @@ preferovat modulární monolit + worker před distribuovanými mikroslužbami.
 2. Transakce uloží původní i nové hodnoty, audit a outbox.
 3. Zrušení nastaví termín `cancelled` a aktivní rezervace
    `cancelled_by_studio`; fee nevzniká.
-4. Worker zruší staré remindery a odešle povinný e-mail + dostupný push/in-app.
+4. Worker zruší staré remindery, odešle povinný e-mail a aktualizuje zprávu v
+   klientském účtu.
 
 ## Doménový model
 
@@ -195,8 +194,10 @@ autorizací, nikoli jen skrytým menu.
 
 - klientská a administrativní přihlašovací plocha jsou oddělené;
 - hesla používají moderní adaptivní hash, reset je krátkodobý a jednorázový;
-- web preferuje bezpečnou HTTP-only relaci; mobil bezpečné platformní úložiště
-  tokenu; přesný mechanismus schválí bezpečnostní návrh;
+- web používá OIDC Authorization Code flow s PKCE a serverovou HTTP-only relací;
+- preferovaný kandidát je Keycloak 26.1.5 s vlastním realm a oddělenými
+  klientskými/admin policies; konkrétní issuer a client model ještě vyžaduje
+  potvrzení;
 - authorization je objektová i rolová: klient pouze vlastní objekt, admin podle
   role a akce, super admin spravuje privilege;
 - admin MFA je doporučené a před produkcí musí být explicitně rozhodnuto;
@@ -206,18 +207,18 @@ autorizací, nikoli jen skrytým menu.
 
 Upload používá povolené MIME/extension kombinace, limit rozměrů/velikosti,
 bezpečné názvy, skenování a oddělené originály/varianty. Metadata a vazby jsou v
-PostgreSQL; binární objekty lze ukládat do S3-kompatibilního úložiště na
+PostgreSQL; produkční binární objekty se ukládají do S3-kompatibilního úložiště na
 `docker.home.cz`. Preferovaný kandidát je vlastní Studio Balance gateway,
 bucket a credentials nad `shared-seaweedfs`, nikoli sdílení tenant konfigurace
 jiné aplikace. Originál není automaticky veřejný. Změna běžného obsahu je datová
-a nevyžaduje nový mobilní release.
+a nevyžaduje nový aplikační release.
 
 ## Notifikační architektura
 
 Každá zpráva má účel, kanál, plán, stav, počet pokusů, poslední chybu a
 idempotency key. Provozní a marketingové preference jsou oddělené. Při změně
-rezervace se staré pending joby zruší a vytvoří nové. Selhání push nesmí zabránit
-povinnému e-mailu o změně/zrušení.
+rezervace se staré pending joby zruší a vytvoří nové. E-mail o změně nebo
+zrušení je povinný; mobilní push není součástí rozsahu.
 
 ## Prostředí a nasazení
 
@@ -235,11 +236,12 @@ flowchart TB
     dmz --> webdeploy[Web + Admin]
     webdeploy --> apideploy[API]
     apideploy --> workerdeploy[Worker / Outbox]
+    webdeploy --> keycloak["Keycloak 26.1.5 / OIDC kandidát"]
   end
   apideploy --> dbproxy["haproxy.home.cz:5000"]
   workerdeploy --> dbproxy
   dbproxy --> proddb[(PostgreSQL cluster)]
-  apideploy --> s3gateway["Studio Balance S3 gateway (volitelná)"]
+  apideploy --> s3gateway["Studio Balance S3 gateway"]
   workerdeploy --> s3gateway
   s3gateway --> seaweed[(shared-seaweedfs)]
   apideploy --> otel[OTel / Error Monitoring TBD]
@@ -248,15 +250,16 @@ flowchart TB
 
 Veřejná doména, Nginx DMZ, Docker host a databázový endpoint jsou závazné.
 Otevřené zůstávají certifikát/TLS konfigurace, Nginx upstream porty, image
-registry, Docker orchestrace, PostgreSQL major/TLS/auth, S3 tenant konfigurace,
+registry, Docker orchestrace, PostgreSQL 18 TLS/auth, S3 tenant konfigurace,
+Keycloak realm/issuer/MFA,
 SLA a rollback.
 Aplikace nesmí používat přímé adresy databázových uzlů. Produkční účty a data
 vlastní Studio Balance.
 
 ## Zálohy a obnova
 
-Baseline je denní automatická DB záloha a, při použití S3, samostatně
-monitorovaná záloha/verzování objektů podle přijatého RPO. Konzistence obnovy
+Baseline je denní automatická DB záloha a samostatně monitorovaná
+záloha/verzování S3 objektů podle přijatého RPO. Konzistence obnovy
 musí spojit metadata v PostgreSQL s objekty v S3. Obě obnovy se pravidelně
 prokazují v izolovaném prostředí. RPO/RTO a retence musí být schváleny. Backup
 bez restore testu se nepovažuje za ověřený.
@@ -265,14 +268,14 @@ bez restore testu se nepovažuje za ověřený.
 
 - správnost rezervace a času má přednost před cache/optimistickým UX;
 - modulární monolit s jasnými hranicemi je výchozí preference pro první verzi;
-- jeden doménový backend zabraňuje rozdílným pravidlům webu a mobilu;
+- jeden doménový backend zabraňuje rozdílným pravidlům veřejného webu,
+  klientského účtu a administrace;
 - asynchronní kanály nesmí poškodit transakční konzistenci;
 - provider-specific volby se uzavírají ADR, nikoli náhodným prvním balíčkem.
 
 ## Otevřené architektonické body
 
-Přesný stack, Docker/Nginx release workflow, PostgreSQL verze/TLS,
-identity/session mechanismus, poskytovatelé e-mailu/push, media binary/cache
-model, analytika, RPO/RTO a minimální mobilní OS jsou evidovány v
-`open-questions.md`. Do jejich uzavření je cílový model závazný na úrovni
-schopností a invariantu, ne implementačního produktu.
+Stack a PostgreSQL major verze jsou rozhodnuté. Docker/Nginx release workflow,
+PostgreSQL TLS/role provisioning, Keycloak realm/issuer/MFA, poskytovatel
+e-mailu, media cache model, analytika a RPO/RTO jsou evidovány v
+`open-questions.md`.

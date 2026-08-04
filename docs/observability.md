@@ -59,18 +59,17 @@ Veřejná analytika ani telemetry nesmí zpřístupnit počet volných míst kli
 
 - scheduled/sent/failed/cancelled podle channel/type;
 - retry count a oldest pending age;
-- provider reject/bounce a invalid push token;
+- provider reject/bounce;
 - doba od doménové změny k úspěšnému odeslání;
 - permanent failure důležitého zrušení/změny.
 
-### Web a mobil
+### Webový frontend
 
 - frontend crash/error rate podle verze a surface;
 - Web Vitals/LCP/INP/CLS pro veřejný web;
 - načtení rozvrhu a booking latency z pohledu klienta;
 - nejasný booking timeout a následná kontrola účtu;
-- mobilní crash-free sessions, API failure a push open/deep-link failure;
-- offline/stale zobrazení nejbližší rezervace.
+- frontend exception rate a API failure podle veřejné/klientské/admin plochy.
 
 Produktová analytika a provozní telemetry jsou oddělené. Produktové eventy se
 zapnou až po privacy/consent rozhodnutí.
@@ -78,7 +77,7 @@ zapnou až po privacy/consent rozhodnutí.
 ## Tracing
 
 Trace má spojit edge/web server, API, booking transaction, outbox a worker.
-Externí e-mail/push span neobsahuje tělo zprávy. Sampling je vyšší pro chyby a
+Externí e-mail span neobsahuje tělo zprávy. Sampling je vyšší pro chyby a
 kritické booking/notification flow, ale respektuje náklady a privacy.
 
 ## Health a readiness
@@ -88,7 +87,7 @@ kritické booking/notification flow, ale respektuje náklady a privacy.
   provoz;
 - asynchronní provider výpadek může být degraded místo not-ready, pokud je
   zpráva bezpečně uložena a existuje alert;
-- mobile/web readiness se ověřuje syntetickým smoke mimo samotný endpoint.
+- web readiness se ověřuje syntetickým smoke mimo samotný endpoint.
 
 ## Alerty – návrh
 
@@ -99,7 +98,7 @@ kritické booking/notification flow, ale respektuje náklady a privacy.
 | P1 | zrušení/změna termínu se trvale nedoručuje e-mailem | ruční kontakt a oprava fronty |
 | P2 | významný růst 5xx/latency, queue age nebo crash rate | šetření během provozní doby |
 | P2 | záloha selhala nebo je starší než povolený limit | oprava a ověření obnovitelnosti |
-| P3 | jednotlivý provider retry/bounce, neaktivní push token | agregovat a řešit trend |
+| P3 | jednotlivý provider retry/bounce | agregovat a řešit trend |
 
 Konkrétní prahy, on-call kanál a reakční časy jsou TBD. Alert bez vlastníka a
 runbooku není připravený.
@@ -109,7 +108,7 @@ runbooku není připravený.
 1. **Service overview:** traffic, error, latency, saturation, version, ready.
 2. **Booking integrity:** výsledky, conflicts, DB retries, nejčastější codes.
 3. **Notifications:** queue age, delivery, retries, provider failures.
-4. **Client quality:** Web Vitals, frontend/mobile errors, API latency.
+4. **Client quality:** Web Vitals, frontend errors, API latency.
 5. **Backup/operations:** backup age, restore test date, migration/deploy state.
 
 ## Retence a přístup

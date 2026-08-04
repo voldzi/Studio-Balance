@@ -2,21 +2,21 @@
 
 ## Účel a status
 
-Tento dokument je vývojový baseline odvozený ze závazného briefu verze 1.0.
-Zkracuje rozsáhlé zadání do testovatelných pravidel a priorit. Nemění původní
-zadání; při rozporu má brief přednost.
+Tento dokument je vývojový baseline odvozený z původního briefu verze 1.0 a
+novějších závazných rozhodnutí v `client-decisions.md`. Zkracuje zadání do
+testovatelných pravidel a priorit. Následné rozhodnutí má v tématu, které
+výslovně mění, před původním briefem přednost.
 
 Priorita `P0` znamená podmínku vydání první verze, `P1` hodnotnou součást první
 verze, kterou lze po schválení etapizovat, a `P2` budoucí rozšíření.
 
 ## Produktový výsledek
 
-Studio Balance získá jeden digitální produkt se čtyřmi povrchy:
+Studio Balance získá jeden responzivní webový produkt se třemi povrchy:
 
 1. indexovatelný veřejný web;
 2. klientský účet a rezervace;
-3. mobilní aplikaci iOS/Android;
-4. webovou administraci.
+3. webovou administraci.
 
 Všechny povrchy používají stejné účty, lekce, termíny, rezervace, obsahová data
 a obchodní pravidla.
@@ -30,11 +30,12 @@ a obchodní pravidla.
 | INV-003 | žádné online permanentky ani zůstatky vstupů | účet, API i administrace nemají pass ledger |
 | INV-004 | veřejnost nikdy neuvidí kapacitu ani počet zbývajících míst | API vrací jen veřejný stav dostupnosti |
 | INV-005 | žádná čekací listina ani automatické obeslání po uvolnění místa | chybí endpoint, entita i CTA waitlistu |
-| INV-006 | jedna databáze rezervací pro web, mobil a administraci | změna je okamžitě viditelná ve všech klientech |
+| INV-006 | jedna databáze rezervací pro veřejný/klientský web a administraci | změna je okamžitě viditelná ve všech webových površích |
 | INV-007 | rozvrh je veřejný, účet je nutný až pro rezervaci | anonymní cesta končí až na potvrzení rezervace |
 | INV-008 | časové pásmo lekcí je `Europe/Prague` | testy standardního i letního času |
 | INV-009 | přesně 24 hodin před začátkem je storno včas, o sekundu později už pozdní | hraniční testy na serveru |
 | INV-010 | zrušení studiem nikdy nezaloží storno poplatek | stav rezervace i fee tabulka |
+| INV-011 | nevzniká nativní iOS/Android aplikace ani app-store release | repozitář neobsahuje Expo/React Native workspace ani mobilní push provider |
 
 ## Veřejný web
 
@@ -73,7 +74,7 @@ Datum narození a nouzový kontakt se v první verzi nesbírají.
 | BKG-002 | P0 | transakce zabrání překročení kapacity při souběžných požadavcích |
 | BKG-003 | P0 | jeden klient nemůže mít dvě aktivní rezervace téhož termínu |
 | BKG-004 | P0 | opakované odeslání nebo dvojklik je idempotentní |
-| BKG-005 | P0 | rezervace ukládá zdroj `web`, `ios`, `android` nebo `admin` a snapshot podmínek |
+| BKG-005 | P0 | rezervace ukládá zdroj `web` nebo `admin` a snapshot podmínek |
 | BKG-006 | P0 | potvrzení obsahuje lekci, datum, čas, vypočtený příchod, místo, platbu ve studiu a storno pravidlo |
 | BKG-007 | P1 | potvrzení nabízí kalendář, navigaci, moje rezervace a návrat na rozvrh |
 | BKG-008 | P1 | účet rozlišuje nadcházející rezervace a historii všech stavů |
@@ -108,32 +109,30 @@ reserved
 
 Výchozí hodnota je 10 minut. Lze ji přepsat na úrovni studia, typu lekce a
 konkrétního termínu; nejkonkrétnější hodnota vyhrává. Vypočtený čas se zobrazuje
-v detailu, potvrzení, e-mailu, aplikaci, push notifikaci a kalendáři.
+v detailu, potvrzení, e-mailu, klientském účtu a kalendáři.
 
 ## Oznámení
 
 | ID | Priorita | Požadavek |
 | --- | --- | --- |
-| NTF-001 | P0 | povinné kanály jsou e-mail, push a in-app; SMS je mimo první verzi |
+| NTF-001 | P0 | povinné kanály jsou e-mail a stav v klientském účtu; SMS a mobilní push jsou mimo první verzi |
 | NTF-002 | P0 | potvrzení, storno, změna a zrušení jsou navázány na správnou rezervaci a doručují se idempotentně |
 | NTF-003 | P0 | výchozí připomenutí se plánují 24 h, 2 h a 30 min před začátkem |
-| NTF-004 | P0 | změna nebo zrušení termínu se vždy odešle e-mailem; push je doplňkový kanál |
+| NTF-004 | P0 | změna nebo zrušení termínu se vždy odešle e-mailem a zobrazí v klientském účtu |
 | NTF-005 | P0 | změna nebo zrušení rezervace zneplatní neaktuální naplánované zprávy |
-| NTF-006 | P1 | deep link z push otevře konkrétní rezervaci nebo novinku |
+| NTF-006 | P1 | odkaz v e-mailu otevře po bezpečném přihlášení konkrétní rezervaci nebo novinku |
 | NTF-007 | P1 | marketingová komunikace má samostatný odvolatelný souhlas a neblokuje službu |
 
-## Mobilní aplikace
+## Web-only rozsah
 
-- Aplikace je očekávána v App Store a Google Play pro iOS a Android; PWA vyžaduje
-  předchozí výslovné schválení.
-- Hlavní navigace má nejvýše pět položek: Domů, Rozvrh, Rezervace, Novinky,
-  Profil.
-- Domovská obrazovka zvýrazní nejbližší rezervaci, čas příchodu a navigaci.
-- Aplikace nesmí být pouhý webový obal; přidanou hodnotou jsou push notifikace,
-  deep links a rychlý přístup k nejbližší rezervaci.
-- Krátký offline výpadek dovolí zobrazit naposledy známé údaje o nejbližší
-  rezervaci, ale nikdy potvrdit novou rezervaci offline.
-- O povolení push se žádá až po vysvětlení přínosu.
+- Produkt je responzivní web od 360 px; nevzniká samostatná nativní aplikace,
+  instalační wrapper ani app-store release.
+- Klientský účet na webu zpřístupní nejbližší rezervaci, historii, storno,
+  profil a provozní zprávy.
+- Mobilní browser dostává plnohodnotný responzivní tok, nikoli omezenou
+  sekundární verzi.
+- Mobilní push, APNs/FCM, native deep links a platformní offline storage jsou
+  mimo rozsah. Změny lekcí mají povinný e-mailový fallback.
 
 ## Administrace a obsah
 
@@ -165,7 +164,7 @@ Role:
 | provoz | dev/test/prod, strukturované logy, request ID, health/readiness, monitoring |
 | infrastruktura | `studiobalance.zeleznalady.cz` přes Nginx na `dmz.home.cz` do Dockeru na `docker.home.cz`; PostgreSQL pouze přes `haproxy.home.cz:5000`; lokálně Docker Desktop |
 | perzistence | PostgreSQL je zdroj pravdy pro relační a rezervační data; média lze uložit do S3-kompatibilní služby na `docker.home.cz` pouze v samostatném Studio Balance bucketu s oddělenými credentials, zálohou a řízenou síťovou cestou |
-| kompatibilita | současné Safari iOS/macOS, Chrome Android/desktop, Edge a Firefox |
+| kompatibilita | současné Safari iOS/macOS, Chrome Android/desktop, Edge a Firefox jako webové prohlížeče |
 | lokalizace | první verze `cs-CZ`, čas `Europe/Prague`, srozumitelné české chyby |
 | export | rezervace a provozní seznamy lze exportovat do CSV |
 
@@ -194,7 +193,7 @@ testovatelná kritéria a schválený obsah/asset tam, kde je potřeba.
 
 - web a design: brief kapitoly 3–18, 45–47, 50, 52–55;
 - účet a rezervace: kapitoly 19–26, 42, 56 a TC-01 až TC-08;
-- oznámení a mobil: kapitoly 27–30, 57;
+- oznámení: původní brief kapitola 27; mobilní kapitoly 28–30 a 57 jsou nahrazené CD-006;
 - administrace a data: kapitoly 31–44;
 - bezpečnost a soukromí: kapitoly 48–49;
 - NFR, realizace a předání: kapitoly 59–67.

@@ -2,8 +2,8 @@
 
 ## Mission
 
-This repository contains the Studio Balance product: a public website, shared
-booking experience, iOS/Android client, web administration, common API, and
+This repository contains the Studio Balance product: a responsive public and
+client website, shared booking experience, web administration, common API, and
 one source of operational data. The product must feel calm, elegant, simple,
 and consistent with the real studio while keeping booking rules unambiguous.
 
@@ -21,14 +21,16 @@ and consistent with the real studio while keeping booking rules unambiguous.
 
 ## Source of Truth and Precedence
 
-1. `docs/01 Zadání/STUDIO_BALANCE_ZADANI_PRO_VYVOJ.md` is the binding client
-   brief. The decomposed Unicode folder name on disk may render differently;
-   resolve it by filename rather than creating a duplicate folder.
-2. `docs/requirements.md` and the flat active documents in `docs/` translate
+1. `docs/client-decisions.md` contains binding client decisions made after the
+   original brief and overrides it only where it explicitly changes scope.
+2. `docs/01 Zadání/STUDIO_BALANCE_ZADANI_PRO_VYVOJ.md` is the original binding
+   client brief. The decomposed Unicode folder name on disk may render
+   differently; resolve it by filename rather than creating a duplicate folder.
+3. `docs/requirements.md` and the flat active documents in `docs/` translate
    the brief into development rules. Update them when the product changes.
-3. `openapi/openapi.json` is the binding REST contract for paths it defines.
-4. Source code and tests must implement the preceding contracts.
-5. DOCX files and images in `docs/01 Zadání/` are supporting references only.
+4. `openapi/openapi.json` is the binding REST contract for paths it defines.
+5. Source code and tests must implement the preceding contracts.
+6. DOCX files and images in `docs/01 Zadání/` are supporting references only.
    They never override the binding brief. See `docs/source-register.md`.
 
 If two active sources conflict, stop and resolve the conflict in documentation
@@ -40,7 +42,7 @@ before encoding one interpretation in code.
 - No client-side permanentka/pass balance or online pass purchase.
 - No waiting list and no notification when a place becomes free.
 - Never expose numeric capacity or remaining-place counts to public clients.
-- One booking database serves web, mobile, and administration.
+- One booking database serves public/client web and administration.
 - Booking capacity and duplicate prevention are enforced transactionally by the
   backend, not inferred in the UI.
 - The cancellation boundary is exact: at least 24 hours before the session is
@@ -50,8 +52,10 @@ before encoding one interpretation in code.
   snapshotted lesson price; money is handled only in the studio.
 - A studio-cancelled session never creates a cancellation fee.
 - Public schedule browsing does not require an account; booking does.
-- Content, schedule, and booking data shared by web and mobile come from one
+- Content, schedule, and booking data shared by all web surfaces come from one
   source, not hardcoded client lists.
+- The product is responsive web only. Do not add a native iOS/Android app,
+  Expo/React Native workspace, app-store release, or mobile push provider.
 - Production application workloads run as Docker containers on
   `docker.home.cz`.
 - Public traffic for `https://studiobalance.zeleznalady.cz` is published
@@ -61,7 +65,7 @@ before encoding one interpretation in code.
 - Local development dependencies run in Docker Desktop and never use
   production data or credentials.
 - PostgreSQL is the system of record for relational and booking data.
-  S3-compatible storage on `docker.home.cz` may hold media only through a
+  Production media use S3-compatible storage on `docker.home.cz` only through a
   dedicated Studio Balance bucket, credentials, backup policy, and approved
   network boundary; do not reuse another application's tenant credentials.
 
@@ -86,14 +90,16 @@ before encoding one interpretation in code.
 
 ## Environment
 
-The repository is currently documentation-first and has no approved
-application framework. The canonical remote is
+The repository is currently documentation-first. ADR 0003 approves a
+TypeScript monorepo with Next.js, NestJS/Fastify, worker, PostgreSQL and
+`pnpm`, but the application scaffold does not yet exist. The canonical remote is
 `git@github.com:voldzi/Studio-Balance.git`; production runs in Docker on
 `docker.home.cz`, public traffic for `https://studiobalance.zeleznalady.cz`
 passes through Nginx on `dmz.home.cz`, production PostgreSQL is reached only
 through `haproxy.home.cz:5000`, and local services run in Docker Desktop. Do
-not invent run, build, lint, typecheck, or deployment commands. After the stack
-is accepted, update this section, `README.md`, and `docs/operations.md` together.
+not invent run, build, lint, typecheck, or deployment commands. When the
+scaffold is created, update this section, `README.md`, and `docs/operations.md`
+together.
 
 Currently valid checks:
 

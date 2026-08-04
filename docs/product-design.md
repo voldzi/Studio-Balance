@@ -41,11 +41,11 @@ sbírat osobní údaje bez účelu.
 | Cesta | Vstup | Úspěch | Selhání / fallback |
 | --- | --- | --- | --- |
 | první rezervace | homepage, detail lekce, rozvrh | účet + právě jedna potvrzená rezervace | zachovat vybraný termín a vysvětlit chybu |
-| rychlá rezervace klienta | aplikace nebo rozvrh | potvrzení bez platebního kroku | při souběhu nabídnout návrat na jiné termíny |
-| kontrola nejbližší lekce | mobilní Domů / účet | čas, příchod, místo, instruktor a navigace | offline zobrazit poslední známé údaje s označením |
+| rychlá rezervace klienta | klientský účet nebo rozvrh | potvrzení bez platebního kroku | při souběhu nabídnout návrat na jiné termíny |
+| kontrola nejbližší lekce | responzivní klientský účet | čas, příchod, místo, instruktor a navigace | při výpadku srozumitelná chyba a bezpečný retry |
 | včasné storno | detail rezervace | zrušeno bez poplatku a místo uvolněno | bezpečný retry bez dvojí změny |
 | pozdní storno | detail rezervace | klient nejprve pochopí cenu a potvrdí | výchozí akce je rezervaci ponechat |
-| změna/zrušení studiem | push/e-mail/účet | klient vidí aktuální stav a rozdíl | e-mail je povinný fallback, stav je v účtu |
+| změna/zrušení studiem | e-mail/účet | klient vidí aktuální stav a rozdíl | e-mail je povinný fallback, stav je v účtu |
 | správa termínu | admin rozvrh | vytvoření/změna/zrušení s auditní stopou | potvrzení dopadu před hromadnou notifikací |
 | evidence docházky | admin termín | attended/no_show, případně právě jeden fee | oprava jen s důvodem a auditem |
 
@@ -80,11 +80,12 @@ Routes:
 /cookies
 ```
 
-### Mobilní aplikace
+### Klientský účet
 
-Spodní navigace má pět položek: Domů, Rozvrh, Rezervace, Novinky, Profil.
-Kontakt, právní texty a galerie mohou být sekundární. Push deep link vede na
-konkrétní rezervaci nebo novinku, ne pouze na homepage.
+Responzivní klientská část obsahuje přehled, rezervace, historii, profil a
+provozní zprávy. Na úzkém viewportu používá kompaktní webovou navigaci a zachová
+stejné funkce i pravidla jako desktop. Odkaz z e-mailu po přihlášení vrací
+klienta na konkrétní rezervaci nebo zprávu.
 
 ### Administrace
 
@@ -105,7 +106,7 @@ Rezervace/docházka, Storno poplatky, Obsah, Nastavení, Audit. Navigace je
 | potvrzení rezervace | zkontrolovat výsledek | nejasný timeout vede ke kontrole „Moje rezervace“ |
 | moje rezervace | otevřít nejbližší/historii | empty state pro nového klienta |
 | storno dialog | porozumět důsledku | on-time a late jsou dva rozdílné vzory |
-| mobilní Domů | jedním pohledem zjistit nejbližší termín | bez rezervace, offline/stale |
+| klientský přehled | jedním pohledem zjistit nejbližší termín | bez rezervace, loading, chyba |
 | admin rozvrh | řídit série a výjimky | konflikty, dopad na klienty, neuložené změny |
 | admin termín | seznam klientů a docházka | prázdný seznam, export, oprava stavu |
 
@@ -204,8 +205,7 @@ odladěny na kontrast; stav se nikdy nesděluje pouze barvou.
 ### Fotografie a značka
 
 - pouze poslední schválené logo, bez překreslování a deformace;
-- produkční SVG + transparentní PNG, zvláštní schválené varianty pro app icon,
-  favicon a splash;
+- produkční SVG + transparentní PNG a schválená varianta favicon;
 - skutečné schválené fotografie studia, lidí a používaných pomůcek;
 - desktop/mobil crop, moderní komprese, `srcset`, lazy loading mimo LCP a alt;
 - žádné nesmyslné/deformované vybavení ani generický AI obraz v produkci.
@@ -221,7 +221,8 @@ Každá znovupoužitelná komponenta definuje:
 - `validation_error`: chyba u pole i souhrn, fokus na první chybu;
 - `system_error`: lidský český text, retry a request ID pro podporu;
 - `permission_denied`: bez úniku existence cizího objektu;
-- `offline/stale` u mobilu: čas poslední synchronizace a zákaz změnové akce.
+- `network_error`: zachovat kontext, nabídnout bezpečný retry a nezobrazit
+  neověřený výsledek změnové akce.
 
 Formuláře mají trvalé labely, zachovají data po chybě, formátují telefon,
 umožní zobrazit heslo a nepředvyplní marketingový souhlas.
@@ -270,7 +271,7 @@ adresa, platba ve studiu a viditelné storno pravidlo.
 
 Sledovat bez citlivého obsahu: načtení/selhání rozvrhu, otevření detailu,
 zahájení/dokončení rezervace, veřejný `SESSION_FULL`, chybu/timeout, storno,
-otevření push, crash a latency. Nikdy nelogovat heslo, token, obsah interní
+frontendovou výjimku a latency. Nikdy nelogovat heslo, token, obsah interní
 poznámky nebo nadbytečné osobní údaje.
 
 ## Vizuální QA gate
@@ -283,5 +284,5 @@ poznámky nebo nadbytečné osobní údaje.
 - [ ] CTA a texty odpovídají klidnému tónu a českému zadání;
 - [ ] produkční fotografie mají správný crop, kompresi a alt;
 - [ ] rezervace a storno mají jednoznačný výsledek i při pomalé síti;
-- [ ] mobilní aplikace přináší push/deep-link hodnotu a není jen webový wrapper;
+- [ ] klientský účet a rezervace jsou plnohodnotně použitelné v mobilním browseru;
 - [ ] admin workflow bylo ověřeno s provozovatelkou na notebooku/tabletu.

@@ -32,6 +32,8 @@ required_files=(
   CLAUDE.md
   .env.example
   docs/README.md
+  docs/client-decisions.md
+  docs/client-questionnaire-booking-rules.md
   docs/requirements.md
   docs/product-design.md
   docs/architecture.md

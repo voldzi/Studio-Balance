@@ -2,8 +2,9 @@
 
 ## Status a cíle
 
-Dokument definuje bezpečnostní baseline před implementací. Konkrétní knihovny,
-identity provider a cloud se doplní po schválení stacku. Systém zpracovává
+Dokument definuje bezpečnostní baseline před implementací. Keycloak 26.1.5 je
+preferovaný OIDC kandidát; konkrétní realm, klienti a policies se doplní po
+schválení identity modelu. Systém zpracovává
 kontaktní údaje, rezervace, docházku a administrativní fee, ale nikdy platební
 karty nebo online platební tokeny.
 
@@ -30,12 +31,14 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 
 ## Autentizace
 
-- hesla se hashují moderním adaptivním algoritmem s bezpečnou konfigurací;
+- při použití Keycloaku aplikace hesla neukládá; identity provider je chrání
+  moderním adaptivním hashem a schválenou password policy;
 - login a reset jsou rate-limited, monitorované a odolné proti enumeraci účtů;
 - reset token je náhodný, jednorázový, krátkodobý a v úložišti chráněný;
 - změna hesla a zrušení účtu vyžadují čerstvé/zesílené ověření;
 - webová session je `HttpOnly`, `Secure`, vhodné `SameSite`, rotovaná po loginu;
-- mobilní credential je v Keychain/Keystore ekvivalentu, ne v běžném storage;
+- OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
+  vrstva mimo browser JavaScript;
 - admin vstup je oddělený; MFA rozhodnutí je P0 v `open-questions.md`;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 
@@ -67,9 +70,9 @@ scénáři.
   Balance bucketu; nesdílí se s jiným projektem ani klientským bundlem;
 - lokální Docker Desktop používá pouze lokální credentials a syntetická data;
 - rotace credentialu má dokumentovaný postup a nevyžaduje změnu zdrojového kódu;
-- logy, error tracking, build artefakty a mobilní bundle nesmí obsahovat server
-  secret;
-- mobilní/public build nikdy nedostane databázové nebo provider admin credentials.
+- logy, error tracking a build artefakty nesmí obsahovat server secret;
+- veřejný browser build nikdy nedostane databázové, S3, OIDC client secret nebo
+  provider admin credentials.
 
 ## TLS a webová ochrana
 
