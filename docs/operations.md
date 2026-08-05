@@ -5,7 +5,7 @@
 Repozitář obsahuje první funkční zákaznickou verzi: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
 klientský profil, transakční rezervaci/storno a první administrační řez pro
-rozvrh, lekce, klienty a rezervace. Revize `d46b193` běží veřejně
+rozvrh, lekce, klienty a rezervace. Revize `c5fa80d` běží veřejně
 přes DMZ, používá produkční PostgreSQL přes HAProxy a produkční Keycloak.
 Izolovaný starší náhled zůstává oddělený na interních portech a není veřejným
 zdrojem dat.
@@ -94,7 +94,8 @@ za aktivní.
 
 ### Stav aktivace 2026-08-05
 
-Nginx publikace je aktivní pro produkční revizi `d46b193`:
+Nginx publikace směruje na produkční stack; aktuálně nasazená aplikační revize
+je `c5fa80d`:
 
 - `http://studiobalance.zeleznalady.cz` vrací 301 na HTTPS;
 - `https://studiobalance.zeleznalady.cz` vrací web 200;
@@ -110,9 +111,10 @@ S3 a e-mail zůstávají mimo rozsah tohoto preview.
 
 ## Produkční verze
 
-Revize `d46b193` byla 2026-08-04 nasazena a ověřena: web 200, API health a
-readiness 200 s odpovídající verzí, veřejný rozvrh čte produkční PostgreSQL a
-OIDC login přesměruje na realm `studio-balance` s produkční callback URL.
+Revize `c5fa80d` byla 2026-08-05 nasazena a ověřena: web 200, API health a
+readiness 200 s odpovídající verzí, veřejný rozvrh čte produkční PostgreSQL,
+klientský OIDC používá web klienta a `/admin` má samostatný admin OIDC klient,
+HTTP-only relaci a serverovou kontrolu rolí.
 DMZ přepnutí bylo 2026-08-05 provedeno omezeným sudo instalátorem; instalátor
 uchoval zálohu předchozí konfigurace a validoval konfiguraci Nginxu.
 
@@ -123,7 +125,7 @@ na Docker hostu. Kandidát používá interní host porty 3281 (web) a 4281 (API
 aby nemohl samovolně převzít stávající veřejný preview na portech 3280/4280.
 
 ```bash
-pnpm deploy:production -- <git-sha>
+pnpm deploy:production <git-sha>
 curl --fail http://docker.home.cz:4281/ready
 curl --fail --head http://docker.home.cz:3281/
 ```
@@ -340,7 +342,7 @@ all pre-merge checks: pnpm check
 production database bootstrap: scripts/bootstrap-production-postgres.sh
 isolated preview deploy to docker.home.cz: pnpm deploy:preview -- <git-sha>
 isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
-production Docker candidate deploy to docker.home.cz: pnpm deploy:production -- <git-sha>
+production Docker candidate deploy to docker.home.cz: pnpm deploy:production <git-sha>
 Keycloak realm/client provision: scripts/bootstrap-production-keycloak.sh
 Keycloak production preview accounts: scripts/provision-production-preview-accounts.sh
 Keycloak production admin with mandatory MFA enrollment: scripts/provision-production-admin.sh
