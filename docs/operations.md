@@ -5,7 +5,7 @@
 Repozitář obsahuje první funkční zákaznickou verzi: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
 klientský profil, transakční rezervaci/storno a první administrační řez pro
-rozvrh, lekce, klienty a rezervace. Revize `c5fa80d` běží veřejně
+rozvrh, lekce, klienty a rezervace. Revize `fb77662` běží veřejně
 přes DMZ, používá produkční PostgreSQL přes HAProxy a produkční Keycloak.
 Izolovaný starší náhled zůstává oddělený na interních portech a není veřejným
 zdrojem dat.
@@ -95,7 +95,7 @@ za aktivní.
 ### Stav aktivace 2026-08-05
 
 Nginx publikace směruje na produkční stack; aktuálně nasazená aplikační revize
-je `c5fa80d`:
+je `fb77662`:
 
 - `http://studiobalance.zeleznalady.cz` vrací 301 na HTTPS;
 - `https://studiobalance.zeleznalady.cz` vrací web 200;
@@ -111,12 +111,33 @@ S3 a e-mail zůstávají mimo rozsah tohoto preview.
 
 ## Produkční verze
 
-Revize `c5fa80d` byla 2026-08-05 nasazena a ověřena: web 200, API health a
+Revize `fb77662` byla 2026-08-05 nasazena a ověřena: web 200, API health a
 readiness 200 s odpovídající verzí, veřejný rozvrh čte produkční PostgreSQL,
 klientský OIDC používá web klienta a `/admin` má samostatný admin OIDC klient,
 HTTP-only relaci a serverovou kontrolu rolí.
 DMZ přepnutí bylo 2026-08-05 provedeno omezeným sudo instalátorem; instalátor
 uchoval zálohu předchozí konfigurace a validoval konfiguraci Nginxu.
+
+### Ověření produkčního rezervačního toku 2026-08-05
+
+Po hlášení, že se zadavatel po přihlášení nedostane do rezervace, byl
+reprodukován chybný návrat na interní adresu `0.0.0.0:3000`. Příčinou bylo
+sestavování cílové URL z interního originu Next.js requestu za reverse proxy.
+Revize `fb77662` odvozuje všechny klientské i administrační návraty po OIDC a
+odhlášení výhradně z nakonfigurované veřejné URL. Regresní testy ověřují, že se
+interní origin do návratové adresy nedostane.
+
+Po nasazení proběhl přes veřejnou HTTPS adresu skutečný end-to-end test:
+
+- otevření budoucí lekce a vstup do rezervace;
+- přihlášení produkčním klientským účtem a návrat na správnou veřejnou URL;
+- doplnění profilu a souhlas s verzovanými storno podmínkami;
+- vytvoření rezervace a její zobrazení v klientském účtu;
+- včasné storno s výsledkem „Zrušeno včas“ a bez storno poplatku;
+- odhlášení s návratem na veřejnou domovskou stránku.
+
+Po testu nezůstala aktivní rezervace ani storno poplatek. Prohlížeč během toku
+nezaznamenal konzolovou chybu a API readiness hlásilo verzi `fb77662`.
 
 `docker-compose.production.yml` netvoří vlastní databázi. Spustí stejný obraz
 aplikace proti `DATABASE_URL_MIGRATOR` pro migrace a následně proti
