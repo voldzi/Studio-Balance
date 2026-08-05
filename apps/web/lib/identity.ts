@@ -77,6 +77,10 @@ export function isSecureCookie(config = identityConfig()): boolean {
   return new URL(config.publicAppUrl).protocol === "https:";
 }
 
+export function publicRedirectUrl(path: string, mode: IdentityMode = "web"): URL {
+  return new URL(path, identityConfig(mode).publicAppUrl);
+}
+
 function key(secret: string): Uint8Array {
   return new TextEncoder().encode(secret);
 }
