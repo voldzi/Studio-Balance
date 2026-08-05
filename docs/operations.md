@@ -306,6 +306,12 @@ sdílený Keycloak kontejner, čeká na health, aktivuje theme jen v realm
 `studio-balance` a ověří veřejné načtení stylesheetu. Ostatní realmy ani jejich
 login theme nemění.
 
+Theme byl do produkčního realm `studio-balance` aktivován 5. 8. 2026 z revize
+`5c69ad4`. Veřejný login na `login.zeleznalady.cz` byl po nasazení ověřen ve
+výchozím desktopovém rozměru i na šířce 360 px: česká lokalizace, brandovaný
+stylesheet a rozvržení bez vodorovného posuvu. Produkční ověření nezahrnuje
+zadání přihlašovacích údajů ani změnu MFA uživatele.
+
 ## Health a readiness
 
 - `GET /health`: 200, pokud proces běží; nekontroluje vzdálené služby;
