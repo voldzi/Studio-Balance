@@ -296,6 +296,16 @@ oddělenými confidential klienty. Tento hostname dočasně nahrazuje dosud
 plánovaný `auth.studiobalance.zeleznalady.cz`; callbacky a web origins zůstávají
 omezené na `https://studiobalance.zeleznalady.cz`.
 
+Vlastní login theme je verzovaný v
+`infra/keycloak/themes/studio-balance/`. Lokální Keycloak jej připojuje pouze
+pro čtení a importovaný realm používá češtinu jako výchozí jazyk. Produkční
+nasazení provádí interaktivní
+`scripts/deploy-production-keycloak-theme.sh`: heslo master administrátora si
+vyžádá bez echo a neukládá je, předchozí theme zazálohuje, restartuje pouze
+sdílený Keycloak kontejner, čeká na health, aktivuje theme jen v realm
+`studio-balance` a ověří veřejné načtení stylesheetu. Ostatní realmy ani jejich
+login theme nemění.
+
 ## Health a readiness
 
 - `GET /health`: 200, pokud proces běží; nekontroluje vzdálené služby;

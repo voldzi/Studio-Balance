@@ -237,6 +237,22 @@ bezpečnostních kroků. Neověřený klient po registraci dostane jasný dalš�
 po ověření se vrátí k vybranému termínu. Admin MFA vysvětlí nastavení faktoru,
 recovery a chybu bez možnosti bezpečnostní krok přeskočit.
 
+### Keycloak login theme
+
+Realm `studio-balance` používá vlastní responzivní login theme nad
+`keycloak.v2`. Desktop kombinuje schválenou fotografii studia, oficiální logo
+a samostatný světlý formulářový panel. Pod 900 px se fotografie mění na krátký
+horní vizuální pás a formulář zůstává v jediném sloupci bez horizontálního
+scrollu. Téma pokrývá přihlášení, registraci, obnovu hesla, ověření e-mailu,
+chyby a nastavení ověřovací aplikace. Výchozí jazyk je čeština s angličtinou
+jako podporovanou variantou.
+
+Téma nemění OIDC, neobchází Keycloak formuláře a nenačítá externí fonty ani
+skripty. Hesla, OTP, QR secret, recovery kódy a validační chyby nadále zpracovává
+výhradně Keycloak. Všechny prvky mají trvalý label, dotykovou výšku alespoň
+48 px, viditelný fokus, kontrastní chybový stav a respektují
+`prefers-reduced-motion`.
+
 ## Interakce a motion
 
 - motion slouží orientaci a zpětné vazbě, ne dekorativnímu předvádění;

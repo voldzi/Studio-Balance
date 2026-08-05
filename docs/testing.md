@@ -118,6 +118,9 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - současné Safari iOS/macOS, Chrome Android/desktop, Edge, Firefox;
 - keyboard-only, viditelný fokus a dialog focus restore;
 - automated WCAG audit + ruční formuláře/live region/zoom/reduced motion;
+- Keycloak login theme na přihlášení, registraci, obnově hesla, validační chybě
+  a nastavení MFA při 360 px i desktopu; žádný horizontální scroll, useknutý
+  formulář ani únik QR secretu do důkazu;
 - žádný capacity count, waitlist, payment CTA nebo permanentka v DOM,
   accessible name, URL payloadu ani analytics eventu;
 - schválené logo/fotografie, crop a layout bez překryvu/shiftu.

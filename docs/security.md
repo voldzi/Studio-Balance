@@ -139,6 +139,13 @@ chráněného logu. Logovací redakce pokrývá credentials, authorization heade
 cookies, reset tokeny, e-mail provider payloady a volné poznámky. Osobní údaje
 se logují jen jako stabilní interní ID nebo bezpečně maskovaná hodnota.
 
+Keycloak theme dědí systémové `keycloak.v2` šablony a upravuje pouze CSS,
+lokalizované texty a statické schválené obrazové podklady. Neobsahuje vlastní
+JavaScript, formulářové endpointy ani kopii credential logiky. QR kód pro MFA,
+OTP, hesla a recovery kódy se nesmí přidat do repozitáře, screenshotů,
+analytiky ani provozních logů. Theme assety jsou lokální a neodesílají data na
+externí CDN nebo fontovou službu.
+
 ## Soukromí a práva subjektu
 
 - sbírat jen data potřebná pro účet a rezervaci;

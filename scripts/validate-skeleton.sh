@@ -68,6 +68,7 @@ done
 require_dir docs/adr
 require_dir docs/archive
 require_dir infra/keycloak/realm
+require_dir infra/keycloak/themes/studio-balance/login
 require_dir infra/postgres/migrations
 
 strip_compact() {
