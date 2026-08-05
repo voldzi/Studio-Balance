@@ -2,12 +2,12 @@
 
 ## Aktuální stav
 
-Repozitář obsahuje první funkční zákaznické preview: Next.js web,
+Repozitář obsahuje první funkční zákaznickou verzi: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
-klientský profil a transakční rezervaci/storno. Izolovaný starší náhled je
-aktivní přes DMZ. Vedle něj běží ověřený produkční kandidát revize `d46b193`,
-který používá skutečnou produkční DB přes HAProxy a produkční Keycloak, ale
-zatím není směrován z veřejného Nginxu.
+klientský profil a transakční rezervaci/storno. Revize `d46b193` běží veřejně
+přes DMZ, používá produkční PostgreSQL přes HAProxy a produkční Keycloak.
+Izolovaný starší náhled zůstává oddělený na interních portech a není veřejným
+zdrojem dat.
 Směr je schválený v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový
 kontrakt.
 
@@ -25,9 +25,9 @@ Schválená topologie:
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
 Read-only inventura hostitele a readiness omezení jsou v
-`docs/infrastructure-assessment.md`. Disková kapacita byla před náhledovým
-nasazením znovu ověřena; téměř vyčerpaný swap a neuzavřené produkční integrace
-nadále blokují veřejný produkční rollout.
+`docs/infrastructure-assessment.md`. Disková kapacita, readiness aplikace a
+externí HTTPS smoke test byly před publikací ověřeny. S3 a e-mail zůstávají
+vědomě mimo rozsah tohoto zákaznického preview.
 
 Zákaznické preview používá klientem dodané rastrové logo a fotografie. E-mail
 je pro tuto etapu záměrně vypnutý; potvrzení se ukládá pouze jako interní zpráva
@@ -66,7 +66,7 @@ nespouští down migration ani obnovu databáze. Před použitím se musí ově�
 zpětná kompatibilita migrací. Veřejná DMZ, produkční databáze, produkční
 Keycloak a S3 mají vlastní pozdější change plan.
 
-## Publikace preview přes DMZ
+## Publikace přes DMZ
 
 DNS A záznam `studiobalance.zeleznalady.cz` existuje. Nginx publikaci aktivuje
 verzovaný skript z `infra/nginx/install-studiobalance.sh`:
@@ -91,27 +91,29 @@ nahradit `ADMIN_EMAIL` skutečným provozním kontaktem. Dokud správce skript
 nespustí a neprojde externí HTTPS smoke test, nesmí se DMZ publikace označit
 za aktivní.
 
-### Stav aktivace 2026-08-04
+### Stav aktivace 2026-08-05
 
-Nginx publikace je aktivní pro interní preview revizi `e10a7ad`:
+Nginx publikace je aktivní pro produkční revizi `d46b193`:
 
 - `http://studiobalance.zeleznalady.cz` vrací 301 na HTTPS;
 - `https://studiobalance.zeleznalady.cz` vrací web 200;
 - certifikát Let's Encrypt pro tento hostname platí do 2026-11-02 a Certbot
   má aktivní plán obnovy;
 - veřejné `/health` a `/ready` vracejí 404;
-- Nginx proxyuje `/` na web 3280 a `/api/` na API 4280.
+- Nginx proxyuje `/` na web 3281 a `/api/` na API 4281;
+- před přepnutím skript ověřil API readiness s přesnou očekávanou revizí;
+- externí smoke test potvrdil HTTPS web 200 a veřejný rozvrh 200.
 
-Jde stále o vývojový preview s izolovanou databází, nikoli o dokončené
-produkční vydání. Produkční PostgreSQL je připraveno pro kandidátní Compose
-stack; přihlášení Keycloak, S3 a e-mail zůstávají aplikačně nezapojené.
+Jde o zákaznickou první verzi. Produkční PostgreSQL a Keycloak jsou zapojené;
+S3 a e-mail zůstávají mimo rozsah tohoto preview.
 
-## Produkční kandidát (neveřejný)
+## Produkční verze
 
 Revize `d46b193` byla 2026-08-04 nasazena a ověřena: web 200, API health a
 readiness 200 s odpovídající verzí, veřejný rozvrh čte produkční PostgreSQL a
 OIDC login přesměruje na realm `studio-balance` s produkční callback URL.
-DMZ přepnutí zůstává samostatný krok s omezeným sudo přístupem.
+DMZ přepnutí bylo 2026-08-05 provedeno omezeným sudo instalátorem; instalátor
+uchoval zálohu předchozí konfigurace a validoval konfiguraci Nginxu.
 
 `docker-compose.production.yml` netvoří vlastní databázi. Spustí stejný obraz
 aplikace proti `DATABASE_URL_MIGRATOR` pro migrace a následně proti
