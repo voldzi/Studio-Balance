@@ -22,9 +22,10 @@ function cookieValue(cookieHeader: string | undefined, name: string): string | u
 
 export async function verifyStudioSession(
   cookieHeader: string | undefined,
-  sessionSecret: string
+  sessionSecret: string,
+  cookieName = sessionCookieName
 ): Promise<StudioSession | undefined> {
-  const token = cookieValue(cookieHeader, sessionCookieName);
+  const token = cookieValue(cookieHeader, cookieName);
   if (!token) return undefined;
 
   try {

@@ -10,9 +10,10 @@ klient bez zbytečné překážky najde, pochopí a rezervuje vhodný termín.
 Finální vizuál podléhá schválení produkčních assetů. Referenční screenshot není
 hotová obrazovka a nesmí převážit funkční zadání.
 
-První implementovaný webový povrch je responzivní strukturální prototyp úvodu a
-prázdného rozvrhu. Používá výchozí tokeny níže, textový název a abstraktní CSS
-plochu; není finálním brand schválením a záměrně nepoužívá referenční fotografie.
+Implementovaný webový povrch zahrnuje veřejný web, rozvrh, klientský účet,
+rezervaci/storno a první provozní řez administrace. Veřejný web používá dodané
+logo a reálné fotografie pro zákaznické preview; jejich finální schválení
+zůstává součástí akceptace.
 
 ## Uživatelé a jejich úlohy
 

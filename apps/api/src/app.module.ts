@@ -10,9 +10,12 @@ import { ScheduleController } from "./schedule/schedule.controller.js";
 import { ScheduleService } from "./schedule/schedule.service.js";
 import { BookingController } from "./booking/booking.controller.js";
 import { BookingService } from "./booking/booking.service.js";
+import { AdminController } from "./admin/admin.controller.js";
+import { AdminRoleGuard } from "./admin/admin-role.guard.js";
+import { AdminService } from "./admin/admin.service.js";
 
 @Module({
-  controllers: [SystemController, ScheduleController, MeController, BookingController],
-  providers: [RuntimeConfigService, DatabaseService, SessionAuthGuard, ScheduleService, AccountService, BookingService]
+  controllers: [SystemController, ScheduleController, MeController, BookingController, AdminController],
+  providers: [RuntimeConfigService, DatabaseService, SessionAuthGuard, AdminRoleGuard, ScheduleService, AccountService, BookingService, AdminService]
 })
 export class AppModule {}

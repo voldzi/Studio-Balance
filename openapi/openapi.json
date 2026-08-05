@@ -239,6 +239,45 @@
           "409": { "$ref": "#/components/responses/Error" }
         }
       }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "summary": "Read the operational dashboard", "operationId": "getAdminDashboard", "tags": ["Administration"], "security": [{ "adminSession": [] }],
+        "responses": { "200": { "description": "Operational summary.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/v1/admin/class-types": {
+      "get": { "summary": "List all class types for administration", "operationId": "adminListClassTypes", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "Class types.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminClassType" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a class type", "operationId": "adminCreateClassType", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminClassTypeInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/class-types/{id}": {
+      "patch": { "summary": "Update a class type", "operationId": "adminUpdateClassType", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminClassTypeInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/instructors": {
+      "get": { "summary": "List instructors for administration", "operationId": "adminListInstructors", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "Instructors.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminInstructor" } } } } } } } } },
+      "post": { "summary": "Create an instructor", "operationId": "adminCreateInstructor", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminInstructorInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/instructors/{id}": {
+      "patch": { "summary": "Update an instructor", "operationId": "adminUpdateInstructor", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminInstructorInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/sessions": {
+      "get": { "summary": "List sessions including operational fields", "operationId": "adminListSessions", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } }, { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } }], "responses": { "200": { "description": "Admin schedule.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminSession" } } } } } } } } },
+      "post": { "summary": "Create a one-off session", "operationId": "adminCreateSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminSessionInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/sessions/{id}": {
+      "patch": { "summary": "Update a scheduled session", "operationId": "adminUpdateSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminSessionInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "409": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/sessions/{id}/cancel": {
+      "post": { "summary": "Cancel a session and all active bookings without fees", "operationId": "adminCancelSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReasonRequest" } } } }, "responses": { "200": { "description": "Cancelled." }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/users": {
+      "get": { "summary": "List client profiles", "operationId": "adminListUsers", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "search", "in": "query", "schema": { "type": "string", "maxLength": 200 } }], "responses": { "200": { "description": "Clients.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/bookings": {
+      "get": { "summary": "List bookings for operations", "operationId": "adminListBookings", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "sessionId", "in": "query", "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Bookings.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/bookings/{id}/attendance": {
+      "post": { "summary": "Record attendance or no-show", "operationId": "adminRecordAttendance", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminAttendanceRequest" } } } }, "responses": { "200": { "description": "Attendance recorded." }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
     }
   },
   "components": {
@@ -251,6 +290,7 @@
     "parameters": {
       "SessionId": { "name": "sessionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "BookingId": { "name": "bookingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ResourceId": { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "IdempotencyKey": {
         "name": "Idempotency-Key",
         "in": "header",
@@ -426,7 +466,16 @@
         "additionalProperties": false,
         "required": ["lateCancellationConfirmed"],
         "properties": { "lateCancellationConfirmed": { "type": "boolean" } }
-      }
+      },
+      "AdminMutationResponse": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } },
+      "AdminClassTypeInput": { "type": "object", "additionalProperties": false, "required": ["slug","name","tagline","description","durationMinutes","arrivalLeadMinutes","active","sortOrder"], "properties": { "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "name": { "type": "string" }, "tagline": { "type": "string" }, "description": { "type": "string" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 } } },
+      "AdminClassType": { "allOf": [{ "$ref": "#/components/schemas/AdminClassTypeInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },
+      "AdminInstructorInput": { "type": "object", "additionalProperties": false, "required": ["displayName","bio","active","sortOrder"], "properties": { "displayName": { "type": "string" }, "bio": { "type": "string" }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 } } },
+      "AdminInstructor": { "allOf": [{ "$ref": "#/components/schemas/AdminInstructorInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },
+      "AdminSessionInput": { "type": "object", "additionalProperties": false, "required": ["classTypeId","instructorId","startAt","durationMinutes","arrivalLeadMinutes","locationName","locationAddress","priceCents","capacity","equipment","suitability"], "properties": { "classTypeId": { "type": "string", "format": "uuid" }, "instructorId": { "type": "string", "format": "uuid" }, "startAt": { "type": "string", "format": "date-time" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "locationName": { "type": "string" }, "locationAddress": { "type": "string" }, "priceCents": { "type": "integer", "minimum": 0 }, "capacity": { "type": "integer", "minimum": 1, "maximum": 500 }, "equipment": { "type": "string" }, "suitability": { "type": "string" } } },
+      "AdminSession": { "type": "object", "additionalProperties": true, "required": ["id","classTypeId","className","instructorId","instructorName","startAt","endAt","capacity","bookingCount","status"], "properties": { "id": { "type": "string", "format": "uuid" }, "classTypeId": { "type": "string", "format": "uuid" }, "className": { "type": "string" }, "instructorId": { "type": "string", "format": "uuid" }, "instructorName": { "type": "string" }, "startAt": { "type": "string", "format": "date-time" }, "endAt": { "type": "string", "format": "date-time" }, "capacity": { "type": "integer" }, "bookingCount": { "type": "integer" }, "status": { "type": "string", "enum": ["scheduled","cancelled","completed"] } } },
+      "AdminReasonRequest": { "type": "object", "additionalProperties": false, "required": ["reason"], "properties": { "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } },
+      "AdminAttendanceRequest": { "type": "object", "additionalProperties": false, "required": ["status","reason"], "properties": { "status": { "type": "string", "enum": ["attended","no_show"] }, "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } }
     },
     "securitySchemes": {
       "studioSession": {
@@ -434,13 +483,15 @@
         "in": "cookie",
         "name": "sb_session",
         "description": "Short-lived HTTP-only Studio Balance BFF session."
-      }
+      },
+      "adminSession": { "type": "apiKey", "in": "cookie", "name": "sb_admin_session", "description": "Short-lived HTTP-only admin BFF session requiring an admin realm role." }
     }
   },
   "tags": [
     { "name": "System", "description": "Liveness and readiness." },
     { "name": "Schedule", "description": "Public class catalogue and schedule." },
     { "name": "Account", "description": "Authenticated client profile." },
-    { "name": "Booking", "description": "Transactional client booking and cancellation." }
+    { "name": "Booking", "description": "Transactional client booking and cancellation." },
+    { "name": "Administration", "description": "Role-protected operational administration with audit logging." }
   ]
 }

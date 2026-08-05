@@ -4,6 +4,8 @@ import { SignJWT, createRemoteJWKSet, jwtVerify } from "jose";
 
 const attemptCookieName = "sb_oidc_attempt";
 export const sessionCookieName = "sb_session";
+const adminAttemptCookieName = "sb_admin_oidc_attempt";
+const adminSessionCookieName = "sb_admin_session";
 const sessionIssuer = "studio-balance-web";
 const sessionAudience = "studio-balance-api";
 
@@ -29,12 +31,14 @@ export type WebSession = {
 };
 
 type IdentityConfig = {
+  callbackPath: string;
   clientId: string;
   clientSecret: string;
   issuer: string;
   publicAppUrl: string;
   sessionSecret: string;
 };
+export type IdentityMode = "web" | "admin";
 
 function configuredValue(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
@@ -42,7 +46,7 @@ function configuredValue(name: string, fallback?: string): string {
   return value;
 }
 
-export function identityConfig(): IdentityConfig {
+export function identityConfig(mode: IdentityMode = "web"): IdentityConfig {
   const publicAppUrl = configuredValue("PUBLIC_APP_URL", "http://localhost:3000");
   const sessionSecret = configuredValue("SESSION_SECRET", "local-development-session-secret-change-before-sharing");
   const issuer = configuredValue("OIDC_ISSUER_URL", "http://localhost:8081/realms/studio-balance").replace(/\/$/, "");
@@ -56,16 +60,17 @@ export function identityConfig(): IdentityConfig {
   }
 
   return {
+    callbackPath: mode === "admin" ? "/admin/auth/callback" : "/auth/callback",
     publicAppUrl: publicAppUrl.replace(/\/$/, ""),
     issuer,
     sessionSecret,
-    clientId: configuredValue("OIDC_WEB_CLIENT_ID", "studiobalance-web"),
-    clientSecret: configuredValue("OIDC_WEB_CLIENT_SECRET", "local-web-client-only")
+    clientId: mode === "admin" ? configuredValue("OIDC_ADMIN_CLIENT_ID", "studiobalance-admin") : configuredValue("OIDC_WEB_CLIENT_ID", "studiobalance-web"),
+    clientSecret: mode === "admin" ? configuredValue("OIDC_ADMIN_CLIENT_SECRET", "local-admin-client-only") : configuredValue("OIDC_WEB_CLIENT_SECRET", "local-web-client-only")
   };
 }
 
 export function callbackUrl(config = identityConfig()): string {
-  return `${config.publicAppUrl}/auth/callback`;
+  return `${config.publicAppUrl}${config.callbackPath}`;
 }
 
 export function isSecureCookie(config = identityConfig()): boolean {
@@ -84,8 +89,8 @@ export function safeReturnTo(value: string | null | undefined): string {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/muj-ucet";
 }
 
-export async function createLoginAttempt(returnTo: string): Promise<{ authorizationUrl: string; cookieValue: string }> {
-  const config = identityConfig();
+export async function createLoginAttempt(returnTo: string, mode: IdentityMode = "web"): Promise<{ authorizationUrl: string; cookieValue: string }> {
+  const config = identityConfig(mode);
   const discovery = await discover(config);
   const state = base64Url(randomBytes(32));
   const nonce = base64Url(randomBytes(32));
@@ -116,8 +121,8 @@ export async function finishLogin(input: {
   code: string;
   cookieValue: string | undefined;
   state: string | null;
-}): Promise<{ returnTo: string; session: string }> {
-  const config = identityConfig();
+}, mode: IdentityMode = "web"): Promise<{ returnTo: string; roles: WebSession["roles"]; session: string }> {
+  const config = identityConfig(mode);
   const attempt = await readAttempt(input.cookieValue, config);
   if (!attempt || !input.state || attempt.state !== input.state) throw new Error("Invalid OIDC login state");
 
@@ -166,7 +171,7 @@ export async function finishLogin(input: {
     )
   };
 
-  return { returnTo: attempt.returnTo, session: await signSession(session, config) };
+  return { returnTo: attempt.returnTo, roles: session.roles, session: await signSession(session, config) };
 }
 
 export async function readWebSession(cookieValue: string | undefined): Promise<WebSession | undefined> {
@@ -201,6 +206,10 @@ export async function readWebSession(cookieValue: string | undefined): Promise<W
 export const identityCookies = {
   attempt: attemptCookieName,
   session: sessionCookieName
+};
+export const adminIdentityCookies = {
+  attempt: adminAttemptCookieName,
+  session: adminSessionCookieName
 };
 
 async function discover(config: IdentityConfig): Promise<OidcDiscovery> {

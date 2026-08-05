@@ -22,7 +22,7 @@ if [[ "$(stat -c '%a' "$env_file")" != "600" ]]; then
   exit 1
 fi
 
-for variable in DATABASE_URL DATABASE_URL_MIGRATOR PUBLIC_APP_URL OIDC_ISSUER_URL OIDC_WEB_CLIENT_ID OIDC_WEB_CLIENT_SECRET SESSION_SECRET; do
+for variable in DATABASE_URL DATABASE_URL_MIGRATOR PUBLIC_APP_URL OIDC_ISSUER_URL OIDC_WEB_CLIENT_ID OIDC_WEB_CLIENT_SECRET OIDC_ADMIN_CLIENT_ID OIDC_ADMIN_CLIENT_SECRET SESSION_SECRET; do
   if ! grep -q "^${variable}=" "$env_file"; then
     echo "Production environment file is missing ${variable}." >&2
     exit 1

@@ -4,7 +4,8 @@
 
 Repozitář obsahuje první funkční zákaznickou verzi: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
-klientský profil a transakční rezervaci/storno. Revize `d46b193` běží veřejně
+klientský profil, transakční rezervaci/storno a první administrační řez pro
+rozvrh, lekce, klienty a rezervace. Revize `d46b193` běží veřejně
 přes DMZ, používá produkční PostgreSQL přes HAProxy a produkční Keycloak.
 Izolovaný starší náhled zůstává oddělený na interních portech a není veřejným
 zdrojem dat.
@@ -342,6 +343,7 @@ isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
 production Docker candidate deploy to docker.home.cz: pnpm deploy:production -- <git-sha>
 Keycloak realm/client provision: scripts/bootstrap-production-keycloak.sh
 Keycloak production preview accounts: scripts/provision-production-preview-accounts.sh
+Keycloak production admin with mandatory MFA enrollment: scripts/provision-production-admin.sh
 Nginx preview publish through dmz.home.cz: infra/nginx/install-studiobalance.sh
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD

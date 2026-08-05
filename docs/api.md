@@ -196,7 +196,7 @@ Late cancel request musí obsahovat potvrzení důsledku. Response uvádí stav
 rezervace, zda fee vznikl, jeho částku a že se řeší ve studiu. Online payment
 URL nebo payment token jsou zakázané.
 
-## Administrace – návrh
+## Administrace
 
 | Oblast | Doporučené cesty |
 | --- | --- |
@@ -214,6 +214,13 @@ URL nebo payment token jsou zakázané.
 | obsah | zdrojově specifické CRUD cesty pod `/api/v1/admin/content/...` |
 | média | bezpečný upload/finalize model pod `/api/v1/admin/media` |
 | audit | read-only `GET /api/v1/admin/audit-log` |
+
+První provozní řez implementuje dashboard, typy lekcí, instruktory, termíny,
+zrušení termínu, seznam klientů, seznam rezervací a evidenci účasti/neúčasti.
+Všechny cesty používají samostatnou HTTP-only admin relaci, vyžadují roli
+`admin` nebo `super_admin` a každá změna zapisuje auditní záznam. Série,
+ruční rezervace, poplatky, obsah, média a čtení auditu zůstávají následujícím
+řezem; tabulka výše je cílový kontrakt.
 
 Generické wildcard endpointy se v OpenAPI nepoužívají; každý konkrétní resource
 dostane vlastní operaci, schema, oprávnění a auditní pravidlo.
