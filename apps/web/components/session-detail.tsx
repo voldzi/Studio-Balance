@@ -28,13 +28,14 @@ export function SessionDetail({ sessionId }: { sessionId: string }) {
           fill
           priority
           sizes="(max-width: 760px) 100vw, 55vw"
-          src="/images/studio-balance/studio-detail.jpg"
+          src="/images/studio-balance/studio-gallery.jpeg"
         />
       </div>
       <div className="session-detail-copy">
         <p className="eyebrow">{formatStudioDate(session.startAt, { weekday: "long", day: "numeric", month: "long" })}</p>
         <h1>{session.classType.name}</h1>
         <p className="detail-lead">{session.classType.tagline}</p>
+        <Link className="text-link" href={`/lekce/${session.classType.slug}`}>Detail typu lekce</Link>
         <dl className="detail-facts">
           <div><dt>Čas</dt><dd>{formatStudioDate(session.startAt, { hour: "2-digit", minute: "2-digit" })}–{formatStudioDate(session.endAt, { hour: "2-digit", minute: "2-digit" })}</dd></div>
           <div><dt>Příchod</dt><dd>Prosíme v {formatStudioDate(session.arrivalAt, { hour: "2-digit", minute: "2-digit" })}</dd></div>

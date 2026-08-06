@@ -2,15 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SiteHeader } from "../components/site-header";
-
-const lessons = [
-  { name: "Barre", tagline: "Tvarování, postava a elegance", image: "studio-detail.jpg", position: "50% 48%" },
-  { name: "TRX", tagline: "Funkční síla a kontrola", image: "studio-hero.jpg", position: "12% 48%" },
-  { name: "Balance Flow", tagline: "Stabilita, mobilita a plynulý pohyb", image: "studio-detail.jpg", position: "78% 55%" },
-  { name: "Jumping", tagline: "Zábava, kardio a energie", image: "studio-hero.jpg", position: "90% 40%" },
-  { name: "Power jóga", tagline: "Síla, dech a vnitřní klid", image: "studio-detail.jpg", position: "25% 72%" },
-  { name: "Kruhový trénink", tagline: "Komplexní trénink celého těla", image: "studio-hero.jpg", position: "55% 65%" }
-];
+import { LessonCatalog } from "../components/lesson-catalog";
 
 export default function HomePage() {
   return (
@@ -47,7 +39,7 @@ export default function HomePage() {
               Studio Balance je prostor, kde pečujeme o tělo i mysl. V jemné atmosféře,
               s osobním přístupem a důrazem na kvalitu pohybu.
             </p>
-            <Link className="text-link" href="/rozvrh">Najít svoji lekci</Link>
+            <Link className="text-link" href="/o-studiu">Více o studiu</Link>
           </div>
           <div className="story-image-wrap">
             <Image
@@ -66,28 +58,9 @@ export default function HomePage() {
               <p className="eyebrow">Lekce</p>
               <h2 id="lessons-title">Vyberte si svůj pohyb</h2>
             </div>
-            <Link className="text-link" href="/rozvrh">Celý rozvrh</Link>
+            <Link className="text-link" href="/lekce">Všechny lekce</Link>
           </div>
-          <div className="lesson-grid">
-            {lessons.map((lesson) => (
-              <article className="lesson-card" key={lesson.name}>
-                <div className="lesson-image-wrap">
-                  <Image
-                    alt="Interiér Studia Balance"
-                    className="lesson-image"
-                    fill
-                    sizes="(max-width: 620px) 100vw, (max-width: 960px) 50vw, 33vw"
-                    src={`/images/studio-balance/${lesson.image}`}
-                    style={{ objectPosition: lesson.position }}
-                  />
-                </div>
-                <div className="lesson-copy">
-                  <h3>{lesson.name}</h3>
-                  <p>{lesson.tagline}</p>
-                </div>
-              </article>
-            ))}
-          </div>
+          <LessonCatalog compact />
         </section>
 
         <section className="flow-banner" aria-labelledby="flow-title">
@@ -103,7 +76,7 @@ export default function HomePage() {
             <p className="eyebrow eyebrow-light">Balance Flow Method</p>
             <h2 id="flow-title">Plynulost, stabilita a rovnováha.</h2>
             <p>Autorská metoda pro vědomý pohyb bez tlaku na výkon.</p>
-            <Link className="button button-ghost" href="/rozvrh">Vybrat termín</Link>
+            <Link className="button button-ghost" href="/balance-flow">Poznat Balance Flow</Link>
           </div>
         </section>
       </main>
@@ -116,7 +89,7 @@ export default function HomePage() {
         <div>
           <h2>Kontakt</h2>
           <p>Ruská 10, 792 01 Bruntál</p>
-          <p>732 192 120</p>
+          <Link href="/kontakt">Kontaktní informace</Link>
         </div>
         <div>
           <h2>Rezervace</h2>

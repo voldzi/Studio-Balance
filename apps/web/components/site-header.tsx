@@ -14,15 +14,22 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
         />
       </Link>
       <nav aria-label="Hlavní navigace">
-        <Link href="/#studio">O studiu</Link>
-        <Link href="/#lekce">Lekce</Link>
+        <Link href="/o-studiu">O studiu</Link>
+        <Link href="/lekce">Lekce</Link>
         <Link href="/rozvrh">Rozvrh</Link>
-        <Link href="/#kontakt">Kontakt</Link>
+        <Link href="/galerie">Galerie</Link>
+        <Link href="/kontakt">Kontakt</Link>
       </nav>
       <div className="header-actions">
         <Link className="header-account" href="/muj-ucet">Můj účet</Link>
         <Link className="button button-small" href="/rozvrh">Rezervovat lekci</Link>
       </div>
+      <details className="mobile-nav">
+        <summary>Menu</summary>
+        <nav aria-label="Mobilní navigace">
+          <Link href="/o-studiu">O studiu</Link><Link href="/lekce">Lekce</Link><Link href="/rozvrh">Rozvrh</Link><Link href="/balance-flow">Balance Flow</Link><Link href="/galerie">Galerie</Link><Link href="/cenik">Ceník</Link><Link href="/kontakt">Kontakt</Link>
+        </nav>
+      </details>
     </header>
   );
 }

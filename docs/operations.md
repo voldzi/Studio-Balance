@@ -238,6 +238,15 @@ databázové TLS/auth, Docker deployment, registry, Nginx upstream/TLS
 konfigurace, poskytovatelé, ceny a limity. Žádná
 platební služba není potřeba.
 
+Schválené obrazové podklady aktuálního preview jsou součástí webového balíčku
+na cestě `/images/studio-balance/`; nejsou vydávány za finální originální
+fotografie studia. Po připravení vyhrazeného S3 bucketu se nahradí řízeným
+importem a adresy médií se přepnou v administraci.
+
+E-mailové úlohy vznikají v tabulce `notification_outbox`, ale bez schváleného
+poskytovatele, odesílací adresy a retenční politiky nejsou odesílány ani
+označovány jako odeslané. Klientská potvrzení jsou mezitím dostupná v účtu.
+
 ## Deployment kontrakt
 
 Budoucí pipeline musí:

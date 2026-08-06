@@ -6,12 +6,23 @@ import { DatabaseService } from "../database/database.service.js";
 
 type ClassTypeRow = {
   arrival_lead_minutes: number;
+  audience: string;
+  benefits: string;
   description: string;
+  difficulty: number;
   duration_minutes: number;
+  hero_image_alt: string;
+  hero_image_path: string;
   id: string;
   name: string;
+  practical_notice: string;
+  seo_description: string;
+  seo_title: string;
   slug: string;
+  suitable_for_beginners: boolean;
   tagline: string;
+  default_equipment: string;
+  what_to_bring: string;
 };
 
 export type PublicSession = {
@@ -87,12 +98,34 @@ export class ScheduleService {
 
   async listClassTypes(): Promise<{ items: ReturnType<typeof mapClassType>[] }> {
     const result = await this.database.query<ClassTypeRow>(`
-      SELECT id, slug, name, tagline, description, duration_minutes, arrival_lead_minutes
+      SELECT id, slug, name, tagline, description, duration_minutes, arrival_lead_minutes,
+        difficulty, benefits, audience, suitable_for_beginners, default_equipment,
+        what_to_bring, practical_notice, hero_image_path, hero_image_alt, seo_title, seo_description
       FROM class_types
       WHERE active = true
       ORDER BY sort_order, name
     `);
     return { items: result.rows.map(mapClassType) };
+  }
+
+  async getClassType(slug: string): Promise<(ReturnType<typeof mapClassType> & { upcomingSessions: PublicSession[] }) | undefined> {
+    const classTypes = await this.database.query<ClassTypeRow>(`
+      SELECT id, slug, name, tagline, description, duration_minutes, arrival_lead_minutes,
+        difficulty, benefits, audience, suitable_for_beginners, default_equipment,
+        what_to_bring, practical_notice, hero_image_path, hero_image_alt, seo_title, seo_description
+      FROM class_types
+      WHERE slug = $1 AND active = true
+    `, [slug]);
+    const classType = classTypes.rows[0];
+    if (!classType) return undefined;
+    const sessions = await this.database.query<SessionRow>(`${sessionSelect}
+      WHERE ct.id = $1 AND s.start_at >= now()
+      GROUP BY s.id, ct.id, i.id
+      ORDER BY s.start_at
+      LIMIT 12
+    `, [classType.id]);
+    const now = new Date();
+    return { ...mapClassType(classType), upcomingSessions: sessions.rows.map((row) => mapSession(row, now)) };
   }
 
   async listSessions(from: Date, to: Date): Promise<{ items: PublicSession[]; timezone: "Europe/Prague" }> {
@@ -122,7 +155,17 @@ function mapClassType(row: ClassTypeRow) {
     tagline: row.tagline,
     description: row.description,
     durationMinutes: row.duration_minutes,
-    arrivalLeadMinutes: row.arrival_lead_minutes
+    arrivalLeadMinutes: row.arrival_lead_minutes,
+    difficulty: row.difficulty,
+    benefits: row.benefits,
+    audience: row.audience,
+    suitableForBeginners: row.suitable_for_beginners,
+    defaultEquipment: row.default_equipment,
+    whatToBring: row.what_to_bring,
+    practicalNotice: row.practical_notice,
+    heroImage: row.hero_image_path ? { src: row.hero_image_path, alt: row.hero_image_alt } : null,
+    seoTitle: row.seo_title,
+    seoDescription: row.seo_description
   };
 }
 

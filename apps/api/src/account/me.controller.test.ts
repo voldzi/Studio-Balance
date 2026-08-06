@@ -45,6 +45,16 @@ describe("GET /api/v1/me", () => {
               last_name: null,
               phone: null,
               terms_version: null
+            }),
+            listNotifications: async () => ({
+              items: [{
+                id: "95dfe8fb-87db-4afb-8903-88edcf8b07c1",
+                kind: "booking_confirmed",
+                title: "Rezervace je potvrzená",
+                body: "Barre · 8. 8. 2026 17:00",
+                readAt: null,
+                createdAt: "2026-08-06T10:00:00.000Z"
+              }]
             })
           }
         }
@@ -100,6 +110,27 @@ describe("GET /api/v1/me", () => {
     expect(response.statusCode).toBe(401);
     expect(response.json()).toMatchObject({
       error: { code: "AUTHENTICATION_REQUIRED", message: "Pro pokračování se prosím přihlaste." }
+    });
+  });
+
+  it("shows recent booking messages only to the authenticated account", async () => {
+    const current = await createApplication();
+    const response = await current.inject({
+      method: "GET",
+      url: "/api/v1/me/notifications",
+      headers: { cookie: `sb_session=${await session()}` }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      items: [{
+        id: "95dfe8fb-87db-4afb-8903-88edcf8b07c1",
+        kind: "booking_confirmed",
+        title: "Rezervace je potvrzená",
+        body: "Barre · 8. 8. 2026 17:00",
+        readAt: null,
+        createdAt: "2026-08-06T10:00:00.000Z"
+      }]
     });
   });
 });

@@ -54,6 +54,12 @@ proto používá dodaný raster loga a samostatné fotografie studia. Toto rozho
 neprohlašuje rastry za finální produkční assety a nemění požadavek na jednotlivé
 originální fotografie lekcí a průhledné logo před finálním vydáním.
 
+Dne 2026-08-06 zadavatel výslovně potvrdil použití šesti dodaných plakátových
+vizuálů lekcí a vizualizace sálu v aktuální aplikaci. Jsou proto zařazené jako
+preview media v `apps/web/public/images/studio-balance/`; QR kódy, tištěné URL
+a text uvnitř obrazu se nepřebírají jako funkční data. Finální produkční média
+zůstávají samostatným schvalovacím a S3 workflow.
+
 ## Analyzované textové podklady
 
 ### Závazný Markdown

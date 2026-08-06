@@ -49,9 +49,13 @@ a obchodní pravidla.
 | WEB-006 | P1 | domovská stránka ukazuje několik nejbližších termínů a 3–6 schválených recenzí |
 | WEB-007 | P1 | galerie má lightbox, ovládání klávesnicí, Escape, alt text a optimalizované obrazy |
 | WEB-008 | P1 | SEO: title, description, canonical, sitemap, robots, Open Graph a vhodná strukturovaná data |
+| WEB-009 | P0 | každý aktivní typ lekce má veřejný detail se schválenou fotografií, náročností 1–5, vhodností, přínosy, pomůckami, praktickou informací a nejbližšími termíny bez počtu volných míst |
+| WEB-010 | P0 | klientský účet ukazuje potvrzení rezervace a důležité změny termínu jako zprávy v účtu |
 
 Počáteční typy lekcí jsou Barre, TRX, Balance Flow, Jumping, Kruhový trénink a
 Power jóga. Jde o data spravovaná administrací, ne enum nebo pevné karty v kódu.
+Administrace spravuje také náročnost, publikum, přínosy, praktické informace,
+SEO a schválenou cestu fotografie typu lekce.
 
 ## Účet a autentizace
 
@@ -125,15 +129,16 @@ v detailu, potvrzení, e-mailu, klientském účtu a kalendáři.
 | --- | --- | --- |
 | NTF-001 | P0 | povinné kanály jsou e-mail a stav v klientském účtu; SMS a mobilní push jsou mimo první verzi |
 | NTF-002 | P0 | potvrzení, storno, změna a zrušení jsou navázány na správnou rezervaci a doručují se idempotentně |
-| NTF-003 | P0 | výchozí připomenutí se plánují 24 h, 2 h a 30 min před začátkem |
+| NTF-003 | P0 | výchozí připomenutí se plánují 24 h, 2 h a 30 min před začátkem a ukládají se do trvalého provider-agnostického outboxu |
 | NTF-004 | P0 | změna nebo zrušení termínu se vždy odešle e-mailem a zobrazí v klientském účtu |
 | NTF-005 | P0 | změna nebo zrušení rezervace zneplatní neaktuální naplánované zprávy |
 | NTF-006 | P1 | odkaz v e-mailu otevře po bezpečném přihlášení konkrétní rezervaci nebo novinku |
 | NTF-007 | P1 | marketingová komunikace má samostatný odvolatelný souhlas a neblokuje službu |
 
 Zákaznické preview e-mailového poskytovatele neaktivuje a žádné skutečné
-zprávy neodesílá. Tento preview režim nemění produkční požadavky NTF-001 až
-NTF-005; před produkčním vydáním se musí doplnit a ověřit doručování.
+zprávy neodesílá. Potvrzení rezervace a změny jsou dostupné v klientském účtu.
+Tento preview režim nemění produkční požadavky NTF-001 až NTF-005; před ostrým
+provozem se musí doplnit a ověřit doručování.
 
 ## Web-only rozsah
 

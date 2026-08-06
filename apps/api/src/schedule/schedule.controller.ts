@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ScheduleService } from "./schedule.service.js";
 
 const uuid = z.string().uuid();
+const slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 @Controller("api/v1")
 export class ScheduleController {
@@ -12,6 +13,16 @@ export class ScheduleController {
   @Get("class-types")
   listClassTypes() {
     return this.schedule.listClassTypes();
+  }
+
+  @Get("class-types/:slug")
+  async getClassType(@Param("slug") slugValue: string) {
+    if (!slug.safeParse(slugValue).success) {
+      throw new HttpException({ code: "RESOURCE_NOT_FOUND", message: "Lekce nebyla nalezena." }, HttpStatus.NOT_FOUND);
+    }
+    const classType = await this.schedule.getClassType(slugValue);
+    if (!classType) throw new HttpException({ code: "RESOURCE_NOT_FOUND", message: "Lekce nebyla nalezena." }, HttpStatus.NOT_FOUND);
+    return classType;
   }
 
   @Get("sessions")

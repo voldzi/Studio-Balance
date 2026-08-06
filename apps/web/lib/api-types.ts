@@ -16,6 +16,29 @@ export type PublicSession = {
   timezone: "Europe/Prague";
 };
 
+export type ClassType = {
+  active?: boolean;
+  arrivalLeadMinutes: number;
+  audience: string;
+  benefits: string;
+  defaultEquipment: string;
+  description: string;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  durationMinutes: number;
+  heroImage: { alt: string; src: string } | null;
+  id: string;
+  name: string;
+  practicalNotice: string;
+  seoDescription: string;
+  seoTitle: string;
+  slug: string;
+  suitableForBeginners: boolean;
+  tagline: string;
+  whatToBring: string;
+};
+
+export type ClassTypeDetail = ClassType & { upcomingSessions: PublicSession[] };
+
 export type Profile = {
   email: string;
   emailVerified: boolean;
@@ -26,6 +49,15 @@ export type Profile = {
   roles: ("client" | "admin" | "super_admin")[];
   subject: string;
   termsVersion: string | null;
+};
+
+export type AccountNotification = {
+  body: string;
+  createdAt: string;
+  id: string;
+  kind: "booking_confirmed" | "booking_cancelled" | "lesson_reminder" | "session_changed" | "session_cancelled";
+  readAt: string | null;
+  title: string;
 };
 
 export type Booking = {

@@ -23,6 +23,18 @@ zůstávají beze změny jako auditní stopa.
 | CD-010 | Produkční DB bootstrap dočasně použije přes HAProxy `sslmode=disable`; Keycloak realm použije stávající hostname `login.zeleznalady.cz` | HAProxy neposkytuje TLS a Node PostgreSQL ovladač neumí bezpečný TLS fallback na prosté spojení. Výjimka je omezená na interní trasu a je dočasná do zprovoznění `verify-full` s vlastním CA. Vyhrazený realm a přesné client callbacky jsou zachované |
 | CD-011 | Schvalují se všechna doporučená rezervační pravidla z dotazníku | přesně 24 h je včasné storno; po významné změně lze termínu nastavit bezplatné storno okno; podmínky se přijímají při první rezervaci a nové verzi; neuhrazený poplatek neblokuje rezervaci; administrátor eviduje úhradu hotově/terminálem a může pozvat nového klienta s propojením po ověření e-mailu |
 | CD-012 | Zákaznické preview má použít dodané logo, vizuální návrh a fotografie; e-mailové odesílání se v preview nezapíná | implementace vizuálně vychází z návrhu z 4. 8. 2026 a používá dodané rastry pouze pro preview; provozní stav se zobrazí v účtu, ale skutečné e-maily zůstávají podmínkou produkčního vydání |
+| CD-013 | Zadavatel 2026-08-06 znovu potvrdil web-only rozsah, šest úrovní náročnosti a použití dodaných vizuálů v aplikaci | náročnost je součástí typu lekce, nikoli uživatelské hodnocení; dodané rastry jsou schválené preview assety; před finálním produkčním vydáním se nahradí originálními médii ve vyhrazeném S3 |
+
+## Schválené náročnosti lekcí
+
+| Lekce | Náročnost |
+| --- | ---: |
+| Barre | 3/5 |
+| TRX | 4/5 |
+| Balance Flow | 2/5 |
+| Jumping | 5/5 |
+| Power jóga | 3/5 |
+| Kruhový trénink | 4/5 |
 
 ## Schválená identita
 

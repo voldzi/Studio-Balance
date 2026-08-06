@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/class-types/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get public class type detail and upcoming sessions */
+        get: operations["getClassType"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -105,6 +122,23 @@ export interface paths {
         head?: never;
         /** Update the authenticated client profile */
         patch: operations["updateCurrentAccount"];
+        trace?: never;
+    };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated client's account notifications */
+        get: operations["listMyNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/bookings": {
@@ -403,6 +437,23 @@ export interface components {
             description: string;
             durationMinutes: number;
             arrivalLeadMinutes: number;
+            difficulty: number;
+            benefits: string;
+            audience: string;
+            suitableForBeginners: boolean;
+            defaultEquipment: string;
+            whatToBring: string;
+            practicalNotice: string;
+            heroImage: components["schemas"]["MediaImage"] | null;
+            seoTitle: string;
+            seoDescription: string;
+        };
+        MediaImage: {
+            src: string;
+            alt: string;
+        };
+        ClassTypeDetail: components["schemas"]["ClassType"] & {
+            upcomingSessions: components["schemas"]["PublicSession"][];
         };
         InstructorSummary: {
             /** Format: uuid */
@@ -445,6 +496,18 @@ export interface components {
             phone: string | null;
             termsVersion: string | null;
             profileComplete: boolean;
+        };
+        AccountNotification: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "booking_confirmed" | "booking_cancelled" | "lesson_reminder" | "session_changed" | "session_cancelled";
+            title: string;
+            body: string;
+            /** Format: date-time */
+            readAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
         };
         UpdateMeRequest: {
             firstName: string;
@@ -496,6 +559,17 @@ export interface components {
             arrivalLeadMinutes: number;
             active: boolean;
             sortOrder: number;
+            difficulty: number;
+            benefits: string;
+            audience: string;
+            suitableForBeginners: boolean;
+            defaultEquipment: string;
+            whatToBring: string;
+            practicalNotice: string;
+            heroImagePath: string;
+            heroImageAlt: string;
+            seoTitle: string;
+            seoDescription: string;
         };
         AdminClassType: components["schemas"]["AdminClassTypeInput"] & {
             /** Format: uuid */
@@ -642,6 +716,29 @@ export interface operations {
             };
         };
     };
+    getClassType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Active class type and its upcoming sessions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassTypeDetail"];
+                };
+            };
+            404: components["responses"]["Error"];
+        };
+    };
     listSessions: {
         parameters: {
             query?: {
@@ -737,6 +834,29 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+        };
+    };
+    listMyNotifications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recent in-account booking and schedule messages. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AccountNotification"][];
+                    };
+                };
+            };
             401: components["responses"]["Error"];
         };
     };

@@ -124,6 +124,11 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - žádný capacity count, waitlist, payment CTA nebo permanentka v DOM,
   accessible name, URL payloadu ani analytics eventu;
 - schválené logo/fotografie, crop a layout bez překryvu/shiftu.
+- detail každé lekce na 360 px i desktopu: schválená fotografie nebo bezpečný
+  fallback, sémantická náročnost 1–5 hvězdiček, praktické informace a odkaz na
+  nejbližší termín;
+- klientský účet po rezervaci ukáže potvrzení jen přihlášenému klientovi;
+  nepřihlášený požadavek na zprávy vrací standardní `401` chybu.
 
 ## Oznámení
 
@@ -135,6 +140,10 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - permanent e-mail failure důležité změny vyvolá alert/ruční fallback;
 - odkaz z e-mailu otevře správný objekt po loginu i bez aktivní session;
 - marketing preference neblokuje provozní komunikaci a naopak.
+- rezervace vytvoří právě jedno potvrzení a pouze budoucí výchozí připomínky v
+  outboxu; při stornu se čekající úlohy označí jako zrušené;
+- bez nakonfigurovaného e-mailového poskytovatele nesmí žádná úloha přejít do
+  stavu `sent`.
 
 ## Admin, CMS a média
 

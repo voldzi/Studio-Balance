@@ -68,6 +68,19 @@
         }
       }
     },
+    "/api/v1/class-types/{slug}": {
+      "get": {
+        "summary": "Get public class type detail and upcoming sessions",
+        "operationId": "getClassType",
+        "tags": ["Schedule"],
+        "security": [],
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } }],
+        "responses": {
+          "200": { "description": "Active class type and its upcoming sessions.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClassTypeDetail" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/api/v1/sessions": {
       "get": {
         "summary": "List public class sessions",
@@ -144,6 +157,30 @@
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } }
           },
           "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "summary": "List the authenticated client's account notifications",
+        "operationId": "listMyNotifications",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": {
+            "description": "Recent in-account booking and schedule messages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AccountNotification" } } }
+                }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Error" }
         }
       }
@@ -353,16 +390,28 @@
           {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "description", "durationMinutes", "arrivalLeadMinutes"],
+            "required": ["id", "description", "durationMinutes", "arrivalLeadMinutes", "difficulty", "benefits", "audience", "suitableForBeginners", "defaultEquipment", "whatToBring", "practicalNotice", "heroImage", "seoTitle", "seoDescription"],
             "properties": {
               "id": { "type": "string", "format": "uuid" },
               "description": { "type": "string" },
               "durationMinutes": { "type": "integer" },
-              "arrivalLeadMinutes": { "type": "integer" }
+              "arrivalLeadMinutes": { "type": "integer" },
+              "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "benefits": { "type": "string" },
+              "audience": { "type": "string" },
+              "suitableForBeginners": { "type": "boolean" },
+              "defaultEquipment": { "type": "string" },
+              "whatToBring": { "type": "string" },
+              "practicalNotice": { "type": "string" },
+              "heroImage": { "oneOf": [{ "$ref": "#/components/schemas/MediaImage" }, { "type": "null" }] },
+              "seoTitle": { "type": "string" },
+              "seoDescription": { "type": "string" }
             }
           }
         ]
       },
+      "MediaImage": { "type": "object", "additionalProperties": false, "required": ["src", "alt"], "properties": { "src": { "type": "string" }, "alt": { "type": "string" } } },
+      "ClassTypeDetail": { "allOf": [{ "$ref": "#/components/schemas/ClassType" }, { "type": "object", "additionalProperties": false, "required": ["upcomingSessions"], "properties": { "upcomingSessions": { "type": "array", "items": { "$ref": "#/components/schemas/PublicSession" } } } }] },
       "InstructorSummary": {
         "type": "object",
         "additionalProperties": false,
@@ -417,6 +466,19 @@
           "profileComplete": { "type": "boolean" }
         }
       },
+      "AccountNotification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "title", "body", "readAt", "createdAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string", "enum": ["booking_confirmed", "booking_cancelled", "lesson_reminder", "session_changed", "session_cancelled"] },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "readAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
       "UpdateMeRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -468,7 +530,7 @@
         "properties": { "lateCancellationConfirmed": { "type": "boolean" } }
       },
       "AdminMutationResponse": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } },
-      "AdminClassTypeInput": { "type": "object", "additionalProperties": false, "required": ["slug","name","tagline","description","durationMinutes","arrivalLeadMinutes","active","sortOrder"], "properties": { "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "name": { "type": "string" }, "tagline": { "type": "string" }, "description": { "type": "string" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 } } },
+      "AdminClassTypeInput": { "type": "object", "additionalProperties": false, "required": ["slug","name","tagline","description","durationMinutes","arrivalLeadMinutes","active","sortOrder","difficulty","benefits","audience","suitableForBeginners","defaultEquipment","whatToBring","practicalNotice","heroImagePath","heroImageAlt","seoTitle","seoDescription"], "properties": { "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "name": { "type": "string" }, "tagline": { "type": "string" }, "description": { "type": "string" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 }, "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 }, "benefits": { "type": "string" }, "audience": { "type": "string" }, "suitableForBeginners": { "type": "boolean" }, "defaultEquipment": { "type": "string" }, "whatToBring": { "type": "string" }, "practicalNotice": { "type": "string" }, "heroImagePath": { "type": "string" }, "heroImageAlt": { "type": "string" }, "seoTitle": { "type": "string" }, "seoDescription": { "type": "string" } } },
       "AdminClassType": { "allOf": [{ "$ref": "#/components/schemas/AdminClassTypeInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },
       "AdminInstructorInput": { "type": "object", "additionalProperties": false, "required": ["displayName","bio","active","sortOrder"], "properties": { "displayName": { "type": "string" }, "bio": { "type": "string" }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 } } },
       "AdminInstructor": { "allOf": [{ "$ref": "#/components/schemas/AdminInstructorInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },

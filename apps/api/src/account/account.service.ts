@@ -14,6 +14,15 @@ export type ProfileRow = {
   terms_version: string | null;
 };
 
+export type AccountNotificationRow = {
+  body: string;
+  created_at: Date;
+  id: string;
+  kind: "booking_confirmed" | "booking_cancelled" | "lesson_reminder" | "session_changed" | "session_cancelled";
+  read_at: Date | null;
+  title: string;
+};
+
 @Injectable()
 export class AccountService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
@@ -38,6 +47,28 @@ export class AccountService {
       RETURNING id, oidc_subject, email, email_verified, first_name, last_name, phone, terms_version
     `, [profile.id, input.firstName, input.lastName, input.phone]);
     return result.rows[0]!;
+  }
+
+  async listNotifications(session: StudioSession) {
+    const profile = await this.ensureProfile(session);
+    const result = await this.database.query<AccountNotificationRow>(`
+      SELECT id, kind, title, body, read_at, created_at
+      FROM account_notifications
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 20
+    `, [profile.id]);
+
+    return {
+      items: result.rows.map((notification) => ({
+        id: notification.id,
+        kind: notification.kind,
+        title: notification.title,
+        body: notification.body,
+        readAt: notification.read_at?.toISOString() ?? null,
+        createdAt: notification.created_at.toISOString()
+      }))
+    };
   }
 }
 

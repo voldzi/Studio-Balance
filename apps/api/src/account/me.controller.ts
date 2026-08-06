@@ -33,4 +33,10 @@ export class MeController {
     const profile = await this.accounts.updateProfile(session, input.data);
     return profileResponse(profile, session);
   }
+
+  @Get("me/notifications")
+  @UseGuards(SessionAuthGuard)
+  async notifications(@Req() request: SessionRequest) {
+    return this.accounts.listNotifications(request.studioSession!);
+  }
 }

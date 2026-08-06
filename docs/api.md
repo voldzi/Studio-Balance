@@ -96,8 +96,8 @@ Doporučené doménové kódy:
 
 ## Veřejný endpoint katalog
 
-Implementované jsou `class-types`, seznam termínů a detail termínu. Další
-řádky jsou plánované a nejsou součástí aktuálního OpenAPI.
+Implementované jsou veřejný katalog a detail lekcí, seznam termínů a detail
+termínu. Další řádky jsou plánované a nejsou součástí aktuálního OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
@@ -149,7 +149,11 @@ implementované aplikační operace:
 | --- | --- | --- |
 | GET | `/api/v1/me` | profil klienta spojený s OIDC subjectem |
 | PATCH | `/api/v1/me` | povolené doménové profilové změny |
+| GET | `/api/v1/me/notifications` | posledních 20 zpráv patřících přihlášenému klientovi |
 | DELETE | `/api/v1/me` | žádost/proces zrušení účtu |
+
+Zprávy v účtu obsahují potvrzení rezervace a provozní změny. Nejsou určené pro
+marketingovou komunikaci a endpoint nikdy nevrací zprávy jiného klienta.
 
 Issuer je `https://login.zeleznalady.cz/realms/studio-balance`;
 klienti jsou `studiobalance-web` a `studiobalance-admin`. Callback/logout URL

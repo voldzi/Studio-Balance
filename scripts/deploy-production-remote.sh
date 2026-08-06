@@ -10,8 +10,8 @@ if [[ ! "$version" =~ ^[0-9a-f]{7,40}$ ]]; then
   exit 2
 fi
 
-if [[ -n "$(git -C "$root" status --porcelain)" ]]; then
-  echo "Deployment refused: commit or stash local changes first." >&2
+if ! git -C "$root" diff --quiet || ! git -C "$root" diff --cached --quiet; then
+  echo "Deployment refused: commit or stash tracked local changes first." >&2
   exit 1
 fi
 

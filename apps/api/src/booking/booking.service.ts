@@ -100,6 +100,12 @@ export class BookingService {
         INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
         VALUES ($1, $2, 'booking_confirmed', 'Rezervace je potvrzená', $3)
       `, [profile.id, booking.id, `${row.class_name} · ${row.start_at.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })}`]);
+      await scheduleEmailNotifications(client, {
+        bookingId: booking.id,
+        className: row.class_name,
+        startAt: row.start_at,
+        userId: profile.id
+      });
       await audit(client, input.requestId, profile.oidc_subject, "booking.created", "booking", booking.id);
       await storeIdempotency(client, profile.id, input.idempotencyKey, requestHash, booking.id, response);
       return response;
@@ -168,6 +174,7 @@ export class BookingService {
         INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
         VALUES ($1, $2, 'booking_cancelled', 'Rezervace byla zrušena', $3)
       `, [profile.id, row.booking_id, fee === null ? "Místo bylo uvolněno bez storno poplatku." : "Storno poplatek uhradíte ve studiu."]);
+      await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id=$1 AND status='pending'", [row.booking_id]);
       await audit(client, input.requestId, profile.oidc_subject, "booking.cancelled", "booking", row.booking_id, { mode: preview.mode });
 
       const response = bookingResponse(
@@ -292,6 +299,28 @@ async function readIdempotency(client: PoolClient, userId: string, key: string, 
 
 async function storeIdempotency(client: PoolClient, userId: string, key: string, requestHash: string, bookingId: string, response: BookingResponse): Promise<void> {
   await client.query("INSERT INTO booking_idempotency (user_id, idempotency_key, request_hash, booking_id, response_body) VALUES ($1, $2, $3, $4, $5)", [userId, key, requestHash, bookingId, response]);
+}
+
+async function scheduleEmailNotifications(client: PoolClient, input: { bookingId: string; className: string; startAt: Date; userId: string }): Promise<void> {
+  const reminders = [
+    { kind: "booking_confirmation", scheduledAt: new Date(), subject: "Rezervace je potvrzená" },
+    { kind: "lesson_reminder", scheduledAt: new Date(input.startAt.getTime() - 24 * 60 * 60_000), subject: "Zítra vás čeká lekce" },
+    { kind: "lesson_reminder", scheduledAt: new Date(input.startAt.getTime() - 2 * 60 * 60_000), subject: "Dnes vás čeká lekce" },
+    { kind: "lesson_reminder", scheduledAt: new Date(input.startAt.getTime() - 30 * 60_000), subject: "Za chvíli začínáme" }
+  ].filter((item) => item.scheduledAt.getTime() >= Date.now());
+
+  for (const item of reminders) {
+    await client.query(`
+      INSERT INTO notification_outbox (user_id, booking_id, kind, channel, scheduled_at, payload)
+      VALUES ($1, $2, $3, 'email', $4, $5)
+      ON CONFLICT (booking_id, kind, scheduled_at) DO NOTHING
+    `, [input.userId, input.bookingId, item.kind, item.scheduledAt, {
+      className: input.className,
+      startAt: input.startAt.toISOString(),
+      subject: item.subject,
+      timezone: "Europe/Prague"
+    }]);
+  }
 }
 
 async function audit(client: PoolClient, requestId: string, actorId: string, action: string, entityType: string, entityId: string, metadata: object = {}): Promise<void> {

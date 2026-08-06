@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
-import { ApiError, apiRequest, formatPrice, formatStudioDate, type Booking, type CancellationPreview, type Profile } from "../lib/api-types";
+import { ApiError, apiRequest, formatPrice, formatStudioDate, type AccountNotification, type Booking, type CancellationPreview, type Profile } from "../lib/api-types";
 
 const bookingLabels: Record<Booking["status"], string> = {
   attended: "Absolvováno",
@@ -17,18 +17,21 @@ const bookingLabels: Record<Booking["status"], string> = {
 export function AccountDashboard() {
   const [profile, setProfile] = useState<Profile>();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [notifications, setNotifications] = useState<AccountNotification[]>([]);
   const [selected, setSelected] = useState<{ booking: Booking; preview: CancellationPreview }>();
   const [message, setMessage] = useState<string>();
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [nextProfile, nextBookings] = await Promise.all([
+      const [nextProfile, nextBookings, nextNotifications] = await Promise.all([
         apiRequest<Profile>("/api/v1/me"),
-        apiRequest<{ items: Booking[] }>("/api/v1/me/bookings")
+        apiRequest<{ items: Booking[] }>("/api/v1/me/bookings"),
+        apiRequest<{ items: AccountNotification[] }>("/api/v1/me/notifications")
       ]);
       setProfile(nextProfile);
       setBookings(nextBookings.items);
+      setNotifications(nextNotifications.items);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Účet se nepodařilo načíst.");
     }
@@ -139,6 +142,24 @@ export function AccountDashboard() {
               ))}
             </div>
           )}
+
+          <section aria-labelledby="notifications-title" className="account-notifications">
+            <div className="account-section-heading">
+              <h2 id="notifications-title">Zprávy</h2>
+              <p>Potvrzení rezervací a důležité změny.</p>
+            </div>
+            {notifications.length ? (
+              <div className="notification-list">
+                {notifications.map((notification) => (
+                  <article className="notification-item" key={notification.id}>
+                    <p className="booking-date">{formatStudioDate(notification.createdAt, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                    <h3>{notification.title}</h3>
+                    <p>{notification.body}</p>
+                  </article>
+                ))}
+              </div>
+            ) : <p className="account-empty-message">Zatím tu nemáte žádné zprávy.</p>}
+          </section>
         </section>
 
         <aside className="profile-card">

@@ -9,7 +9,11 @@ const classTypeSchema = z.object({
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120), name: z.string().trim().min(2).max(120),
   tagline: z.string().trim().min(2).max(240), description: z.string().trim().min(2).max(5000),
   durationMinutes: z.number().int().min(15).max(240), arrivalLeadMinutes: z.number().int().min(0).max(120),
-  active: z.boolean(), sortOrder: z.number().int().min(0).max(10000)
+  active: z.boolean(), sortOrder: z.number().int().min(0).max(10000), difficulty: z.number().int().min(1).max(5),
+  benefits: z.string().trim().max(3000), audience: z.string().trim().max(3000), suitableForBeginners: z.boolean(),
+  defaultEquipment: z.string().trim().max(3000), whatToBring: z.string().trim().max(3000), practicalNotice: z.string().trim().max(3000),
+  heroImagePath: z.string().trim().max(500).refine((value) => !value || value.startsWith("/images/studio-balance/"), "Invalid image path"),
+  heroImageAlt: z.string().trim().max(500), seoTitle: z.string().trim().max(120), seoDescription: z.string().trim().max(320)
 }).strict();
 const instructorSchema = z.object({ displayName: z.string().trim().min(2).max(160), bio: z.string().trim().max(5000), active: z.boolean(), sortOrder: z.number().int().min(0).max(10000) }).strict();
 const sessionSchema = z.object({

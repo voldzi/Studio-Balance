@@ -5,11 +5,31 @@ import type { StudioSession } from "../auth/session.js";
 import { DatabaseService } from "../database/database.service.js";
 
 type MutationContext = { requestId: string; session: StudioSession };
-export type AdminClassTypeInput = { active: boolean; arrivalLeadMinutes: number; description: string; durationMinutes: number; name: string; slug: string; sortOrder: number; tagline: string };
+export type AdminClassTypeInput = {
+  active: boolean;
+  arrivalLeadMinutes: number;
+  audience: string;
+  benefits: string;
+  defaultEquipment: string;
+  description: string;
+  difficulty: number;
+  durationMinutes: number;
+  heroImageAlt: string;
+  heroImagePath: string;
+  name: string;
+  practicalNotice: string;
+  seoDescription: string;
+  seoTitle: string;
+  slug: string;
+  sortOrder: number;
+  suitableForBeginners: boolean;
+  tagline: string;
+  whatToBring: string;
+};
 export type AdminInstructorInput = { active: boolean; bio: string; displayName: string; sortOrder: number };
 export type AdminSessionInput = { arrivalLeadMinutes: number; capacity: number; classTypeId: string; durationMinutes: number; equipment: string; instructorId: string; locationAddress: string; locationName: string; priceCents: number; startAt: string; suitability: string };
 type DashboardSessionRow = { booking_count: number; capacity: number; class_name: string; id: string; instructor_name: string; start_at: Date; status: string };
-type ClassTypeRow = { active: boolean; arrival_lead_minutes: number; description: string; duration_minutes: number; id: string; name: string; slug: string; sort_order: number; tagline: string };
+type ClassTypeRow = { active: boolean; arrival_lead_minutes: number; audience: string; benefits: string; default_equipment: string; description: string; difficulty: number; duration_minutes: number; hero_image_alt: string; hero_image_path: string; id: string; name: string; practical_notice: string; seo_description: string; seo_title: string; slug: string; sort_order: number; suitable_for_beginners: boolean; tagline: string; what_to_bring: string };
 type InstructorRow = { active: boolean; bio: string; display_name: string; id: string; sort_order: number };
 type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; capacity: number; change_notice: string | null; class_name: string; class_type_id: string; end_at: Date; equipment: string; id: string; instructor_id: string; instructor_name: string; location_address: string; location_name: string; price_cents: number; start_at: Date; status: string; suitability: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
@@ -49,15 +69,15 @@ export class AdminService {
   }
 
   async listClassTypes() {
-    const result = await this.database.query<ClassTypeRow>("SELECT id, slug, name, tagline, description, duration_minutes, arrival_lead_minutes, active, sort_order FROM class_types ORDER BY sort_order, name");
-    return { items: result.rows.map((row) => ({ id: row.id, slug: row.slug, name: row.name, tagline: row.tagline, description: row.description, durationMinutes: row.duration_minutes, arrivalLeadMinutes: row.arrival_lead_minutes, active: row.active, sortOrder: row.sort_order })) };
+    const result = await this.database.query<ClassTypeRow>("SELECT id, slug, name, tagline, description, duration_minutes, arrival_lead_minutes, active, sort_order, difficulty, benefits, audience, suitable_for_beginners, default_equipment, what_to_bring, practical_notice, hero_image_path, hero_image_alt, seo_title, seo_description FROM class_types ORDER BY sort_order, name");
+    return { items: result.rows.map(mapAdminClassType) };
   }
 
   async createClassType(data: AdminClassTypeInput, context: MutationContext) {
     const result = await this.database.query<{ id: string }>(`
-      INSERT INTO class_types (slug, name, tagline, description, duration_minutes, arrival_lead_minutes, active, sort_order)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id
-    `, [data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder]);
+      INSERT INTO class_types (slug, name, tagline, description, duration_minutes, arrival_lead_minutes, active, sort_order, difficulty, benefits, audience, suitable_for_beginners, default_equipment, what_to_bring, practical_notice, hero_image_path, hero_image_alt, seo_title, seo_description)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id
+    `, [data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder, data.difficulty, data.benefits, data.audience, data.suitableForBeginners, data.defaultEquipment, data.whatToBring, data.practicalNotice, data.heroImagePath, data.heroImageAlt, data.seoTitle, data.seoDescription]);
     await this.audit(context, "class_type.created", "class_type", result.rows[0]!.id);
     return { id: result.rows[0]!.id };
   }
@@ -65,8 +85,11 @@ export class AdminService {
   async updateClassType(id: string, data: AdminClassTypeInput, context: MutationContext) {
     const result = await this.database.query(`
       UPDATE class_types SET slug=$2, name=$3, tagline=$4, description=$5, duration_minutes=$6,
-        arrival_lead_minutes=$7, active=$8, sort_order=$9, updated_at=now() WHERE id=$1 RETURNING id
-    `, [id, data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder]);
+        arrival_lead_minutes=$7, active=$8, sort_order=$9, difficulty=$10, benefits=$11, audience=$12,
+        suitable_for_beginners=$13, default_equipment=$14, what_to_bring=$15, practical_notice=$16,
+        hero_image_path=$17, hero_image_alt=$18, seo_title=$19, seo_description=$20, updated_at=now()
+      WHERE id=$1 RETURNING id
+    `, [id, data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder, data.difficulty, data.benefits, data.audience, data.suitableForBeginners, data.defaultEquipment, data.whatToBring, data.practicalNotice, data.heroImagePath, data.heroImageAlt, data.seoTitle, data.seoDescription]);
     if (!result.rowCount) throw notFound("Typ lekce nebyl nalezen.");
     await this.audit(context, "class_type.updated", "class_type", id);
     return { id };
@@ -134,6 +157,7 @@ export class AdminService {
       await client.query("UPDATE cancellation_fees SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='due'", [id]);
       await client.query(`INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
         SELECT user_id,id,'session_cancelled','Lekce byla zrušena',$2 FROM bookings WHERE session_id=$1 AND status='cancelled_by_studio'`, [id, reason]);
+      await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='pending'", [id]);
       await auditWithClient(client, context, "session.cancelled", "session", id, { reason });
       return { id, status: "cancelled" };
     });
@@ -175,6 +199,7 @@ export class AdminService {
 }
 
 function mapAdminSession(row: AdminSessionRow) { return { id: row.id, classTypeId: row.class_type_id, className: row.class_name, instructorId: row.instructor_id, instructorName: row.instructor_name, startAt: row.start_at.toISOString(), endAt: row.end_at.toISOString(), arrivalLeadMinutes: row.arrival_lead_minutes, locationName: row.location_name, locationAddress: row.location_address, priceCents: row.price_cents, capacity: row.capacity, bookingCount: row.booking_count, status: row.status, equipment: row.equipment, suitability: row.suitability, changeNotice: row.change_notice }; }
+function mapAdminClassType(row: ClassTypeRow) { return { id: row.id, slug: row.slug, name: row.name, tagline: row.tagline, description: row.description, durationMinutes: row.duration_minutes, arrivalLeadMinutes: row.arrival_lead_minutes, active: row.active, sortOrder: row.sort_order, difficulty: row.difficulty, benefits: row.benefits, audience: row.audience, suitableForBeginners: row.suitable_for_beginners, defaultEquipment: row.default_equipment, whatToBring: row.what_to_bring, practicalNotice: row.practical_notice, heroImagePath: row.hero_image_path, heroImageAlt: row.hero_image_alt, seoTitle: row.seo_title, seoDescription: row.seo_description }; }
 async function auditWithClient(client: PoolClient, context: MutationContext, action: string, entityType: string, entityId: string, metadata: object = {}) { await client.query("INSERT INTO application_audit (actor_type,actor_id,action,entity_type,entity_id,request_id,metadata) VALUES ('admin',$1,$2,$3,$4,$5,$6)", [context.session.subject, action, entityType, entityId, context.requestId, metadata]); }
 function notFound(message: string) { return new HttpException({ code: "RESOURCE_NOT_FOUND", message }, HttpStatus.NOT_FOUND); }
 function conflict(message: string) { return new HttpException({ code: "STATE_CONFLICT", message }, HttpStatus.CONFLICT); }
