@@ -58,7 +58,8 @@ Dne 2026-08-06 zadavatel výslovně potvrdil použití šesti dodaných plakáto
 vizuálů lekcí a vizualizace sálu v aktuální aplikaci. Dne 2026-08-07 následně
 dodal pro všech šest lekcí ostřejší náhradní podklady; ty jsou zařazené jako
 aktuální preview media v `apps/web/public/images/studio-balance/`. Od 2026-08-08
-se v katalogu zobrazují ve společném formátu s kontrolovaným cropem; text uvnitř
+se v katalogu zobrazují ve společném formátu s kontrolovaným cropem, zatímco
+detail lekce zachová celý plakát ve ztlumeném pozadí z téhož obrazu. Text uvnitř
 obrazů se nepřebírá jako funkční data. Finální produkční média zůstávají
 samostatným schvalovacím a S3 workflow.
 

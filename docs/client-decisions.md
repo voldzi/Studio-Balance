@@ -26,6 +26,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-013 | Zadavatel 2026-08-06 znovu potvrdil web-only rozsah, šest úrovní náročnosti a použití dodaných vizuálů v aplikaci | náročnost je součástí typu lekce, nikoli uživatelské hodnocení; dodané rastry jsou schválené preview assety; před finálním produkčním vydáním se nahradí originálními médii ve vyhrazeném S3 |
 | CD-014 | Zadavatel 2026-08-07 dodal ostřejší náhradní plakátové podklady pro všech šest lekcí | nahrazují dosavadní preview rastry; konkrétní způsob zobrazení v kartě určuje novější CD-015 a finální produkční média nadále patří do schváleného S3 workflow |
 | CD-015 | Zadavatel 2026-08-08 schválil jednotnou velikost plakátů v katalogu lekcí | karty používají společný formát s kontrolovaným cropem od horní hrany; název ani hlavní motiv se nesmí oříznout |
+| CD-016 | Zadavatel 2026-08-08 schválil úplné zobrazení plakátu v detailu lekce | detail používá `contain` a ztlumené pozadí z téhož obrazu; katalogové karty zůstávají ve společném formátu podle CD-015 |
 
 ## Schválené náročnosti lekcí
 

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useState } from "react";
 
 import { publicSessionLabel } from "@studiobalance/domain";
 
@@ -22,8 +22,8 @@ export function LessonDetail({ slug }: { slug: string }) {
   if (state === "error" || !lesson) return <div className="content-message" role="alert"><p>Detail lekce se nepodařilo načíst.</p><Link className="button button-secondary" href="/lekce">Zpět na lekce</Link></div>;
 
   return <article className="lesson-detail">
-    <div className="lesson-detail-hero">
-      {lesson.heroImage ? <Image alt={lesson.heroImage.alt} fill priority sizes="(max-width: 760px) 100vw, 55vw" src={lesson.heroImage.src} /> : <div className="lesson-image-fallback" aria-hidden="true" />}
+    <div className="lesson-detail-hero" style={lesson.heroImage ? { "--lesson-detail-backdrop": `url(${lesson.heroImage.src})` } as CSSProperties : undefined}>
+      {lesson.heroImage ? <Image alt={lesson.heroImage.alt} className="lesson-detail-image" fill priority sizes="(max-width: 760px) 100vw, 55vw" src={lesson.heroImage.src} /> : <div className="lesson-image-fallback" aria-hidden="true" />}
     </div>
     <div className="lesson-detail-copy">
       <p className="eyebrow">Studio Balance</p>

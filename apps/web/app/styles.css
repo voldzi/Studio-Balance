@@ -229,11 +229,13 @@ footer a { margin-bottom: var(--space-2); }
 .content-prose p { margin: 0 0 var(--space-5); }
 .content-prose .button { margin-top: var(--space-3); color: #fffaf4; }
 .content-hero-image { min-height: clamp(18rem, 45vw, 34rem); margin: 0 0 var(--space-8); position: relative; overflow: hidden; border-radius: var(--radius-lg); }
-.content-hero-image img, .gallery-grid img, .lesson-detail-hero img { object-fit: cover; }
+.content-hero-image img, .gallery-grid img { object-fit: cover; }
 .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
 .gallery-grid figure { min-height: 16rem; margin: 0; position: relative; overflow: hidden; border-radius: var(--radius-md); background: var(--color-bg-secondary); }
 .lesson-detail { overflow: hidden; display: grid; grid-template-columns: 1.05fr .95fr; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg-light); box-shadow: var(--shadow-soft); }
-.lesson-detail-hero { min-height: 39rem; position: relative; background: #dec8b4; }
+.lesson-detail-hero { min-height: 39rem; position: relative; isolation: isolate; overflow: hidden; background: #dec8b4; }
+.lesson-detail-hero::before { content: ""; position: absolute; z-index: 0; inset: -2rem; background: linear-gradient(rgb(92 58 40 / 28%), rgb(92 58 40 / 28%)), var(--lesson-detail-backdrop) center / cover no-repeat; filter: blur(1.35rem) saturate(82%); transform: scale(1.05); }
+.lesson-detail-hero .lesson-detail-image { z-index: 1; object-fit: contain; object-position: center; }
 .lesson-detail-copy { padding: clamp(2rem, 5vw, 4.5rem); }
 .lesson-detail-copy > p:not(.eyebrow):not(.detail-lead):not(.lesson-detail-stars) { color: var(--color-text-secondary); }
 .lesson-detail-stars { margin: 0 0 var(--space-6); }
