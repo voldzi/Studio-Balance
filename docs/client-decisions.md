@@ -24,7 +24,8 @@ zůstávají beze změny jako auditní stopa.
 | CD-011 | Schvalují se všechna doporučená rezervační pravidla z dotazníku | přesně 24 h je včasné storno; po významné změně lze termínu nastavit bezplatné storno okno; podmínky se přijímají při první rezervaci a nové verzi; neuhrazený poplatek neblokuje rezervaci; administrátor eviduje úhradu hotově/terminálem a může pozvat nového klienta s propojením po ověření e-mailu |
 | CD-012 | Zákaznické preview má použít dodané logo, vizuální návrh a fotografie; e-mailové odesílání se v preview nezapíná | implementace vizuálně vychází z návrhu z 4. 8. 2026 a používá dodané rastry pouze pro preview; provozní stav se zobrazí v účtu, ale skutečné e-maily zůstávají podmínkou produkčního vydání |
 | CD-013 | Zadavatel 2026-08-06 znovu potvrdil web-only rozsah, šest úrovní náročnosti a použití dodaných vizuálů v aplikaci | náročnost je součástí typu lekce, nikoli uživatelské hodnocení; dodané rastry jsou schválené preview assety; před finálním produkčním vydáním se nahradí originálními médii ve vyhrazeném S3 |
-| CD-014 | Zadavatel 2026-08-07 dodal ostřejší náhradní plakátové podklady pro všech šest lekcí | nahrazují dosavadní preview rastry; karta zachová celý obraz bez ořezu a finální produkční média nadále patří do schváleného S3 workflow |
+| CD-014 | Zadavatel 2026-08-07 dodal ostřejší náhradní plakátové podklady pro všech šest lekcí | nahrazují dosavadní preview rastry; konkrétní způsob zobrazení v kartě určuje novější CD-015 a finální produkční média nadále patří do schváleného S3 workflow |
+| CD-015 | Zadavatel 2026-08-08 schválil jednotnou velikost plakátů v katalogu lekcí | karty používají společný formát s kontrolovaným cropem od horní hrany; název ani hlavní motiv se nesmí oříznout |
 
 ## Schválené náročnosti lekcí
 

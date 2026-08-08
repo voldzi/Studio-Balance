@@ -213,8 +213,8 @@ odladěny na kontrast; stav se nikdy nesděluje pouze barvou.
 - produkční SVG + transparentní PNG a schválená varianta favicon;
 - skutečné schválené fotografie studia, lidí a používaných pomůcek;
 - desktop/mobil crop, moderní komprese, `srcset`, lazy loading mimo LCP a alt;
-- vertikální plakátové preview na kartě lekce zachová celý obraz (`contain`) v
-  portrétním rámečku s teplým pozadím; nesmí se oříznout název ani hlavní motiv;
+- plakátové preview na kartě lekce vyplní jednotný rámeček (`cover`) s
+  kontrolovaným cropem od horní hrany; nesmí se oříznout název ani hlavní motiv;
 - žádné nesmyslné/deformované vybavení ani generický AI obraz v produkci.
 
 ## Komponenty a stavová pravidla
