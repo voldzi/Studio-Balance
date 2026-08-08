@@ -28,7 +28,7 @@ export function LessonCatalog({ compact = false }: { compact?: boolean }) {
     {items.map((lesson) => <article className="lesson-card" key={lesson.id}>
       <Link aria-label={`Detail lekce ${lesson.name}`} className="lesson-card-link" href={`/lekce/${lesson.slug}`}>
         <div className="lesson-image-wrap">
-          {lesson.heroImage ? <Image alt={lesson.heroImage.alt} className={`lesson-image${lesson.slug === "power-joga" ? " lesson-image-cover" : ""}`} fill priority={["barre", "trx", "balance-flow"].includes(lesson.slug)} sizes="(max-width: 620px) 100vw, (max-width: 960px) 50vw, 33vw" src={lesson.heroImage.src} /> : <div className="lesson-image-fallback" aria-hidden="true" />}
+          {lesson.heroImage ? <Image alt={lesson.heroImage.alt} className="lesson-image" fill priority={["barre", "trx", "balance-flow"].includes(lesson.slug)} sizes="(max-width: 620px) 100vw, (max-width: 960px) 50vw, 33vw" src={lesson.heroImage.src} /> : <div className="lesson-image-fallback" aria-hidden="true" />}
         </div>
         <div className="lesson-copy">
           <p className="lesson-difficulty"><DifficultyStars value={lesson.difficulty} /></p>

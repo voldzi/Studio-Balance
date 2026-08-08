@@ -55,10 +55,12 @@ neprohlašuje rastry za finální produkční assety a nemění požadavek na je
 originální fotografie lekcí a průhledné logo před finálním vydáním.
 
 Dne 2026-08-06 zadavatel výslovně potvrdil použití šesti dodaných plakátových
-vizuálů lekcí a vizualizace sálu v aktuální aplikaci. Jsou proto zařazené jako
-preview media v `apps/web/public/images/studio-balance/`; QR kódy, tištěné URL
-a text uvnitř obrazu se nepřebírají jako funkční data. Finální produkční média
-zůstávají samostatným schvalovacím a S3 workflow.
+vizuálů lekcí a vizualizace sálu v aktuální aplikaci. Dne 2026-08-07 následně
+dodal pro všech šest lekcí ostřejší náhradní podklady; ty jsou zařazené jako
+aktuální preview media v `apps/web/public/images/studio-balance/`. Obsah obrazu
+se zobrazuje celý, bez výřezové výjimky. Text uvnitř obrazů se nepřebírá jako
+funkční data. Finální produkční média zůstávají samostatným schvalovacím a S3
+workflow.
 
 ## Analyzované textové podklady
 
