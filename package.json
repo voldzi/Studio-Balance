@@ -23,6 +23,7 @@
     "infra:up": "docker compose up -d postgres keycloak",
     "preview:config": "docker compose --env-file .env.preview -f docker-compose.preview.yml config --quiet",
     "rollback:preview": "bash scripts/rollback-preview-remote.sh",
+    "rollback:production": "bash scripts/rollback-production-remote.sh",
     "lint": "eslint .",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm generate:contracts && pnpm -r --if-present typecheck",

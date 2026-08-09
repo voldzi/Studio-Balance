@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List approved public reviews */
+        get: operations["listReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -348,6 +365,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List reviews including drafts */
+        get: operations["adminListReviews"];
+        put?: never;
+        /** Create a review draft or approved review */
+        post: operations["adminCreateReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/reviews/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update, publish, feature or hide a review */
+        patch: operations["adminUpdateReview"];
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -546,6 +598,57 @@ export interface components {
         CancelBookingRequest: {
             lateCancellationConfirmed: boolean;
         };
+        Review: {
+            /** Format: uuid */
+            id: string;
+            authorLabel: string;
+            body: string;
+            source: string | null;
+            /** Format: date */
+            reviewedOn: string | null;
+            rating: number | null;
+            classType: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+        };
+        AdminReviewInput: {
+            authorLabel: string;
+            body: string;
+            source?: string | null;
+            /** Format: date */
+            reviewedOn: string | null;
+            rating: number | null;
+            classTypeId: string | null;
+            /** @description Must be true before publication. */
+            consentConfirmed: boolean;
+            published: boolean;
+            featured: boolean;
+            sortOrder: number;
+        };
+        AdminReview: {
+            /** Format: uuid */
+            id: string;
+            authorLabel: string;
+            body: string;
+            source: string | null;
+            /** Format: date */
+            reviewedOn: string | null;
+            rating: number | null;
+            classType: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+            classTypeId: string | null;
+            consentConfirmed: boolean;
+            published: boolean;
+            featured: boolean;
+            sortOrder: number;
+        };
         AdminMutationResponse: {
             /** Format: uuid */
             id: string;
@@ -737,6 +840,31 @@ export interface operations {
                 };
             };
             404: components["responses"]["Error"];
+        };
+    };
+    listReviews: {
+        parameters: {
+            query?: {
+                featured?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published reviews with confirmed consent, in display order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Review"][];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
         };
     };
     listSessions: {
@@ -1250,6 +1378,87 @@ export interface operations {
                 content?: never;
             };
             400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All reviews. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AdminReview"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminUpdateReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReviewInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
         };
     };

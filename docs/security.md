@@ -44,6 +44,10 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 - OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
   vrstva mimo browser JavaScript;
 - admin vstup je oddělený a MFA je povinné pro `admin` i `super_admin`;
+- admin Authorization Code žádost vynutí čerstvé Keycloak přihlášení pomocí
+  `prompt=login` a `max_age=0`; jmenovitý admin účet se před předáním ověří v
+  nové anonymní relaci heslem i TOTP a bez dokončeného testu se nepovažuje za
+  aktivovaný;
 - klient musí mít před první rezervací ověřený e-mail;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 
@@ -156,7 +160,16 @@ externí CDN nebo fontovou službu.
 - zrušení účtu respektuje právní retenci: nepotřebná data se smažou nebo
   nevratně anonymizují, povinné záznamy se omezí;
 - konkrétní retenční lhůty a správce údajů musí dodat zadavatel/právní podpora;
-- foto klienta/recenze se zveřejní jen s doloženým souhlasem.
+- foto klienta/recenze se zveřejní jen s doloženým souhlasem; databázový
+  constraint i API odmítnou publikaci recenze bez jeho potvrzení;
+- recenze jsou prostý text renderovaný s výchozím output encodingem frameworku,
+  nikoli administrátorem vložené HTML, a změny publikace se auditují bez uložení
+  celého textu do auditních metadat;
+- změna recenze a její minimální auditní záznam jsou atomická databázová
+  transakce; koncept může odkazovat na neaktivní typ lekce, ale publikace
+  vyžaduje existující aktivní typ a neznámý identifikátor API odmítne;
+- zdroj reference je volitelný údaj, nikoli podmínka souhlasu nebo publikace,
+  a administrační výpis konceptů používá `Cache-Control: private, no-store`.
 
 ## Hrozby vyžadující test
 

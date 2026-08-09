@@ -33,6 +33,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-020 | Připomenutí jsou volitelná, provozní změny povinné; zákaznické preview skutečné e-maily neodesílá | CD-011, CD-012 |
 | RD-021 | Neuhrazený storno poplatek rezervaci neblokuje; administrátor eviduje úhradu hotově nebo terminálem | CD-011 |
 | RD-022 | Administrátor může pozvat nového klienta a účet se propojí až po ověření e-mailu | CD-011 |
+| RD-023 | Recenze jsou ručně spravované a hvězdičky se zobrazí jen u doloženého hodnocení; automatické výzvy po lekci zůstávají otevřené | CD-018 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -57,7 +58,7 @@ blokátorem implementace.
 | OQ-015 | Jaké jsou rozpočtové a provozní limity e-mailu, monitoringu a případné CDN vrstvy? | ovlivní poskytovatele i SLA; runtime a DB topologie jsou už schválené |
 | OQ-020 | Jaké RPO/RTO a retenční dobu mají databázové zálohy? | baseline je denní záloha a pravidelný test obnovy; čísla chybí |
 | OQ-030 | Jaký database name, TLS režim, admin role, credentials policy a failover očekávání platí za `haproxy.home.cz:5000`? | major 18 je potvrzený; tyto údaje jsou nutné pro bezpečný produkční bootstrap skript |
-| OQ-031 | Jaký image registry a finální produkční rollback workflow se použije mezi `dmz.home.cz` a `docker.home.cz`? | preview Compose/rollback řeší ADR 0006 a Nginx upstream, TLS i instalační rollback ADR 0007; preview publikace je aktivní, finální produkční workflow ještě ne |
+| OQ-031 | Jaký image registry a retenční okno produkčních image se použije na `docker.home.cz`? | produkční deploy i rollback přes verzované lokální image a kontrolu přesné revize jsou implementované; před úklidem starších image zbývá schválit registry/retenci a obnovu image po ztrátě hostitele |
 | OQ-032 | Jak se provisionuje vyhrazená Studio Balance gateway nad `shared-seaweedfs`? | S3 použití je schválené; potvrdit interní endpoint, bucket, credentials, pinned image, healthcheck, backup/restore, vlastníka a lifecycle |
 | OQ-033 | Kdo vlastní kapacitní alerty `docker.home.cz`, jaké jsou jejich prahy a jak se vyřeší téměř vyčerpaný swap? | disk byl 2026-08-04 přeměřen na přibližně 73 GiB volno, swap však zůstává produkčním rizikem; interní preview má resource limits a preflight |
 
@@ -75,7 +76,6 @@ blokátorem implementace.
 | ID | Otázka | Dopad |
 | --- | --- | --- |
 | OQ-025 | Budou v první verzi filtry lekcí podle cíle/instruktora? | nesmí zkomplikovat základní rozvrh |
-| OQ-026 | Má být ruční sekce recenzí zdrojem hvězdiček, nebo pouze textových citací? | hvězdičky jen u skutečně doložených hodnocení |
 | OQ-027 | Které sociální sítě se zobrazí, zejména TikTok? | prázdná síť se nesmí zobrazit |
 | OQ-028 | Má být po lekci výzva k hodnocení už v první verzi? | vyžaduje pravidlo četnosti a marketing/provozní klasifikaci |
 | OQ-029 | Má „Přidat do kalendáře“ nabídnout stažitelný ICS, webové odkazy Google/Outlook/Apple, nebo obojí? | ovlivní webový tok a časové testy |

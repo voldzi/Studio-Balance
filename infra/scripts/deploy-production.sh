@@ -15,10 +15,19 @@ if [[ ! -f "$env_file" ]]; then
   exit 1
 fi
 
-command -v curl >/dev/null || { echo "curl is required." >&2; exit 1; }
+for command in curl docker flock; do
+  command -v "$command" >/dev/null || { echo "$command is required." >&2; exit 1; }
+done
 
 if [[ "$(stat -c '%a' "$env_file")" != "600" ]]; then
   echo "Production environment file must have mode 0600." >&2
+  exit 1
+fi
+
+lock_file="$(dirname "$env_file")/.production-operation.lock"
+exec 9>"$lock_file"
+if ! flock -n 9; then
+  echo "Another Studio Balance production deploy or rollback is already running." >&2
   exit 1
 fi
 
@@ -44,19 +53,64 @@ fi
 
 export APP_VERSION="$version"
 compose=(docker compose --parallel 1 --env-file "$env_file" -f "$root/docker-compose.production.yml")
+previous_image="$(docker inspect --format '{{.Config.Image}}' studio-balance-production-web-1 2>/dev/null || true)"
+previous_version="${previous_image##*:}"
+
+wait_for_revision() {
+  local expected_version="$1"
+  local readiness=""
+
+  for _ in {1..30}; do
+    if readiness="$(curl --fail --silent --show-error --connect-timeout 3 --max-time 5 http://127.0.0.1:4281/ready 2>/dev/null)" \
+      && grep -Fq "\"version\":\"$expected_version\"" <<<"$readiness" \
+      && curl --fail --silent --show-error --connect-timeout 3 --max-time 5 --head http://127.0.0.1:3281/ >/dev/null; then
+      return 0
+    fi
+    sleep 2
+  done
+
+  return 1
+}
+
+rollback_previous() {
+  if [[ "$previous_version" =~ ^[0-9a-f]{7,40}$ && "$previous_version" != "$version" ]]; then
+    echo "Restoring previous production revision $previous_version..." >&2
+    for image in api web worker; do
+      if ! docker image inspect "studiobalance/$image:$previous_version" >/dev/null 2>&1; then
+        echo "Automatic rollback image studiobalance/$image:$previous_version is unavailable." >&2
+        return 1
+      fi
+    done
+    export APP_VERSION="$previous_version"
+    if ! "${compose[@]}" up -d --no-build --remove-orphans; then
+      echo "Automatic rollback could not start the previous revision." >&2
+      return 1
+    fi
+    if ! wait_for_revision "$previous_version"; then
+      "${compose[@]}" ps >&2
+      echo "Automatic rollback did not restore a healthy previous revision." >&2
+      return 1
+    fi
+    "${compose[@]}" ps
+    echo "Previous production revision $previous_version was restored." >&2
+  else
+    echo "No validated previous production revision is available for automatic rollback." >&2
+    return 1
+  fi
+}
 
 "${compose[@]}" build --pull
-"${compose[@]}" up -d --remove-orphans
+if ! "${compose[@]}" up -d --remove-orphans; then
+  rollback_previous || true
+  exit 1
+fi
 
-for _ in {1..30}; do
-  if curl --fail --silent --show-error --connect-timeout 3 http://127.0.0.1:4281/ready >/dev/null \
-    && curl --fail --silent --show-error --connect-timeout 3 --head http://127.0.0.1:3281/ >/dev/null; then
-    "${compose[@]}" ps
-    exit 0
-  fi
-  sleep 2
-done
+if wait_for_revision "$version"; then
+  "${compose[@]}" ps
+  exit 0
+fi
 
 "${compose[@]}" ps >&2
-echo "Production candidate did not become ready; public Nginx was not changed." >&2
+echo "Production candidate did not become ready; restoring the previous revision." >&2
+rollback_previous || true
 exit 1

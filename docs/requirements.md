@@ -46,7 +46,7 @@ a obchodní pravidla.
 | WEB-003 | P0 | veřejný týdenní rozvrh; na mobilu výběr dne a svislý seznam, ne sedmidenní stísněná tabulka |
 | WEB-004 | P0 | termín ukazuje čas, typ lekce, instruktora a jeden veřejný stav bez počtu míst |
 | WEB-005 | P0 | detail termínu obsahuje datum, čas, příchod, místo, instruktora, cenu, pomůcky, vhodnost, platbu ve studiu a storno |
-| WEB-006 | P1 | domovská stránka ukazuje několik nejbližších termínů a 3–6 schválených recenzí |
+| WEB-006 | P1 | domovská stránka ukazuje několik nejbližších termínů a 3–6 skutečných schválených recenzí; bez publikovaného obsahu nevytváří náhradní citace |
 | WEB-007 | P1 | galerie má lightbox, ovládání klávesnicí, Escape, alt text a optimalizované obrazy |
 | WEB-008 | P1 | SEO: title, description, canonical, sitemap, robots, Open Graph a vhodná strukturovaná data |
 | WEB-009 | P0 | každý aktivní typ lekce má veřejný detail se schválenou fotografií, náročností 1–5, vhodností, přínosy, pomůckami, praktickou informací a nejbližšími termíny bez počtu volných míst |
@@ -161,6 +161,12 @@ nastavení a auditní log.
 Administrátor musí bez nasazení nové verze upravit běžný text, fotografie,
 kontakty, ceník, FAQ, recenze, novinky, instruktory, typy lekcí a termíny.
 Rozvrh se nesmí hardcodovat z referenčního obrázku.
+
+Recenze je prostý text se schváleným jménem nebo iniciálou, volitelným zdrojem,
+volitelným datem, volitelnou vazbou na lekci a volitelným skutečným hodnocením
+1–5.
+Publikace bez doloženého souhlasu je odmítnuta databází i API. Skrytí se provádí
+deaktivací/publikací, nikoli destruktivním smazáním, a změny se auditují.
 
 Role:
 

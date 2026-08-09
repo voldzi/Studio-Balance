@@ -129,9 +129,17 @@ hero + značka + dvě CTA
 → právní a kontaktní footer
 ```
 
-Hero používá slogan „Najdi si svůj balans.“ a volitelně „Pohyb. Síla. Klid.
+Hero používá slogan „Najdi si svůj balanc.“ a volitelně „Pohyb. Síla. Klid.
 Rovnováha.“ Fotografie a text nesmí soupeřit; mobilní ořez zachová zrcadlo a
 atmosféru.
+
+Recenzní pás používá tři až šest ručně schválených referencí. Na desktopu jsou
+karty v klidné mřížce, na mobilu se posouvají po jedné bez autoplay. Hodnocení
+recenze je volitelné a vizuálně i přístupnostním popiskem se odlišuje od
+náročnosti lekce. Pokud není publikovaná žádná skutečná recenze, homepage celý
+pás vynechá a stránka Recenze zobrazí pravdivý prázdný stav. Schválený zdroj a
+datum se zobrazí jen tehdy, pokud byly skutečně dodány; samostatná stránka vždy
+nabídne CTA do rozvrhu a používá společný kontaktní footer.
 
 ## Rozvrh a veřejné stavy
 

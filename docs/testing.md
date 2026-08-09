@@ -24,6 +24,14 @@ Automatizovaný DB concurrency test posledního místa, plný Keycloak browser E
 e-mail, administrace, S3 média a reálná zařízení zůstávají předprodukčními
 branami; zákaznické preview je nesmí vydávat za uzavřené.
 
+Řez recenzí ověřuje veřejné čtení bez přihlášení, oddělenou administrátorskou
+autorizaci, odmítnutí publikace bez souhlasu, volitelné skutečné hvězdičky a
+audit vytvoření/úpravy. Migrace neobsahuje žádné ukázkové reference; prázdný
+stav proto nesmí zobrazit vymyšlenou citaci.
+Admin formulář po validační chybě zachová rozepsanou skutečnou recenzi a
+publikovaná vazba na skrytý nebo neexistující typ lekce nesmí vytvářet veřejný
+odkaz vedoucí na 404.
+
 ## Vrstvy
 
 | Vrstva | Co ověřuje |

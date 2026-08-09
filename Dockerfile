@@ -38,6 +38,7 @@ WORKDIR /app
 COPY --from=builder /workspace/apps/web/.next/standalone ./
 COPY --from=builder /workspace/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /workspace/apps/web/public ./apps/web/public
+RUN mkdir -p /app/apps/web/.next/cache && chown node:node /app/apps/web/.next/cache
 USER node
 CMD ["node", "apps/web/server.js"]
 

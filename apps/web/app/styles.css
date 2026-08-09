@@ -17,7 +17,8 @@ a { color: inherit; }
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 4px;
   border-radius: var(--radius-sm);
@@ -154,6 +155,7 @@ h3 { font-size: 1.7rem; }
 .story,
 .lesson-section,
 .flow-banner,
+.reviews-section,
 .schedule-shell,
 .detail-shell,
 .booking-shell,
@@ -190,6 +192,18 @@ h3 { font-size: 1.7rem; }
 .flow-copy { max-width: 43rem; padding: clamp(2rem, 6vw, 5rem); position: relative; z-index: 1; color: #fffaf4; }
 .flow-copy h2 { margin-bottom: var(--space-4); }
 .flow-copy > p:not(.eyebrow) { color: #f0dfcf; }
+
+.reviews-section { padding: 0 clamp(0rem, 3vw, 3rem) clamp(5rem, 10vw, 9rem); }
+.reviews-loading { min-height: 10rem; color: var(--color-text-secondary); }
+.reviews-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); }
+.review-card { min-width: 0; min-height: 18rem; margin: 0; padding: clamp(1.5rem, 3vw, 2.25rem); display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-light); box-shadow: var(--shadow-soft); }
+.review-rating { margin: 0 0 var(--space-4); color: var(--color-accent-hover); font-size: 1.05rem; letter-spacing: .08em; }
+.review-quote { margin: 0; color: var(--color-text-primary); font-family: var(--font-display); font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.35; }
+.review-attribution { margin-top: auto; padding-top: var(--space-6); display: grid; gap: var(--space-1); border-top: 1px solid var(--color-border); }
+.review-attribution cite { font-style: normal; font-weight: 800; }
+.review-attribution a { width: fit-content; color: var(--color-accent-hover); font-size: .82rem; }
+.review-meta { color: var(--color-text-secondary); font-size: .78rem; }
+.reviews-action { margin-top: var(--space-8); display: flex; justify-content: center; }
 
 footer { padding: clamp(3rem, 7vw, 5rem) max(1rem, calc((100% - var(--content-max)) / 2)); display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: var(--space-12); background: #392d26; color: #f7eee5; }
 footer h2 { margin-bottom: var(--space-4); font-family: var(--font-body); font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
@@ -370,12 +384,16 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
 .admin-table-wrap th, .admin-table-wrap td { padding: .85rem .7rem; border-top: 1px solid var(--color-border); text-align: left; vertical-align: top; }
 .admin-table-wrap th { color: var(--color-text-secondary); font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; }
 .admin-row-actions { display: flex; gap: var(--space-2); }
+.admin-form-note { margin: 0; color: var(--color-text-secondary); font-size: .78rem; }
+.admin-review-list li div { min-width: 0; }
+.admin-review-list li span { max-width: 42rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 900px) {
   .site-header { grid-template-columns: 8rem 1fr; }
   .site-header nav { display: none; }
   .header-actions { justify-content: end; }
   .lesson-grid { grid-template-columns: repeat(2, 1fr); }
+  .reviews-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lesson-detail { grid-template-columns: 1fr; }
   .lesson-detail-hero { min-height: 28rem; }
   .session-row { grid-template-columns: 6rem 1fr 9rem 3rem; gap: var(--space-3); }
@@ -434,12 +452,15 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
   .history-row { grid-template-columns: 1fr 1fr; }
   .admin-app { display: block; }
   .admin-sidebar { min-height: auto; padding: var(--space-4); position: static; }
-  .admin-sidebar nav { margin-top: var(--space-4); grid-template-columns: repeat(5, minmax(8rem, 1fr)); overflow-x: auto; }
+  .admin-sidebar nav { margin-top: var(--space-4); grid-template-columns: repeat(6, minmax(8rem, 1fr)); overflow-x: auto; }
   .admin-user { margin-top: var(--space-4); grid-template-columns: 1fr auto; }
   .admin-content { padding: var(--space-5) var(--space-4); }
   .admin-stats, .admin-form-grid, .admin-two-columns { grid-template-columns: 1fr; }
   .admin-session-row { grid-template-columns: 1fr auto; }
   .admin-session-row time, .admin-session-row div { grid-column: 1; }
+  .reviews-section { padding-inline: 0; overflow: hidden; }
+  .reviews-grid { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); display: flex; gap: var(--space-4); overflow-x: auto; scroll-padding-inline: var(--space-4); scroll-snap-type: x mandatory; }
+  .review-card { flex: 0 0 min(88vw, 22rem); scroll-snap-align: start; }
 }
 
 @media (prefers-reduced-motion: reduce) {

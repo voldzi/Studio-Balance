@@ -63,6 +63,11 @@ detail lekce zachová celý plakát ve ztlumeném pozadí z téhož obrazu. Text
 obrazů se nepřebírá jako funkční data. Finální produkční média zůstávají
 samostatným schvalovacím a S3 workflow.
 
+Dne 2026-08-09 zadavatel opravil slogan na „Najdi si svůj balanc.“ a schválil
+recenzní pás na titulní stránce. Implementace nevytváří ukázkové recenze:
+zobrazuje pouze ručně vložené reference s doloženým souhlasem a volitelné
+hvězdičky jen tehdy, pokud je klientka skutečně udělila.
+
 ## Analyzované textové podklady
 
 ### Závazný Markdown

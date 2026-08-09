@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
-import { ContentPage } from "../../components/content-page";
+import { ReviewsShowcase } from "../../components/reviews-showcase";
+import { SiteFooter } from "../../components/site-footer";
+import { SiteHeader } from "../../components/site-header";
 
-export const metadata: Metadata = { title: "Recenze", description: "Zkušenosti klientek Studio Balance." };
-export default function ReviewsPage() { return <ContentPage eyebrow="Zkušenosti klientek" title="Recenze"><p>Ověřené recenze sem doplníme po jejich schválení zadavatelkou. Nezobrazujeme vymyšlená ani nepodložená hodnocení.</p></ContentPage>; }
+export const metadata: Metadata = { title: "Recenze", description: "Ověřené zkušenosti klientek Studia Balance." };
+export default function ReviewsPage() { return <><SiteHeader /><main className="content-shell"><header className="page-heading"><p className="eyebrow">Recenze</p><h1>Zkušenosti klientek</h1><p>Zveřejňujeme pouze skutečné reference, které klientky schválily k publikaci.</p></header><ReviewsShowcase /></main><SiteFooter /></>; }

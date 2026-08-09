@@ -81,6 +81,19 @@
         }
       }
     },
+    "/api/v1/reviews": {
+      "get": {
+        "summary": "List approved public reviews",
+        "operationId": "listReviews",
+        "tags": ["Content"],
+        "security": [],
+        "parameters": [{ "name": "featured", "in": "query", "schema": { "type": "boolean", "default": false } }],
+        "responses": {
+          "200": { "description": "Published reviews with confirmed consent, in display order.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Review" } } } } } } },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/api/v1/sessions": {
       "get": {
         "summary": "List public class sessions",
@@ -307,6 +320,13 @@
     "/api/v1/admin/sessions/{id}/cancel": {
       "post": { "summary": "Cancel a session and all active bookings without fees", "operationId": "adminCancelSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReasonRequest" } } } }, "responses": { "200": { "description": "Cancelled." }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
     },
+    "/api/v1/admin/content/reviews": {
+      "get": { "summary": "List reviews including drafts", "operationId": "adminListReviews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All reviews.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminReview" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a review draft or approved review", "operationId": "adminCreateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/reviews/{id}": {
+      "patch": { "summary": "Update, publish, feature or hide a review", "operationId": "adminUpdateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
     "/api/v1/admin/users": {
       "get": { "summary": "List client profiles", "operationId": "adminListUsers", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "search", "in": "query", "schema": { "type": "string", "maxLength": 200 } }], "responses": { "200": { "description": "Clients.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
     },
@@ -529,6 +549,9 @@
         "required": ["lateCancellationConfirmed"],
         "properties": { "lateCancellationConfirmed": { "type": "boolean" } }
       },
+      "Review": { "type": "object", "additionalProperties": false, "required": ["id","authorLabel","body","source","reviewedOn","rating","classType"], "properties": { "id": { "type": "string", "format": "uuid" }, "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] } } },
+      "AdminReviewInput": { "type": "object", "additionalProperties": false, "required": ["authorLabel","body","reviewedOn","rating","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean", "description": "Must be true before publication." }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
+      "AdminReview": { "type": "object", "additionalProperties": false, "required": ["id","authorLabel","body","source","reviewedOn","rating","classType","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "id": { "type": "string", "format": "uuid" }, "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean" }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
       "AdminMutationResponse": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } },
       "AdminClassTypeInput": { "type": "object", "additionalProperties": false, "required": ["slug","name","tagline","description","durationMinutes","arrivalLeadMinutes","active","sortOrder","difficulty","benefits","audience","suitableForBeginners","defaultEquipment","whatToBring","practicalNotice","heroImagePath","heroImageAlt","seoTitle","seoDescription"], "properties": { "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "name": { "type": "string" }, "tagline": { "type": "string" }, "description": { "type": "string" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 }, "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 }, "benefits": { "type": "string" }, "audience": { "type": "string" }, "suitableForBeginners": { "type": "boolean" }, "defaultEquipment": { "type": "string" }, "whatToBring": { "type": "string" }, "practicalNotice": { "type": "string" }, "heroImagePath": { "type": "string" }, "heroImageAlt": { "type": "string" }, "seoTitle": { "type": "string" }, "seoDescription": { "type": "string" } } },
       "AdminClassType": { "allOf": [{ "$ref": "#/components/schemas/AdminClassTypeInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },
@@ -552,6 +575,7 @@
   "tags": [
     { "name": "System", "description": "Liveness and readiness." },
     { "name": "Schedule", "description": "Public class catalogue and schedule." },
+    { "name": "Content", "description": "Approved public Studio Balance content." },
     { "name": "Account", "description": "Authenticated client profile." },
     { "name": "Booking", "description": "Transactional client booking and cancellation." },
     { "name": "Administration", "description": "Role-protected operational administration with audit logging." }

@@ -27,6 +27,8 @@ zůstávají beze změny jako auditní stopa.
 | CD-014 | Zadavatel 2026-08-07 dodal ostřejší náhradní plakátové podklady pro všech šest lekcí | nahrazují dosavadní preview rastry; konkrétní způsob zobrazení v kartě určuje novější CD-015 a finální produkční média nadále patří do schváleného S3 workflow |
 | CD-015 | Zadavatel 2026-08-08 schválil jednotnou velikost plakátů v katalogu lekcí | karty používají společný formát s kontrolovaným cropem od horní hrany; název ani hlavní motiv se nesmí oříznout |
 | CD-016 | Zadavatel 2026-08-08 schválil úplné zobrazení plakátu v detailu lekce | detail používá `contain` a ztlumené pozadí z téhož obrazu; katalogové karty zůstávají ve společném formátu podle CD-015 |
+| CD-017 | Zadavatel 2026-08-09 opravil slogan na přesné znění „Najdi si svůj balanc.“ | novější znění nahrazuje variantu „balans“ v původním briefu a používá se jednotně na veřejném webu |
+| CD-018 | Zadavatel 2026-08-09 schválil pás skutečných recenzí na titulní stránce | recenze se ručně spravují v administraci, publikace vyžaduje doložený souhlas a hvězdičky se zobrazí jen u skutečně předaného hodnocení; automatický sběr hodnocení není tímto rozhodnutím schválen |
 
 ## Schválené náročnosti lekcí
 

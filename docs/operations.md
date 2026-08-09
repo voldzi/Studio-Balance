@@ -94,8 +94,8 @@ za aktivní.
 
 ### Stav aktivace 2026-08-05
 
-Nginx publikace směruje na produkční stack; aktuálně nasazená aplikační revize
-je `fb77662`:
+Nginx publikace byla aktivována proti aplikační revizi `fb77662` a směruje na
+produkční stack:
 
 - `http://studiobalance.zeleznalady.cz` vrací 301 na HTTPS;
 - `https://studiobalance.zeleznalady.cz` vrací web 200;
@@ -107,7 +107,9 @@ je `fb77662`:
 - externí smoke test potvrdil HTTPS web 200 a veřejný rozvrh 200.
 
 Jde o zákaznickou první verzi. Produkční PostgreSQL a Keycloak jsou zapojené;
-S3 a e-mail zůstávají mimo rozsah tohoto preview.
+S3 a e-mail zůstávají mimo rozsah tohoto preview. Provozní audit 9. 8. 2026
+před následujícím rolloutem ověřil běžící revizi `fd7b990`, zdravé web/API/worker
+kontejnery a stejnou veřejnou DMZ trasu.
 
 ## Produkční verze
 
@@ -146,16 +148,27 @@ na Docker hostu. Kandidát používá interní host porty 3281 (web) a 4281 (API
 aby nemohl samovolně převzít stávající veřejný preview na portech 3280/4280.
 
 ```bash
-pnpm deploy:production <git-sha>
+pnpm deploy:production -- <git-sha>
+pnpm rollback:production -- <previous-git-sha>
 curl --fail http://docker.home.cz:4281/ready
 curl --fail --head http://docker.home.cz:3281/
 ```
 
 Nasazení odmítne nepřítomný nebo příliš otevřený runtime soubor (vyžaduje
 `0600`), nízkou diskovou/RAM rezervu a neúspěšný health check. Obrazy sestavuje
-sériově, aby nezvyšovalo tlak na omezený swap hostitele. Nevypisuje konfigurační
-hodnoty a nemění DMZ. Přepnutí veřejného Nginxu je samostatný change po ověření
-autentizace, e-mailu, záloh a provozní readiness.
+sériově, aby nezvyšovalo tlak na omezený swap hostitele. Kandidát se nejprve
+sestaví, po spuštění musí API readiness vrátit přesně požadovanou Git revizi a
+web musí odpovědět 200. Deployment i rollback používají společný zámek proti
+souběhu. Pokud kandidát nenaběhne, postup ověří dostupnost všech tří předchozích
+image (API, web, worker), obnoví je a znovu čeká na readiness přesné předchozí
+revize. Když se nepotvrdí ani rollback, skript skončí chybou a vyžaduje ruční
+zásah; stav nesmí být označen za úspěšné nasazení. Nevypisuje konfigurační
+hodnoty a nemění DMZ.
+
+Webový runtime vytváří zapisovatelný pouze adresář `.next/cache` pro uživatele
+`node`; zbytek aplikačního stromu zůstává pouze pro čtení. Po rollout se dvakrát
+vyžádá stejná optimalizovaná fotografie a v logu se ověří, že nevzniká `EACCES`
+ani `unhandledRejection` z image cache.
 
 Pro dočasné udělení přístupu z lokální administrátorské stanice slouží
 `scripts/grant-dmz-codex-access.sh`. Interaktivně využije existující SSH a sudo
@@ -321,6 +334,22 @@ výchozím desktopovém rozměru i na šířce 360 px: česká lokalizace, brand
 stylesheet a rozvržení bez vodorovného posuvu. Produkční ověření nezahrnuje
 zadání přihlašovacích údajů ani změnu MFA uživatele.
 
+### Jmenovitý účet administrátorky
+
+`scripts/provision-production-admin.sh` se spouští až po potvrzení přesného
+e-mailu provozovatelky. Interaktivně načte Keycloak master heslo bez echo,
+vytvoří nebo po výslovném potvrzení aktualizuje jmenovitý účet, přiřadí pouze
+realm roli `admin`, nastaví jednorázové dočasné heslo a required action
+`CONFIGURE_TOTP`. Dočasné heslo se nepíše do repozitáře ani konfiguračního
+souboru a předává se odděleným schváleným kanálem.
+
+Admin OIDC žádost navíc používá `prompt=login` a `max_age=0`, takže při novém
+vstupu do administrace nelze pouze převzít dřívější klientskou SSO relaci.
+Před předáním se dokončí první login, změna dočasného hesla a registrace TOTP;
+následně se v druhé anonymní relaci ověří, že přihlášení vyžaduje heslo i OTP a
+že klientský účet bez role končí na srozumitelné chybě. Dokud tento test
+neproběhne pro potvrzený jmenovitý účet, administrátorský přístup není předaný.
+
 ## Health a readiness
 
 - `GET /health`: 200, pokud proces běží; nekontroluje vzdálené služby;
@@ -362,6 +391,19 @@ ne přepsat databázi starou zálohou. Restore databáze je samostatný incident
 postup jen pro poškození/ztrátu dat. Po rollbacku se ověří health/readiness,
 zápis testovací rezervace v bezpečném prostředí, queue/outbox a stav migrací.
 
+```bash
+pnpm rollback:production -- <previous-git-sha>
+```
+
+Vzdálený wrapper ověří, že cílový release obsahuje produkční Compose soubor,
+bezpečně nahraje aktuální management rollback skript a na Docker hostu ověří
+existenci všech tří cílových image. Rollback používá `--no-build`, neprovádí
+databázový down migration a přijme výsledek jen tehdy, když readiness vrátí
+přesnou cílovou revizi a web odpoví 200. Předchozí image se proto nemažou,
+dokud neuplyne schválené rollback okno. Migrace každého release musí být po
+tuto dobu zpětně kompatibilní; jinak je rollback aplikace zakázán a řeší se
+samostatným incidentním postupem.
+
 ## Vlastnictví a předání
 
 Studio Balance musí vlastnit nebo mít plný přístup k doméně, DNS, Nginx DMZ,
@@ -388,14 +430,15 @@ all pre-merge checks: pnpm check
 production database bootstrap: scripts/bootstrap-production-postgres.sh
 isolated preview deploy to docker.home.cz: pnpm deploy:preview -- <git-sha>
 isolated preview rollback: pnpm rollback:preview -- <previous-git-sha>
-production Docker candidate deploy to docker.home.cz: pnpm deploy:production <git-sha>
+production Docker candidate deploy to docker.home.cz: pnpm deploy:production -- <git-sha>
+production Docker rollback on docker.home.cz: pnpm rollback:production -- <previous-git-sha>
 Keycloak realm/client provision: scripts/bootstrap-production-keycloak.sh
 Keycloak production preview accounts: scripts/provision-production-preview-accounts.sh
 Keycloak production admin with mandatory MFA enrollment: scripts/provision-production-admin.sh
 Nginx preview publish through dmz.home.cz: infra/nginx/install-studiobalance.sh
 backup/restore test: TBD
 S3 provision/backup/restore test: TBD
-production deploy/rollback: TBD
+production deploy/rollback: infra/scripts/deploy-production.sh | infra/scripts/rollback-production.sh
 ```
 
 První lokální spuštění používá `cp .env.example .env`, `pnpm infra:up`,

@@ -28,11 +28,11 @@ rezervační pravidla nebo klíčové obrazovky.
 
 ## Fáze 1 – design systém a ověřený prototyp
 
-Stav k 2026-08-04: první zákaznické webové preview je implementované podle
-kompozitního návrhu a používá klientem dodané logo a fotografie. Úvod, veřejný
-rozvrh, detail termínu, vstup do rezervace a klientský přehled jsou responzivní;
-vizuální QA prošla na desktopu a mobilu. Finální jednotlivé fotografie lekcí,
-průhledné logo a schválení provozovatelkou zůstávají exit gate této fáze.
+Stav k 2026-08-09: zákaznické webové preview používá dodané logo, sjednocené
+ostré plakáty všech šesti lekcí a responzivní úvod, katalog, detaily, rozvrh,
+rezervaci i klientský přehled. Zadavatelka vizuál kladně přijala; oprava sloganu
+a pás skutečných schválených recenzí jsou zapracované. Finální fotografie
+reálného dokončeného studia a výslovné finální schválení zůstávají exit gate.
 
 Výstupy:
 
@@ -48,14 +48,15 @@ nikde neukazuje počet míst, platba ani waitlist.
 
 ## Fáze 2 – aplikační základ, backend a administrace
 
-Stav k 2026-08-04: body 1–2 a první část bodů 3–6 mají implementovaný řez —
+Stav k 2026-08-09: body 1–2 a první část bodů 3–6 mají implementovaný řez —
 spustitelný scaffold, health/readiness, konfiguraci, PostgreSQL 18 migrace,
 request ID, strukturované logy, auditní základ, OIDC BFF relaci, veřejný katalog
 termínů, klientský profil, transakční rezervaci, idempotenci, klientský přehled
-a včasné/pozdní storno. Image web/API/worker a oddělené preview/produkční
-Compose deploymenty jsou připravené podle ADR 0006. Administrace, plný auditní
-workflow, e-mail, S3 media workflow a všechny produkční release gates tím nejsou
-uzavřené.
+a včasné/pozdní storno. Image web/API/worker, oddělené preview/produkční Compose
+deploymenty, bezpečný rollback a první administrace lekcí, termínů, klientů,
+rezervací, docházky a recenzí jsou implementované. Opakované série, úplný auditní
+workflow, e-mail, S3 media workflow, jmenovité admin předání a všechny produkční
+release gates tím nejsou uzavřené.
 
 Pořadí vertikálních řezů:
 

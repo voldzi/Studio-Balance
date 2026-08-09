@@ -117,6 +117,10 @@ export async function createLoginAttempt(returnTo: string, mode: IdentityMode = 
   url.searchParams.set("nonce", nonce);
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
+  if (mode === "admin") {
+    url.searchParams.set("prompt", "login");
+    url.searchParams.set("max_age", "0");
+  }
 
   return { authorizationUrl: url.toString(), cookieValue };
 }

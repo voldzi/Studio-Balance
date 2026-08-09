@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { SiteHeader } from "../components/site-header";
 import { LessonCatalog } from "../components/lesson-catalog";
+import { ReviewsShowcase } from "../components/reviews-showcase";
 
 export default function HomePage() {
   return (
@@ -22,7 +23,7 @@ export default function HomePage() {
           <div className="hero-overlay" />
           <div className="hero-copy">
             <p className="eyebrow eyebrow-light">Move · Flow · Balance</p>
-            <h1 id="hero-title">Najdi si svůj balans.</h1>
+            <h1 id="hero-title">Najdi si svůj balanc.</h1>
             <p className="hero-lead">Pohyb, síla a klid v komorním studiu s osobním přístupem.</p>
             <div className="actions">
               <Link className="button" href="/rozvrh">Rezervovat lekci</Link>
@@ -79,12 +80,14 @@ export default function HomePage() {
             <Link className="button button-ghost" href="/balance-flow">Poznat Balance Flow</Link>
           </div>
         </section>
+
+        <ReviewsShowcase homepage />
       </main>
 
       <footer id="kontakt">
         <div className="footer-brand">
           <Image alt="Studio Balance" height={92} src="/images/studio-balance/brand-logo.jpg" width={154} />
-          <p>Najdi si svůj balans.</p>
+          <p>Najdi si svůj balanc.</p>
         </div>
         <div>
           <h2>Kontakt</h2>

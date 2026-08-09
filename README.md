@@ -104,7 +104,7 @@ Jednotlivé procesy lze spustit přes `pnpm dev:web`, `pnpm dev:api` a
 `pnpm dev:worker`. Lokální vývoj se nikdy nesmí připojovat k produkční databázi
 nebo produkčnímu Keycloak realmu.
 
-## Interní náhled na Docker hostiteli
+## Nasazení na Docker hostiteli
 
 Přesný čistý Git commit lze nasadit příkazem `pnpm deploy:preview -- <sha>`.
 Na `docker.home.cz` vznikne izolovaný Compose projekt s webem na portu 3280,
@@ -113,10 +113,14 @@ náhled bez DMZ, produkčního Keycloaku, HAProxy databáze a S3. Ověření a r
 popisuje [provozní dokumentace](docs/operations.md).
 
 Nginx publikaci tohoto preview popisuje
-[ADR 0007](docs/adr/0007-dmz-nginx-publication.md). Preview je od 2026-08-04
-dostupné na `https://studiobalance.zeleznalady.cz`; nadále nejde o dokončené
-produkční vydání, protože používá izolovanou preview databázi bez produkčního
-Keycloaku, PostgreSQL a S3.
+[ADR 0007](docs/adr/0007-dmz-nginx-publication.md). Veřejná adresa nyní přes
+DMZ směruje na samostatný produkční stack na portech 3281/4281 s produkčním
+Keycloakem a PostgreSQL přes HAProxy; izolovaný preview stack zůstává neveřejný.
+Přesný čistý produkční commit se nasadí pomocí
+`pnpm deploy:production -- <sha>` a předchozí kompatibilní image se obnoví přes
+`pnpm rollback:production -- <previous-sha>`. S3 media workflow, e-mail a
+zbývající release gates se nesmí vydávat za dokončené. Přesné kontroly a
+rollback popisuje [provozní dokumentace](docs/operations.md).
 
 ## Dokumentace
 

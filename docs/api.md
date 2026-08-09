@@ -5,9 +5,9 @@
 Studio Balance potřebuje jedno API pro veřejný web, klientský účet a administraci.
 Závazným strojovým kontraktem je `openapi/openapi.json`. Aktuální první
 vertikální řez implementuje health/readiness, veřejné typy lekcí a termíny,
-profil klienta, vytvoření a výpis vlastních rezervací a bezpečné storno s
-preview důsledku. Ostatní katalog v tomto dokumentu je roadmapa; funkční
-endpoint se smí implementovat až po doplnění do OpenAPI.
+schválené recenze, profil klienta, vytvoření a výpis vlastních rezervací a
+bezpečné storno s preview důsledku. Ostatní katalog v tomto dokumentu je
+roadmapa; funkční endpoint se smí implementovat až po doplnění do OpenAPI.
 
 ## Zdroje pravdy
 
@@ -96,8 +96,9 @@ Doporučené doménové kódy:
 
 ## Veřejný endpoint katalog
 
-Implementované jsou veřejný katalog a detail lekcí, seznam termínů a detail
-termínu. Další řádky jsou plánované a nejsou součástí aktuálního OpenAPI.
+Implementované jsou veřejný katalog a detail lekcí, seznam termínů, detail
+termínu a čtení publikovaných recenzí. Ostatní řádky jsou plánované a nejsou
+součástí aktuálního OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
@@ -137,6 +138,16 @@ poznámka, seznam klientů a jakýkoli waitlist údaj.
 
 `availability` je jeden z `bookable`, `full`, `closed`, `cancelled`,
 `completed`.
+
+### Veřejná recenze
+
+`GET /api/v1/reviews` vrací pouze publikované recenze s doloženým souhlasem.
+Volitelný query parametr `featured=true` omezí výstup na nejvýše šest referencí
+pro titulní stránku. Response neobsahuje interní příznak souhlasu ani koncepty.
+`rating` je `null`, pokud klientka skutečné hodnocení neposkytla; nesmí se
+dopočítat z náročnosti lekce. `source` je volitelný údaj o původu reference a
+ve veřejné odpovědi je `null`, pokud nebyl zadán. Odkaz na typ lekce se vrací
+jen pro aktuálně aktivní typ, aby veřejná reference nevedla na neaktivní detail.
 
 ## Identita a profil
 
@@ -220,9 +231,14 @@ URL nebo payment token jsou zakázané.
 | audit | read-only `GET /api/v1/admin/audit-log` |
 
 První provozní řez implementuje dashboard, typy lekcí, instruktory, termíny,
-zrušení termínu, seznam klientů, seznam rezervací a evidenci účasti/neúčasti.
+zrušení termínu, seznam klientů, seznam rezervací, evidenci účasti/neúčasti a
+`GET/POST/PATCH /api/v1/admin/content/reviews` pro koncept, publikaci, skrytí a
+řazení schválených recenzí.
 Všechny cesty používají samostatnou HTTP-only admin relaci, vyžadují roli
-`admin` nebo `super_admin` a každá změna zapisuje auditní záznam. Série,
+`admin` nebo `super_admin`; administrační výpis je `private, no-store` a každá
+změna se zapisuje spolu s auditním záznamem v jediné databázové transakci.
+Zdroj reference je volitelný. Při přiřazení lekce musí typ existovat a
+publikovaná reference smí odkazovat pouze na aktivní typ lekce. Série,
 ruční rezervace, poplatky, obsah, média a čtení auditu zůstávají následujícím
 řezem; tabulka výše je cílový kontrakt.
 
