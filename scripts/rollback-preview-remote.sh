@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--" ]]; then
+  shift
+fi
+
 remote_host="${STUDIO_BALANCE_DOCKER_HOST:-docker.home.cz}"
 version="${1:-}"
 remote_root="/home/voldzi/deployments/studio-balance"

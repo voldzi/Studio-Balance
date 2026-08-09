@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "${1:-}" == "--" ]]; then
+  shift
+fi
+
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 remote_host="${STUDIO_BALANCE_DOCKER_HOST:-docker.home.cz}"
 version="${1:-$(git -C "$root" rev-parse HEAD)}"
