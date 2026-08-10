@@ -69,12 +69,13 @@ zobrazuje pouze ručně vložené reference s doloženým souhlasem a volitelné
 hvězdičky jen tehdy, pokud je klientka skutečně udělila.
 
 Dne 2026-08-10 zadavatel dodal první skutečnou recenzi, výslovný souhlas
-autorky s publikací, pevný týdenní rozvrh, kapacity a cenu prvního ověřovacího
-termínu TRX. Obrázek ve složce `02 Recenze` je autoritativní podklad pro časy a
-rozlišení Barre Sculpt / Barre Strength; nejde o fotografii recenzentky.
-Recenze neobsahuje hvězdičkové hodnocení, proto se žádné nedoplňuje. Ceny
-ostatních lekcí, datum účinnosti celého opakovaného rozvrhu a konečná kapacita
-Barre zůstávají otevřené.
+autorky s publikací, pevný týdenní rozvrh a kapacity. Původní obrázek ve složce
+`02 Recenze` je autoritativní podklad pro časy a rozlišení Barre Sculpt / Barre
+Strength; nejde o fotografii recenzentky. Novější soubor
+`03 Rozvrh/Studio_Balance_kompletni_rozvrh_2026-08-10.jpg` potvrzuje také ceny
+a lektorky a v těchto údajích má před starším podkladem přednost. Recenze
+neobsahuje hvězdičkové hodnocení, proto se žádné nedoplňuje. Otevřená zůstává
+jen konečná kapacita obou Barre variant.
 
 Stejná lokální složka obsahuje také historické screenshoty veřejných hodnocení
 a soukromých zpráv. Některé uvádějí zdravotní stav, hmotnost nebo tělesné míry
@@ -159,6 +160,6 @@ Unikátní obsah zahrnuje:
 
 Před finálním produkčním vydáním je nutné potvrdit nebo dodat: finální logo v
 SVG a PNG, schválený hero obraz, reálné fotografie lekcí a instruktorů, přesné
-kontakty, úplný ceník, datum účinnosti pevného rozvrhu, texty, další recenze,
-právní dokumenty, parkování, sociální profily a mapu. App Store/Google Play
-assety se po rozhodnutí CD-006 nepožadují.
+kontakty, konečnou kapacitu Barre, texty, další recenze, právní dokumenty,
+parkování, sociální profily a mapu. App Store/Google Play assety se po
+rozhodnutí CD-006 nepožadují.

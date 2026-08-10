@@ -35,23 +35,24 @@ zůstávají beze změny jako auditní stopa.
 | CD-022 | První ověřovací termín je TRX v pondělí 17:00–18:00 za 160 Kč s kapacitou 8 | nejbližší budoucí termín se založí na 17. 8. 2026 a umožní ověřit celý veřejný rezervační tok |
 | CD-023 | Pevný týdenní rozvrh platí od 10. 8. 2026 | datum účinnosti už není otevřené; termíny se zveřejňují podle potvrzeného rozvrhu a cen, kapacita Barre zůstává dočasně 10 míst |
 | CD-024 | TRX stojí 160 Kč a všechny ostatní lekce mají jednotnou cenu 299 Kč | celý pevný rozvrh lze zveřejnit v aktuálním 30denním rezervačním horizontu; ceny se ukládají na konkrétním termínu pro správný rezervační a storno tok |
+| CD-025 | Novější kompletní rozvrh nahrazuje cenovou část CD-024 a potvrzuje lektorky | Barre Sculpt a Barre Strength stojí 250 Kč; TRX, Balance Flow, Kruhový trénink, Jumping a Power Yoga stojí 160 Kč; přiřazení lektorek je závazné podle tabulky níže |
 
 ## Schválený týdenní rozvrh 2026-08-10
 
-| Den | Čas | Lekce |
-| --- | --- | --- |
-| pondělí | 17:00–18:00 | TRX |
-| pondělí | 18:10–19:10 | Balance Flow |
-| úterý | 17:00–18:00 | Barre Sculpt |
-| úterý | 18:15–19:15 | Kruhový trénink |
-| středa | 16:00–17:00 | TRX |
-| středa | 17:15–18:15 | Jumping |
-| čtvrtek | 8:30–9:30 | Barre Strength |
-| čtvrtek | 17:00–18:00 | Balance Flow |
-| čtvrtek | 18:15–19:15 | Kruhový trénink |
-| pátek | 17:30–18:30 | Power Yoga |
-| neděle | 16:00–17:00 | Jumping |
-| neděle | 18:00–19:00 | Power Yoga |
+| Den | Čas | Lekce | Lektorka |
+| --- | --- | --- | --- |
+| pondělí | 17:00–18:00 | TRX | Nicola Lojková |
+| pondělí | 18:10–19:10 | Balance Flow | Nicola Lojková |
+| úterý | 17:00–18:00 | Barre Sculpt | Nicola Lojková |
+| úterý | 18:15–19:15 | Kruhový trénink | Tereza |
+| středa | 16:00–17:00 | TRX | Nicola Lojková |
+| středa | 17:15–18:15 | Jumping | Nicola Lojková |
+| čtvrtek | 8:30–9:30 | Barre Strength | Katka |
+| čtvrtek | 17:00–18:00 | Balance Flow | Nicola Lojková |
+| čtvrtek | 18:15–19:15 | Kruhový trénink | Tereza |
+| pátek | 17:30–18:30 | Power Yoga | Helka |
+| neděle | 16:00–17:00 | Jumping | Monika |
+| neděle | 18:00–19:00 | Power Yoga | Helka |
 
 | Lekce | Maximální kapacita |
 | --- | ---: |
@@ -63,10 +64,18 @@ zůstávají beze změny jako auditní stopa.
 | Jumping | 16 |
 | Power Yoga | 16 |
 
-Celý rozvrh je obsahově finální a platí od 10. 8. 2026. Produkční termíny
-v aktuálním 30denním rezervačním horizontu se zveřejňují za 160 Kč u TRX
-a za jednotných 299 Kč u všech ostatních lekcí. U obou Barre variant se do
-konečného potvrzení používá předběžná kapacita 10 míst.
+| Lekce | Cena |
+| --- | ---: |
+| Barre Sculpt | 250 Kč |
+| Barre Strength | 250 Kč |
+| TRX | 160 Kč |
+| Balance Flow | 160 Kč |
+| Kruhový trénink | 160 Kč |
+| Jumping | 160 Kč |
+| Power Yoga | 160 Kč |
+
+Celý rozvrh je obsahově finální a platí od 10. 8. 2026. U obou Barre variant
+se do konečného potvrzení používá předběžná kapacita 10 míst.
 
 ## Schválené náročnosti lekcí
 
