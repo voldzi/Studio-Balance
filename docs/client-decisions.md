@@ -29,16 +29,51 @@ zůstávají beze změny jako auditní stopa.
 | CD-016 | Zadavatel 2026-08-08 schválil úplné zobrazení plakátu v detailu lekce | detail používá `contain` a ztlumené pozadí z téhož obrazu; katalogové karty zůstávají ve společném formátu podle CD-015 |
 | CD-017 | Zadavatel 2026-08-09 opravil slogan na přesné znění „Najdi si svůj balanc.“ | novější znění nahrazuje variantu „balans“ v původním briefu a používá se jednotně na veřejném webu |
 | CD-018 | Zadavatel 2026-08-09 schválil pás skutečných recenzí na titulní stránce | recenze se ručně spravují v administraci, publikace vyžaduje doložený souhlas a hvězdičky se zobrazí jen u skutečně předaného hodnocení; automatický sběr hodnocení není tímto rozhodnutím schválen |
+| CD-019 | Zadavatel 2026-08-10 dodal první skutečnou recenzi s výslovným souhlasem autorky | recenze Markety Šímové se publikuje bez hvězdiček, protože číselné hodnocení nebylo dodáno; je přiřazená k TRX a může být zvýrazněná na titulní stránce |
+| CD-020 | Barre se rozlišuje na samostatné typy Barre Sculpt a Barre Strength | Barre Sculpt znamená tvarování postavy, Barre Strength sílu a stabilitu; oba typy zůstávají administračně spravovanými daty a dočasně používají společný schválený Barre vizuál |
+| CD-021 | Zadavatel dodal pevný týdenní rozvrh a kapacity lekcí | TRX má 8 míst, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre má předběžně 10 míst a čeká na konečné potvrzení; produkční série se nezaloží s domyšlenými cenami ani bez data účinnosti |
+| CD-022 | První ověřovací termín je TRX v pondělí 17:00–18:00 za 160 Kč s kapacitou 8 | nejbližší budoucí termín se založí na 17. 8. 2026 a umožní ověřit celý veřejný rezervační tok |
+
+## Schválený týdenní rozvrh 2026-08-10
+
+| Den | Čas | Lekce |
+| --- | --- | --- |
+| pondělí | 17:00–18:00 | TRX |
+| pondělí | 18:10–19:10 | Balance Flow |
+| úterý | 17:00–18:00 | Barre Sculpt |
+| úterý | 18:15–19:15 | Kruhový trénink |
+| středa | 16:00–17:00 | TRX |
+| středa | 17:15–18:15 | Jumping |
+| čtvrtek | 8:30–9:30 | Barre Strength |
+| čtvrtek | 17:00–18:00 | Balance Flow |
+| čtvrtek | 18:15–19:15 | Kruhový trénink |
+| pátek | 17:30–18:30 | Power Yoga |
+| neděle | 16:00–17:00 | Jumping |
+| neděle | 18:00–19:00 | Power Yoga |
+
+| Lekce | Maximální kapacita |
+| --- | ---: |
+| TRX | 8 |
+| Balance Flow | 10 |
+| Barre Sculpt | přibližně 10, čeká na potvrzení |
+| Barre Strength | přibližně 10, čeká na potvrzení |
+| Kruhový trénink | 16 |
+| Jumping | 16 |
+| Power Yoga | 16 |
+
+Celý rozvrh je obsahově finální. Před vytvořením opakované produkční série
+zbývá dodat datum účinnosti a ceny všech lekcí kromě TRX. Cena TRX je 160 Kč.
 
 ## Schválené náročnosti lekcí
 
 | Lekce | Náročnost |
 | --- | ---: |
-| Barre | 3/5 |
+| Barre Sculpt | 3/5 |
+| Barre Strength | 3/5 |
 | TRX | 4/5 |
 | Balance Flow | 2/5 |
 | Jumping | 5/5 |
-| Power jóga | 3/5 |
+| Power Yoga | 3/5 |
 | Kruhový trénink | 4/5 |
 
 ## Schválená identita

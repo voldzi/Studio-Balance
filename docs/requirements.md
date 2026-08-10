@@ -52,8 +52,10 @@ a obchodní pravidla.
 | WEB-009 | P0 | každý aktivní typ lekce má veřejný detail se schválenou fotografií, náročností 1–5, vhodností, přínosy, pomůckami, praktickou informací a nejbližšími termíny bez počtu volných míst |
 | WEB-010 | P0 | klientský účet ukazuje potvrzení rezervace a důležité změny termínu jako zprávy v účtu |
 
-Počáteční typy lekcí jsou Barre, TRX, Balance Flow, Jumping, Kruhový trénink a
-Power jóga. Jde o data spravovaná administrací, ne enum nebo pevné karty v kódu.
+Aktuální typy lekcí jsou Barre Sculpt, Barre Strength, TRX, Balance Flow,
+Jumping, Kruhový trénink a Power Yoga. Jde o data spravovaná administrací, ne
+enum nebo pevné karty v kódu. Barre Sculpt se zaměřuje na tvarování postavy,
+Barre Strength na sílu a stabilitu.
 Administrace spravuje také náročnost, publikum, přínosy, praktické informace,
 SEO a schválenou cestu fotografie typu lekce.
 

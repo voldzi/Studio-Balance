@@ -5,7 +5,7 @@
 Repozitář obsahuje první funkční zákaznickou verzi: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
 klientský profil, transakční rezervaci/storno a první administrační řez pro
-rozvrh, lekce, klienty a rezervace. Revize `fb77662` běží veřejně
+rozvrh, lekce, klienty a rezervace. Revize `905647e` běží veřejně
 přes DMZ, používá produkční PostgreSQL přes HAProxy a produkční Keycloak.
 Izolovaný starší náhled zůstává oddělený na interních portech a není veřejným
 zdrojem dat.
@@ -113,8 +113,10 @@ kontejnery a stejnou veřejnou DMZ trasu.
 
 ## Produkční verze
 
-Revize `fb77662` byla 2026-08-05 nasazena a ověřena: web 200, API health a
-readiness 200 s odpovídající verzí, veřejný rozvrh čte produkční PostgreSQL,
+Výchozí produkční řez `fb77662` byl 2026-08-05 nasazen a ověřen. Aktuální
+revize `905647e` byla 2026-08-09 nasazena s recenzním modulem, opravenou cache
+obrázků a bezpečnějším deploy/rollback postupem. Web vrací 200, API health a
+readiness odpovídají nasazené verzi, veřejný rozvrh čte produkční PostgreSQL,
 klientský OIDC používá web klienta a `/admin` má samostatný admin OIDC klient,
 HTTP-only relaci a serverovou kontrolu rolí.
 DMZ přepnutí bylo 2026-08-05 provedeno omezeným sudo instalátorem; instalátor

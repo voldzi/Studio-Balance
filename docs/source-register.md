@@ -68,6 +68,21 @@ recenzní pás na titulní stránce. Implementace nevytváří ukázkové recenz
 zobrazuje pouze ručně vložené reference s doloženým souhlasem a volitelné
 hvězdičky jen tehdy, pokud je klientka skutečně udělila.
 
+Dne 2026-08-10 zadavatel dodal první skutečnou recenzi, výslovný souhlas
+autorky s publikací, pevný týdenní rozvrh, kapacity a cenu prvního ověřovacího
+termínu TRX. Obrázek ve složce `02 Recenze` je autoritativní podklad pro časy a
+rozlišení Barre Sculpt / Barre Strength; nejde o fotografii recenzentky.
+Recenze neobsahuje hvězdičkové hodnocení, proto se žádné nedoplňuje. Ceny
+ostatních lekcí, datum účinnosti celého opakovaného rozvrhu a konečná kapacita
+Barre zůstávají otevřené.
+
+Stejná lokální složka obsahuje také historické screenshoty veřejných hodnocení
+a soukromých zpráv. Některé uvádějí zdravotní stav, hmotnost nebo tělesné míry
+a u jednotlivých zpráv není doložený souhlas s novou publikací na tomto webu.
+Tyto screenshoty se proto neukládají do Git historie ani nepřepisují do
+produkční databáze. Pro aktuální publikaci je schválená pouze výše uvedená
+recenze Markety Šímové, u které zadavatel výslovně předal odpověď „Ano“.
+
 ## Analyzované textové podklady
 
 ### Závazný Markdown
@@ -142,7 +157,8 @@ Unikátní obsah zahrnuje:
 
 ## Chybějící produkční podklady
 
-Před produkčním použitím je nutné potvrdit nebo dodat: finální logo v SVG a
-PNG, schválený hero obraz, reálné fotografie lekcí a instruktorů, přesné
-kontakty, ceník, rozvrh, texty, recenze, právní dokumenty, parkování, sociální
-profily a mapu. App Store/Google Play assety se po rozhodnutí CD-006 nepožadují.
+Před finálním produkčním vydáním je nutné potvrdit nebo dodat: finální logo v
+SVG a PNG, schválený hero obraz, reálné fotografie lekcí a instruktorů, přesné
+kontakty, úplný ceník, datum účinnosti pevného rozvrhu, texty, další recenze,
+právní dokumenty, parkování, sociální profily a mapu. App Store/Google Play
+assety se po rozhodnutí CD-006 nepožadují.
