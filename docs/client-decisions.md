@@ -31,8 +31,9 @@ zůstávají beze změny jako auditní stopa.
 | CD-018 | Zadavatel 2026-08-09 schválil pás skutečných recenzí na titulní stránce | recenze se ručně spravují v administraci, publikace vyžaduje doložený souhlas a hvězdičky se zobrazí jen u skutečně předaného hodnocení; automatický sběr hodnocení není tímto rozhodnutím schválen |
 | CD-019 | Zadavatel 2026-08-10 dodal první skutečnou recenzi s výslovným souhlasem autorky | recenze Markety Šímové se publikuje bez hvězdiček, protože číselné hodnocení nebylo dodáno; je přiřazená k TRX a může být zvýrazněná na titulní stránce |
 | CD-020 | Barre se rozlišuje na samostatné typy Barre Sculpt a Barre Strength | Barre Sculpt znamená tvarování postavy, Barre Strength sílu a stabilitu; oba typy zůstávají administračně spravovanými daty a dočasně používají společný schválený Barre vizuál |
-| CD-021 | Zadavatel dodal pevný týdenní rozvrh a kapacity lekcí | TRX má 8 míst, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre má předběžně 10 míst a čeká na konečné potvrzení; produkční série se nezaloží s domyšlenými cenami ani bez data účinnosti |
+| CD-021 | Zadavatel dodal pevný týdenní rozvrh a kapacity lekcí | TRX má 8 míst, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre má předběžně 10 míst a čeká na konečné potvrzení; produkční série se nezaloží s domyšlenými cenami |
 | CD-022 | První ověřovací termín je TRX v pondělí 17:00–18:00 za 160 Kč s kapacitou 8 | nejbližší budoucí termín se založí na 17. 8. 2026 a umožní ověřit celý veřejný rezervační tok |
+| CD-023 | Pevný týdenní rozvrh platí od 10. 8. 2026 | datum účinnosti už není otevřené; v produkci lze ihned zveřejnit termíny, pro které je potvrzená cena, ostatní čekají pouze na cenu a konečné potvrzení kapacity Barre |
 
 ## Schválený týdenní rozvrh 2026-08-10
 
@@ -61,8 +62,10 @@ zůstávají beze změny jako auditní stopa.
 | Jumping | 16 |
 | Power Yoga | 16 |
 
-Celý rozvrh je obsahově finální. Před vytvořením opakované produkční série
-zbývá dodat datum účinnosti a ceny všech lekcí kromě TRX. Cena TRX je 160 Kč.
+Celý rozvrh je obsahově finální a platí od 10. 8. 2026. Produkční TRX termíny
+v aktuálním 30denním rezervačním horizontu lze zveřejnit za potvrzených 160 Kč.
+Před zveřejněním ostatních termínů zbývá dodat jejich ceny; u obou Barre
+variant navíc konečnou kapacitu.
 
 ## Schválené náročnosti lekcí
 

@@ -37,6 +37,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-024 | Barre Sculpt a Barre Strength jsou samostatné typy lekcí; první znamená tvarování postavy, druhý sílu a stabilitu | CD-020 |
 | RD-025 | Kapacity jsou TRX 8, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre je dočasně 10 do konečného potvrzení | CD-021 |
 | RD-026 | První ověřovací TRX je v pondělí 17:00–18:00 za 160 Kč a má kapacitu 8 | CD-022 |
+| RD-027 | Pevný týdenní rozvrh platí od 10. 8. 2026 | CD-023 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -46,7 +47,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | OQ-002 | Která varianta loga je poslední schválená a lze dodat SVG, transparentní PNG, favicon/app icon pravidla a ochrannou zónu? | blokuje finální design systém a produkční vizuál |
 | OQ-003 | Který hero obraz a které fotografie lekcí jsou skutečné a schválené k publikaci? | reference obsahují různé varianty; produkce nesmí použít neověřený raster |
 | OQ-004 | Které kontakty, sociální profily, adresa, parkování a otevírací informace jsou aktuální? | údaje z vizitky pouze ověřit, nekopírovat automaticky |
-| OQ-005 | Jaké jsou ceny ostatních lekcí, od kterého týdne platí celý pevný rozvrh a jaká je konečná kapacita obou Barre variant? | rozvrh a kapacity jsou jinak potvrzené; bez těchto tří údajů se nesmí hromadně vytvořit produkční série |
+| OQ-005 | Jaké jsou ceny ostatních lekcí a jaká je konečná kapacita obou Barre variant? | rozvrh platí od 10. 8. 2026; bez těchto údajů se nesmí zveřejnit ostatní placené termíny ani vydávat přibližnou kapacitu Barre za konečnou |
 
 ## Uzavřená produktová pravidla
 
