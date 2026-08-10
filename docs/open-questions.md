@@ -38,6 +38,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-025 | Kapacity jsou TRX 8, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre je dočasně 10 do konečného potvrzení | CD-021 |
 | RD-026 | První ověřovací TRX je v pondělí 17:00–18:00 za 160 Kč a má kapacitu 8 | CD-022 |
 | RD-027 | Pevný týdenní rozvrh platí od 10. 8. 2026 | CD-023 |
+| RD-028 | TRX stojí 160 Kč, všechny ostatní lekce mají jednotnou cenu 299 Kč | CD-024 |
 
 ## P0 – vlastnictví, obsah a značka
 
@@ -47,7 +48,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | OQ-002 | Která varianta loga je poslední schválená a lze dodat SVG, transparentní PNG, favicon/app icon pravidla a ochrannou zónu? | blokuje finální design systém a produkční vizuál |
 | OQ-003 | Který hero obraz a které fotografie lekcí jsou skutečné a schválené k publikaci? | reference obsahují různé varianty; produkce nesmí použít neověřený raster |
 | OQ-004 | Které kontakty, sociální profily, adresa, parkování a otevírací informace jsou aktuální? | údaje z vizitky pouze ověřit, nekopírovat automaticky |
-| OQ-005 | Jaké jsou ceny ostatních lekcí a jaká je konečná kapacita obou Barre variant? | rozvrh platí od 10. 8. 2026; bez těchto údajů se nesmí zveřejnit ostatní placené termíny ani vydávat přibližnou kapacitu Barre za konečnou |
+| OQ-005 | Jaká je konečná kapacita obou Barre variant a které lektorky vedou jednotlivé termíny? | do potvrzení se pro Barre používá 10 míst a u nových termínů Nicola Lojková; obojí zůstává administračně opravitelné a nesmí se vydávat za konečné rozdělení |
 
 ## Uzavřená produktová pravidla
 
