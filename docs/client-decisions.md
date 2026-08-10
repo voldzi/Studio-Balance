@@ -36,6 +36,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-023 | Pevný týdenní rozvrh platí od 10. 8. 2026 | datum účinnosti už není otevřené; termíny se zveřejňují podle potvrzeného rozvrhu a cen, kapacita Barre zůstává dočasně 10 míst |
 | CD-024 | TRX stojí 160 Kč a všechny ostatní lekce mají jednotnou cenu 299 Kč | celý pevný rozvrh lze zveřejnit v aktuálním 30denním rezervačním horizontu; ceny se ukládají na konkrétním termínu pro správný rezervační a storno tok |
 | CD-025 | Novější kompletní rozvrh nahrazuje cenovou část CD-024 a potvrzuje lektorky | Barre Sculpt a Barre Strength stojí 250 Kč; TRX, Balance Flow, Kruhový trénink, Jumping a Power Yoga stojí 160 Kč; přiřazení lektorek je závazné podle tabulky níže |
+| CD-026 | Veřejné sociální profily Studia Balance jsou Instagram `studiobalancenl` a dodaný Facebook profil | odkazy se zobrazí v kontaktní stránce a společném footeru; sledovací parametry Instagramu se neukládají |
 
 ## Schválený týdenní rozvrh 2026-08-10
 

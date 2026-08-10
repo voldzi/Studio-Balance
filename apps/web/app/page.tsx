@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SiteHeader } from "../components/site-header";
 import { LessonCatalog } from "../components/lesson-catalog";
 import { ReviewsShowcase } from "../components/reviews-showcase";
+import { SocialLinks } from "../components/social-links";
 
 export default function HomePage() {
   return (
@@ -93,6 +94,7 @@ export default function HomePage() {
           <h2>Kontakt</h2>
           <p>Ruská 10, 792 01 Bruntál</p>
           <Link href="/kontakt">Kontaktní informace</Link>
+          <SocialLinks compact />
         </div>
         <div>
           <h2>Rezervace</h2>

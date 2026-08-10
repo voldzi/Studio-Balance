@@ -211,6 +211,15 @@ footer p { margin: 0 0 var(--space-2); }
 footer > div:not(.footer-brand) { display: flex; flex-direction: column; align-items: flex-start; }
 footer a { margin-bottom: var(--space-2); }
 .footer-brand img { border-radius: var(--radius-sm); mix-blend-mode: screen; }
+.social-links { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.social-links a { min-height: 44px; padding: .65rem .9rem; display: inline-flex; align-items: center; gap: .45rem; border: 1px solid var(--color-border); border-radius: 999px; color: var(--color-text-primary); text-decoration: none; }
+.social-links a:hover { border-color: var(--color-accent); color: var(--color-accent-hover); }
+.social-links-compact { margin-top: var(--space-3); gap: var(--space-2); }
+footer .social-links a { margin: 0; border-color: rgba(247, 238, 229, .35); color: #f7eee5; }
+footer .social-links a:hover { border-color: #f7eee5; color: #fff; }
+.contact-socials { margin: var(--space-8) 0; padding: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-secondary); }
+.contact-socials h2 { margin-bottom: var(--space-2); }
+.contact-socials p { margin-bottom: var(--space-5); }
 
 .page-heading { max-width: 48rem; padding: clamp(3rem, 6vw, 5rem) 0 var(--space-10); }
 .page-heading h1 { margin-bottom: var(--space-5); }

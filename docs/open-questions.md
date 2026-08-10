@@ -48,7 +48,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | OQ-001 | Kdo je jmenovitý product owner, kdo schvaluje UX a kdo přebírá provoz? | stanovit jednu rozhodovací a jednu technickou kontaktní osobu |
 | OQ-002 | Která varianta loga je poslední schválená a lze dodat SVG, transparentní PNG, favicon/app icon pravidla a ochrannou zónu? | blokuje finální design systém a produkční vizuál |
 | OQ-003 | Který hero obraz a které fotografie lekcí jsou skutečné a schválené k publikaci? | reference obsahují různé varianty; produkce nesmí použít neověřený raster |
-| OQ-004 | Které kontakty, sociální profily, adresa, parkování a otevírací informace jsou aktuální? | údaje z vizitky pouze ověřit, nekopírovat automaticky |
+| OQ-004 | Které kontakty, adresa, parkování a otevírací informace jsou aktuální? | Instagram a Facebook jsou potvrzené v CD-026; ostatní údaje z vizitky pouze ověřit, nekopírovat automaticky |
 | OQ-005 | Jaká je konečná kapacita obou Barre variant? | do potvrzení se pro Barre používá pracovní kapacita 10 míst; veřejný klient počet míst nevidí |
 
 ## Uzavřená produktová pravidla
@@ -82,7 +82,7 @@ blokátorem implementace.
 | ID | Otázka | Dopad |
 | --- | --- | --- |
 | OQ-025 | Budou v první verzi filtry lekcí podle cíle/instruktora? | nesmí zkomplikovat základní rozvrh |
-| OQ-027 | Které sociální sítě se zobrazí, zejména TikTok? | prázdná síť se nesmí zobrazit |
+| OQ-027 | Má se vedle potvrzeného Instagramu a Facebooku zobrazit také TikTok? | prázdná nebo nepotvrzená síť se nesmí zobrazit |
 | OQ-028 | Má být po lekci výzva k hodnocení už v první verzi? | vyžaduje pravidlo četnosti a marketing/provozní klasifikaci |
 | OQ-029 | Má „Přidat do kalendáře“ nabídnout stažitelný ICS, webové odkazy Google/Outlook/Apple, nebo obojí? | ovlivní webový tok a časové testy |
 
