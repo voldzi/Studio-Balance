@@ -35,7 +35,7 @@ a obchodní pravidla.
 | INV-008 | časové pásmo lekcí je `Europe/Prague` | testy standardního i letního času |
 | INV-009 | přesně 24 hodin před začátkem je storno včas, o sekundu později už pozdní | hraniční testy na serveru |
 | INV-010 | zrušení studiem nikdy nezaloží storno poplatek | stav rezervace i fee tabulka |
-| INV-011 | nevzniká nativní iOS/Android aplikace ani app-store release | repozitář neobsahuje Expo/React Native workspace ani mobilní push provider |
+| INV-011 | nevzniká nativní iOS/Android aplikace ani app-store release | PWA zůstává instalovatelným responzivním webem; repozitář neobsahuje Expo/React Native workspace ani mobilní push provider |
 
 ## Veřejný web
 
@@ -51,6 +51,7 @@ a obchodní pravidla.
 | WEB-008 | P1 | SEO: title, description, canonical, sitemap, robots, Open Graph a vhodná strukturovaná data |
 | WEB-009 | P0 | každý aktivní typ lekce má veřejný detail se schválenou fotografií, náročností 1–5, vhodností, přínosy, pomůckami, praktickou informací a nejbližšími termíny bez počtu volných míst |
 | WEB-010 | P0 | klientský účet ukazuje potvrzení rezervace a důležité změny termínu jako zprávy v účtu |
+| WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje |
 
 Aktuální typy lekcí jsou Barre Sculpt, Barre Strength, TRX, Balance Flow,
 Jumping, Kruhový trénink a Power Yoga. Jde o data spravovaná administrací, ne
@@ -150,8 +151,10 @@ provozem se musí doplnit a ověřit doručování.
   profil a provozní zprávy.
 - Mobilní browser dostává plnohodnotný responzivní tok, nikoli omezenou
   sekundární verzi.
-- Mobilní push, APNs/FCM, native deep links a platformní offline storage jsou
-  mimo rozsah. Změny lekcí mají povinný e-mailový fallback.
+- Mobilní push, APNs/FCM a native deep links jsou mimo rozsah. PWA smí uložit
+  pouze statickou webovou vrstvu a offline obrazovku; online rozvrh, účet a
+  rezervace se nikdy nevydávají za aktuálně použitelné offline údaje. Změny
+  lekcí mají povinný e-mailový fallback.
 
 ## Administrace a obsah
 

@@ -141,6 +141,14 @@ pás vynechá a stránka Recenze zobrazí pravdivý prázdný stav. Schválený 
 datum se zobrazí jen tehdy, pokud byly skutečně dodány; samostatná stránka vždy
 nabídne CTA do rozvrhu a používá společný kontaktní footer.
 
+### Instalace webu (PWA)
+
+Web lze nainstalovat jako PWA pod názvem Studio Balance. Používá oficiální logo
+jako instalační ikonu, vlastní barevnost a samostatnou stránku pro stav bez
+připojení. Offline zůstávají dostupné jen bezpečně uložené statické soubory;
+rezervační data, rozvrh, přihlášený účet a API se necachují jako aktuální obsah
+a rezervaci nelze bez připojení provést.
+
 ## Rozvrh a veřejné stavy
 
 Desktop používá vzdušné karty po dnech, nikoli excelovou mřížku. Mobil používá

@@ -132,6 +132,9 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - žádný capacity count, waitlist, payment CTA nebo permanentka v DOM,
   accessible name, URL payloadu ani analytics eventu;
 - schválené logo/fotografie, crop a layout bez překryvu/shiftu.
+- PWA smoke: manifest obsahuje název, barvy a instalační ikony; service worker
+  neinterceptuje API ani neukládá rozvrh, účet nebo rezervace; bez připojení
+  navigace zobrazí pravdivou offline stránku.
 - detail každé lekce na 360 px i desktopu: schválená fotografie nebo bezpečný
   fallback, sémantická náročnost 1–5 hvězdiček, praktické informace a odkaz na
   nejbližší termín;

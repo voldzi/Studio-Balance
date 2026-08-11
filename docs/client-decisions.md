@@ -38,6 +38,8 @@ zůstávají beze změny jako auditní stopa.
 | CD-025 | Novější kompletní rozvrh nahrazuje cenovou část CD-024 a potvrzuje lektorky | Barre Sculpt a Barre Strength stojí 250 Kč; TRX, Balance Flow, Kruhový trénink, Jumping a Power Yoga stojí 160 Kč; přiřazení lektorek je závazné podle tabulky níže |
 | CD-026 | Veřejné sociální profily Studia Balance jsou Instagram `studiobalancenl` a dodaný Facebook profil | odkazy se zobrazí v kontaktní stránce a společném footeru; sledovací parametry Instagramu se neukládají |
 | CD-027 | Šest dodaných referencí od Heleny Šimkové, Evy Gaidadzi, Moniky Jendrišákové, Veroniky Škobrtalové, Lenky Zvyhalové a Hany Dokládalové je schváleno k publikaci | reference se přiřadí k TRX nebo Jumpingu, publikují bez nedodaného hvězdičkového hodnocení a s daty 2.–7. 8. 2026 |
+| CD-028 | Zadavatel 2026-08-11 ověřil kapacity a opravil cenu Balance Flow Board | kapacity jsou TRX 8, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre Sculpt i Barre Strength zůstávají do potvrzení na dočasných 10. Cena Balance Flow je 200 Kč, ostatní ceny z CD-025 zůstávají beze změny. |
+| CD-029 | Veřejný web může fungovat jako instalovatelná PWA | jde stále o responzivní web, nikoli nativní aplikaci. PWA poskytuje manifest, ikonu, bezpečné ukládání statických souborů a stránku bez připojení; rozvrh, účet, API a rezervace se offline neukládají ani neprovádějí. |
 
 ## Schválený týdenní rozvrh 2026-08-10
 
@@ -71,7 +73,7 @@ zůstávají beze změny jako auditní stopa.
 | Barre Sculpt | 250 Kč |
 | Barre Strength | 250 Kč |
 | TRX | 160 Kč |
-| Balance Flow | 160 Kč |
+| Balance Flow | 200 Kč |
 | Kruhový trénink | 160 Kč |
 | Jumping | 160 Kč |
 | Power Yoga | 160 Kč |
