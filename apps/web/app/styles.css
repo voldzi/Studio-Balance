@@ -195,10 +195,11 @@ h3 { font-size: 1.7rem; }
 
 .reviews-section { padding: 0 clamp(0rem, 3vw, 3rem) clamp(5rem, 10vw, 9rem); }
 .reviews-loading { min-height: 10rem; color: var(--color-text-secondary); }
-.reviews-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); }
+.reviews-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: var(--space-5); }
 .review-card { min-width: 0; min-height: 18rem; margin: 0; padding: clamp(1.5rem, 3vw, 2.25rem); display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-light); box-shadow: var(--shadow-soft); }
 .review-rating { margin: 0 0 var(--space-4); color: var(--color-accent-hover); font-size: 1.05rem; letter-spacing: .08em; }
 .review-quote { margin: 0; color: var(--color-text-primary); font-family: var(--font-display); font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.35; }
+.reviews-section-homepage .review-quote { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 6; }
 .review-attribution { margin-top: auto; padding-top: var(--space-6); display: grid; gap: var(--space-1); border-top: 1px solid var(--color-border); }
 .review-attribution cite { font-style: normal; font-weight: 800; }
 .review-attribution a { width: fit-content; color: var(--color-accent-hover); font-size: .82rem; }
@@ -468,8 +469,9 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
   .admin-session-row { grid-template-columns: 1fr auto; }
   .admin-session-row time, .admin-session-row div { grid-column: 1; }
   .reviews-section { padding-inline: 0; overflow: hidden; }
-  .reviews-grid { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); display: flex; gap: var(--space-4); overflow-x: auto; scroll-padding-inline: var(--space-4); scroll-snap-type: x mandatory; }
-  .review-card { flex: 0 0 min(88vw, 22rem); scroll-snap-align: start; }
+  .reviews-grid { grid-template-columns: 1fr; }
+  .reviews-section-homepage .reviews-grid { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); display: flex; gap: var(--space-4); overflow-x: auto; scroll-padding-inline: var(--space-4); scroll-snap-type: x mandatory; }
+  .reviews-section-homepage .review-card { flex: 0 0 min(88vw, 22rem); scroll-snap-align: start; }
 }
 
 @media (prefers-reduced-motion: reduce) {

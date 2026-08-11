@@ -47,7 +47,7 @@ export function ReviewsShowcase({ homepage = false }: { homepage?: boolean }) {
     <div className="reviews-action"><Link className="button" href="/rozvrh">Vybrat si lekci</Link></div>
   </>;
 
-  return <section aria-labelledby="reviews-title" className="reviews-section">
+  return <section aria-labelledby="reviews-title" className="reviews-section reviews-section-homepage">
     <div className="section-heading">
       <div><p className="eyebrow">Zkušenosti klientek</p><h2 id="reviews-title">Pohyb, ke kterému se rády vracejí</h2></div>
       <Link className="text-link" href="/recenze">Všechny recenze</Link>
