@@ -40,6 +40,8 @@ zůstávají beze změny jako auditní stopa.
 | CD-027 | Šest dodaných referencí od Heleny Šimkové, Evy Gaidadzi, Moniky Jendrišákové, Veroniky Škobrtalové, Lenky Zvyhalové a Hany Dokládalové je schváleno k publikaci | reference se přiřadí k TRX nebo Jumpingu, publikují bez nedodaného hvězdičkového hodnocení a s daty 2.–7. 8. 2026 |
 | CD-028 | Zadavatel 2026-08-11 ověřil kapacity a opravil cenu Balance Flow Board | kapacity jsou TRX 8, Balance Flow 10, Kruhový trénink 16, Jumping 16 a Power Yoga 16; Barre Sculpt i Barre Strength zůstávají do potvrzení na dočasných 10. Cena Balance Flow je 200 Kč, ostatní ceny z CD-025 zůstávají beze změny. |
 | CD-029 | Veřejný web může fungovat jako instalovatelná PWA | jde stále o responzivní web, nikoli nativní aplikaci. PWA poskytuje manifest, ikonu, bezpečné ukládání statických souborů a stránku bez připojení; rozvrh, účet, API a rezervace se offline neukládají ani neprovádějí. |
+| CD-030 | Skutečné proměny klientek před/po spravuje administrátorka | každá položka vyžaduje dvě skutečné fotografie, pravdivý popis a doložený výslovný souhlas s fotografiemi, textem a uvedeným jménem; bez souhlasu ji nelze publikovat. Fotografie patří do vyhrazeného Studio Balance S3 úložiště a nesmějí obsahovat zavádějící úpravy ani nepodložené zdravotní sliby. |
+| CD-031 | Administrace obsahuje kontextovou nápovědu | otazníky vysvětlují zejména kapacitu, cenu, pořadí, publikování, souhlas a práci s fotografiemi; nápověda je dostupná myší, dotykem i klávesnicí a nenahrazuje validační hlášení. |
 
 ## Schválený týdenní rozvrh 2026-08-10
 

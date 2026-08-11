@@ -234,12 +234,20 @@ První provozní řez implementuje dashboard, typy lekcí, instruktory, termíny
 zrušení termínu, seznam klientů, seznam rezervací, evidenci účasti/neúčasti a
 `GET/POST/PATCH /api/v1/admin/content/reviews` pro koncept, publikaci, skrytí a
 řazení schválených recenzí.
+Stejný řez obsahuje `GET /api/v1/transformations`, administrační
+`GET/POST/PATCH /api/v1/admin/content/transformations`, binární upload
+`POST /api/v1/admin/media/transformation-image` a veřejné čtení pouze
+publikovaného obrázku přes `GET /api/v1/media/{id}`. Upload přijímá JPG, PNG
+nebo WebP do 8 MB a vrací identifikátor normalizovaného WebP assetu. Publikace
+vyžaduje dvě různé fotografie a potvrzený souhlas; zvýrazněná proměna musí být
+současně publikovaná. Při nenakonfigurovaném úložišti vrací upload
+`MEDIA_STORAGE_UNAVAILABLE` s HTTP 503.
 Všechny cesty používají samostatnou HTTP-only admin relaci, vyžadují roli
 `admin` nebo `super_admin`; administrační výpis je `private, no-store` a každá
 změna se zapisuje spolu s auditním záznamem v jediné databázové transakci.
 Zdroj reference je volitelný. Při přiřazení lekce musí typ existovat a
-publikovaná reference smí odkazovat pouze na aktivní typ lekce. Série,
-ruční rezervace, poplatky, obsah, média a čtení auditu zůstávají následujícím
+publikovaná reference i proměna smí odkazovat pouze na aktivní typ lekce. Série,
+ruční rezervace, poplatky a čtení auditu zůstávají následujícím
 řezem; tabulka výše je cílový kontrakt.
 
 Generické wildcard endpointy se v OpenAPI nepoužívají; každý konkrétní resource

@@ -27,7 +27,7 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
       <details className="mobile-nav">
         <summary>Menu</summary>
         <nav aria-label="Mobilní navigace">
-          <Link href="/o-studiu">O studiu</Link><Link href="/lekce">Lekce</Link><Link href="/rozvrh">Rozvrh</Link><Link href="/balance-flow">Balance Flow</Link><Link href="/galerie">Galerie</Link><Link href="/cenik">Ceník</Link><Link href="/kontakt">Kontakt</Link>
+          <Link href="/o-studiu">O studiu</Link><Link href="/lekce">Lekce</Link><Link href="/rozvrh">Rozvrh</Link><Link href="/balance-flow">Balance Flow</Link><Link href="/promeny">Proměny</Link><Link href="/galerie">Galerie</Link><Link href="/cenik">Ceník</Link><Link href="/kontakt">Kontakt</Link>
         </nav>
       </details>
     </header>

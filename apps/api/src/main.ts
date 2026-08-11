@@ -16,6 +16,9 @@ async function bootstrap(): Promise<void> {
     genReqId: generateRequestId,
     logger: false
   });
+  for (const contentType of ["image/jpeg", "image/png", "image/webp"]) {
+    adapter.getInstance().addContentTypeParser(contentType, { parseAs: "buffer", bodyLimit: 8 * 1024 * 1024 }, (_request, body, done) => done(null, body));
+  }
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     abortOnError: false,
     logger: false

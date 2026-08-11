@@ -89,6 +89,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transformations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List approved client transformations */
+        get: operations["listTransformations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/media/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a public transformation image */
+        get: operations["getPublicMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -400,6 +434,75 @@ export interface paths {
         patch: operations["adminUpdateReview"];
         trace?: never;
     };
+    "/api/v1/admin/content/transformations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List transformations including drafts */
+        get: operations["adminListTransformations"];
+        put?: never;
+        /** Create a transformation */
+        post: operations["adminCreateTransformation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/transformations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update, publish, feature or hide a transformation */
+        patch: operations["adminUpdateTransformation"];
+        trace?: never;
+    };
+    "/api/v1/admin/media/transformation-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload and normalize a transformation image */
+        post: operations["adminUploadTransformationImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/media/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a transformation image in administration */
+        get: operations["adminGetMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -649,6 +752,73 @@ export interface components {
             featured: boolean;
             sortOrder: number;
         };
+        TransformationImage: {
+            url: string;
+            width: number;
+            height: number;
+        };
+        Transformation: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            story: string;
+            attribution: string;
+            beforeImage: components["schemas"]["TransformationImage"];
+            afterImage: components["schemas"]["TransformationImage"];
+            classType: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+        };
+        AdminTransformationInput: {
+            title: string;
+            story: string;
+            attribution: string;
+            /** Format: uuid */
+            beforeAssetId: string;
+            /** Format: uuid */
+            afterAssetId: string;
+            classTypeId: string | null;
+            /** @description Must be true before publication. */
+            consentConfirmed: boolean;
+            published: boolean;
+            /** @description May be true only for published content. */
+            featured: boolean;
+            sortOrder: number;
+        };
+        AdminTransformation: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            story: string;
+            attribution: string;
+            beforeImage: components["schemas"]["TransformationImage"];
+            afterImage: components["schemas"]["TransformationImage"];
+            classType: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+            /** Format: uuid */
+            beforeAssetId: string;
+            /** Format: uuid */
+            afterAssetId: string;
+            classTypeId: string | null;
+            consentConfirmed: boolean;
+            published: boolean;
+            featured: boolean;
+            sortOrder: number;
+        };
+        MediaUploadResponse: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            width: number;
+            height: number;
+        };
         AdminMutationResponse: {
             /** Format: uuid */
             id: string;
@@ -865,6 +1035,55 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+        };
+    };
+    listTransformations: {
+        parameters: {
+            query?: {
+                featured?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published transformations with confirmed consent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Transformation"][];
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    getPublicMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published WebP image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            404: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     listSessions: {
@@ -1457,6 +1676,140 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListTransformations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All transformations. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AdminTransformation"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateTransformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTransformationInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminUpdateTransformation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTransformationInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminUploadTransformationImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+                "image/webp": string;
+            };
+        };
+        responses: {
+            /** @description Normalized media asset. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    adminGetMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private WebP image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];

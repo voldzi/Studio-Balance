@@ -158,6 +158,13 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 
 ## Admin, CMS a média
 
+Proměny před/po mají testovat: koncept bez souhlasu, odmítnutí publikace bez
+souhlasu, dvě různé fotografie, skrytí z veřejného API, pořadí, vazbu pouze na
+aktivní lekci, audit a `private, no-store` administrační odpověď. Upload ověřuje
+JPG/PNG/WebP do 8 MB, odmítnutí jiného či poškozeného obsahu, odstranění EXIF,
+limit rozměrů, nedostupné S3 a zákaz veřejného čtení osiřelého objektu. UI se
+ověří od 360 px, klávesnicí a s nápovědou otevřitelnou fokusem.
+
 - recurrence create/edit/exception/cancel bez hardcodovaného rozvrhu;
 - preview dopadu významné změny;
 - obsahová změna se projeví veřejnému webu i klientskému účtu bez release;

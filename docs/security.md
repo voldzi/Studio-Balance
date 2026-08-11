@@ -170,6 +170,12 @@ externí CDN nebo fontovou službu.
   vyžaduje existující aktivní typ a neznámý identifikátor API odmítne;
 - zdroj reference je volitelný údaj, nikoli podmínka souhlasu nebo publikace,
   a administrační výpis konceptů používá `Cache-Control: private, no-store`.
+- proměna před/po se zveřejní jen s doloženým výslovným souhlasem; databáze i
+  API odmítnou publikaci bez souhlasu a zvýraznění nepublikovaného záznamu;
+- upload proměn přijímá pouze JPG, PNG nebo WebP do 8 MB, skutečný obraz dekóduje,
+  odstraní metadata, omezí rozměry a ukládá jen serverem vytvořený WebP;
+- veřejně lze načíst jen objekt použitý publikovanou proměnou. S3 credentials
+  zůstávají výhradně na serveru a patří samostatnému Studio Balance tenantovi.
 
 ## Hrozby vyžadující test
 

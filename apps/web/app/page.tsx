@@ -5,6 +5,7 @@ import { SiteHeader } from "../components/site-header";
 import { LessonCatalog } from "../components/lesson-catalog";
 import { ReviewsShowcase } from "../components/reviews-showcase";
 import { SocialLinks } from "../components/social-links";
+import { TransformationsShowcase } from "../components/transformations-showcase";
 
 export default function HomePage() {
   return (
@@ -82,6 +83,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        <TransformationsShowcase homepage />
         <ReviewsShowcase homepage />
       </main>
 

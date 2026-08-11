@@ -15,9 +15,13 @@ import { AdminRoleGuard } from "./admin/admin-role.guard.js";
 import { AdminService } from "./admin/admin.service.js";
 import { AdminReviewsController, ReviewsController } from "./content/reviews.controller.js";
 import { ReviewsService } from "./content/reviews.service.js";
+import { AdminTransformationsController, TransformationsController } from "./content/transformations.controller.js";
+import { TransformationsService } from "./content/transformations.service.js";
+import { AdminMediaController, MediaController } from "./media/media.controller.js";
+import { MediaStorageService } from "./media/media-storage.service.js";
 
 @Module({
-  controllers: [SystemController, ScheduleController, ReviewsController, MeController, BookingController, AdminController, AdminReviewsController],
-  providers: [RuntimeConfigService, DatabaseService, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, AccountService, BookingService, AdminService]
+  controllers: [SystemController, ScheduleController, ReviewsController, TransformationsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminMediaController],
+  providers: [RuntimeConfigService, DatabaseService, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, MediaStorageService, AccountService, BookingService, AdminService]
 })
 export class AppModule {}

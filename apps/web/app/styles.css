@@ -397,6 +397,34 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
 .admin-form-note { margin: 0; color: var(--color-text-secondary); font-size: .78rem; }
 .admin-review-list li div { min-width: 0; }
 .admin-review-list li span { max-width: 42rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-label-row { display: flex; align-items: center; gap: .45rem; }
+.admin-help { position: relative; display: inline-grid; flex: 0 0 auto; }
+.admin-help > button { width: 1.35rem; height: 1.35rem; padding: 0; border: 1px solid #ad8d77; border-radius: 50%; background: #fff; color: #6d4a36; cursor: help; font-size: .75rem; font-weight: 850; line-height: 1; }
+.admin-help > button:focus-visible { outline: 3px solid rgb(179 112 51 / 35%); outline-offset: 2px; }
+.admin-help > span { width: min(18rem, 75vw); padding: .65rem .75rem; position: absolute; z-index: 40; left: 50%; bottom: calc(100% + .55rem); visibility: hidden; border-radius: var(--radius-sm); background: #392d26; color: #fffaf4; box-shadow: 0 .7rem 2rem rgb(34 24 18 / 22%); font-size: .75rem; font-weight: 500; line-height: 1.45; opacity: 0; transform: translateX(-50%); pointer-events: none; }
+.admin-help:hover > span, .admin-help:focus-within > span { visibility: visible; opacity: 1; }
+.admin-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.admin-image-upload { padding: var(--space-3); border: 1px dashed #c7aa96; border-radius: var(--radius-sm); background: #f9f4ef; }
+.admin-image-upload img { width: 100%; aspect-ratio: 4 / 3; margin: var(--space-2) 0; display: block; border-radius: .4rem; object-fit: cover; }
+.admin-image-upload small { display: block; margin-top: .35rem; color: var(--color-text-secondary); font-size: .72rem; }
+.admin-before-after { grid-template-columns: 1fr 1fr; gap: .35rem; }
+.admin-before-after figure { margin: 0; position: relative; }
+.admin-before-after img { width: 6.5rem; aspect-ratio: 4 / 3; display: block; border-radius: .35rem; object-fit: cover; }
+.admin-before-after figcaption { padding: .15rem .35rem; position: absolute; left: .25rem; bottom: .25rem; border-radius: .25rem; background: rgb(57 45 38 / 82%); color: white; font-size: .62rem; font-weight: 800; text-transform: uppercase; }
+.admin-transformation-list > li > div { gap: .45rem; }
+
+.transformations-section { padding: var(--space-12) 0; }
+.transformations-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--space-6); }
+.transformation-card { overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-light); box-shadow: var(--shadow-soft); }
+.transformation-images { display: grid; grid-template-columns: 1fr 1fr; }
+.transformation-images figure { margin: 0; position: relative; overflow: hidden; }
+.transformation-images img { width: 100%; aspect-ratio: 4 / 5; display: block; object-fit: cover; }
+.transformation-images figcaption { padding: .35rem .65rem; position: absolute; left: var(--space-3); bottom: var(--space-3); border-radius: 999px; background: rgb(57 45 38 / 84%); color: white; font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.transformation-copy { padding: var(--space-5); }
+.transformation-copy h3 { margin: var(--space-2) 0 var(--space-3); font-size: 1.8rem; }
+.transformation-copy > p:not(.eyebrow) { color: var(--color-text-secondary); }
+.transformation-copy strong { display: block; margin-top: var(--space-4); }
+.transformation-copy .text-link { margin-top: var(--space-3); display: inline-block; }
 
 @media (max-width: 900px) {
   .site-header { grid-template-columns: 8rem 1fr; }
@@ -404,6 +432,7 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
   .header-actions { justify-content: end; }
   .lesson-grid { grid-template-columns: repeat(2, 1fr); }
   .reviews-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transformations-grid { grid-template-columns: 1fr; }
   .lesson-detail { grid-template-columns: 1fr; }
   .lesson-detail-hero { min-height: 28rem; }
   .session-row { grid-template-columns: 6rem 1fr 9rem 3rem; gap: var(--space-3); }
@@ -465,7 +494,7 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
   .admin-sidebar nav { margin-top: var(--space-4); grid-template-columns: repeat(6, minmax(8rem, 1fr)); overflow-x: auto; }
   .admin-user { margin-top: var(--space-4); grid-template-columns: 1fr auto; }
   .admin-content { padding: var(--space-5) var(--space-4); }
-  .admin-stats, .admin-form-grid, .admin-two-columns { grid-template-columns: 1fr; }
+  .admin-stats, .admin-form-grid, .admin-two-columns, .admin-upload-grid { grid-template-columns: 1fr; }
   .admin-session-row { grid-template-columns: 1fr auto; }
   .admin-session-row time, .admin-session-row div { grid-column: 1; }
   .reviews-section { padding-inline: 0; overflow: hidden; }

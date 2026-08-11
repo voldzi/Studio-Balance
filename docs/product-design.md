@@ -276,6 +276,20 @@ výhradně Keycloak. Všechny prvky mají trvalý label, dotykovou výšku alesp
 
 ## Interakce a motion
 
+### Proměny před/po a administrační nápověda
+
+Veřejná karta zobrazuje fotografie ve stejně velkých sousedních polích s
+trvalými štítky „Před“ a „Po“, pravdivým příběhem a schváleným označením
+klientky. Bez publikovaných položek se blok na titulní stránce vůbec nevykreslí;
+nevzniká náhradní nebo ilustrační proměna. Text neslibuje hubnutí ani léčebný
+výsledek a samostatná stránka připomíná individuálnost výsledků.
+
+Administrace používá u méně samozřejmých polí malé tlačítko s otazníkem.
+Nápověda se zobrazí hoverem i fokusem, má vlastní přístupný název, neotevírá
+novou stránku a na mobilu nepřetéká mimo viewport. Vysvětluje zejména souhlas,
+publikaci, zvýraznění, pořadí, kapacitu, cenu a pravidla fotografií; chyba po
+uložení zůstává samostatnou čitelnou zprávou.
+
 - motion slouží orientaci a zpětné vazbě, ne dekorativnímu předvádění;
 - mikroanimace typicky 150–250 ms; delší přechod jen s jasným důvodem;
 - žádný layout shift, parallax blokující výkon ani automatické hlučné video;

@@ -258,6 +258,12 @@ na cestě `/images/studio-balance/`; nejsou vydávány za finální originální
 fotografie studia. Po připravení vyhrazeného S3 bucketu se nahradí řízeným
 importem a adresy médií se přepnou v administraci.
 
+Administrační modul proměn je připravený na vyhrazené S3 úložiště. Dokud nejsou
+společně nastavené `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` a
+`S3_SECRET_ACCESS_KEY`, seznam a koncepty fungují, ale upload vrací řízené
+`MEDIA_STORAGE_UNAVAILABLE` (HTTP 503). Nesmí se použít bucket ani credentials
+jiné aplikace běžící na `docker.home.cz`.
+
 E-mailové úlohy vznikají v tabulce `notification_outbox`, ale bez schváleného
 poskytovatele, odesílací adresy a retenční politiky nejsou odesílány ani
 označovány jako odeslané. Klientská potvrzení jsou mezitím dostupná v účtu.
