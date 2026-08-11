@@ -348,8 +348,11 @@ zadání přihlašovacích údajů ani změnu MFA uživatele.
 e-mailu provozovatelky. Interaktivně načte Keycloak master heslo bez echo,
 vytvoří nebo po výslovném potvrzení aktualizuje jmenovitý účet, přiřadí pouze
 realm roli `admin`, nastaví jednorázové dočasné heslo a required action
-`CONFIGURE_TOTP`. Dočasné heslo se nepíše do repozitáře ani konfiguračního
-souboru a předává se odděleným schváleným kanálem.
+`CONFIGURE_TOTP`. Při opravě účtu lze po samostatném potvrzení odstranit jeho
+staré TOTP credentials a vynutit nové spárování ověřovací aplikace. Dočasné
+heslo lze zadat skrytě dvakrát; skript je pak nevypíše ani neuloží. Pokud je
+pole prázdné, vygeneruje náhodné heslo a vypíše je právě jednou. Na konci ověří
+aktivní účet, ověřený e-mail a realm roli `admin`.
 
 Admin OIDC žádost navíc používá `prompt=login` a `max_age=0`, takže při novém
 vstupu do administrace nelze pouze převzít dřívější klientskou SSO relaci.
