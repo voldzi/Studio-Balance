@@ -125,9 +125,10 @@ Každá kritická obrazovka pokryje loading, empty, disabled, success, validatio
 system error, permission denied a případný offline/stale stav. Povinný smoke:
 
 - 360 px, tablet a desktop;
-- mobilní veřejné menu jednoznačně rozlišuje všechny lekce a autorskou metodu,
-  obsahuje „Přihlásit / Můj účet“ a nepřihlášeného dovede na přihlášení bez
-  ztráty návratu do účtu;
+- mobilní veřejné menu obsahuje obecné cíle bez samostatné položky Balance
+  Flow, obsahuje „Přihlásit / Můj účet“ a nepřihlášeného dovede na přihlášení
+  bez ztráty návratu do účtu; otevřený panel se zavře klepnutím mimo něj,
+  výběrem odkazu i klávesou Escape a po Escape vrátí fokus na ovladač menu;
 - současné Safari iOS/macOS, Chrome Android/desktop, Edge, Firefox;
 - keyboard-only, viditelný fokus a dialog focus restore;
 - automated WCAG audit + ruční formuláře/live region/zoom/reduced motion;
