@@ -48,6 +48,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-035 | Zadavatel doplnil úplná jména lektorů a potvrdil ceny podle konkrétních lekcí | Kruhový trénink vede Tereza Sitková, nedělní Jumping Monika Kubincová, Power Yoga Xavier Tihelka, úterní Barre Nicola Lojšková, ranní Barre Katka Adamovská, středeční Jumping, TRX a Balance Flow Nicola Lojšková. Barre stojí 250 Kč, Balance Flow 200 Kč a ostatní uvedené lekce 160 Kč. |
 | CD-036 | Mobilní veřejné menu musí jednoznačně zpřístupnit klientský účet a vysvětlit samostatnou stránku Balance Flow | menu používá texty „Všechny lekce“, „Rozvrh a rezervace“, „Metoda Balance Flow“ a oddělenou položku „Přihlásit / Můj účet“; nepřihlášený návštěvník je po otevření účtu veden na přihlášení |
 | CD-037 | Zadavatel 13. 8. 2026 odstranil samostatnou metodu Balance Flow z veřejného mobilního menu | stránka a zvýraznění metody na homepage zůstávají dostupné, ale hlavní mobilní navigace obsahuje jen obecné cíle; otevřený panel se zavře klepnutím mimo něj, výběrem odkazu nebo klávesou Escape |
+| CD-038 | Administrátor vstupuje do správy studia ze svého klientského profilu | položku vidí pouze účet s rolí `admin` nebo `super_admin`; platná admin relace otevře správu přímo, jinak následuje bez mezistránky čerstvé administrátorské ověření heslem a TOTP, přičemž klientský e-mail může být předvyplněn |
 
 ## Schválený týdenní rozvrh 2026-08-10
 

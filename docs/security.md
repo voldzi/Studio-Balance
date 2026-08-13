@@ -48,6 +48,9 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
   `prompt=login` a `max_age=0`; jmenovitý admin účet se před předáním ověří v
   nové anonymní relaci heslem i TOTP a bez dokončeného testu se nepovažuje za
   aktivovaný;
+- profil účtu s rolí `admin` nebo `super_admin` nabízí přímý vstup do správy;
+  položka sama oprávnění neuděluje, administrace znovu ověří serverovou roli a
+  při chybějící zesílené relaci vede přímo na čerstvé heslo a TOTP;
 - klientská registrace nepoužívá e-mailové ověření, dokud není bezpečně provozovaný SMTP sender; konfigurační oprava odstraní i dříve uloženou required action `VERIFY_EMAIL`, ale zachová změnu hesla a registraci TOTP; booking nadále vyžaduje platnou relaci, vyplněné jméno, příjmení a telefon a přijetí podmínek;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 

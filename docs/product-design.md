@@ -105,6 +105,12 @@ jako desktop a administrace. Číselný počet volných míst z referenčních o
 se nepřebírá; veřejné UI ukazuje pouze slovní stav. Permanentky, doporučovací
 slevy, nativní aplikace a mobilní push nejsou tímto vizuálem schválené.
 
+Pokud profil nese roli `admin` nebo `super_admin`, zobrazí v nastavení samostatný
+vstup „Správa studia“. Běžný klient jej nevidí. Platná administrátorská relace
+otevře správu přímo; jinak přechod bez další mezistránky spustí čerstvé
+administrátorské ověření heslem a TOTP s předvyplněným e-mailem aktuálního
+účtu. Odkaz nenahrazuje serverovou kontrolu role ani povinné MFA.
+
 ### Administrace
 
 Primární oblasti: Dashboard, Rozvrh, Typy lekcí, Instruktoři, Klienti,

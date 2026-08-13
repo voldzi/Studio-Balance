@@ -6,7 +6,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   PiArrowRight, PiCalendarBlank, PiCalendarCheck, PiChatCircleText, PiCheckCircle,
   PiClock, PiEnvelopeSimple, PiGear, PiHeart, PiHeartFill, PiHouse, PiMapPin,
-  PiNewspaperClipping, PiSignOut, PiUser, PiUserCircle
+  PiNewspaperClipping, PiShieldCheck, PiSignOut, PiUser, PiUserCircle
 } from "react-icons/pi";
 
 import {
@@ -252,8 +252,9 @@ function MessagesView({ items }: { items: AccountNotification[] }) {
   return <section className="client-view" aria-labelledby="messages-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="messages-title">Zprávy účtu</h1>{items.length ? <div className="client-news-list">{items.map((item) => <article key={item.id}><time>{formatStudioDate(item.createdAt, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time><h2>{item.title}</h2><p>{item.body}</p></article>)}</div> : <div className="client-empty-state"><p>Zatím tu nemáte žádné zprávy.</p></div>}</section>;
 }
 
-function ProfileView({ busy, profile, saveProfile }: { busy: boolean; profile: Profile; saveProfile: (event: FormEvent<HTMLFormElement>) => Promise<void> }) {
-  return <section className="client-view client-profile-view" aria-labelledby="profile-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="profile-title">Profil</h1><div className="client-profile-layout"><form className="client-profile-form" onSubmit={(event) => void saveProfile(event)}><label>Jméno<input defaultValue={profile.firstName ?? ""} name="firstName" required /></label><label>Příjmení<input defaultValue={profile.lastName ?? ""} name="lastName" required /></label><label>Telefon<input autoComplete="tel" defaultValue={profile.phone ?? ""} name="phone" required type="tel" /></label><label>E-mail<input disabled value={profile.email} /></label><button className="client-primary-action" disabled={busy} type="submit">Uložit údaje</button></form><aside className="client-settings"><h2><PiGear aria-hidden="true" /> Nastavení</h2><p>Přihlášení a zabezpečení účtu spravuje Studio Balance. Platby probíhají pouze ve studiu.</p><form action="/auth/logout" method="post"><button type="submit"><PiSignOut aria-hidden="true" /> Odhlásit se</button></form></aside></div></section>;
+export function ProfileView({ busy, profile, saveProfile }: { busy: boolean; profile: Profile; saveProfile: (event: FormEvent<HTMLFormElement>) => Promise<void> }) {
+  const canManageStudio = profile.roles.some((role) => role === "admin" || role === "super_admin");
+  return <section className="client-view client-profile-view" aria-labelledby="profile-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="profile-title">Profil</h1><div className="client-profile-layout"><form className="client-profile-form" onSubmit={(event) => void saveProfile(event)}><label>Jméno<input defaultValue={profile.firstName ?? ""} name="firstName" required /></label><label>Příjmení<input defaultValue={profile.lastName ?? ""} name="lastName" required /></label><label>Telefon<input autoComplete="tel" defaultValue={profile.phone ?? ""} name="phone" required type="tel" /></label><label>E-mail<input disabled value={profile.email} /></label><button className="client-primary-action" disabled={busy} type="submit">Uložit údaje</button></form><aside className="client-settings"><h2><PiGear aria-hidden="true" /> Nastavení</h2><p>Přihlášení a zabezpečení účtu spravuje Studio Balance. Platby probíhají pouze ve studiu.</p>{canManageStudio && <div className="client-admin-entry"><h3><PiShieldCheck aria-hidden="true" /> Správa studia</h3><p>Rozvrh, rezervace, klienti a obsah. Před vstupem může být vyžadováno heslo a jednorázový ověřovací kód.</p><Link href="/admin">Otevřít administraci <PiArrowRight aria-hidden="true" /></Link></div>}<form action="/auth/logout" method="post"><button type="submit"><PiSignOut aria-hidden="true" /> Odhlásit se</button></form></aside></div></section>;
 }
 
 function ClientBottomNavigation({ active, navigate }: { active: AccountView; navigate: (view: AccountView) => void }) {

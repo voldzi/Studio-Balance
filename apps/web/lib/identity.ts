@@ -95,7 +95,7 @@ export function safeReturnTo(value: string | null | undefined): string {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/muj-ucet";
 }
 
-export async function createLoginAttempt(returnTo: string, mode: IdentityMode = "web"): Promise<{ authorizationUrl: string; cookieValue: string }> {
+export async function createLoginAttempt(returnTo: string, mode: IdentityMode = "web", loginHint?: string): Promise<{ authorizationUrl: string; cookieValue: string }> {
   const config = identityConfig(mode);
   const discovery = await discover(config);
   const state = base64Url(randomBytes(32));
@@ -122,6 +122,8 @@ export async function createLoginAttempt(returnTo: string, mode: IdentityMode = 
   if (mode === "admin") {
     url.searchParams.set("prompt", "login");
     url.searchParams.set("max_age", "0");
+    const normalizedLoginHint = loginHint?.trim();
+    if (normalizedLoginHint && normalizedLoginHint.length <= 254) url.searchParams.set("login_hint", normalizedLoginHint);
   }
 
   return { authorizationUrl: url.toString(), cookieValue };
