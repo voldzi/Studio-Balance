@@ -92,10 +92,21 @@ client_id="$(node -e 'const clients=JSON.parse(process.argv[1]); if (clients.len
 flow_id="$(node -e 'const flows=JSON.parse(process.argv[1]); const flow=flows.find((item)=>item.alias===process.argv[2]); if (!flow) process.exit(1); process.stdout.write(flow.id)' "$flows" "$flow")"
 remote update "clients/$client_id" -s "authenticationFlowBindingOverrides={\"browser\":\"$flow_id\"}"
 
+# The application validates realm roles from the signed ID token. Keycloak's
+# built-in roles scope adds them to access tokens by default, but not to ID
+# tokens. Enable the existing realm-role mapper for ID tokens so both the web
+# profile and the separately authenticated administration receive `admin`.
+role_scopes="$(remote get 'client-scopes?name=roles')"
+role_scope_id="$(node -e 'const scopes=JSON.parse(process.argv[1]); const scope=scopes.find((item)=>item.name==="roles"); if (!scope) process.exit(1); process.stdout.write(scope.id)' "$role_scopes")"
+role_mappers="$(remote get "client-scopes/$role_scope_id/protocol-mappers/models")"
+realm_role_mapper_id="$(node -e 'const mappers=JSON.parse(process.argv[1]); const mapper=mappers.find((item)=>item.name==="realm roles" && item.protocolMapper==="oidc-usermodel-realm-role-mapper"); if (!mapper) process.exit(1); process.stdout.write(mapper.id)' "$role_mappers")"
+remote update "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id" -s 'config."id.token.claim"=true'
+
 realm_state="$(remote get "realms/$realm" --fields verifyEmail,resetPasswordAllowed)"
 client_state="$(remote get "clients/$client_id" --fields clientId,authenticationFlowBindingOverrides)"
 execution_state="$(remote get "authentication/flows/$flow/executions")"
 users_state="$(remote get 'users?max=1000')"
+realm_role_mapper_state="$(remote get "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id")"
 node -e '
   const realm=JSON.parse(process.argv[1]);
   const client=JSON.parse(process.argv[2]);
@@ -110,9 +121,12 @@ node -e '
   if (users.some((user)=>(user.requiredActions ?? []).includes("VERIFY_EMAIL"))) {
     throw new Error("A stale VERIFY_EMAIL required action remains on an account.");
   }
-' "$realm_state" "$client_state" "$execution_state" "$flow_id" "$users_state"
+  const mapper=JSON.parse(process.argv[6]);
+  if (mapper.config?.["id.token.claim"]!=="true") throw new Error("Realm roles are missing from ID tokens.");
+' "$realm_state" "$client_state" "$execution_state" "$flow_id" "$users_state" "$realm_role_mapper_state"
 
 echo "Configured: client registration without e-mail verification; password reset hidden until SMTP is available."
 echo "Configured: stale VERIFY_EMAIL actions removed while other account actions were preserved."
 echo "Configured: studiobalance-admin requires password and TOTP on every login."
+echo "Configured: realm roles are included in signed ID tokens for web and administration."
 echo "Administrators without an authenticator app must first enroll TOTP through their required action using the regular web login, then use /admin/prihlaseni."

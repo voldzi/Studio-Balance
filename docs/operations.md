@@ -374,6 +374,9 @@ Keycloak jméno a heslo. Po úspěchu ověří, že e-mailové ověřování i r
 jsou vypnuté, odstraní z existujících účtů pouze starou required action
 `VERIFY_EMAIL` (ostatní akce včetně `UPDATE_PASSWORD` a `CONFIGURE_TOTP`
 zachová) a ověří, že je administrátorský flow skutečně navázaný na klienta.
+Současně zapne a kontroluje předávání realm rolí v podepsaném ID tokenu.
+Samotné přiřazení role uživateli v Keycloaku nestačí: bez tohoto mapperu by
+web ani oddělená administrace role `admin` a `super_admin` nerozpoznaly.
 Následné ověření se provede v anonymním okně: klientská registrace musí projít
 bez e-mailové zprávy; administrátorský vstup po heslu vždy vyžádá TOTP.
 
