@@ -237,7 +237,7 @@ interním logu, ale nesmí vypsat hodnotu secretu.
 - PostgreSQL jako transakční zdroj pravdy;
 - S3-kompatibilní úložiště produkčních binárních médií s odděleným tenantem;
 - Keycloak/OIDC s realm `studio-balance`, oddělenými web/admin policies,
-  email verification a admin MFA;
+  jednoduchou klientskou registrací bez e-mailového ověření a povinným admin MFA;
 - Nginx reverse proxy na `dmz.home.cz` pro internetovou publikaci;
 - transakční e-mail;
 - observability/error monitoring;
@@ -279,8 +279,8 @@ Budoucí pipeline musí:
 5. provést migraci bezpečným pořadím expand → deploy → contract;
 6. nasadit Docker image API/worker/web na `docker.home.cz`, aktualizovat Nginx
    upstream na `dmz.home.cz` bezpečným postupem a ověřit `/health` a `/ready`;
-7. ověřit Keycloak discovery/login/logout, email verification, klientskou relaci
-   a admin MFA přes produkční issuer;
+7. ověřit Keycloak discovery/login/logout, klientskou registraci bez e-mailové
+   povinné akce, klientskou relaci a admin MFA přes produkční issuer;
 8. provést smoke kritické anonymní a autentizované cesty;
 9. sledovat error rate, latency a notification queue;
 10. ověřit zápis/čtení testovacího S3 objektu a stav zálohy bez
@@ -371,7 +371,9 @@ formulář hesla i povinný TOTP formulář. Klientský OIDC flow zůstává bez
 
 Skript se spouští z lokálního Macu a interaktivně si vyžádá pouze master
 Keycloak jméno a heslo. Po úspěchu ověří, že e-mailové ověřování i reset hesla
-jsou vypnuté a že je administrátorský flow skutečně navázaný na klienta.
+jsou vypnuté, odstraní z existujících účtů pouze starou required action
+`VERIFY_EMAIL` (ostatní akce včetně `UPDATE_PASSWORD` a `CONFIGURE_TOTP`
+zachová) a ověří, že je administrátorský flow skutečně navázaný na klienta.
 Následné ověření se provede v anonymním okně: klientská registrace musí projít
 bez e-mailové zprávy; administrátorský vstup po heslu vždy vyžádá TOTP.
 

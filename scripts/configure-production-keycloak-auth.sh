@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -euo pipefail
 
 realm="studio-balance"
@@ -44,6 +45,23 @@ remote() {
 # that would promise an e-mail the studio cannot send.
 remote update "realms/$realm" -s verifyEmail=false -s resetPasswordAllowed=false
 
+# Disabling realm-level verification does not remove a stale VERIFY_EMAIL action
+# already stored on existing accounts. Preserve every other required action (most
+# importantly UPDATE_PASSWORD and CONFIGURE_TOTP) while removing only this one.
+users="$(remote get 'users?max=1000')"
+while IFS=$'\t' read -r user_id required_actions; do
+  [[ -n "$user_id" ]] || continue
+  remote update "users/$user_id" -s "requiredActions=$required_actions"
+done < <(node -e '
+  const users=JSON.parse(process.argv[1]);
+  for (const user of users) {
+    const actions=(user.requiredActions ?? []).filter((action)=>action!=="VERIFY_EMAIL");
+    if (actions.length !== (user.requiredActions ?? []).length) {
+      process.stdout.write(`${user.id}\t${JSON.stringify(actions)}\n`);
+    }
+  }
+' "$users")
+
 flows="$(remote get authentication/flows)"
 if ! node -e 'const flows=JSON.parse(process.argv[1]); process.exit(flows.some((flow)=>flow.alias===process.argv[2]) ? 0 : 1)' "$flows" "$flow"; then
   remote create authentication/flows -s "alias=$flow" -s 'description=Studio Balance administration: password and required TOTP.' -s providerId=basic-flow -s topLevel=true -s builtIn=false
@@ -66,7 +84,7 @@ ensure_execution() {
 ensure_execution auth-username-password-form
 ensure_execution auth-otp-form
 
-clients="$(remote get 'clients?clientId=studiobalance-admin')"
+clients="$(remote get "clients?clientId=$admin_client")"
 client_id="$(node -e 'const clients=JSON.parse(process.argv[1]); if (clients.length!==1) process.exit(1); process.stdout.write(clients[0].id)' "$clients")"
 flow_id="$(node -e 'const flows=JSON.parse(process.argv[1]); const flow=flows.find((item)=>item.alias===process.argv[2]); if (!flow) process.exit(1); process.stdout.write(flow.id)' "$flows" "$flow")"
 remote update "clients/$client_id" -s "authenticationFlowBindingOverrides={\"browser\":\"$flow_id\"}"
@@ -74,6 +92,7 @@ remote update "clients/$client_id" -s "authenticationFlowBindingOverrides={\"bro
 realm_state="$(remote get "realms/$realm" --fields verifyEmail,resetPasswordAllowed)"
 client_state="$(remote get "clients/$client_id" --fields clientId,authenticationFlowBindingOverrides)"
 execution_state="$(remote get "authentication/flows/$flow/executions")"
+users_state="$(remote get 'users?max=1000')"
 node -e '
   const realm=JSON.parse(process.argv[1]);
   const client=JSON.parse(process.argv[2]);
@@ -84,8 +103,13 @@ node -e '
     const execution=executions.find((item)=>item.providerId===provider);
     if (!execution || execution.requirement!=="REQUIRED") throw new Error(`Required execution missing: ${provider}`);
   }
-' "$realm_state" "$client_state" "$execution_state" "$flow_id"
+  const users=JSON.parse(process.argv[5]);
+  if (users.some((user)=>(user.requiredActions ?? []).includes("VERIFY_EMAIL"))) {
+    throw new Error("A stale VERIFY_EMAIL required action remains on an account.");
+  }
+' "$realm_state" "$client_state" "$execution_state" "$flow_id" "$users_state"
 
 echo "Configured: client registration without e-mail verification; password reset hidden until SMTP is available."
+echo "Configured: stale VERIFY_EMAIL actions removed while other account actions were preserved."
 echo "Configured: studiobalance-admin requires password and TOTP on every login."
 echo "Administrators without an authenticator app must first enroll TOTP through their required action using the regular web login, then use /admin/prihlaseni."

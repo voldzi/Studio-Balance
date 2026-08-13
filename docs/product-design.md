@@ -58,9 +58,11 @@ sbírat osobní údaje bez účelu.
 
 ### Veřejný web
 
-Hlavní navigace: Domů, O studiu, Lekce, Rozvrh, Balance Flow, Galerie, Recenze,
-Ceník, Kontakt a dominantní CTA „Rezervovat lekci“. Na mobilu je navigace
-kompaktní, ale CTA na rozvrh zůstává snadno dostupné.
+Hlavní navigace: Domů, O studiu, Všechny lekce, Rozvrh, Metoda Balance Flow,
+Galerie, Recenze, Ceník, Kontakt a dominantní CTA „Rezervovat lekci“. Na
+mobilu je navigace kompaktní, CTA na rozvrh zůstává snadno dostupné a poslední
+oddělená položka „Přihlásit / Můj účet“ vede nepřihlášeného návštěvníka přes
+přihlášení a přihlášeného přímo do klientského přehledu.
 
 Routes:
 

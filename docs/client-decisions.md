@@ -46,6 +46,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-033 | Administrátorský přístup vyžaduje TOTP | klient `studiobalance-admin` používá oddělený přihlašovací tok, který po heslu vždy vyžaduje ověřovací kód; účet bez nastavené aplikace musí nejprve dokončit její registraci. |
 | CD-034 | Zadavatel schválil 13. 8. 2026 prémiový mobilní směr klientské webové aplikace | instalovatelná PWA používá krémovou, hnědou a zlatavou paletu, oficiální logo, schválené fotografie, přivítání, nejbližší rezervaci, rychlé storno, novinky, zprávy, oblíbené a spodní navigaci Domů / Rozvrh / Rezervace / Oblíbené / Profil. Jde stále o responzivní web napojený na stejnou databázi; číselná volná místa, permanentky a nativní mobilní aplikace zůstávají mimo rozsah. |
 | CD-035 | Zadavatel doplnil úplná jména lektorů a potvrdil ceny podle konkrétních lekcí | Kruhový trénink vede Tereza Sitková, nedělní Jumping Monika Kubincová, Power Yoga Xavier Tihelka, úterní Barre Nicola Lojšková, ranní Barre Katka Adamovská, středeční Jumping, TRX a Balance Flow Nicola Lojšková. Barre stojí 250 Kč, Balance Flow 200 Kč a ostatní uvedené lekce 160 Kč. |
+| CD-036 | Mobilní veřejné menu musí jednoznačně zpřístupnit klientský účet a vysvětlit samostatnou stránku Balance Flow | menu používá texty „Všechny lekce“, „Rozvrh a rezervace“, „Metoda Balance Flow“ a oddělenou položku „Přihlásit / Můj účet“; nepřihlášený návštěvník je po otevření účtu veden na přihlášení |
 
 ## Schválený týdenní rozvrh 2026-08-10
 

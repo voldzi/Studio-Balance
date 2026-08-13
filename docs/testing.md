@@ -112,7 +112,9 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
 - pagination/filters/invalid ranges mají deterministické výsledky;
 - CSRF/CORS/cache headers odpovídají auth modelu;
 - Keycloak issuer/audience/signature/expiry validace, jednoduchá klientská
-  registrace bez e-mailového ověření a odhlášení mají pozitivní i negativní testy;
+  registrace bez e-mailového ověření a odhlášení mají pozitivní i negativní
+  testy; existující účet se starou `VERIFY_EMAIL` akcí po konfigurační opravě
+  neotevře obrazovku slibující nedostupný e-mail;
 - admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
   projeví v relaci a auditu;
 - web, API a worker zůstávají kompatibilní během rollout/rollback okna.
@@ -123,6 +125,9 @@ Každá kritická obrazovka pokryje loading, empty, disabled, success, validatio
 system error, permission denied a případný offline/stale stav. Povinný smoke:
 
 - 360 px, tablet a desktop;
+- mobilní veřejné menu jednoznačně rozlišuje všechny lekce a autorskou metodu,
+  obsahuje „Přihlásit / Můj účet“ a nepřihlášeného dovede na přihlášení bez
+  ztráty návratu do účtu;
 - současné Safari iOS/macOS, Chrome Android/desktop, Edge, Firefox;
 - keyboard-only, viditelný fokus a dialog focus restore;
 - automated WCAG audit + ruční formuláře/live region/zoom/reduced motion;
