@@ -78,7 +78,10 @@ ensure_execution() {
   fi
   local execution_id
   execution_id="$(node -e 'const executions=JSON.parse(process.argv[1]); const execution=executions.find((item)=>item.providerId===process.argv[2]); if (!execution) process.exit(1); process.stdout.write(execution.id)' "$executions" "$provider")"
-  remote update "authentication/flows/$flow/executions" -s "id=$execution_id" -s requirement=REQUIRED
+  # This special endpoint returns an array on GET but accepts one execution
+  # object on PUT. Disable kcadm's automatic GET-and-merge step, otherwise it
+  # tries to deserialize the returned array as an ObjectNode and aborts.
+  remote update "authentication/flows/$flow/executions" -s "id=$execution_id" -s requirement=REQUIRED -n
 }
 
 ensure_execution auth-username-password-form
