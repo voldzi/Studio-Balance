@@ -170,7 +170,6 @@ export function AccountDashboard() {
             <label>Telefon<input autoComplete="tel" defaultValue={profile.phone ?? ""} name="phone" required type="tel" /></label>
             <button className="button button-secondary full-button" disabled={busy} type="submit">Uložit údaje</button>
           </form>
-          {!profile.emailVerified && <p className="status-warning">E-mail ještě není ověřený. Bez ověření nelze rezervovat.</p>}
           <form action="/auth/logout" method="post"><button className="text-button" type="submit">Odhlásit se</button></form>
         </aside>
       </div>

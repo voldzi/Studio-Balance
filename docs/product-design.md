@@ -107,7 +107,7 @@ Rezervace/docházka, Storno poplatky, Obsah, Nastavení, Audit. Navigace je
 | detail typu | porozumět obsahu a najít termín | žádný budoucí termín |
 | rozvrh | vybrat den a termín | loading, prázdný den, full, closed, cancelled, chyba |
 | detail termínu | ověřit čas, vhodnost, cenu, pravidla | disabled CTA podle veřejného stavu |
-| auth v rezervaci | přihlásit/registrovat bez ztráty kontextu | validace, existující e-mail, neověřený e-mail |
+| auth v rezervaci | přihlásit/registrovat bez ztráty kontextu | validace, existující e-mail, nevyplněný profil |
 | potvrzení rezervace | zkontrolovat výsledek | nejasný timeout vede ke kontrole „Moje rezervace“ |
 | moje rezervace | otevřít nejbližší/historii | empty state pro nového klienta |
 | storno dialog | porozumět důsledku | on-time a late jsou dva rozdílné vzory |
@@ -254,8 +254,8 @@ Formuláře mají trvalé labely, zachovají data po chybě, formátují telefon
 umožní zobrazit heslo a nepředvyplní marketingový souhlas.
 
 Keycloak přihlášení vizuálně navazuje na Studio Balance, ale neskrývá význam
-bezpečnostních kroků. Neověřený klient po registraci dostane jasný další krok a
-po ověření se vrátí k vybranému termínu. Admin MFA vysvětlí nastavení faktoru,
+bezpečnostních kroků. Nový klient po registraci doplní profil a vrátí se k
+vybranému termínu. Admin MFA vysvětlí nastavení faktoru,
 recovery a chybu bez možnosti bezpečnostní krok přeskočit.
 
 ### Keycloak login theme
@@ -264,8 +264,8 @@ Realm `studio-balance` používá vlastní responzivní login theme nad
 `keycloak.v2`. Desktop kombinuje schválenou fotografii studia, oficiální logo
 a samostatný světlý formulářový panel. Pod 900 px se fotografie mění na krátký
 horní vizuální pás a formulář zůstává v jediném sloupci bez horizontálního
-scrollu. Téma pokrývá přihlášení, registraci, obnovu hesla, ověření e-mailu,
-chyby a nastavení ověřovací aplikace. Výchozí jazyk je čeština s angličtinou
+scrollu. Téma pokrývá přihlášení, registraci, obnovu hesla, chyby a nastavení
+ověřovací aplikace. Výchozí jazyk je čeština s angličtinou
 jako podporovanou variantou.
 
 Téma nemění OIDC, neobchází Keycloak formuláře a nenačítá externí fonty ani

@@ -66,13 +66,13 @@ SEO a schválenou cestu fotografie typu lekce.
 | ID | Priorita | Požadavek |
 | --- | --- | --- |
 | IDN-001 | P0 | registrace jménem, příjmením, e-mailem, telefonem a bezpečným přihlašovacím prostředkem |
-| IDN-002 | P0 | přihlášení e-mailem, odhlášení, změna a reset hesla, ověření e-mailu a bezpečná relace |
+| IDN-002 | P0 | přihlášení e-mailem, odhlášení, změna hesla a bezpečná relace; reset hesla se zpřístupní po zprovoznění SMTP |
 | IDN-003 | P0 | po přihlášení během rezervace návrat na původně vybraný termín |
 | IDN-004 | P0 | verze podmínek a čas přijetí jsou evidovány; marketingový souhlas je oddělený a nepředvyplněný |
 | IDN-005 | P0 | klient vidí a mění jen vlastní profil a rezervace; administrátor používá oddělený vstup |
 | IDN-006 | P1 | klient může požádat o export údajů a zrušení účtu |
 | IDN-007 | P0 | identita používá Keycloak realm `studio-balance`, OIDC Authorization Code + PKCE a serverovou HTTP-only relaci |
-| IDN-008 | P0 | neověřený e-mail nemůže vytvořit rezervaci; veřejné prohlížení zůstává dostupné |
+| IDN-008 | P0 | klient může vytvořit rezervaci po doplnění jména, příjmení a telefonu a po přijetí podmínek; e-mailové ověření se nevyžaduje |
 | IDN-009 | P0 | `admin` a `super_admin` musí dokončit MFA; klientská MFA není v první verzi povinná |
 
 Datum narození a nouzový kontakt se v první verzi nesbírají.

@@ -352,7 +352,7 @@ realm roli `admin`, nastaví jednorázové dočasné heslo a required action
 staré TOTP credentials a vynutit nové spárování ověřovací aplikace. Dočasné
 heslo lze zadat skrytě dvakrát; skript je pak nevypíše ani neuloží. Pokud je
 pole prázdné, vygeneruje náhodné heslo a vypíše je právě jednou. Na konci ověří
-aktivní účet, ověřený e-mail a realm roli `admin`.
+aktivní účet a realm roli `admin`.
 
 Admin OIDC žádost navíc používá `prompt=login` a `max_age=0`, takže při novém
 vstupu do administrace nelze pouze převzít dřívější klientskou SSO relaci.
@@ -360,6 +360,20 @@ Před předáním se dokončí první login, změna dočasného hesla a registra
 následně se v druhé anonymní relaci ověří, že přihlášení vyžaduje heslo i OTP a
 že klientský účet bez role končí na srozumitelné chybě. Dokud tento test
 neproběhne pro potvrzený jmenovitý účet, administrátorský přístup není předaný.
+
+### Jednoduchá registrace a povinné OTP administrace
+
+`scripts/configure-production-keycloak-auth.sh` bezpečně nastaví produkční
+realm `studio-balance` bez e-mailového ověřování klienta a bez odkazu na reset
+hesla, dokud studio nemá nakonfigurovaný SMTP sender. Současně vytvoří nebo
+opraví oddělený browser flow klienta `studiobalance-admin`; obsahuje povinný
+formulář hesla i povinný TOTP formulář. Klientský OIDC flow zůstává beze změny.
+
+Skript se spouští z lokálního Macu a interaktivně si vyžádá pouze master
+Keycloak jméno a heslo. Po úspěchu ověří, že e-mailové ověřování i reset hesla
+jsou vypnuté a že je administrátorský flow skutečně navázaný na klienta.
+Následné ověření se provede v anonymním okně: klientská registrace musí projít
+bez e-mailové zprávy; administrátorský vstup po heslu vždy vyžádá TOTP.
 
 ## Health a readiness
 

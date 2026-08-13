@@ -104,12 +104,7 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
       </section>
 
       <section className="booking-form-card" aria-label="Údaje a storno podmínky">
-        {!profile.emailVerified ? (
-          <div className="status-warning" role="alert">
-            <h2>Nejprve ověřte e-mail</h2>
-            <p>Ověření dokončíte ve svém Studio Balance účtu. Potom se vraťte k rezervaci.</p>
-          </div>
-        ) : !profile.profileComplete ? (
+        {!profile.profileComplete ? (
           <form onSubmit={saveProfile}>
             <h2>Doplňte své údaje</h2>
             <p>Potřebujeme je jen pro správu vaší rezervace.</p>

@@ -82,6 +82,6 @@ export function profileResponse(profile: ProfileRow, session: StudioSession) {
     lastName: profile.last_name,
     phone: profile.phone,
     termsVersion: profile.terms_version,
-    profileComplete: Boolean(profile.email_verified && profile.first_name && profile.last_name && profile.phone)
+    profileComplete: Boolean(profile.first_name && profile.last_name && profile.phone)
   };
 }

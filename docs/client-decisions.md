@@ -42,6 +42,8 @@ zůstávají beze změny jako auditní stopa.
 | CD-029 | Veřejný web může fungovat jako instalovatelná PWA | jde stále o responzivní web, nikoli nativní aplikaci. PWA poskytuje manifest, ikonu, bezpečné ukládání statických souborů a stránku bez připojení; rozvrh, účet, API a rezervace se offline neukládají ani neprovádějí. |
 | CD-030 | Skutečné proměny klientek před/po spravuje administrátorka | každá položka vyžaduje dvě skutečné fotografie, pravdivý popis a doložený výslovný souhlas s fotografiemi, textem a uvedeným jménem; bez souhlasu ji nelze publikovat. Fotografie patří do vyhrazeného Studio Balance S3 úložiště a nesmějí obsahovat zavádějící úpravy ani nepodložené zdravotní sliby. |
 | CD-031 | Administrace obsahuje kontextovou nápovědu | otazníky vysvětlují zejména kapacitu, cenu, pořadí, publikování, souhlas a práci s fotografiemi; nápověda je dostupná myší, dotykem i klávesnicí a nenahrazuje validační hlášení. |
+| CD-032 | Klientská registrace je jednoduchá a nevyžaduje e-mailové ověření | Keycloak po registraci neodesílá ověřovací e-mail; klient může po doplnění jména, příjmení, telefonu a přijetí podmínek rezervovat. Reset hesla se zpřístupní až po budoucím zprovoznění SMTP. |
+| CD-033 | Administrátorský přístup vyžaduje TOTP | klient `studiobalance-admin` používá oddělený přihlašovací tok, který po heslu vždy vyžaduje ověřovací kód; účet bez nastavené aplikace musí nejprve dokončit její registraci. |
 
 ## Schválený týdenní rozvrh 2026-08-10
 
@@ -106,7 +108,7 @@ Keycloak je schválený identity provider. Závazné rozhodnutí je v ADR 0004:
 
 - realm `studio-balance` a oddělené klientské/admin OIDC policies;
 - produkční issuer `https://login.zeleznalady.cz/realms/studio-balance`;
-- povinné ověření e-mailu před první rezervací;
+- jednoduchá klientská registrace bez e-mailového ověření; před první rezervací se doplní profil a přijmou podmínky;
 - povinné MFA pro `admin` a `super_admin`;
 - lokální projektová instance stejné hlavní verze v Docker Desktop;
 - provozní healthcheck, záloha, restore, upgrade a vlastnictví.

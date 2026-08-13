@@ -50,7 +50,7 @@ flowchart LR
 | API | jednotná autorizace, validace, doménová pravidla a kontrakt klientů |
 | Booking Service | kapacita, idempotence, stavový automat, cutoff a fee |
 | Schedule Service | typy lekcí, série, výjimky, lokální čas a veřejná dostupnost |
-| Identity Service | Keycloak realm `studio-balance`, oddělené web/admin policies, reset, email verification a MFA |
+| Identity Service | Keycloak realm `studio-balance`, oddělené web/admin policies, jednoduchá registrace bez e-mailového ověření a admin MFA |
 | Content Service | lekce, instruktoři, stránky, ceník, FAQ, recenze, novinky, média |
 | Notification Orchestrator | plán, zrušení, retry a stav doručení e-mailu/provozní zprávy |
 | Worker | asynchronní e-mail, media processing a plánované úlohy |
@@ -209,8 +209,10 @@ autorizací, nikoli jen skrytým menu.
 - identity provider je Keycloak 26.1.5, realm `studio-balance`, oddělené
   confidential klienty `studiobalance-web` a `studiobalance-admin` a produkční
   issuer `https://login.zeleznalady.cz/realms/studio-balance`;
-- e-mail musí být ověřen před bookingem a role `admin`/`super_admin` vyžadují
-  MFA nejméně pomocí TOTP;
+- klientská registrace nevyžaduje e-mailové ověření; do zprovoznění SMTP se
+  nezobrazuje ani obnova hesla. Booking vyžaduje platnou relaci, vyplněný
+  profil a přijetí podmínek; role `admin`/`super_admin` vyžadují MFA nejméně
+  pomocí TOTP;
 - authorization je objektová i rolová: klient pouze vlastní objekt, admin podle
   role a akce, super admin spravuje privilege;
 - citlivé akce a autorizace se kontrolují na API, nikdy pouze v UI.

@@ -189,7 +189,6 @@ export class BookingService {
 
   private async requireBookableProfile(session: StudioSession): Promise<ProfileRow> {
     const profile = await this.accounts.ensureProfile(session);
-    if (!profile.email_verified) throw domainError("EMAIL_NOT_VERIFIED", "Před rezervací prosím ověřte e-mail.", HttpStatus.FORBIDDEN);
     if (!profile.first_name || !profile.last_name || !profile.phone) {
       throw domainError("PROFILE_INCOMPLETE", "Před rezervací doplňte jméno a telefon.", HttpStatus.FORBIDDEN);
     }

@@ -27,9 +27,10 @@ token storage ani mobilní OAuth klienty.
 6. Produkční issuer je
    `https://login.zeleznalady.cz/realms/studio-balance` a vede přes
    Nginx na `dmz.home.cz` do Keycloaku na `docker.home.cz`.
-7. E-mail musí být ověřen před první rezervací. Neověřený uživatel může dokončit
-   registraci a prohlížet veřejný obsah, ale booking API jej odmítne bezpečným
-   doménovým kódem.
+7. Klientská registrace je bez e-mailového ověření, dokud Studio Balance nemá
+   bezpečně provozovaný SMTP sender. Před rezervací klient doplní jméno,
+   příjmení a telefon a přijme aktuální podmínky. Odkaz na obnovu hesla je do
+   zprovoznění SMTP vypnutý, aby nesliboval nedoručitelný e-mail.
 8. MFA je povinné pro role `admin` a `super_admin`; minimální faktor je TOTP.
    WebAuthn lze přidat jako silnější alternativu. Klientská MFA není v první
    verzi povinná.
@@ -62,6 +63,6 @@ token storage ani mobilní OAuth klienty.
 - `.env.example` a provozní konfigurace obsahují issuer a dva OIDC klienty;
 - OpenAPI chráněných endpointů bude používat schválené OIDC bearer/session
   security schéma;
-- testy pokryjí neověřený e-mail, chybný issuer/audience, expiraci, role, MFA
+- testy pokryjí jednoduchou klientskou registraci, chybný issuer/audience, expiraci, role, MFA
   admina, odhlášení a změnu oprávnění;
 - veřejná auth URL potřebuje DNS, TLS a Nginx konfiguraci na DMZ.

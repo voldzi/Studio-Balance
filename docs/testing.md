@@ -111,8 +111,8 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
 - role a objektová autorizace pro každou `me/admin` cestu;
 - pagination/filters/invalid ranges mají deterministické výsledky;
 - CSRF/CORS/cache headers odpovídají auth modelu;
-- Keycloak issuer/audience/signature/expiry validace, neověřený e-mail a
-  odhlášení mají pozitivní i negativní testy;
+- Keycloak issuer/audience/signature/expiry validace, jednoduchá klientská
+  registrace bez e-mailového ověření a odhlášení mají pozitivní i negativní testy;
 - admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
   projeví v relaci a auditu;
 - web, API a worker zůstávají kompatibilní během rollout/rollback okna.

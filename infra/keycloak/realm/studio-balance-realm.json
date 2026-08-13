@@ -10,8 +10,8 @@
   "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
-  "resetPasswordAllowed": true,
-  "verifyEmail": true,
+  "resetPasswordAllowed": false,
+  "verifyEmail": false,
   "rememberMe": true,
   "roles": {
     "realm": [

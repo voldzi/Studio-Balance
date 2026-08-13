@@ -36,7 +36,7 @@ Identita používá Keycloak/OIDC podle ADR 0004. Kontrakt musí podporovat:
 
 - OIDC Authorization Code flow s PKCE a bezpečnou HTTP-only serverovou relaci;
 - oddělené klientské a admin přihlášení/policies a admin MFA;
-- ověřený e-mail jako podmínku vytvoření rezervace;
+- platnou klientskou relaci, vyplněný profil a přijaté podmínky jako podmínku vytvoření rezervace;
 - reset hesla s krátkou jednorázovou platností;
 - serverovou objektovou autorizaci každé chráněné operace.
 
@@ -46,7 +46,7 @@ Veřejný obsah a rozvrh jsou anonymní. Rezervace a `me` cesty vyžadují klien
 `GET /api/v1/me` a `PATCH /api/v1/me` jsou implementované chráněné cesty. Čtou pouze relaci
 vydanou webovou BFF po OIDC callbacku, nikdy OIDC token z browser JavaScriptu.
 Profil je svázaný s Keycloak subjectem a ukládá jméno, příjmení, telefon,
-ověřený e-mail a přijatou verzi podmínek.
+stav e-mailu z identity a přijatou verzi podmínek.
 
 ## Konvence
 

@@ -52,15 +52,15 @@ administrace odmítá MFA nebo API vrací systematické 401/403.
 
 **Diagnostika:** ověřit produkční issuer přes DMZ, Keycloak health/logy, DNS/TLS,
 client ID a callback allowlist bez vypsání secretu. Rozlišit nedostupnost IdP,
-propadlou relaci, neověřený e-mail, chybné audience/role a neprovedené MFA.
+propadlou relaci, chybné audience/role a neprovedené MFA.
 
 **Náprava:** veřejné čtení může zůstat dostupné, ale booking a admin změny se
-nesmějí pustit bez ověřené identity. Obnovit Keycloak/proxy/config, neaktivovat
-nouzový bypass role, email verification nebo MFA. Recovery a reset faktoru jsou
+nesmějí pustit bez platné identity. Obnovit Keycloak/proxy/config, neaktivovat
+nouzový bypass role nebo MFA. Recovery a reset faktoru jsou
 privilegované a auditované.
 
 **Ověření:** discovery, klientský login/logout, návrat na původní termín,
-odmítnutí neověřeného e-mailu, admin MFA, role denial a zneplatnění relace.
+jednoduchá klientská registrace, admin MFA, role denial a zneplatnění relace.
 
 ## Databáze není dostupná
 
