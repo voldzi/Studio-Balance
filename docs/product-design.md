@@ -87,10 +87,18 @@ Routes:
 
 ### Klientský účet
 
-Responzivní klientská část obsahuje přehled, rezervace, historii, profil a
-provozní zprávy. Na úzkém viewportu používá kompaktní webovou navigaci a zachová
-stejné funkce i pravidla jako desktop. Odkaz z e-mailu po přihlášení vrací
-klienta na konkrétní rezervaci nebo zprávu.
+Responzivní klientská část vychází ze směru schváleného 13. 8. 2026: krémové
+pozadí, hnědá typografie, měděné/zlatavé akce, elegantní nadpisové písmo,
+oficiální logo a schválené fotografie lekcí. Úvod přivítá klientku, ukáže její
+nejbližší rezervaci s fotografií a nabídne detail i bezpečné storno.
+
+Spodní mobilní navigace má přesné pořadí Domů, Rozvrh, Rezervace, Oblíbené a
+Profil. Klientský přehled dále obsahuje nadcházející/minulé rezervace, novinky,
+zprávy účtu, profil, nastavení a odhlášení. Rozvrh, detail i rezervační krok
+zůstávají součástí stejného responzivního webu a používají tentýž serverový stav
+jako desktop a administrace. Číselný počet volných míst z referenčních obrázků
+se nepřebírá; veřejné UI ukazuje pouze slovní stav. Permanentky, doporučovací
+slevy, nativní aplikace a mobilní push nejsou tímto vizuálem schválené.
 
 ### Administrace
 

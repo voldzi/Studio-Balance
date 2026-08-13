@@ -60,6 +60,24 @@ export type AccountNotification = {
   title: string;
 };
 
+export type FavoriteClassType = {
+  difficulty: number;
+  favoritedAt: string;
+  heroImage: { alt: string; src: string } | null;
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+};
+
+export type NewsItem = {
+  body: string;
+  id: string;
+  publishedAt: string;
+  summary: string;
+  title: string;
+};
+
 export type Booking = {
   cancellationCutoffAt: string;
   createdAt: string;

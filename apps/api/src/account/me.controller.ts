@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Inject, Patch, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Inject, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 
 import { SessionAuthGuard, type SessionRequest } from "../auth/session-auth.guard.js";
@@ -9,6 +9,7 @@ const updateProfileSchema = z.object({
   lastName: z.string().trim().min(1).max(100),
   phone: z.string().trim().min(7).max(30)
 }).strict();
+const uuid = z.string().uuid();
 
 @Controller("api/v1")
 export class MeController {
@@ -39,4 +40,31 @@ export class MeController {
   async notifications(@Req() request: SessionRequest) {
     return this.accounts.listNotifications(request.studioSession!);
   }
+
+  @Get("me/favorites")
+  @UseGuards(SessionAuthGuard)
+  favorites(@Req() request: SessionRequest) {
+    return this.accounts.listFavorites(request.studioSession!);
+  }
+
+  @Post("me/favorites/:classTypeId")
+  @UseGuards(SessionAuthGuard)
+  async addFavorite(@Req() request: SessionRequest, @Param("classTypeId") classTypeId: string) {
+    if (!uuid.safeParse(classTypeId).success) throw favoriteNotFound();
+    const result = await this.accounts.addFavorite(request.studioSession!, classTypeId);
+    if (!result) throw favoriteNotFound();
+    return result;
+  }
+
+  @Delete("me/favorites/:classTypeId")
+  @UseGuards(SessionAuthGuard)
+  async removeFavorite(@Req() request: SessionRequest, @Param("classTypeId") classTypeId: string) {
+    if (!uuid.safeParse(classTypeId).success) throw favoriteNotFound();
+    await this.accounts.removeFavorite(request.studioSession!, classTypeId);
+    return { id: classTypeId };
+  }
+}
+
+function favoriteNotFound() {
+  return new HttpException({ code: "RESOURCE_NOT_FOUND", message: "Lekce nebyla nalezena." }, HttpStatus.NOT_FOUND);
 }

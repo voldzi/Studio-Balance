@@ -44,23 +44,25 @@ zůstávají beze změny jako auditní stopa.
 | CD-031 | Administrace obsahuje kontextovou nápovědu | otazníky vysvětlují zejména kapacitu, cenu, pořadí, publikování, souhlas a práci s fotografiemi; nápověda je dostupná myší, dotykem i klávesnicí a nenahrazuje validační hlášení. |
 | CD-032 | Klientská registrace je jednoduchá a nevyžaduje e-mailové ověření | Keycloak po registraci neodesílá ověřovací e-mail; klient může po doplnění jména, příjmení, telefonu a přijetí podmínek rezervovat. Reset hesla se zpřístupní až po budoucím zprovoznění SMTP. |
 | CD-033 | Administrátorský přístup vyžaduje TOTP | klient `studiobalance-admin` používá oddělený přihlašovací tok, který po heslu vždy vyžaduje ověřovací kód; účet bez nastavené aplikace musí nejprve dokončit její registraci. |
+| CD-034 | Zadavatel schválil 13. 8. 2026 prémiový mobilní směr klientské webové aplikace | instalovatelná PWA používá krémovou, hnědou a zlatavou paletu, oficiální logo, schválené fotografie, přivítání, nejbližší rezervaci, rychlé storno, novinky, zprávy, oblíbené a spodní navigaci Domů / Rozvrh / Rezervace / Oblíbené / Profil. Jde stále o responzivní web napojený na stejnou databázi; číselná volná místa, permanentky a nativní mobilní aplikace zůstávají mimo rozsah. |
+| CD-035 | Zadavatel doplnil úplná jména lektorů a potvrdil ceny podle konkrétních lekcí | Kruhový trénink vede Tereza Sitková, nedělní Jumping Monika Kubincová, Power Yoga Xavier Tihelka, úterní Barre Nicola Lojšková, ranní Barre Katka Adamovská, středeční Jumping, TRX a Balance Flow Nicola Lojšková. Barre stojí 250 Kč, Balance Flow 200 Kč a ostatní uvedené lekce 160 Kč. |
 
 ## Schválený týdenní rozvrh 2026-08-10
 
-| Den | Čas | Lekce | Lektorka |
+| Den | Čas | Lekce | Lekci vede |
 | --- | --- | --- | --- |
-| pondělí | 17:00–18:00 | TRX | Nicola Lojková |
-| pondělí | 18:10–19:10 | Balance Flow | Nicola Lojková |
-| úterý | 17:00–18:00 | Barre Sculpt | Nicola Lojková |
-| úterý | 18:15–19:15 | Kruhový trénink | Tereza |
-| středa | 16:00–17:00 | TRX | Nicola Lojková |
-| středa | 17:15–18:15 | Jumping | Nicola Lojková |
-| čtvrtek | 8:30–9:30 | Barre Strength | Katka |
-| čtvrtek | 17:00–18:00 | Balance Flow | Nicola Lojková |
-| čtvrtek | 18:15–19:15 | Kruhový trénink | Tereza |
-| pátek | 17:30–18:30 | Power Yoga | Helka |
-| neděle | 16:00–17:00 | Jumping | Monika |
-| neděle | 18:00–19:00 | Power Yoga | Helka |
+| pondělí | 17:00–18:00 | TRX | Nicola Lojšková |
+| pondělí | 18:10–19:10 | Balance Flow | Nicola Lojšková |
+| úterý | 17:00–18:00 | Barre Sculpt | Nicola Lojšková |
+| úterý | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
+| středa | 16:00–17:00 | TRX | Nicola Lojšková |
+| středa | 17:15–18:15 | Jumping | Nicola Lojšková |
+| čtvrtek | 8:30–9:30 | Barre Strength | Katka Adamovská |
+| čtvrtek | 17:00–18:00 | Balance Flow | Nicola Lojšková |
+| čtvrtek | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
+| pátek | 17:30–18:30 | Power Yoga | Xavier Tihelka |
+| neděle | 16:00–17:00 | Jumping | Monika Kubincová |
+| neděle | 18:00–19:00 | Power Yoga | Xavier Tihelka |
 
 | Lekce | Maximální kapacita |
 | --- | ---: |

@@ -1,4 +1,4 @@
-const CACHE_NAME = "studio-balance-static-v1";
+const CACHE_NAME = "studio-balance-static-v2";
 const APP_SHELL = ["/", "/offline.html", "/manifest.webmanifest", "/images/studio-balance/brand-logo.jpg"];
 
 self.addEventListener("install", (event) => {

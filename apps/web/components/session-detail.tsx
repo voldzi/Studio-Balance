@@ -39,7 +39,7 @@ export function SessionDetail({ sessionId }: { sessionId: string }) {
         <dl className="detail-facts">
           <div><dt>Čas</dt><dd>{formatStudioDate(session.startAt, { hour: "2-digit", minute: "2-digit" })}–{formatStudioDate(session.endAt, { hour: "2-digit", minute: "2-digit" })}</dd></div>
           <div><dt>Příchod</dt><dd>Prosíme v {formatStudioDate(session.arrivalAt, { hour: "2-digit", minute: "2-digit" })}</dd></div>
-          <div><dt>Lektorka</dt><dd>{session.instructor.displayName}</dd></div>
+          <div><dt>Lekci vede</dt><dd>{session.instructor.displayName}</dd></div>
           <div><dt>Cena</dt><dd>{formatPrice(session.price)} · platba ve studiu</dd></div>
           <div><dt>Místo</dt><dd>{session.location.name}, {session.location.address}</dd></div>
           <div><dt>Stav</dt><dd>{publicSessionLabel(session.availability)}</dd></div>

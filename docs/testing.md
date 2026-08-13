@@ -140,6 +140,13 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
   nejbližší termín;
 - klientský účet po rezervaci ukáže potvrzení jen přihlášenému klientovi;
   nepřihlášený požadavek na zprávy vrací standardní `401` chybu.
+- klientský účet na 360 px ukáže přivítání, nejbližší rezervaci s fotografií,
+  přímé storno a spodní navigaci bez horizontálního přetečení; na desktopu
+  zachová stejná data a akce;
+- oblíbené jsou soukromé pro aktuální účet, idempotentně se přidají/odeberou a
+  skrytý typ lekce se veřejně nevrací;
+- novinky zobrazují jen publikované položky po čase zveřejnění; admin koncept,
+  publikace a úprava vyžadují admin roli a zapisují audit.
 
 ## Oznámení
 

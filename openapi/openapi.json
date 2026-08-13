@@ -94,6 +94,17 @@
         }
       }
     },
+    "/api/v1/news": {
+      "get": {
+        "summary": "List published Studio Balance news",
+        "operationId": "listNews",
+        "tags": ["Content"],
+        "security": [],
+        "responses": {
+          "200": { "description": "Published news in display order.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/NewsItem" } } } } } } }
+        }
+      }
+    },
     "/api/v1/transformations": {
       "get": { "summary": "List approved client transformations", "operationId": "listTransformations", "tags": ["Content"], "security": [], "parameters": [{ "name": "featured", "in": "query", "schema": { "type": "boolean", "default": false } }], "responses": { "200": { "description": "Published transformations with confirmed consent.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transformation" } } } } } } }, "400": { "$ref": "#/components/responses/Error" } } }
     },
@@ -202,6 +213,36 @@
           },
           "401": { "$ref": "#/components/responses/Error" }
         }
+      }
+    },
+    "/api/v1/me/favorites": {
+      "get": {
+        "summary": "List the authenticated client's favorite class types",
+        "operationId": "listMyFavorites",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": { "description": "Favorite active class types.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/FavoriteClassType" } } } } } } },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/favorites/{classTypeId}": {
+      "post": {
+        "summary": "Add an active class type to favorites",
+        "operationId": "addMyFavorite",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ClassTypeId" }],
+        "responses": { "201": { "description": "Favorite saved.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "401": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } }
+      },
+      "delete": {
+        "summary": "Remove a class type from favorites",
+        "operationId": "removeMyFavorite",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ClassTypeId" }],
+        "responses": { "200": { "description": "Favorite removed or already absent.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "401": { "$ref": "#/components/responses/Error" } }
       }
     },
     "/api/v1/bookings": {
@@ -333,6 +374,13 @@
     "/api/v1/admin/content/reviews/{id}": {
       "patch": { "summary": "Update, publish, feature or hide a review", "operationId": "adminUpdateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
     },
+    "/api/v1/admin/content/news": {
+      "get": { "summary": "List news including drafts", "operationId": "adminListNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All news.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminNewsItem" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a news draft or published item", "operationId": "adminCreateNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminNewsInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/news/{id}": {
+      "patch": { "summary": "Update, publish, feature or hide news", "operationId": "adminUpdateNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminNewsInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
     "/api/v1/admin/content/transformations": {
       "get": { "summary": "List transformations including drafts", "operationId": "adminListTransformations", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All transformations.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminTransformation" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
       "post": { "summary": "Create a transformation", "operationId": "adminCreateTransformation", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminTransformationInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
@@ -366,6 +414,7 @@
     "parameters": {
       "SessionId": { "name": "sessionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "BookingId": { "name": "bookingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ClassTypeId": { "name": "classTypeId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "ResourceId": { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "IdempotencyKey": {
         "name": "Idempotency-Key",
@@ -516,6 +565,61 @@
           "body": { "type": "string" },
           "readAt": { "type": ["string", "null"], "format": "date-time" },
           "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FavoriteClassType": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "slug", "tagline", "difficulty", "heroImage", "favoritedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "tagline": { "type": "string" },
+          "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "heroImage": { "oneOf": [{ "$ref": "#/components/schemas/MediaImage" }, { "type": "null" }] },
+          "favoritedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NewsItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "summary", "body", "publishedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "minLength": 2, "maxLength": 160 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 400 },
+          "body": { "type": "string", "minLength": 10, "maxLength": 5000 },
+          "publishedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminNewsInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "summary", "body", "published", "featured", "publishedAt", "sortOrder"],
+        "properties": {
+          "title": { "type": "string", "minLength": 2, "maxLength": 160 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 400 },
+          "body": { "type": "string", "minLength": 10, "maxLength": 5000 },
+          "published": { "type": "boolean" },
+          "featured": { "type": "boolean" },
+          "publishedAt": { "type": ["string", "null"], "format": "date-time" },
+          "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 }
+        }
+      },
+      "AdminNewsItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "summary", "body", "published", "featured", "publishedAt", "sortOrder"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "summary": { "type": "string" },
+          "body": { "type": "string" },
+          "published": { "type": "boolean" },
+          "featured": { "type": "boolean" },
+          "publishedAt": { "type": ["string", "null"], "format": "date-time" },
+          "sortOrder": { "type": "integer" }
         }
       },
       "UpdateMeRequest": {

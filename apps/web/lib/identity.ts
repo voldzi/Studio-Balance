@@ -26,6 +26,8 @@ type LoginAttempt = {
 export type WebSession = {
   email: string;
   emailVerified: boolean;
+  firstName?: string;
+  lastName?: string;
   roles: ("client" | "admin" | "super_admin")[];
   subject: string;
 };
@@ -174,6 +176,8 @@ export async function finishLogin(input: {
     subject: claims.payload.sub,
     email: claims.payload.email,
     emailVerified: claims.payload.email_verified === true,
+    ...(typeof claims.payload.given_name === "string" ? { firstName: claims.payload.given_name } : {}),
+    ...(typeof claims.payload.family_name === "string" ? { lastName: claims.payload.family_name } : {}),
     roles: roles.filter((role): role is WebSession["roles"][number] =>
       role === "client" || role === "admin" || role === "super_admin"
     )
@@ -204,6 +208,8 @@ export async function readWebSession(cookieValue: string | undefined): Promise<W
       subject: payload.sub,
       email: payload.email,
       emailVerified: payload.email_verified,
+      ...(typeof payload.given_name === "string" ? { firstName: payload.given_name } : {}),
+      ...(typeof payload.family_name === "string" ? { lastName: payload.family_name } : {}),
       roles: payload.roles as WebSession["roles"]
     };
   } catch {
@@ -263,6 +269,8 @@ async function signSession(session: WebSession, config: IdentityConfig): Promise
   return new SignJWT({
     email: session.email,
     email_verified: session.emailVerified,
+    ...(session.firstName ? { given_name: session.firstName } : {}),
+    ...(session.lastName ? { family_name: session.lastName } : {}),
     roles: session.roles
   })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })

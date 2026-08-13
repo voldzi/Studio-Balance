@@ -58,7 +58,8 @@ before encoding one interpretation in code.
   Expo/React Native workspace, app-store release, or mobile push provider.
 - Identity uses the dedicated Keycloak `studio-balance` realm with separate
   web/admin OIDC policies, Authorization Code + PKCE, server-side HTTP-only
-  sessions, verified email before booking, and mandatory admin MFA. See ADR 0004.
+  sessions, simple client registration without e-mail verification while SMTP
+  is unavailable, and mandatory admin MFA. See ADR 0004.
 - Production application workloads run as Docker containers on
   `docker.home.cz`.
 - Public traffic for `https://studiobalance.zeleznalady.cz` is published

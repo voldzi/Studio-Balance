@@ -5,6 +5,8 @@ export type StudioRole = "client" | "admin" | "super_admin";
 export type StudioSession = {
   email: string;
   emailVerified: boolean;
+  firstName?: string;
+  lastName?: string;
   roles: StudioRole[];
   subject: string;
 };
@@ -49,6 +51,8 @@ export async function verifyStudioSession(
       subject: payload.sub,
       email: payload.email,
       emailVerified: payload.email_verified,
+      ...(typeof payload.given_name === "string" ? { firstName: payload.given_name } : {}),
+      ...(typeof payload.family_name === "string" ? { lastName: payload.family_name } : {}),
       roles: payload.roles as StudioRole[]
     };
   } catch {

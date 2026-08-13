@@ -60,6 +60,10 @@ vrstvě/API na každé operaci, nejen v routeru nebo UI.
 - admin spravuje provoz a obsah v rozsahu role;
 - super admin spravuje adminy, kritická nastavení, audit a exporty;
 - interní kapacita a seznam klientů nejsou veřejné;
+- oblíbené typy lekcí jsou vázané na serverový profil aktuálně přihlášeného
+  klienta; klient nikdy neposílá ani nevolí cizí `user_id`;
+- novinky jsou prostý text; veřejné API vrací pouze publikované položky po čase
+  zveřejnění a administrační změny vyžadují admin roli a audit;
 - odpověď na cizí objekt neodhalí, zda objekt existuje;
 - hromadný export, smazání, změna role a audited correction jsou privilegované
   akce s explicitním důvodem a auditní stopou.

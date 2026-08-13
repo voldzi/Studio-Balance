@@ -97,7 +97,7 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
         <p className="detail-lead">{formatStudioDate(session.startAt, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
         <dl className="detail-facts compact-facts">
           <div><dt>Příchod</dt><dd>{formatStudioDate(session.arrivalAt, { hour: "2-digit", minute: "2-digit" })}</dd></div>
-          <div><dt>Lektorka</dt><dd>{session.instructor.displayName}</dd></div>
+          <div><dt>Lekci vede</dt><dd>{session.instructor.displayName}</dd></div>
           <div><dt>Cena</dt><dd>{formatPrice(session.price)}, platba ve studiu</dd></div>
           <div><dt>Místo</dt><dd>{session.location.address}</dd></div>
         </dl>

@@ -97,8 +97,9 @@ Doporučené doménové kódy:
 ## Veřejný endpoint katalog
 
 Implementované jsou veřejný katalog a detail lekcí, seznam termínů, detail
-termínu a čtení publikovaných recenzí. Ostatní řádky jsou plánované a nejsou
-součástí aktuálního OpenAPI.
+termínu, čtení publikovaných recenzí a novinek. Klientské oblíbené i správa
+novinek v administraci jsou rovněž součástí aktuálního OpenAPI. Ostatní řádky
+jsou plánované a nejsou součástí aktuálního OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
@@ -113,6 +114,14 @@ součástí aktuálního OpenAPI.
 | GET | `/api/v1/prices` | informační ceník bez nákupu |
 | GET | `/api/v1/faq` | aktivní FAQ |
 | GET | `/api/v1/studio` | kontakty, mapa, sítě a provozní texty |
+
+Klientské endpointy `GET /api/v1/me/favorites`,
+`POST /api/v1/me/favorites/{classTypeId}` a
+`DELETE /api/v1/me/favorites/{classTypeId}` vyžadují klientskou HTTP-only
+relaci. Administrace spravuje novinky přes
+`GET/POST /api/v1/admin/content/news` a
+`PATCH /api/v1/admin/content/news/{id}`; změny se auditují a odpovědi jsou
+`private, no-store`.
 
 ### Veřejný termín
 

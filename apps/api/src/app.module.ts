@@ -19,9 +19,11 @@ import { AdminTransformationsController, TransformationsController } from "./con
 import { TransformationsService } from "./content/transformations.service.js";
 import { AdminMediaController, MediaController } from "./media/media.controller.js";
 import { MediaStorageService } from "./media/media-storage.service.js";
+import { AdminNewsController, NewsController } from "./content/news.controller.js";
+import { NewsService } from "./content/news.service.js";
 
 @Module({
-  controllers: [SystemController, ScheduleController, ReviewsController, TransformationsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminMediaController],
-  providers: [RuntimeConfigService, DatabaseService, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, MediaStorageService, AccountService, BookingService, AdminService]
+  controllers: [SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController],
+  providers: [RuntimeConfigService, DatabaseService, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService]
 })
 export class AppModule {}

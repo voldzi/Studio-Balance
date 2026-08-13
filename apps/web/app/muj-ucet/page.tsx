@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { AccountDashboard } from "../../components/account-dashboard";
-import { SiteHeader } from "../../components/site-header";
 import { identityCookies, readWebSession } from "../../lib/identity";
 
 export default async function AccountPage() {
@@ -10,10 +9,5 @@ export default async function AccountPage() {
   const session = await readWebSession(cookieStore.get(identityCookies.session)?.value);
   if (!session) redirect("/prihlaseni?returnTo=/muj-ucet");
 
-  return (
-    <>
-      <SiteHeader />
-      <main className="account-shell"><AccountDashboard /></main>
-    </>
-  );
+  return <AccountDashboard />;
 }

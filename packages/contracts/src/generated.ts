@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List published Studio Balance news */
+        get: operations["listNews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/transformations": {
         parameters: {
             query?: never;
@@ -187,6 +204,41 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the authenticated client's favorite class types */
+        get: operations["listMyFavorites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/favorites/{classTypeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an active class type to favorites */
+        post: operations["addMyFavorite"];
+        /** Remove a class type from favorites */
+        delete: operations["removeMyFavorite"];
         options?: never;
         head?: never;
         patch?: never;
@@ -434,6 +486,41 @@ export interface paths {
         patch: operations["adminUpdateReview"];
         trace?: never;
     };
+    "/api/v1/admin/content/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List news including drafts */
+        get: operations["adminListNews"];
+        put?: never;
+        /** Create a news draft or published item */
+        post: operations["adminCreateNews"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/news/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update, publish, feature or hide news */
+        patch: operations["adminUpdateNews"];
+        trace?: never;
+    };
     "/api/v1/admin/content/transformations": {
         parameters: {
             query?: never;
@@ -663,6 +750,48 @@ export interface components {
             readAt: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        FavoriteClassType: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            tagline: string;
+            difficulty: number;
+            heroImage: components["schemas"]["MediaImage"] | null;
+            /** Format: date-time */
+            favoritedAt: string;
+        };
+        NewsItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            summary: string;
+            body: string;
+            /** Format: date-time */
+            publishedAt: string;
+        };
+        AdminNewsInput: {
+            title: string;
+            summary: string;
+            body: string;
+            published: boolean;
+            featured: boolean;
+            /** Format: date-time */
+            publishedAt: string | null;
+            sortOrder: number;
+        };
+        AdminNewsItem: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            summary: string;
+            body: string;
+            published: boolean;
+            featured: boolean;
+            /** Format: date-time */
+            publishedAt: string | null;
+            sortOrder: number;
         };
         UpdateMeRequest: {
             firstName: string;
@@ -917,6 +1046,7 @@ export interface components {
     parameters: {
         SessionId: string;
         BookingId: string;
+        ClassTypeId: string;
         ResourceId: string;
         IdempotencyKey: string;
     };
@@ -1035,6 +1165,28 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+        };
+    };
+    listNews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Published news in display order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["NewsItem"][];
+                    };
+                };
+            };
         };
     };
     listTransformations: {
@@ -1202,6 +1354,76 @@ export interface operations {
                     "application/json": {
                         items: components["schemas"]["AccountNotification"][];
                     };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    listMyFavorites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Favorite active class types. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["FavoriteClassType"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    addMyFavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                classTypeId: components["parameters"]["ClassTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Favorite saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            401: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    removeMyFavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                classTypeId: components["parameters"]["ClassTypeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Favorite removed or already absent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
                 };
             };
             401: components["responses"]["Error"];
@@ -1678,6 +1900,83 @@ export interface operations {
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminListNews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All news. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AdminNewsItem"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminCreateNews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminNewsInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    adminUpdateNews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminNewsInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
             404: components["responses"]["Error"];
         };
     };

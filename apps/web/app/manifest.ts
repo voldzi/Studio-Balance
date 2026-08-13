@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Studio Balance",
     short_name: "Balance",
     description: "Studio Balance – pohyb, síla, klid a rovnováha v Bruntále.",
-    start_url: "/",
+    start_url: "/muj-ucet",
     scope: "/",
     display: "standalone",
     background_color: "#F7F3EE",

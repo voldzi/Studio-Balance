@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { BookingFlow } from "../../../components/booking-flow";
+import { ClientRouteNavigation } from "../../../components/client-route-navigation";
 import { SiteHeader } from "../../../components/site-header";
 import { identityCookies, readWebSession } from "../../../lib/identity";
 
@@ -15,6 +16,7 @@ export default async function BookingPage({ params }: { params: Promise<{ sessio
     <>
       <SiteHeader />
       <main className="booking-shell"><BookingFlow sessionId={sessionId} /></main>
+      <ClientRouteNavigation active="none" />
     </>
   );
 }

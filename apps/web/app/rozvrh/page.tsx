@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { ClientRouteNavigation } from "../../components/client-route-navigation";
 import { ScheduleView } from "../../components/schedule-view";
 import { SiteHeader } from "../../components/site-header";
+import { identityCookies, readWebSession } from "../../lib/identity";
 
 export const metadata: Metadata = {
   description: "Aktuální rozvrh lekcí Studia Balance bez zveřejňování kapacity.",
   title: "Rozvrh lekcí"
 };
 
-export default function SchedulePage() {
+export default async function SchedulePage() {
+  const cookieStore = await cookies();
+  const session = await readWebSession(cookieStore.get(identityCookies.session)?.value);
   return (
     <>
       <SiteHeader />
@@ -20,6 +25,7 @@ export default function SchedulePage() {
         </header>
         <ScheduleView />
       </main>
+      {session && <ClientRouteNavigation active="schedule" />}
     </>
   );
 }

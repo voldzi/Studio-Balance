@@ -55,7 +55,20 @@ describe("GET /api/v1/me", () => {
                 readAt: null,
                 createdAt: "2026-08-06T10:00:00.000Z"
               }]
-            })
+            }),
+            listFavorites: async () => ({
+              items: [{
+                id: "20000000-0000-4000-8000-000000000002",
+                name: "TRX",
+                slug: "trx",
+                tagline: "Funkční síla a kontrola",
+                difficulty: 4,
+                heroImage: { src: "/images/studio-balance/trx.jpeg", alt: "TRX" },
+                favoritedAt: "2026-08-13T10:00:00.000Z"
+              }]
+            }),
+            addFavorite: async (_session: unknown, id: string) => ({ id }),
+            removeFavorite: async () => undefined
           }
         }
       ]
@@ -132,5 +145,28 @@ describe("GET /api/v1/me", () => {
         createdAt: "2026-08-06T10:00:00.000Z"
       }]
     });
+  });
+
+  it("keeps favorites private and supports idempotent add and remove", async () => {
+    const current = await createApplication();
+    const cookie = { cookie: `sb_session=${await session()}` };
+    const list = await current.inject({ method: "GET", url: "/api/v1/me/favorites", headers: cookie });
+    expect(list.statusCode).toBe(200);
+    expect(list.json().items[0]).toMatchObject({ name: "TRX", slug: "trx" });
+
+    const id = "20000000-0000-4000-8000-000000000002";
+    const add = await current.inject({ method: "POST", url: `/api/v1/me/favorites/${id}`, headers: cookie });
+    expect(add.statusCode).toBe(201);
+    expect(add.json()).toEqual({ id });
+
+    const remove = await current.inject({ method: "DELETE", url: `/api/v1/me/favorites/${id}`, headers: cookie });
+    expect(remove.statusCode).toBe(200);
+    expect(remove.json()).toEqual({ id });
+  });
+
+  it("rejects favorites without an authenticated session", async () => {
+    const current = await createApplication();
+    const response = await current.inject({ method: "GET", url: "/api/v1/me/favorites" });
+    expect(response.statusCode).toBe(401);
   });
 });
