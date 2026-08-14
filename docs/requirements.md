@@ -75,7 +75,7 @@ SEO a schválenou cestu fotografie typu lekce.
 | IDN-007 | P0 | identita používá Keycloak realm `studio-balance`, OIDC Authorization Code + PKCE a serverovou HTTP-only relaci |
 | IDN-008 | P0 | klient může vytvořit rezervaci po doplnění jména, příjmení a telefonu a po přijetí podmínek; e-mailové ověření se nevyžaduje |
 | IDN-009 | P0 | `admin` a `super_admin` musí dokončit MFA; klientská MFA není v první verzi povinná |
-| IDN-010 | P0 | klientský profil účtu s rolí `admin` nebo `super_admin` obsahuje přímý vstup „Správa studia“; běžný klient jej nevidí a chybějící admin relace vede přímo na čerstvé administrátorské ověření heslem a TOTP |
+| IDN-010 | P0 | klientský profil účtu s rolí `admin` nebo `super_admin` obsahuje přímý vstup „Správa studia“; platná serverová webová relace administrátora otevře správu bez druhého přihlášení, běžný klient jej nevidí a vstup bez platné relace vede na oddělené ověření heslem a TOTP |
 
 Datum narození a nouzový kontakt se v první verzi nesbírají.
 

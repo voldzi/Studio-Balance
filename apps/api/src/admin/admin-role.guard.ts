@@ -12,7 +12,9 @@ export class AdminRoleGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AdminRequest>();
-    const session = await verifyStudioSession(request.headers.cookie, this.config.value.sessionSecret, "sb_admin_session");
+    const adminSession = await verifyStudioSession(request.headers.cookie, this.config.value.sessionSecret, "sb_admin_session");
+    const webSession = await verifyStudioSession(request.headers.cookie, this.config.value.sessionSecret);
+    const session = adminSession ?? webSession;
     if (!session) {
       throw new HttpException({ code: "AUTHENTICATION_REQUIRED", message: "Přihlaste se do administrace." }, HttpStatus.UNAUTHORIZED);
     }

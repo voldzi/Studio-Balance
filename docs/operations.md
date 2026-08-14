@@ -354,8 +354,9 @@ heslo lze zadat skrytě dvakrát; skript je pak nevypíše ani neuloží. Pokud 
 pole prázdné, vygeneruje náhodné heslo a vypíše je právě jednou. Na konci ověří
 aktivní účet a realm roli `admin`.
 
-Admin OIDC žádost navíc používá `prompt=login` a `max_age=0`, takže při novém
-vstupu do administrace nelze pouze převzít dřívější klientskou SSO relaci.
+Samostatná admin OIDC žádost navíc používá `prompt=login` a `max_age=0`.
+Přechod z již přihlášeného klientského profilu s podepsanou rolí `admin` nebo
+`super_admin` ale samostatnou žádost nespouští a správu otevře automaticky.
 Před předáním se dokončí první login, změna dočasného hesla a registrace TOTP;
 následně se v druhé anonymní relaci ověří, že přihlášení vyžaduje heslo i OTP a
 že klientský účet bez role končí na srozumitelné chybě. Dokud tento test

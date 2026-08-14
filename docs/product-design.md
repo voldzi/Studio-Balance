@@ -106,10 +106,10 @@ se nepřebírá; veřejné UI ukazuje pouze slovní stav. Permanentky, doporučo
 slevy, nativní aplikace a mobilní push nejsou tímto vizuálem schválené.
 
 Pokud profil nese roli `admin` nebo `super_admin`, zobrazí v nastavení samostatný
-vstup „Správa studia“. Běžný klient jej nevidí. Platná administrátorská relace
-otevře správu přímo; jinak přechod bez další mezistránky spustí čerstvé
-administrátorské ověření heslem a TOTP s předvyplněným e-mailem aktuálního
-účtu. Odkaz nenahrazuje serverovou kontrolu role ani povinné MFA.
+vstup „Správa studia“. Běžný klient jej nevidí. Platná serverová webová nebo
+administrátorská relace s administrátorskou rolí otevře správu přímo, bez
+druhého přihlášení. Teprve vstup bez takové relace spustí oddělené ověření
+heslem a TOTP. Odkaz nenahrazuje serverovou kontrolu role ani povinné MFA.
 
 ### Administrace
 

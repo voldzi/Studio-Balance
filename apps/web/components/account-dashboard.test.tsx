@@ -20,6 +20,6 @@ describe("ProfileView", () => {
     const html = renderToStaticMarkup(<ProfileView busy={false} profile={{ ...baseProfile, roles: ["client", "admin"] }} saveProfile={async () => undefined} />);
     expect(html).toContain("Správa studia");
     expect(html).toContain('href="/admin"');
-    expect(html).toContain("jednorázový ověřovací kód");
+    expect(html).toContain("správa otevře rovnou");
   });
 });

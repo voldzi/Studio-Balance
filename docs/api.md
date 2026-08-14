@@ -251,7 +251,7 @@ nebo WebP do 8 MB a vrací identifikátor normalizovaného WebP assetu. Publikac
 vyžaduje dvě různé fotografie a potvrzený souhlas; zvýrazněná proměna musí být
 současně publikovaná. Při nenakonfigurovaném úložišti vrací upload
 `MEDIA_STORAGE_UNAVAILABLE` s HTTP 503.
-Všechny cesty používají samostatnou HTTP-only admin relaci, vyžadují roli
+Všechny cesty používají serverově ověřenou HTTP-only webovou nebo admin relaci, vyžadují roli
 `admin` nebo `super_admin`; administrační výpis je `private, no-store` a každá
 změna se zapisuje spolu s auditním záznamem v jediné databázové transakci.
 Zdroj reference je volitelný. Při přiřazení lekce musí typ existovat a

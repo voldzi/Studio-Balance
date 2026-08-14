@@ -44,13 +44,14 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 - OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
   vrstva mimo browser JavaScript;
 - admin vstup je oddělený a MFA je povinné pro `admin` i `super_admin`;
-- admin Authorization Code žádost vynutí čerstvé Keycloak přihlášení pomocí
-  `prompt=login` a `max_age=0`; jmenovitý admin účet se před předáním ověří v
-  nové anonymní relaci heslem i TOTP a bez dokončeného testu se nepovažuje za
-  aktivovaný;
+- samostatná admin Authorization Code žádost bez existující aplikační relace
+  vynutí čerstvé Keycloak přihlášení pomocí `prompt=login` a `max_age=0`;
+  jmenovitý admin účet se před předáním ověří v nové anonymní relaci heslem i
+  TOTP a bez dokončeného testu se nepovažuje za aktivovaný;
 - profil účtu s rolí `admin` nebo `super_admin` nabízí přímý vstup do správy;
-  položka sama oprávnění neuděluje, administrace znovu ověří serverovou roli a
-  při chybějící zesílené relaci vede přímo na čerstvé heslo a TOTP;
+  položka sama oprávnění neuděluje a administrace znovu serverově ověří
+  podepsanou roli. Platná webová relace administrátora se uzná bez druhého
+  přihlášení; běžná klientská relace zůstává odmítnuta;
 - klientská registrace nepoužívá e-mailové ověření, dokud není bezpečně provozovaný SMTP sender; konfigurační oprava odstraní i dříve uloženou required action `VERIFY_EMAIL`, ale zachová změnu hesla a registraci TOTP; booking nadále vyžaduje platnou relaci, vyplněné jméno, příjmení a telefon a přijetí podmínek;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 

@@ -23,9 +23,9 @@ describe("admin authorization", () => {
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
 
-  async function cookie(roles: string[]) {
+  async function cookie(roles: string[], name = "sb_admin_session") {
     const token = await new SignJWT({ email: "operator@example.test", email_verified: true, roles }).setProtectedHeader({ alg: "HS256" }).setSubject("admin-subject").setIssuer("studio-balance-web").setAudience("studio-balance-api").setIssuedAt().setExpirationTime("1h").sign(new TextEncoder().encode(config.sessionSecret));
-    return `sb_admin_session=${token}`;
+    return `${name}=${token}`;
   }
 
   it("rejects a request without the separate admin session", async () => {
@@ -42,6 +42,12 @@ describe("admin authorization", () => {
 
   it("allows an administrator", async () => {
     const response = await (await createApplication()).inject({ method: "GET", url: "/api/v1/admin/dashboard", headers: { cookie: await cookie(["admin"]) } });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ activeBookings: 2, clients: 1 });
+  });
+
+  it("allows a signed-in web administrator without a second login", async () => {
+    const response = await (await createApplication()).inject({ method: "GET", url: "/api/v1/admin/dashboard", headers: { cookie: await cookie(["client", "admin"], "sb_session") } });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ activeBookings: 2, clients: 1 });
   });

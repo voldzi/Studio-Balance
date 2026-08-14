@@ -117,6 +117,9 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
   neotevře obrazovku slibující nedostupný e-mail;
 - admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
   projeví v relaci a auditu;
+- platná webová relace s rolí `admin` otevře správu i administrační API bez
+  druhého loginu; webová relace pouze s rolí `client` skončí 403 a anonymní
+  vstup zůstává 401 / přesměrován na oddělené přihlášení;
 - web, API a worker zůstávají kompatibilní během rollout/rollback okna.
 
 ## UI a přístupnost
