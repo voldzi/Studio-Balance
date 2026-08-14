@@ -143,7 +143,9 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - schválené logo/fotografie, crop a layout bez překryvu/shiftu.
 - PWA smoke: manifest obsahuje název, barvy a instalační ikony; service worker
   neinterceptuje API ani neukládá rozvrh, účet nebo rezervace; bez připojení
-  navigace zobrazí pravdivou offline stránku.
+  navigace zobrazí pravdivou offline stránku; instalovaná aplikace už návod
+  nezobrazuje, iOS dostane postup Safari a podporovaný prohlížeč instalační
+  dialog.
 - detail každé lekce na 360 px i desktopu: schválená fotografie nebo bezpečný
   fallback, sémantická náročnost 1–5 hvězdiček, praktické informace a odkaz na
   nejbližší termín;

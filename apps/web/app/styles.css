@@ -401,6 +401,12 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
 .client-settings h2 { display: flex; align-items: center; gap: .6rem; font-size: 1.8rem; }
 .client-settings p { color: var(--color-text-secondary); line-height: 1.6; }
 .client-settings button { padding: 0; display: inline-flex; align-items: center; gap: .5rem; border: 0; background: transparent; color: var(--client-copper-dark); cursor: pointer; text-decoration: underline; }
+.pwa-install-guide { margin: var(--space-6) 0; padding: var(--space-5); display: grid; gap: var(--space-4); border: 1px solid #dfc3aa; border-radius: .75rem; background: linear-gradient(135deg, #fffaf6, #f7eee6); }
+.pwa-install-guide h3 { margin: .3rem 0 .65rem; font-family: var(--font-display); font-size: 1.5rem; }
+.pwa-install-guide p { margin: 0; font-size: .92rem; }
+.pwa-install-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.pwa-install-actions .client-primary-action { width: auto; }
+.pwa-install-actions .pwa-dismiss { color: var(--color-text-secondary); font-weight: 650; }
 .client-admin-entry { margin: var(--space-6) 0; padding: var(--space-5); border: 1px solid #dfc3aa; border-radius: .75rem; background: #f7eee6; }
 .client-admin-entry h3 { margin: 0; display: flex; align-items: center; gap: .55rem; font-family: var(--font-body); font-size: 1.15rem; }
 .client-admin-entry p { margin: .65rem 0 1rem; font-size: .95rem; }

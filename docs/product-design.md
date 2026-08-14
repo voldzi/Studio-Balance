@@ -168,6 +168,12 @@ připojení. Offline zůstávají dostupné jen bezpečně uložené statické s
 rezervační data, rozvrh, přihlášený účet a API se necachují jako aktuální obsah
 a rezervaci nelze bez připojení provést.
 
+V přihlášeném profilu se dočasně zobrazí srozumitelná karta „Měj studio vždy po
+ruce“. Na iOS vysvětluje postup Safari: Sdílet → Přidat na plochu → Přidat. Na
+zařízeních, která podporují instalační dialog prohlížeče, nabídne jediné
+tlačítko „Přidat na plochu“. Po instalaci ani po volbě „Teď ne“ se znovu
+neukazuje; návod se nesmí vydávat za nativní aplikaci.
+
 ## Rozvrh a veřejné stavy
 
 Desktop používá vzdušné karty po dnech, nikoli excelovou mřížku. Mobil používá

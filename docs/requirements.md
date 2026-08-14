@@ -52,7 +52,7 @@ a obchodní pravidla.
 | WEB-008 | P1 | SEO: title, description, canonical, sitemap, robots, Open Graph a vhodná strukturovaná data |
 | WEB-009 | P0 | každý aktivní typ lekce má veřejný detail se schválenou fotografií, náročností 1–5, vhodností, přínosy, pomůckami, praktickou informací a nejbližšími termíny bez počtu volných míst |
 | WEB-010 | P0 | klientský účet ukazuje potvrzení rezervace a důležité změny termínu jako zprávy v účtu |
-| WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje |
+| WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje. Přihlášený profil poskytne kontextový, jednorázově odmítnutelný návod k přidání na plochu telefonu. |
 | WEB-012 | P0 | přihlášený klientský web má prémiový mobilní přehled s přivítáním, nejbližší rezervací a fotografií, přímým stornem, nadcházejícími/minulými rezervacemi, oblíbenými typy lekcí, novinkami, zprávami účtu, profilem, nastavením a spodní navigací; všechna provozní data používají stejné API a databázi jako veřejný rozvrh a administrace |
 
 Aktuální typy lekcí jsou Barre Sculpt, Barre Strength, TRX, Balance Flow,
