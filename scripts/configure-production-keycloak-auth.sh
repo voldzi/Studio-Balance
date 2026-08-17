@@ -101,7 +101,10 @@ ensure_execution auth-otp-form
 clients="$(remote get "clients?clientId=$admin_client")"
 client_id="$(node -e 'const clients=JSON.parse(process.argv[1]); if (clients.length!==1) process.exit(1); process.stdout.write(clients[0].id)' "$clients")"
 flow_id="$(node -e 'const flows=JSON.parse(process.argv[1]); const flow=flows.find((item)=>item.alias===process.argv[2]); if (!flow) process.exit(1); process.stdout.write(flow.id)' "$flows" "$flow")"
-remote update "clients/$client_id" -s "authenticationFlowBindingOverrides={\"browser\":\"$flow_id\"}"
+# kcadm's partial field projection serialises a map inconsistently on this
+# Keycloak release. Set the one map entry explicitly so other overrides, if any,
+# are preserved as well.
+remote update "clients/$client_id" -s "authenticationFlowBindingOverrides.browser=$flow_id"
 
 # The application validates realm roles from the signed ID token. Keycloak's
 # built-in roles scope adds them to access tokens by default, but not to ID
@@ -114,29 +117,36 @@ realm_role_mapper_id="$(node -e 'const mappers=JSON.parse(process.argv[1]); cons
 remote update "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id" -s 'config."id.token.claim"=true'
 
 realm_state="$(remote get "realms/$realm" --fields verifyEmail,resetPasswordAllowed,rememberMe,ssoSessionIdleTimeout,ssoSessionMaxLifespan,clientSessionIdleTimeout,clientSessionMaxLifespan)"
-client_state="$(remote get "clients/$client_id" --fields clientId,authenticationFlowBindingOverrides)"
 execution_state="$(remote get "authentication/flows/$flow/executions")"
 users_state="$(remote get 'users?max=1000')"
 realm_role_mapper_state="$(remote get "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id")"
 node -e '
   const realm=JSON.parse(process.argv[1]);
-  const client=JSON.parse(process.argv[2]);
-  const executions=JSON.parse(process.argv[3]);
+  const executions=JSON.parse(process.argv[2]);
   if (realm.verifyEmail!==false || realm.resetPasswordAllowed!==false) throw new Error("Simple client registration is not active.");
   const expectedSessions={rememberMe:false,ssoSessionIdleTimeout:2592000,ssoSessionMaxLifespan:7776000,clientSessionIdleTimeout:2592000,clientSessionMaxLifespan:7776000};
   for (const [name,value] of Object.entries(expectedSessions)) if (realm[name]!==value) throw new Error(`Unexpected realm session setting: ${name}`);
-  if (client.authenticationFlowBindingOverrides?.browser!==process.argv[4]) throw new Error("Admin browser flow is not bound.");
   for (const provider of ["auth-username-password-form","auth-otp-form"]) {
     const execution=executions.find((item)=>item.providerId===provider);
     if (!execution || execution.requirement!=="REQUIRED") throw new Error(`Required execution missing: ${provider}`);
   }
-  const users=JSON.parse(process.argv[5]);
+  const users=JSON.parse(process.argv[3]);
   if (users.some((user)=>(user.requiredActions ?? []).includes("VERIFY_EMAIL"))) {
     throw new Error("A stale VERIFY_EMAIL required action remains on an account.");
   }
-  const mapper=JSON.parse(process.argv[6]);
+  const mapper=JSON.parse(process.argv[4]);
   if (mapper.config?.["id.token.claim"]!=="true") throw new Error("Realm roles are missing from ID tokens.");
-' "$realm_state" "$client_state" "$execution_state" "$flow_id" "$users_state" "$realm_role_mapper_state"
+' "$realm_state" "$execution_state" "$users_state" "$realm_role_mapper_state"
+
+# Do not use --fields here: Keycloak 26's partial projection may turn this map
+# into an array. Read the complete representation only in a pipe, never log it,
+# and validate the one required binding without placing any client data in argv.
+remote get "clients/$client_id" | node -e '
+  const client=JSON.parse(require("node:fs").readFileSync(0,"utf8"));
+  if (client.authenticationFlowBindingOverrides?.browser!==process.argv[1]) {
+    throw new Error("Admin browser flow is not bound.");
+  }
+' "$flow_id"
 
 echo "Configured: client registration without e-mail verification; password reset hidden until SMTP is available."
 echo "Configured: Keycloak's own Remember me checkbox is hidden; SSO/client sessions are 30 days idle / 90 days maximum for secure server-side refresh."
