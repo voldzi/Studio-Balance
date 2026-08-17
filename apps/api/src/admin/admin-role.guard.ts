@@ -1,27 +1,25 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 
-import { RuntimeConfigService } from "../config/runtime-config.js";
-import { verifyStudioSession, type StudioSession } from "../auth/session.js";
+import { type StudioSession } from "../auth/session.js";
+import { OpaqueSessionService } from "../auth/opaque-session.service.js";
 
 export type AdminRequest = FastifyRequest & { studioSession?: StudioSession };
 
 @Injectable()
 export class AdminRoleGuard implements CanActivate {
-  constructor(@Inject(RuntimeConfigService) private readonly config: RuntimeConfigService) {}
+  constructor(@Inject(OpaqueSessionService) private readonly sessions: OpaqueSessionService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AdminRequest>();
-    const adminSession = await verifyStudioSession(request.headers.cookie, this.config.value.sessionSecret, "sb_admin_session");
-    const webSession = await verifyStudioSession(request.headers.cookie, this.config.value.sessionSecret);
-    const session = adminSession ?? webSession;
-    if (!session) {
+    const adminSession = await this.sessions.resolveCookie(request.headers.cookie, "admin");
+    if (!adminSession) {
       throw new HttpException({ code: "AUTHENTICATION_REQUIRED", message: "Přihlaste se do administrace." }, HttpStatus.UNAUTHORIZED);
     }
-    if (!session.roles.some((role) => role === "admin" || role === "super_admin")) {
+    if (!adminSession.roles.some((role) => role === "admin" || role === "super_admin")) {
       throw new HttpException({ code: "PERMISSION_DENIED", message: "Pro tuto operaci nemáte oprávnění." }, HttpStatus.FORBIDDEN);
     }
-    request.studioSession = session;
+    request.studioSession = adminSession;
     return true;
   }
 }

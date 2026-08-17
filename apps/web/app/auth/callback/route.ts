@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { finishLogin, identityConfig, identityCookies, isSecureCookie, publicRedirectUrl } from "../../../lib/identity";
+import { createWebSession, finishLogin, identityConfig, identityCookies, isSecureCookie, publicRedirectUrl, rememberedDeviceMaxAgeSeconds } from "../../../lib/identity";
 
 export const runtime = "nodejs";
 
@@ -15,9 +15,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       cookieValue: request.cookies.get(identityCookies.attempt)?.value
     });
     const response = NextResponse.redirect(publicRedirectUrl(result.returnTo));
-    response.cookies.set(identityCookies.session, result.session, {
+    const sessionToken = await createWebSession(result, "web");
+    response.cookies.set(identityCookies.session, sessionToken, {
       httpOnly: true,
-      maxAge: 8 * 60 * 60,
+      ...(result.rememberDevice ? { maxAge: rememberedDeviceMaxAgeSeconds } : {}),
       path: "/",
       sameSite: "lax",
       secure: isSecureCookie(identityConfig())

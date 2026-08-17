@@ -45,6 +45,11 @@ Veřejný obsah a rozvrh jsou anonymní. Rezervace a `me` cesty vyžadují klien
 
 `GET /api/v1/me` a `PATCH /api/v1/me` jsou implementované chráněné cesty. Čtou pouze relaci
 vydanou webovou BFF po OIDC callbacku, nikdy OIDC token z browser JavaScriptu.
+Cookie obsahuje jen náhodný neprůhledný identifikátor; jeho hash, šifrovaný
+refresh token a okamžik poslední revalidace jsou na serveru. Interní cesty
+`/api/internal/sessions*` jsou součástí OpenAPI kvůli implementačnímu kontraktu,
+ale nejsou veřejné: přijímají pouze časově omezený HMAC podepsaný webovým BFF.
+Role a stav účtu se přes refresh token ověří nejpozději po 15 minutách.
 Profil je svázaný s Keycloak subjectem a ukládá jméno, příjmení, telefon,
 stav e-mailu z identity a přijatou verzi podmínek.
 

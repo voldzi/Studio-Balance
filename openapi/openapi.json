@@ -45,6 +45,42 @@
         }
       }
     },
+    "/api/internal/sessions": {
+      "post": {
+        "summary": "Create an opaque application session",
+        "operationId": "createInternalApplicationSession",
+        "tags": ["Internal"],
+        "x-studioBalance-internal": true,
+        "description": "Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionCreateRequest" } } } },
+        "responses": { "201": { "description": "Opaque token stored only in an HTTP-only application cookie.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionCreated" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/internal/sessions/resolve": {
+      "post": {
+        "summary": "Resolve and revalidate an opaque application session",
+        "operationId": "resolveInternalApplicationSession",
+        "tags": ["Internal"],
+        "x-studioBalance-internal": true,
+        "description": "Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionTokenRequest" } } } },
+        "responses": { "201": { "description": "Current identity or null when the session was revoked or expired.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionResolved" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/internal/sessions/revoke": {
+      "post": {
+        "summary": "Revoke an opaque application session",
+        "operationId": "revokeInternalApplicationSession",
+        "tags": ["Internal"],
+        "x-studioBalance-internal": true,
+        "description": "Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionTokenRequest" } } } },
+        "responses": { "201": { "description": "Revoked or already absent.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["revoked"], "properties": { "revoked": { "type": "boolean", "const": true } } } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
     "/api/v1/class-types": {
       "get": {
         "summary": "List active class types",
@@ -453,6 +489,12 @@
           }
         }
       },
+      "InternalSessionKind": { "type": "string", "enum": ["web", "admin"] },
+      "InternalSessionIdentity": { "type": "object", "additionalProperties": false, "required": ["subject", "email", "emailVerified", "roles"], "properties": { "subject": { "type": "string", "minLength": 1, "maxLength": 255 }, "email": { "type": "string", "format": "email", "maxLength": 254 }, "emailVerified": { "type": "boolean" }, "firstName": { "type": "string", "minLength": 1, "maxLength": 100 }, "lastName": { "type": "string", "minLength": 1, "maxLength": 100 }, "roles": { "type": "array", "items": { "type": "string", "enum": ["client", "admin", "super_admin"] }, "maxItems": 3 } } },
+      "InternalSessionCreateRequest": { "type": "object", "additionalProperties": false, "required": ["kind", "refreshToken", "session"], "properties": { "kind": { "$ref": "#/components/schemas/InternalSessionKind" }, "refreshToken": { "type": "string", "minLength": 20, "maxLength": 16000, "writeOnly": true }, "session": { "$ref": "#/components/schemas/InternalSessionIdentity" } } },
+      "InternalSessionTokenRequest": { "type": "object", "additionalProperties": false, "required": ["kind", "token"], "properties": { "kind": { "$ref": "#/components/schemas/InternalSessionKind" }, "token": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "writeOnly": true } } },
+      "InternalSessionCreated": { "type": "object", "additionalProperties": false, "required": ["token"], "properties": { "token": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "writeOnly": true } } },
+      "InternalSessionResolved": { "type": "object", "additionalProperties": false, "required": ["session"], "properties": { "session": { "oneOf": [{ "$ref": "#/components/schemas/InternalSessionIdentity" }, { "type": "null" }] } } },
       "Money": {
         "type": "object",
         "additionalProperties": false,
@@ -695,9 +737,9 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "sb_session",
-        "description": "Short-lived HTTP-only Studio Balance BFF session."
+        "description": "Opaque, HTTP-only Studio Balance server session. Browser JavaScript never receives an OIDC token."
       },
-      "adminSession": { "type": "apiKey", "in": "cookie", "name": "sb_admin_session", "description": "Short-lived HTTP-only admin BFF session requiring an admin realm role." }
+      "adminSession": { "type": "apiKey", "in": "cookie", "name": "sb_admin_session", "description": "Opaque, HTTP-only admin session that originated in the password + TOTP flow and is revalidated against Keycloak." }
     }
   },
   "tags": [
@@ -706,6 +748,7 @@
     { "name": "Content", "description": "Approved public Studio Balance content." },
     { "name": "Account", "description": "Authenticated client profile." },
     { "name": "Booking", "description": "Transactional client booking and cancellation." },
-    { "name": "Administration", "description": "Role-protected operational administration with audit logging." }
+    { "name": "Administration", "description": "Role-protected operational administration with audit logging." },
+    { "name": "Internal", "description": "Non-public BFF-to-API session protocol, protected by a time-bound server HMAC." }
   ]
 }

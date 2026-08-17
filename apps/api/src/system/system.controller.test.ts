@@ -14,6 +14,7 @@ const config: RuntimeConfig = {
   databaseUrl: "postgresql://unused",
   environment: "test",
   logLevel: "error",
+  oidc: { issuer: "http://localhost:8081/realms/studio-balance", webClientId: "web", webClientSecret: "web-secret", adminClientId: "admin", adminClientSecret: "admin-secret" },
   sessionSecret: "test-session-secret-that-is-long-enough-to-be-safe",
   version: "test"
 };

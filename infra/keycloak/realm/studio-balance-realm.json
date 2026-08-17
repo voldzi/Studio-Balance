@@ -12,7 +12,11 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": false,
   "verifyEmail": false,
-  "rememberMe": true,
+  "rememberMe": false,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 7776000,
+  "clientSessionIdleTimeout": 2592000,
+  "clientSessionMaxLifespan": 7776000,
   "roles": {
     "realm": [
       { "name": "client", "description": "Studio Balance client" },

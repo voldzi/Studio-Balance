@@ -106,10 +106,20 @@ se nepřebírá; veřejné UI ukazuje pouze slovní stav. Permanentky, doporučo
 slevy, nativní aplikace a mobilní push nejsou tímto vizuálem schválené.
 
 Pokud profil nese roli `admin` nebo `super_admin`, zobrazí v nastavení samostatný
-vstup „Správa studia“. Běžný klient jej nevidí. Platná serverová webová nebo
-administrátorská relace s administrátorskou rolí otevře správu přímo, bez
-druhého přihlášení. Teprve vstup bez takové relace spustí oddělené ověření
-heslem a TOTP. Odkaz nenahrazuje serverovou kontrolu role ani povinné MFA.
+vstup „Správa studia“. Běžný klient jej nevidí. Platná administrátorská relace
+otevře správu přímo. Při prvním vstupu na zařízení a po jejím vypršení spustí
+oddělené ověření heslem a TOTP; po úspěchu zůstane zabezpečený administrátorský
+přístup při volbě zapamatovaného zařízení použitelný až 90 dní, pokud se používá
+nejméně jednou za 30 dní. Běžná klientská relace se pro správu nikdy
+nepoužije jako náhrada tohoto MFA ověření. Odkaz nenahrazuje serverovou
+kontrolu role ani povinné MFA.
+
+Klientský účet používá pouze neprůhlednou serverovou `HttpOnly` relaci. Volba
+„Zapamatovat toto soukromé zařízení na 90 dní“ je v aplikaci jediná volba pro
+trvalejší přihlášení; bez ní je cookie jen do zavření prohlížeče. Obě varianty
+se při neaktivitě po 30 dnech ukončí. Přihlášený klient proto při běžném návratu
+nezadává heslo znovu; explicitní odhlášení zruší klientskou i administrátorskou
+relaci aplikace na daném zařízení.
 
 ### Administrace
 

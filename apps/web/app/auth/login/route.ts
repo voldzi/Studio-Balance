@@ -5,7 +5,8 @@ import { createLoginAttempt, identityConfig, identityCookies, isSecureCookie, sa
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const { authorizationUrl, cookieValue } = await createLoginAttempt(safeReturnTo(request.nextUrl.searchParams.get("returnTo")));
+  const rememberDevice = request.nextUrl.searchParams.get("rememberDevice") === "1";
+  const { authorizationUrl, cookieValue } = await createLoginAttempt(safeReturnTo(request.nextUrl.searchParams.get("returnTo")), "web", undefined, rememberDevice);
   const response = NextResponse.redirect(authorizationUrl);
   response.cookies.set(identityCookies.attempt, cookieValue, {
     httpOnly: true,

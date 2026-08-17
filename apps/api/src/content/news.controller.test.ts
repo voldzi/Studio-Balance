@@ -6,6 +6,8 @@ import { SignJWT } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AdminRoleGuard } from "../admin/admin-role.guard.js";
+import { OpaqueSessionService } from "../auth/opaque-session.service.js";
+import { opaqueSessionServiceTestDouble } from "../auth/session.test-support.js";
 import { RuntimeConfigService, type RuntimeConfig } from "../config/runtime-config.js";
 import { configureHttp } from "../http/configure-http.js";
 import { AdminNewsController, NewsController } from "./news.controller.js";
@@ -16,6 +18,7 @@ const config: RuntimeConfig = {
   databaseUrl: "postgresql://unused",
   environment: "test",
   logLevel: "error",
+  oidc: { issuer: "http://localhost:8081/realms/studio-balance", webClientId: "web", webClientSecret: "web-secret", adminClientId: "admin", adminClientSecret: "admin-secret" },
   sessionSecret: "test-session-secret-that-is-long-enough-to-be-safe",
   version: "test"
 };
@@ -35,6 +38,7 @@ describe("news API", () => {
       controllers: [NewsController, AdminNewsController],
       providers: [
         AdminRoleGuard,
+        { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble },
         { provide: RuntimeConfigService, useValue: { value: config } },
         { provide: NewsService, useValue: service }
       ]

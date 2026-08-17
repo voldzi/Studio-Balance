@@ -38,6 +38,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/internal/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create an opaque application session
+         * @description Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API.
+         */
+        post: operations["createInternalApplicationSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/internal/sessions/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve and revalidate an opaque application session
+         * @description Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes.
+         */
+        post: operations["resolveInternalApplicationSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/internal/sessions/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke an opaque application session
+         * @description Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak.
+         */
+        post: operations["revokeInternalApplicationSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/class-types": {
         parameters: {
             query?: never;
@@ -663,6 +723,32 @@ export interface components {
                 requestId: string;
             };
         };
+        /** @enum {string} */
+        InternalSessionKind: "web" | "admin";
+        InternalSessionIdentity: {
+            subject: string;
+            /** Format: email */
+            email: string;
+            emailVerified: boolean;
+            firstName?: string;
+            lastName?: string;
+            roles: ("client" | "admin" | "super_admin")[];
+        };
+        InternalSessionCreateRequest: {
+            kind: components["schemas"]["InternalSessionKind"];
+            refreshToken: string;
+            session: components["schemas"]["InternalSessionIdentity"];
+        };
+        InternalSessionTokenRequest: {
+            kind: components["schemas"]["InternalSessionKind"];
+            token: string;
+        };
+        InternalSessionCreated: {
+            token: string;
+        };
+        InternalSessionResolved: {
+            session: components["schemas"]["InternalSessionIdentity"] | null;
+        };
         Money: {
             amount: string;
             /** @constant */
@@ -1095,6 +1181,90 @@ export interface operations {
                 };
             };
             503: components["responses"]["Error"];
+        };
+    };
+    createInternalApplicationSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InternalSessionCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Opaque token stored only in an HTTP-only application cookie. */
+            201: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalSessionCreated"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+        };
+    };
+    resolveInternalApplicationSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InternalSessionTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Current identity or null when the session was revoked or expired. */
+            201: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalSessionResolved"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+        };
+    };
+    revokeInternalApplicationSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InternalSessionTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Revoked or already absent. */
+            201: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        revoked: true;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
         };
     };
     listClassTypes: {

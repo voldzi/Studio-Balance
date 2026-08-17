@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 
 import { SignJWT, createRemoteJWKSet, jwtVerify } from "jose";
 
@@ -7,7 +7,6 @@ export const sessionCookieName = "sb_session";
 const adminAttemptCookieName = "sb_admin_oidc_attempt";
 const adminSessionCookieName = "sb_admin_session";
 const sessionIssuer = "studio-balance-web";
-const sessionAudience = "studio-balance-api";
 
 type OidcDiscovery = {
   authorization_endpoint: string;
@@ -18,6 +17,7 @@ type OidcDiscovery = {
 
 type LoginAttempt = {
   nonce: string;
+  rememberDevice: boolean;
   returnTo: string;
   state: string;
   verifier: string;
@@ -32,7 +32,16 @@ export type WebSession = {
   subject: string;
 };
 
+export type CompletedLogin = {
+  refreshToken: string;
+  rememberDevice: boolean;
+  returnTo: string;
+  roles: WebSession["roles"];
+  session: WebSession;
+};
+
 type IdentityConfig = {
+  apiUrl: string;
   callbackPath: string;
   clientId: string;
   clientSecret: string;
@@ -41,6 +50,8 @@ type IdentityConfig = {
   sessionSecret: string;
 };
 export type IdentityMode = "web" | "admin";
+
+export const rememberedDeviceMaxAgeSeconds = 90 * 24 * 60 * 60;
 
 function configuredValue(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
@@ -52,16 +63,17 @@ export function identityConfig(mode: IdentityMode = "web"): IdentityConfig {
   const publicAppUrl = configuredValue("PUBLIC_APP_URL", "http://localhost:3000");
   const sessionSecret = configuredValue("SESSION_SECRET", "local-development-session-secret-change-before-sharing");
   const issuer = configuredValue("OIDC_ISSUER_URL", "http://localhost:8081/realms/studio-balance").replace(/\/$/, "");
+  const apiUrl = configuredValue("API_URL", "http://localhost:3001").replace(/\/$/, "");
 
-  if (!URL.canParse(publicAppUrl) || !URL.canParse(issuer) || sessionSecret.length < 32) {
+  if (!URL.canParse(publicAppUrl) || !URL.canParse(issuer) || !URL.canParse(apiUrl) || sessionSecret.length < 32) {
     throw new Error("Invalid web identity configuration");
   }
-
-  if (process.env.NODE_ENV === "production" && process.env.APP_ENV === "production" && !process.env.SESSION_SECRET) {
-    throw new Error("Production SESSION_SECRET is required for web identity");
+  if (process.env.NODE_ENV === "production" && process.env.APP_ENV === "production" && (!process.env.SESSION_SECRET || !process.env.API_URL)) {
+    throw new Error("Production SESSION_SECRET and API_URL are required for web identity");
   }
 
   return {
+    apiUrl,
     callbackPath: mode === "admin" ? "/admin/auth/callback" : "/auth/callback",
     publicAppUrl: publicAppUrl.replace(/\/$/, ""),
     issuer,
@@ -95,14 +107,19 @@ export function safeReturnTo(value: string | null | undefined): string {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/muj-ucet";
 }
 
-export async function createLoginAttempt(returnTo: string, mode: IdentityMode = "web", loginHint?: string): Promise<{ authorizationUrl: string; cookieValue: string }> {
+export async function createLoginAttempt(
+  returnTo: string,
+  mode: IdentityMode = "web",
+  loginHint?: string,
+  rememberDevice = false
+): Promise<{ authorizationUrl: string; cookieValue: string }> {
   const config = identityConfig(mode);
   const discovery = await discover(config);
   const state = base64Url(randomBytes(32));
   const nonce = base64Url(randomBytes(32));
   const verifier = base64Url(randomBytes(48));
   const challenge = createHash("sha256").update(verifier).digest("base64url");
-  const attempt: LoginAttempt = { state, nonce, verifier, returnTo: safeReturnTo(returnTo) };
+  const attempt: LoginAttempt = { state, nonce, verifier, returnTo: safeReturnTo(returnTo), rememberDevice };
   const cookieValue = await new SignJWT(attempt)
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuer(sessionIssuer)
@@ -120,6 +137,8 @@ export async function createLoginAttempt(returnTo: string, mode: IdentityMode = 
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
   if (mode === "admin") {
+    // A distinct client and Keycloak flow require password + TOTP for a new
+    // privileged device. Later requests use the opaque admin session instead.
     url.searchParams.set("prompt", "login");
     url.searchParams.set("max_age", "0");
     const normalizedLoginHint = loginHint?.trim();
@@ -133,7 +152,7 @@ export async function finishLogin(input: {
   code: string;
   cookieValue: string | undefined;
   state: string | null;
-}, mode: IdentityMode = "web"): Promise<{ returnTo: string; roles: WebSession["roles"]; session: string }> {
+}, mode: IdentityMode = "web"): Promise<CompletedLogin> {
   const config = identityConfig(mode);
   const attempt = await readAttempt(input.cookieValue, config);
   if (!attempt || !input.state || attempt.state !== input.state) throw new Error("Invalid OIDC login state");
@@ -157,65 +176,47 @@ export async function finishLogin(input: {
   });
   if (!tokenResponse.ok) throw new Error("OIDC token exchange failed");
 
-  const tokens = (await tokenResponse.json()) as { id_token?: unknown };
-  if (typeof tokens.id_token !== "string") throw new Error("OIDC response did not contain an ID token");
+  const tokens = (await tokenResponse.json()) as { id_token?: unknown; refresh_token?: unknown };
+  if (typeof tokens.id_token !== "string" || typeof tokens.refresh_token !== "string") throw new Error("OIDC response did not contain identity and refresh tokens");
 
   const claims = await jwtVerify(tokens.id_token, createRemoteJWKSet(new URL(discovery.jwks_uri)), {
     algorithms: ["RS256", "ES256"],
     issuer: config.issuer,
     audience: config.clientId
   });
-  if (claims.payload.nonce !== attempt.nonce || typeof claims.payload.sub !== "string" || typeof claims.payload.email !== "string") {
-    throw new Error("OIDC identity claims are incomplete");
-  }
+  const session = sessionFromClaims(claims.payload);
+  if (!session || claims.payload.nonce !== attempt.nonce) throw new Error("OIDC identity claims are incomplete");
 
-  const realmAccess = claims.payload.realm_access;
-  const roles =
-    typeof realmAccess === "object" && realmAccess !== null && Array.isArray((realmAccess as { roles?: unknown }).roles)
-      ? (realmAccess as { roles: unknown[] }).roles.filter((role): role is string => typeof role === "string")
-      : [];
-  const session: WebSession = {
-    subject: claims.payload.sub,
-    email: claims.payload.email,
-    emailVerified: claims.payload.email_verified === true,
-    ...(typeof claims.payload.given_name === "string" ? { firstName: claims.payload.given_name } : {}),
-    ...(typeof claims.payload.family_name === "string" ? { lastName: claims.payload.family_name } : {}),
-    roles: roles.filter((role): role is WebSession["roles"][number] =>
-      role === "client" || role === "admin" || role === "super_admin"
-    )
-  };
-
-  return { returnTo: attempt.returnTo, roles: session.roles, session: await signSession(session, config) };
+  return { returnTo: attempt.returnTo, roles: session.roles, session, refreshToken: tokens.refresh_token, rememberDevice: attempt.rememberDevice };
 }
 
-export async function readWebSession(cookieValue: string | undefined): Promise<WebSession | undefined> {
-  const config = identityConfig();
+export async function createWebSession(login: CompletedLogin, mode: IdentityMode): Promise<string> {
+  const response = await internalRequest("/api/internal/sessions", {
+    kind: mode,
+    refreshToken: login.refreshToken,
+    session: login.session
+  });
+  if (!isOpaqueTokenResponse(response)) throw new Error("Opaque application session could not be created");
+  return response.token;
+}
+
+export async function readWebSession(cookieValue: string | undefined, mode: IdentityMode = "web"): Promise<WebSession | undefined> {
+  if (!cookieValue || !/^[A-Za-z0-9_-]{43}$/.test(cookieValue)) return undefined;
   try {
-    const { payload } = await jwtVerify(cookieValue ?? "", key(config.sessionSecret), {
-      algorithms: ["HS256"],
-      issuer: sessionIssuer,
-      audience: sessionAudience
-    });
-    if (
-      typeof payload.sub !== "string" ||
-      typeof payload.email !== "string" ||
-      typeof payload.email_verified !== "boolean" ||
-      !Array.isArray(payload.roles) ||
-      !payload.roles.every((role) => typeof role === "string")
-    ) {
-      return undefined;
-    }
-    if (!payload.roles.every((role) => role === "client" || role === "admin" || role === "super_admin")) return undefined;
-    return {
-      subject: payload.sub,
-      email: payload.email,
-      emailVerified: payload.email_verified,
-      ...(typeof payload.given_name === "string" ? { firstName: payload.given_name } : {}),
-      ...(typeof payload.family_name === "string" ? { lastName: payload.family_name } : {}),
-      roles: payload.roles as WebSession["roles"]
-    };
+    const response = await internalRequest("/api/internal/sessions/resolve", { kind: mode, token: cookieValue });
+    if (!isSessionResponse(response)) return undefined;
+    return response.session ?? undefined;
   } catch {
     return undefined;
+  }
+}
+
+export async function revokeWebSession(cookieValue: string | undefined, mode: IdentityMode): Promise<void> {
+  if (!cookieValue || !/^[A-Za-z0-9_-]{43}$/.test(cookieValue)) return;
+  try {
+    await internalRequest("/api/internal/sessions/revoke", { kind: mode, token: cookieValue });
+  } catch {
+    // Cookie deletion still prevents use in the browser if the API is temporarily unavailable.
   }
 }
 
@@ -261,25 +262,67 @@ async function readAttempt(cookieValue: string | undefined, config: IdentityConf
     ) {
       return undefined;
     }
-    return { state: payload.state, nonce: payload.nonce, verifier: payload.verifier, returnTo: safeReturnTo(payload.returnTo) };
+    return {
+      state: payload.state,
+      nonce: payload.nonce,
+      verifier: payload.verifier,
+      returnTo: safeReturnTo(payload.returnTo),
+      rememberDevice: payload.rememberDevice === true
+    };
   } catch {
     return undefined;
   }
 }
 
-async function signSession(session: WebSession, config: IdentityConfig): Promise<string> {
-  return new SignJWT({
-    email: session.email,
-    email_verified: session.emailVerified,
-    ...(session.firstName ? { given_name: session.firstName } : {}),
-    ...(session.lastName ? { family_name: session.lastName } : {}),
-    roles: session.roles
-  })
-    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-    .setSubject(session.subject)
-    .setIssuer(sessionIssuer)
-    .setAudience(sessionAudience)
-    .setIssuedAt()
-    .setExpirationTime("8h")
-    .sign(key(config.sessionSecret));
+async function internalRequest(path: string, body: Record<string, unknown>): Promise<unknown> {
+  const config = identityConfig();
+  const timestamp = String(Date.now());
+  const signature = createHmac("sha256", config.sessionSecret).update(`${timestamp}:POST:${path}`).digest("base64url");
+  const response = await fetch(`${config.apiUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-studiobalance-internal-signature": signature,
+      "x-studiobalance-internal-timestamp": timestamp
+    },
+    body: JSON.stringify(body),
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error("Internal application session request failed");
+  return response.json();
+}
+
+function sessionFromClaims(payload: Record<string, unknown>): WebSession | undefined {
+  if (typeof payload.sub !== "string" || typeof payload.email !== "string") return undefined;
+  const realmAccess = payload.realm_access;
+  const roles = typeof realmAccess === "object" && realmAccess !== null && Array.isArray((realmAccess as { roles?: unknown }).roles)
+    ? (realmAccess as { roles: unknown[] }).roles.filter(isStudioRole)
+    : [];
+  return {
+    subject: payload.sub,
+    email: payload.email,
+    emailVerified: payload.email_verified === true,
+    ...(typeof payload.given_name === "string" ? { firstName: payload.given_name } : {}),
+    ...(typeof payload.family_name === "string" ? { lastName: payload.family_name } : {}),
+    roles
+  };
+}
+
+function isStudioRole(value: unknown): value is WebSession["roles"][number] {
+  return value === "client" || value === "admin" || value === "super_admin";
+}
+
+function isOpaqueTokenResponse(value: unknown): value is { token: string } {
+  return typeof value === "object" && value !== null && "token" in value && typeof value.token === "string" && /^[A-Za-z0-9_-]{43}$/.test(value.token);
+}
+
+function isSessionResponse(value: unknown): value is { session: WebSession | null } {
+  if (typeof value !== "object" || value === null || !("session" in value)) return false;
+  if (value.session === null) return true;
+  const session = value.session as Record<string, unknown>;
+  return typeof session === "object" && session !== null &&
+    typeof session.subject === "string" && typeof session.email === "string" && typeof session.emailVerified === "boolean" &&
+    Array.isArray(session.roles) && session.roles.every(isStudioRole) &&
+    (session.firstName === undefined || typeof session.firstName === "string") &&
+    (session.lastName === undefined || typeof session.lastName === "string");
 }

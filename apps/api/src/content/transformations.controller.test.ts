@@ -6,17 +6,19 @@ import { SignJWT } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AdminRoleGuard } from "../admin/admin-role.guard.js";
+import { OpaqueSessionService } from "../auth/opaque-session.service.js";
+import { opaqueSessionServiceTestDouble } from "../auth/session.test-support.js";
 import { RuntimeConfigService, type RuntimeConfig } from "../config/runtime-config.js";
 import { configureHttp } from "../http/configure-http.js";
 import { AdminTransformationsController, TransformationsController } from "./transformations.controller.js";
 import { TransformationsService } from "./transformations.service.js";
 
-const config: RuntimeConfig = { apiPort:3001,databaseUrl:"postgresql://unused",environment:"test",logLevel:"error",sessionSecret:"test-session-secret-that-is-long-enough-to-be-safe",version:"test" };
+const config: RuntimeConfig = { apiPort:3001,databaseUrl:"postgresql://unused",environment:"test",logLevel:"error",oidc:{issuer:"http://localhost:8081/realms/studio-balance",webClientId:"web",webClientSecret:"web-secret",adminClientId:"admin",adminClientSecret:"admin-secret"},sessionSecret:"test-session-secret-that-is-long-enough-to-be-safe",version:"test" };
 const imageA="11111111-1111-4111-8111-111111111111"; const imageB="22222222-2222-4222-8222-222222222222";
 
 describe("transformations API",()=>{
   let app:NestFastifyApplication|undefined; afterEach(async()=>{await app?.close();});
-  async function setup(){ const service={create:vi.fn(async()=>({id:imageA})),listAdmin:vi.fn(async()=>({items:[]})),listPublic:vi.fn(async()=>({items:[]})),update:vi.fn(async()=>({id:imageA}))}; const module=await Test.createTestingModule({controllers:[TransformationsController,AdminTransformationsController],providers:[AdminRoleGuard,{provide:RuntimeConfigService,useValue:{value:config}},{provide:TransformationsService,useValue:service}]}).compile(); const created=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({logger:false}),{logger:false}); configureHttp(created,config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app=created; return {app:created,service}; }
+  async function setup(){ const service={create:vi.fn(async()=>({id:imageA})),listAdmin:vi.fn(async()=>({items:[]})),listPublic:vi.fn(async()=>({items:[]})),update:vi.fn(async()=>({id:imageA}))}; const module=await Test.createTestingModule({controllers:[TransformationsController,AdminTransformationsController],providers:[AdminRoleGuard,{provide:OpaqueSessionService,useValue:opaqueSessionServiceTestDouble},{provide:RuntimeConfigService,useValue:{value:config}},{provide:TransformationsService,useValue:service}]}).compile(); const created=module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({logger:false}),{logger:false}); configureHttp(created,config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app=created; return {app:created,service}; }
   async function cookie(){ const token=await new SignJWT({email:"admin@example.test",email_verified:true,roles:["admin"]}).setProtectedHeader({alg:"HS256"}).setSubject("admin").setIssuer("studio-balance-web").setAudience("studio-balance-api").setIssuedAt().setExpirationTime("1h").sign(new TextEncoder().encode(config.sessionSecret)); return `sb_admin_session=${token}`; }
   const payload={title:"Skutečná proměna",story:"Pravidelný pohyb mi přinesl více energie.",attribution:"Jana",beforeAssetId:imageA,afterAssetId:imageB,classTypeId:null,consentConfirmed:true,published:true,featured:true,sortOrder:10};
 

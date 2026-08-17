@@ -45,6 +45,17 @@ remote() {
 # that would promise an e-mail the studio cannot send.
 remote update "realms/$realm" -s verifyEmail=false -s resetPasswordAllowed=false
 
+# The application owns the explicit "remember this device" choice. Keycloak's
+# own checkbox is disabled so users do not see two competing retention controls.
+# Its SSO/client session remains usable for the same 90 day ceiling with a 30 day
+# idle boundary, allowing the server-held refresh token to revalidate the account.
+remote update "realms/$realm" \
+  -s rememberMe=false \
+  -s ssoSessionIdleTimeout=2592000 \
+  -s ssoSessionMaxLifespan=7776000 \
+  -s clientSessionIdleTimeout=2592000 \
+  -s clientSessionMaxLifespan=7776000
+
 # Disabling realm-level verification does not remove a stale VERIFY_EMAIL action
 # already stored on existing accounts. Preserve every other required action (most
 # importantly UPDATE_PASSWORD and CONFIGURE_TOTP) while removing only this one.
@@ -102,7 +113,7 @@ role_mappers="$(remote get "client-scopes/$role_scope_id/protocol-mappers/models
 realm_role_mapper_id="$(node -e 'const mappers=JSON.parse(process.argv[1]); const mapper=mappers.find((item)=>item.name==="realm roles" && item.protocolMapper==="oidc-usermodel-realm-role-mapper"); if (!mapper) process.exit(1); process.stdout.write(mapper.id)' "$role_mappers")"
 remote update "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id" -s 'config."id.token.claim"=true'
 
-realm_state="$(remote get "realms/$realm" --fields verifyEmail,resetPasswordAllowed)"
+realm_state="$(remote get "realms/$realm" --fields verifyEmail,resetPasswordAllowed,rememberMe,ssoSessionIdleTimeout,ssoSessionMaxLifespan,clientSessionIdleTimeout,clientSessionMaxLifespan)"
 client_state="$(remote get "clients/$client_id" --fields clientId,authenticationFlowBindingOverrides)"
 execution_state="$(remote get "authentication/flows/$flow/executions")"
 users_state="$(remote get 'users?max=1000')"
@@ -112,6 +123,8 @@ node -e '
   const client=JSON.parse(process.argv[2]);
   const executions=JSON.parse(process.argv[3]);
   if (realm.verifyEmail!==false || realm.resetPasswordAllowed!==false) throw new Error("Simple client registration is not active.");
+  const expectedSessions={rememberMe:false,ssoSessionIdleTimeout:2592000,ssoSessionMaxLifespan:7776000,clientSessionIdleTimeout:2592000,clientSessionMaxLifespan:7776000};
+  for (const [name,value] of Object.entries(expectedSessions)) if (realm[name]!==value) throw new Error(`Unexpected realm session setting: ${name}`);
   if (client.authenticationFlowBindingOverrides?.browser!==process.argv[4]) throw new Error("Admin browser flow is not bound.");
   for (const provider of ["auth-username-password-form","auth-otp-form"]) {
     const execution=executions.find((item)=>item.providerId===provider);
@@ -126,7 +139,8 @@ node -e '
 ' "$realm_state" "$client_state" "$execution_state" "$flow_id" "$users_state" "$realm_role_mapper_state"
 
 echo "Configured: client registration without e-mail verification; password reset hidden until SMTP is available."
+echo "Configured: Keycloak's own Remember me checkbox is hidden; SSO/client sessions are 30 days idle / 90 days maximum for secure server-side refresh."
 echo "Configured: stale VERIFY_EMAIL actions removed while other account actions were preserved."
-echo "Configured: studiobalance-admin requires password and TOTP on every login."
+echo "Configured: studiobalance-admin requires password and TOTP for a new or expired trusted device."
 echo "Configured: realm roles are included in signed ID tokens for web and administration."
 echo "Administrators without an authenticator app must first enroll TOTP through their required action using the regular web login, then use /admin/prihlaseni."

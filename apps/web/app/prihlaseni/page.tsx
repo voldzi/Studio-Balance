@@ -15,10 +15,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           Přihlášení a registraci bezpečně zajišťuje Studio Balance účet. Po přihlášení se vrátíte tam,
           kde jste skončili.
         </p>
-        <Link className="button" href={`/auth/login?returnTo=${encodeURIComponent(safeReturnTo)}`}>
-          Pokračovat k přihlášení
-        </Link>
-        <p className="auth-help">Nový účet vytvoříte v následujícím bezpečném kroku.</p>
+        <form action="/auth/login" method="get" className="auth-login-form">
+          <input type="hidden" name="returnTo" value={safeReturnTo} />
+          <label className="remember-device">
+            <input type="checkbox" name="rememberDevice" value="1" />
+            <span><strong>Zapamatovat toto soukromé zařízení na 90 dní</strong><small>Na sdíleném telefonu nebo počítači volbu nezaškrtávej.</small></span>
+          </label>
+          <button className="button" type="submit">Pokračovat k přihlášení</button>
+        </form>
+        <p className="auth-help">Bez zaškrtnutí zůstane přihlášení jen do zavření prohlížeče. Nový účet vytvoříte v následujícím bezpečném kroku.</p>
       </section>
     </main>
   );

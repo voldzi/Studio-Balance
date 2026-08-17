@@ -12,6 +12,11 @@ const schema = z.object({
     .url()
     .default("postgresql://studio_balance:local-development-only@localhost:5433/studio_balance"),
   SESSION_SECRET: z.string().min(32).optional(),
+  OIDC_ISSUER_URL: z.string().url().default("http://localhost:8081/realms/studio-balance"),
+  OIDC_WEB_CLIENT_ID: z.string().min(1).default("studiobalance-web"),
+  OIDC_WEB_CLIENT_SECRET: z.string().min(1).default("local-web-client-only"),
+  OIDC_ADMIN_CLIENT_ID: z.string().min(1).default("studiobalance-admin"),
+  OIDC_ADMIN_CLIENT_SECRET: z.string().min(1).default("local-admin-client-only"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   S3_ENDPOINT: optional(z.string().url()),
   S3_REGION: z.preprocess((input) => input === "" ? undefined : input, z.string().min(1).default("us-east-1")),
@@ -36,6 +41,13 @@ export type RuntimeConfig = {
   environment: z.infer<typeof schema>["APP_ENV"];
   logLevel: z.infer<typeof schema>["LOG_LEVEL"];
   mediaStorage?: MediaStorageConfig;
+  oidc: {
+    adminClientId: string;
+    adminClientSecret: string;
+    issuer: string;
+    webClientId: string;
+    webClientSecret: string;
+  };
   sessionSecret: string;
   version: string;
 };
@@ -60,6 +72,17 @@ export function loadRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
     throw new Error("Production SESSION_SECRET is required");
   }
 
+  if (
+    result.data.APP_ENV === "production" &&
+    (!process.env.OIDC_ISSUER_URL ||
+      !process.env.OIDC_WEB_CLIENT_ID ||
+      !process.env.OIDC_WEB_CLIENT_SECRET ||
+      !process.env.OIDC_ADMIN_CLIENT_ID ||
+      !process.env.OIDC_ADMIN_CLIENT_SECRET)
+  ) {
+    throw new Error("Production OIDC configuration is required");
+  }
+
   const mediaValues = [result.data.S3_ENDPOINT, result.data.S3_BUCKET, result.data.S3_ACCESS_KEY_ID, result.data.S3_SECRET_ACCESS_KEY];
   const configuredMediaValues = mediaValues.filter(Boolean).length;
   if (configuredMediaValues > 0 && configuredMediaValues !== mediaValues.length) {
@@ -79,6 +102,13 @@ export function loadRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
       region: result.data.S3_REGION,
       secretAccessKey: result.data.S3_SECRET_ACCESS_KEY!
     } } : {}),
+    oidc: {
+      adminClientId: result.data.OIDC_ADMIN_CLIENT_ID,
+      adminClientSecret: result.data.OIDC_ADMIN_CLIENT_SECRET,
+      issuer: result.data.OIDC_ISSUER_URL.replace(/\/$/, ""),
+      webClientId: result.data.OIDC_WEB_CLIENT_ID,
+      webClientSecret: result.data.OIDC_WEB_CLIENT_SECRET
+    },
     sessionSecret: result.data.SESSION_SECRET ?? "local-development-session-secret-change-before-sharing",
     version: result.data.APP_VERSION
   };

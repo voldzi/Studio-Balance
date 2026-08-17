@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { adminIdentityCookies, finishLogin, identityConfig, isSecureCookie, publicRedirectUrl } from "../../../../lib/identity";
+import { adminIdentityCookies, createWebSession, finishLogin, identityConfig, isSecureCookie, publicRedirectUrl, rememberedDeviceMaxAgeSeconds } from "../../../../lib/identity";
 
 export const runtime = "nodejs";
 
@@ -18,7 +18,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const result = await finishLogin({ code, state: request.nextUrl.searchParams.get("state"), cookieValue: request.cookies.get(adminIdentityCookies.attempt)?.value }, "admin");
     if (!result.roles.some((role) => role === "admin" || role === "super_admin")) throw new Error("Admin role is required");
     const response = NextResponse.redirect(publicRedirectUrl(result.returnTo, "admin"));
-    response.cookies.set(adminIdentityCookies.session, result.session, { httpOnly: true, maxAge: 8 * 60 * 60, path: "/", sameSite: "lax", secure: isSecureCookie(identityConfig("admin")) });
+    const sessionToken = await createWebSession(result, "admin");
+    response.cookies.set(adminIdentityCookies.session, sessionToken, { httpOnly: true, ...(result.rememberDevice ? { maxAge: rememberedDeviceMaxAgeSeconds } : {}), path: "/", sameSite: "lax", secure: isSecureCookie(identityConfig("admin")) });
     response.cookies.delete(adminIdentityCookies.attempt);
     return response;
   } catch (error) {
@@ -54,7 +55,7 @@ function classifyCallbackFailure(error: unknown): AdminLoginFailure {
       return { errorCode: "ADMIN_OIDC_DISCOVERY_FAILED", stage: "discovery" };
     case "OIDC token exchange failed":
       return { errorCode: "ADMIN_OIDC_TOKEN_EXCHANGE_FAILED", stage: "token_exchange" };
-    case "OIDC response did not contain an ID token":
+    case "OIDC response did not contain identity and refresh tokens":
     case "OIDC identity claims are incomplete":
       return { errorCode: "ADMIN_OIDC_CLAIMS_INVALID", stage: "claims" };
     default:

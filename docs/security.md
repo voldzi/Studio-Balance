@@ -4,9 +4,12 @@
 
 Identita používá Keycloak 26.1.5, realm `studio-balance` a oddělené web/admin
 OIDC policies podle ADR 0004. Implementovaný webový řez používá Authorization
-Code + PKCE, jednorázový state/nonce cookie a osmihodinovou `HttpOnly` relaci
-`sb_session`, podepsanou pouze serverovým `SESSION_SECRET`. API ověřuje tuto
-relaci pro `GET /api/v1/me`. Registrace doplněná o klientský telefon, správa
+Code + PKCE, jednorázový state/nonce cookie a neprůhlednou `HttpOnly` relaci
+`sb_session`. Její hash je uložený na serveru; obnovovací token Keycloaku je
+v PostgreSQL šifrovaný AES-256-GCM klíčem odvozeným pomocí HKDF ze serverového
+`SESSION_SECRET`. Oddělená administrátorská relace `sb_admin_session` vznikne
+jen po samostatném hesle a TOTP. API ověřuje klientskou relaci pro `GET /api/v1/me`
+a výhradně administrátorskou relaci pro privilegované cesty. Registrace doplněná o klientský telefon, správa
 profilu, admin MFA enforcement a rezervační autorizace jsou navazující řezy.
 Systém zpracovává
 kontaktní údaje, rezervace, docházku a administrativní fee, ale nikdy platební
@@ -40,18 +43,29 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 - login a reset jsou rate-limited, monitorované a odolné proti enumeraci účtů;
 - reset token je náhodný, jednorázový, krátkodobý a v úložišti chráněný;
 - změna hesla a zrušení účtu vyžadují čerstvé/zesílené ověření;
-- webová session je `HttpOnly`, `Secure`, vhodné `SameSite`, rotovaná po loginu;
+- webová session je neprůhledná, `HttpOnly`, `Secure`, vhodné `SameSite` a po loginu náhodně vydaná; její cookie neobsahuje OIDC token ani roli;
 - OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
   vrstva mimo browser JavaScript;
 - admin vstup je oddělený a MFA je povinné pro `admin` i `super_admin`;
-- samostatná admin Authorization Code žádost bez existující aplikační relace
-  vynutí čerstvé Keycloak přihlášení pomocí `prompt=login` a `max_age=0`;
-  jmenovitý admin účet se před předáním ověří v nové anonymní relaci heslem i
-  TOTP a bez dokončeného testu se nepovažuje za aktivovaný;
+- samostatná admin Authorization Code žádost při prvním vstupu na zařízení
+  nebo po vypršení admin relace vynutí čerstvé Keycloak přihlášení pomocí
+  `prompt=login` a `max_age=0`; jmenovitý admin účet se před předáním ověří v
+  nové anonymní relaci heslem i TOTP a bez dokončeného testu se nepovažuje za
+  aktivovaný;
 - profil účtu s rolí `admin` nebo `super_admin` nabízí přímý vstup do správy;
   položka sama oprávnění neuděluje a administrace znovu serverově ověří
-  podepsanou roli. Platná webová relace administrátora se uzná bez druhého
-  přihlášení; běžná klientská relace zůstává odmítnuta;
+  podepsanou roli i samostatnou admin relaci. Pouhá webová relace se pro
+  správu nikdy neuzná; po MFA může admin relace na soukromém zařízení zůstat
+  použitelná nejvýše 90 dní při aktivitě jednou za 30 dní;
+- bez volby zapamatování je aplikační cookie session-only; s volbou má cookie
+  maximum 90 dní a server vynucuje 30denní neaktivitu. Před více než 15 minutami
+  ověřená relace se při dalším použití obnovovacím tokenem znovu ověří u
+  Keycloaku včetně aktuálních rolí; selhání, disabled účet nebo odebraná role
+  relaci zneplatní. Keycloak nemá vlastní checkbox „Zapamatovat si mě“, aby
+  uživatel viděl jedinou, srozumitelnou volbu;
+- klientské i administrátorské odhlášení zruší serverový záznam, odstraní
+  šifrovaný refresh token, pokusí se o jeho revokaci u Keycloaku a smaže oba
+  aplikační cookies na zařízení;
 - klientská registrace nepoužívá e-mailové ověření, dokud není bezpečně provozovaný SMTP sender; konfigurační oprava odstraní i dříve uloženou required action `VERIFY_EMAIL`, ale zachová změnu hesla a registraci TOTP; booking nadále vyžaduje platnou relaci, vyplněné jméno, příjmení a telefon a přijetí podmínek;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 

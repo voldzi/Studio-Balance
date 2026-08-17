@@ -222,7 +222,7 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `OIDC_WEB_CLIENT_SECRET` | runtime | `local-web-client-only` | ano | veřejná lokální fixture; produkčně serverový secret webového OIDC klienta |
 | `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |
 | `OIDC_ADMIN_CLIENT_SECRET` | runtime | `local-admin-client-only` | ano | veřejná lokální fixture; produkčně serverový secret admin OIDC klienta |
-| `SESSION_SECRET` | ano pro identity runtime | lokální veřejná fixture | ano | podpis serverové HTTP-only relace; produkce vyžaduje unikátní hodnotu alespoň 32 znaků |
+| `SESSION_SECRET` | ano pro identity runtime | lokální veřejná fixture | ano | HMAC interní BFF/API relace a HKDF vstup pro AES-256-GCM šifrování refresh tokenů; produkce vyžaduje unikátní hodnotu alespoň 32 znaků |
 | `EMAIL_FROM` | runtime | prázdné | ne | ověřený odesílatel transakčních zpráv |
 | `EMAIL_PROVIDER_API_KEY` | runtime | prázdné | ano | e-mail provider credential |
 | `LOG_LEVEL` | ne | `info` | ne | minimální úroveň logování |
@@ -354,13 +354,16 @@ heslo lze zadat skrytě dvakrát; skript je pak nevypíše ani neuloží. Pokud 
 pole prázdné, vygeneruje náhodné heslo a vypíše je právě jednou. Na konci ověří
 aktivní účet a realm roli `admin`.
 
-Samostatná admin OIDC žádost navíc používá `prompt=login` a `max_age=0`.
-Přechod z již přihlášeného klientského profilu s podepsanou rolí `admin` nebo
-`super_admin` ale samostatnou žádost nespouští a správu otevře automaticky.
-Před předáním se dokončí první login, změna dočasného hesla a registrace TOTP;
-následně se v druhé anonymní relaci ověří, že přihlášení vyžaduje heslo i OTP a
-že klientský účet bez role končí na srozumitelné chybě. Dokud tento test
-neproběhne pro potvrzený jmenovitý účet, administrátorský přístup není předaný.
+Samostatná admin OIDC žádost při prvním vstupu na zařízení a po vypršení
+admin relace používá `prompt=login` a `max_age=0`. Teprve po úspěšném hesle a
+TOTP vznikne neprůhledná `sb_admin_session`, na zapamatovaném zařízení platná
+nejvýše 90 dní při aktivitě aspoň jednou za 30 dní; během ní otevře vstup
+ze správy profilu administraci automaticky. Obyčejná klientská relace se
+administraci nikdy nepředává, i když obsahuje roli `admin`. Před předáním se
+dokončí první login, změna dočasného hesla a registrace TOTP; následně se v
+druhé anonymní relaci ověří, že přihlášení vyžaduje heslo i OTP a že klientský
+účet bez role končí na srozumitelné chybě. Dokud tento test neproběhne pro
+potvrzený jmenovitý účet, administrátorský přístup není předaný.
 
 ### Jednoduchá registrace a povinné OTP administrace
 
@@ -378,8 +381,15 @@ zachová) a ověří, že je administrátorský flow skutečně navázaný na kl
 Současně zapne a kontroluje předávání realm rolí v podepsaném ID tokenu.
 Samotné přiřazení role uživateli v Keycloaku nestačí: bez tohoto mapperu by
 web ani oddělená administrace role `admin` a `super_admin` nerozpoznaly.
-Následné ověření se provede v anonymním okně: klientská registrace musí projít
-bez e-mailové zprávy; administrátorský vstup po heslu vždy vyžádá TOTP.
+Skript vypne Keycloak checkbox „Zapamatovat si mě“ a nastaví SSO i client
+session na 30 dní neaktivity / 90 dní maximum; jedinou uživatelskou volbu
+zapamatování pak zobrazuje aplikace. Následné ověření se
+provede v anonymním okně: klientská registrace musí projít bez e-mailové zprávy;
+administrátorský vstup po heslu vždy vyžádá TOTP. V aplikaci cookie bez volby
+zapamatování končí se zavřením prohlížeče; zapamatovaná klientská i MFA-prokázaná
+admin relace má maximum 90 dní a 30denní neaktivní limit. Server nejpozději po
+15 minutách ověřuje účet a role znovu v Keycloaku; odhlášení zruší relace,
+refresh tokeny i oba cookies na daném zařízení.
 
 ## Health a readiness
 

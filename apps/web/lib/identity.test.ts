@@ -1,6 +1,7 @@
+import { decodeJwt } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createLoginAttempt, publicRedirectUrl } from "./identity";
+import { createLoginAttempt, publicRedirectUrl, rememberedDeviceMaxAgeSeconds } from "./identity";
 
 const originalPublicAppUrl = process.env.PUBLIC_APP_URL;
 
@@ -11,6 +12,10 @@ afterEach(() => {
 });
 
 describe("publicRedirectUrl", () => {
+  it("caps a trusted device at ninety days", () => {
+    expect(rememberedDeviceMaxAgeSeconds).toBe(90 * 24 * 60 * 60);
+  });
+
   it("always returns to the configured public origin behind a reverse proxy", () => {
     process.env.PUBLIC_APP_URL = "https://studiobalance.zeleznalady.cz";
     expect(publicRedirectUrl("/rezervace/session-id").toString()).toBe("https://studiobalance.zeleznalady.cz/rezervace/session-id");
@@ -53,5 +58,19 @@ describe("publicRedirectUrl", () => {
     }));
     const result = await createLoginAttempt("/admin", "admin", "a".repeat(255));
     expect(new URL(result.authorizationUrl).searchParams.has("login_hint")).toBe(false);
+  });
+
+  it("stores the explicit trusted-device choice only in the signed short-lived login attempt", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authorization_endpoint: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/auth",
+        issuer: "http://localhost:8081/realms/studio-balance",
+        jwks_uri: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/certs",
+        token_endpoint: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/token"
+      })
+    }));
+    const result = await createLoginAttempt("/muj-ucet", "web", undefined, true);
+    expect(decodeJwt(result.cookieValue).rememberDevice).toBe(true);
   });
 });
