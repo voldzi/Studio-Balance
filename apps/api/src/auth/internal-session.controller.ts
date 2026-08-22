@@ -9,6 +9,7 @@ const sessionSchema = z.object({
   emailVerified: z.boolean(),
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
+  mfaVerified: z.boolean(),
   roles: z.array(z.enum(["client", "admin", "super_admin"])).max(3),
   subject: z.string().min(1).max(255)
 }).strict();
@@ -37,6 +38,7 @@ export class InternalSessionController {
       subject: input.data.session.subject,
       email: input.data.session.email,
       emailVerified: input.data.session.emailVerified,
+      mfaVerified: input.data.session.mfaVerified,
       roles: input.data.session.roles,
       ...(input.data.session.firstName ? { firstName: input.data.session.firstName } : {}),
       ...(input.data.session.lastName ? { lastName: input.data.session.lastName } : {})

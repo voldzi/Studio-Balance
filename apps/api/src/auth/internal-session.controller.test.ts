@@ -21,7 +21,7 @@ const config: RuntimeConfig = {
   sessionSecret: "test-session-secret-that-is-long-enough-to-be-safe",
   version: "test"
 };
-const session = { subject: "subject", email: "client@example.test", emailVerified: false, roles: ["client"] };
+const session = { subject: "subject", email: "client@example.test", emailVerified: false, mfaVerified: false, roles: ["client"] };
 
 describe("internal opaque session API", () => {
   let app: NestFastifyApplication | undefined;

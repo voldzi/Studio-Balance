@@ -15,6 +15,7 @@ export const opaqueSessionServiceTestDouble = {
         subject: claims.sub,
         email: claims.email,
         emailVerified: claims.email_verified,
+        mfaVerified: Array.isArray(claims.amr) && claims.amr.includes("otp"),
         ...(typeof claims.given_name === "string" ? { firstName: claims.given_name } : {}),
         ...(typeof claims.family_name === "string" ? { lastName: claims.family_name } : {}),
         roles: claims.roles

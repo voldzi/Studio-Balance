@@ -25,8 +25,8 @@ describe("admin authorization", () => {
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
 
-  async function cookie(roles: string[], name = "sb_admin_session") {
-    const token = await new SignJWT({ email: "operator@example.test", email_verified: true, roles }).setProtectedHeader({ alg: "HS256" }).setSubject("admin-subject").setIssuer("studio-balance-web").setAudience("studio-balance-api").setIssuedAt().setExpirationTime("1h").sign(new TextEncoder().encode(config.sessionSecret));
+  async function cookie(roles: string[], name = "sb_admin_session", mfaVerified = true) {
+    const token = await new SignJWT({ email: "operator@example.test", email_verified: true, roles, ...(mfaVerified ? { amr: ["pwd", "otp"] } : { amr: ["pwd"] }) }).setProtectedHeader({ alg: "HS256" }).setSubject("admin-subject").setIssuer("studio-balance-web").setAudience("studio-balance-api").setIssuedAt().setExpirationTime("1h").sign(new TextEncoder().encode(config.sessionSecret));
     return `${name}=${token}`;
   }
 
@@ -48,9 +48,21 @@ describe("admin authorization", () => {
     expect(response.json()).toMatchObject({ activeBookings: 2, clients: 1 });
   });
 
-  it("rejects an ordinary web session even when it carries an administrator role", async () => {
+  it("allows an MFA-proven web session with an administrator role", async () => {
     const response = await (await createApplication()).inject({ method: "GET", url: "/api/v1/admin/dashboard", headers: { cookie: await cookie(["client", "admin"], "sb_session") } });
-    expect(response.statusCode).toBe(401);
-    expect(response.json()).toMatchObject({ error: { code: "AUTHENTICATION_REQUIRED" } });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("rejects an administrator role in a web session without OTP assurance", async () => {
+    const response = await (await createApplication()).inject({ method: "GET", url: "/api/v1/admin/dashboard", headers: { cookie: await cookie(["client", "admin"], "sb_session", false) } });
+    expect(response.statusCode).toBe(403);
+    expect(response.json()).toMatchObject({ error: { code: "MFA_REQUIRED" } });
+  });
+
+  it("does not let a legacy admin cookie shadow an MFA-proven web session", async () => {
+    const legacyAdmin = await cookie(["admin"], "sb_admin_session", false);
+    const provenWeb = await cookie(["client", "admin"], "sb_session", true);
+    const response = await (await createApplication()).inject({ method: "GET", url: "/api/v1/admin/dashboard", headers: { cookie: `${legacyAdmin}; ${provenWeb}` } });
+    expect(response.statusCode).toBe(200);
   });
 });

@@ -5,6 +5,7 @@ export type StudioSession = {
   emailVerified: boolean;
   firstName?: string;
   lastName?: string;
+  mfaVerified: boolean;
   roles: StudioRole[];
   subject: string;
 };

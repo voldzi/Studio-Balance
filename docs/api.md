@@ -35,7 +35,7 @@ strategii a ADR.
 Identita používá Keycloak/OIDC podle ADR 0004. Kontrakt musí podporovat:
 
 - OIDC Authorization Code flow s PKCE a bezpečnou HTTP-only serverovou relaci;
-- oddělené klientské a admin přihlášení/policies a admin MFA;
+- klientské přihlášení s podmíněným admin OTP, podepsaný AMR důkaz a záložní oddělené admin přihlášení;
 - platnou klientskou relaci, vyplněný profil a přijaté podmínky jako podmínku vytvoření rezervace;
 - reset hesla s krátkou jednorázovou platností;
 - serverovou objektovou autorizaci každé chráněné operace.
@@ -50,6 +50,10 @@ refresh token a okamžik poslední revalidace jsou na serveru. Interní cesty
 `/api/internal/sessions*` jsou součástí OpenAPI kvůli implementačnímu kontraktu,
 ale nejsou veřejné: přijímají pouze časově omezený HMAC podepsaný webovým BFF.
 Role a stav účtu se přes refresh token ověří nejpozději po 15 minutách.
+Interní session objekt obsahuje také `mfaVerified`, které BFF nastaví pouze z
+podepsaného AMR claimu `otp`; následný refresh ani změna role hodnotu nesmí
+povýšit. Admin API přijme webovou nebo záložní admin relaci jen s touto hodnotou
+a aktuální rolí `admin` nebo `super_admin`.
 Profil je svázaný s Keycloak subjectem a ukládá jméno, příjmení, telefon,
 stav e-mailu z identity a přijatou verzi podmínek.
 
@@ -90,6 +94,7 @@ Doporučené doménové kódy:
 | 400 | `VALIDATION_ERROR` | neplatný vstup |
 | 401 | `AUTHENTICATION_REQUIRED` | chybí/propadla identita |
 | 403 | `FORBIDDEN` | identita nemá oprávnění |
+| 403 | `MFA_REQUIRED` | admin role nemá v aktuální relaci prokázané OTP |
 | 404 | `RESOURCE_NOT_FOUND` | objekt neexistuje nebo nesmí být odhalen |
 | 409 | `SESSION_FULL` | kapacita byla mezitím naplněna |
 | 409 | `BOOKING_ALREADY_EXISTS` | klient už má aktivní rezervaci |

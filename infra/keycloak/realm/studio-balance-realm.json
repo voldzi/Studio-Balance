@@ -27,21 +27,6 @@
   "defaultRoles": ["client"],
   "authenticationFlows": [
     {
-      "alias": "studio-balance-client-browser",
-      "description": "Studio Balance client application: password only, never TOTP.",
-      "providerId": "basic-flow",
-      "topLevel": true,
-      "builtIn": false,
-      "authenticationExecutions": [
-        {
-          "authenticator": "auth-username-password-form",
-          "requirement": "REQUIRED",
-          "priority": 10,
-          "userSetupAllowed": false
-        }
-      ]
-    },
-    {
       "alias": "studio-balance-admin-browser",
       "description": "Studio Balance administration: password and required TOTP.",
       "providerId": "basic-flow",
@@ -76,7 +61,16 @@
       "redirectUris": ["http://localhost:3000/*"],
       "webOrigins": ["http://localhost:3000"],
       "attributes": { "pkce.code.challenge.method": "S256" },
-      "authenticationFlowBindingOverrides": { "browser": "studio-balance-client-browser" }
+      "authenticationFlowBindingOverrides": { "browser": "browser" },
+      "protocolMappers": [
+        {
+          "name": "amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": { "access.token.claim": "true", "id.token.claim": "true" }
+        }
+      ]
     },
     {
       "clientId": "studiobalance-admin",
@@ -90,7 +84,16 @@
       "redirectUris": ["http://localhost:3000/admin/*"],
       "webOrigins": ["http://localhost:3000"],
       "attributes": { "pkce.code.challenge.method": "S256" },
-      "authenticationFlowBindingOverrides": { "browser": "studio-balance-admin-browser" }
+      "authenticationFlowBindingOverrides": { "browser": "studio-balance-admin-browser" },
+      "protocolMappers": [
+        {
+          "name": "amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": { "access.token.claim": "true", "id.token.claim": "true" }
+        }
+      ]
     }
   ]
 }

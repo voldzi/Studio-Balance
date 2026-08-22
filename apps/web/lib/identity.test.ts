@@ -1,7 +1,7 @@
 import { decodeJwt } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createLoginAttempt, publicRedirectUrl, rememberedDeviceMaxAgeSeconds } from "./identity";
+import { createLoginAttempt, publicRedirectUrl, rememberedDeviceMaxAgeSeconds, sessionFromClaims } from "./identity";
 
 const originalPublicAppUrl = process.env.PUBLIC_APP_URL;
 
@@ -91,5 +91,22 @@ describe("publicRedirectUrl", () => {
     expect(authorizationUrl.searchParams.get("client_id")).toBe("studiobalance-web");
     expect(authorizationUrl.searchParams.has("prompt")).toBe(false);
     expect(authorizationUrl.searchParams.has("max_age")).toBe(false);
+  });
+});
+
+describe("sessionFromClaims", () => {
+  const baseClaims = {
+    sub: "admin-subject",
+    email: "admin@example.test",
+    email_verified: true,
+    realm_access: { roles: ["client", "admin"] }
+  };
+
+  it("records OTP from the signed AMR claim as administrator assurance", () => {
+    expect(sessionFromClaims({ ...baseClaims, amr: ["pwd", "otp"] })?.mfaVerified).toBe(true);
+  });
+
+  it("does not infer MFA from the administrator role alone", () => {
+    expect(sessionFromClaims({ ...baseClaims, amr: ["pwd"] })?.mfaVerified).toBe(false);
   });
 });

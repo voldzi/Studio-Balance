@@ -1,6 +1,6 @@
 # ADR 0009: Serverová relace zapamatovaného zařízení
 
-- Status: Accepted
+- Status: Accepted; bod 5 je nahrazen ADR 0010
 - Datum: 2026-08-17
 - Rozhodl: zadavatel Studio Balance
 
@@ -28,11 +28,9 @@ právě dokončil druhý faktor.
 4. API znovu ověří refresh token, subject, aktivitu účtu a realm role v
    Keycloaku nejpozději po 15 minutách od minulé revalidace. Chyba refreshu,
    disabled účet, změněný subject nebo odebraná admin role relaci zneplatní.
-5. `sb_admin_session` vzniká výhradně po odděleném klientu
-   `studiobalance-admin`, jehož browser flow vyžaduje heslo a TOTP. Admin API
-   ani `/admin` nikdy nepřijmou `sb_session` jako náhradu tohoto MFA kroku.
-   Po prvním MFA na zapamatovaném zařízení už administrace v rámci stejné
-   platné relace heslo ani OTP znovu nevyžaduje.
+5. Nahrazeno ADR 0010: admin API může přijmout i `sb_session`, ale výhradně když
+   server při původním interaktivním přihlášení uložil podepsaný AMR důkaz OTP.
+   Oddělená `sb_admin_session` zůstává záložní cestou.
 6. Keycloak `Remember me` je vypnuté, aby uživatel neviděl konkurenční volbu.
    SSO a client session mají 30denní idle a 90denní maximum, aby mohl server
    po dobu důvěryhodné relace bezpečně používat refresh token.

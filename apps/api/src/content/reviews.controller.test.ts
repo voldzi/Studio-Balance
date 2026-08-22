@@ -54,7 +54,7 @@ describe("reviews API", () => {
   }
 
   async function cookie(roles: string[]) {
-    const token = await new SignJWT({ email: "operator@example.test", email_verified: true, roles })
+    const token = await new SignJWT({ email: "operator@example.test", email_verified: true, roles, amr: ["pwd", "otp"] })
       .setProtectedHeader({ alg: "HS256" })
       .setSubject("admin-subject")
       .setIssuer("studio-balance-web")

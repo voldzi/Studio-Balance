@@ -1,6 +1,6 @@
 # ADR 0004: Keycloak identita a webová relace
 
-- Status: Accepted
+- Status: Accepted; integrační model MFA relace je upřesněn ADR 0010
 - Datum: 2026-08-04
 - Rozhodl: zadavatel Studio Balance
 
@@ -32,9 +32,8 @@ token storage ani mobilní OAuth klienty.
    příjmení a telefon a přijme aktuální podmínky. Odkaz na obnovu hesla je do
    zprovoznění SMTP vypnutý, aby nesliboval nedoručitelný e-mail.
 8. MFA je povinné pro role `admin` a `super_admin`; minimální faktor je TOTP.
-   WebAuthn lze přidat jako silnější alternativu. Klientský OIDC klient má
-   vlastní browser flow pouze s heslem, proto klientská MFA není v první verzi
-   povinná ani pro klienta, který má ve stejném realmu TOTP credential.
+   WebAuthn lze přidat jako silnější alternativu. Detail jednotného přihlášení,
+   AMR důkazu a záložního admin klienta upravuje ADR 0010.
 9. Keycloak poskytuje identity a role `client`, `admin`, `super_admin`, ale
    objektovou autorizaci rezervací a privilegovaných akcí vždy znovu vynucuje
    API. Aplikační profil se váže na stabilní OIDC claim `sub`, ne na měnitelný

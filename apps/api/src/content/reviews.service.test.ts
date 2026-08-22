@@ -42,7 +42,7 @@ describe("ReviewsService", () => {
     const transaction = vi.fn(async (work: (client: { query: typeof query }) => Promise<unknown>) => work({ query }));
     const databaseQuery = vi.fn();
     const service = new ReviewsService({ query: databaseQuery, transaction } as unknown as DatabaseService);
-    await service.create(input, { requestId: "request-1", session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, roles: ["admin"] } });
+    await service.create(input, { requestId: "request-1", session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, mfaVerified: true, roles: ["admin"] } });
     expect(transaction).toHaveBeenCalledOnce();
     expect(databaseQuery).not.toHaveBeenCalled();
     expect(query).toHaveBeenLastCalledWith(expect.stringContaining("application_audit"), ["admin-1", "review.created", "11111111-1111-4111-8111-111111111111", "request-1"]);
@@ -53,7 +53,7 @@ describe("ReviewsService", () => {
     const query = vi.fn(async () => ({ rowCount: 0, rows: [] }));
     const transaction = vi.fn(async (work: (client: { query: typeof query }) => Promise<unknown>) => work({ query }));
     const service = new ReviewsService({ transaction } as unknown as DatabaseService);
-    const result = await service.update("11111111-1111-4111-8111-111111111111", input, { requestId: "request-1", session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, roles: ["admin"] } });
+    const result = await service.update("11111111-1111-4111-8111-111111111111", input, { requestId: "request-1", session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, mfaVerified: true, roles: ["admin"] } });
     expect(result).toBeUndefined();
     expect(query).toHaveBeenCalledTimes(1);
   });
@@ -69,7 +69,7 @@ describe("ReviewsService", () => {
 
     await expect(service.update("11111111-1111-4111-8111-111111111111", input, {
       requestId: "request-1",
-      session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, roles: ["admin"] }
+      session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, mfaVerified: true, roles: ["admin"] }
     })).resolves.toEqual({ id: "11111111-1111-4111-8111-111111111111" });
     expect(transaction).toHaveBeenCalledOnce();
     expect(databaseQuery).not.toHaveBeenCalled();
@@ -90,7 +90,7 @@ describe("ReviewsService", () => {
 
     await expect(service.create(classTypeInput, {
       requestId: "request-1",
-      session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, roles: ["admin"] }
+      session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, mfaVerified: true, roles: ["admin"] }
     })).rejects.toBeInstanceOf(InvalidReviewClassTypeError);
     expect(query).toHaveBeenCalledOnce();
     expect(query).toHaveBeenCalledWith(expect.stringContaining("FROM class_types"), [classTypeInput.classTypeId]);
@@ -110,7 +110,7 @@ describe("ReviewsService", () => {
       published: false
     }, {
       requestId: "request-1",
-      session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, roles: ["admin"] }
+      session: { subject: "admin-1", email: "admin@example.test", emailVerified: true, mfaVerified: true, roles: ["admin"] }
     })).resolves.toEqual({ id: "11111111-1111-4111-8111-111111111111" });
     expect(query).toHaveBeenCalledTimes(3);
   });

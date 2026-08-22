@@ -17,6 +17,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const result = await finishLogin({ code, state: request.nextUrl.searchParams.get("state"), cookieValue: request.cookies.get(adminIdentityCookies.attempt)?.value }, "admin");
     if (!result.roles.some((role) => role === "admin" || role === "super_admin")) throw new Error("Admin role is required");
+    if (!result.session.mfaVerified) throw new Error("Admin MFA is required");
     const response = NextResponse.redirect(publicRedirectUrl(result.returnTo, "admin"));
     const sessionToken = await createWebSession(result, "admin");
     response.cookies.set(adminIdentityCookies.session, sessionToken, { httpOnly: true, ...(result.rememberDevice ? { maxAge: rememberedDeviceMaxAgeSeconds } : {}), path: "/", sameSite: "lax", secure: isSecureCookie(identityConfig("admin")) });
@@ -24,10 +25,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return response;
   } catch (error) {
     const roleMissing = error instanceof Error && error.message === "Admin role is required";
+    const mfaMissing = error instanceof Error && error.message === "Admin MFA is required";
     logAdminLoginFailure(request, roleMissing
       ? { errorCode: "ADMIN_ROLE_REQUIRED", stage: "authorization" }
+      : mfaMissing
+        ? { errorCode: "ADMIN_MFA_REQUIRED", stage: "authorization" }
       : classifyCallbackFailure(error));
-    const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?error=${roleMissing ? "role" : "callback"}`, "admin"));
+    const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?error=${roleMissing ? "role" : mfaMissing ? "mfa" : "callback"}`, "admin"));
     response.cookies.delete(adminIdentityCookies.attempt);
     return response;
   }
@@ -41,6 +45,7 @@ type AdminLoginFailure = {
     | "ADMIN_OIDC_TOKEN_EXCHANGE_FAILED"
     | "ADMIN_OIDC_CLAIMS_INVALID"
     | "ADMIN_ROLE_REQUIRED"
+    | "ADMIN_MFA_REQUIRED"
     | "ADMIN_OIDC_CALLBACK_FAILED";
   stage: "authorization_response" | "state" | "discovery" | "token_exchange" | "claims" | "authorization" | "callback";
 };

@@ -28,6 +28,7 @@ export type WebSession = {
   emailVerified: boolean;
   firstName?: string;
   lastName?: string;
+  mfaVerified: boolean;
   roles: ("client" | "admin" | "super_admin")[];
   subject: string;
 };
@@ -292,7 +293,7 @@ async function internalRequest(path: string, body: Record<string, unknown>): Pro
   return response.json();
 }
 
-function sessionFromClaims(payload: Record<string, unknown>): WebSession | undefined {
+export function sessionFromClaims(payload: Record<string, unknown>): WebSession | undefined {
   if (typeof payload.sub !== "string" || typeof payload.email !== "string") return undefined;
   const realmAccess = payload.realm_access;
   const roles = typeof realmAccess === "object" && realmAccess !== null && Array.isArray((realmAccess as { roles?: unknown }).roles)
@@ -302,6 +303,7 @@ function sessionFromClaims(payload: Record<string, unknown>): WebSession | undef
     subject: payload.sub,
     email: payload.email,
     emailVerified: payload.email_verified === true,
+    mfaVerified: Array.isArray(payload.amr) && payload.amr.includes("otp"),
     ...(typeof payload.given_name === "string" ? { firstName: payload.given_name } : {}),
     ...(typeof payload.family_name === "string" ? { lastName: payload.family_name } : {}),
     roles
@@ -322,6 +324,7 @@ function isSessionResponse(value: unknown): value is { session: WebSession | nul
   const session = value.session as Record<string, unknown>;
   return typeof session === "object" && session !== null &&
     typeof session.subject === "string" && typeof session.email === "string" && typeof session.emailVerified === "boolean" &&
+    typeof session.mfaVerified === "boolean" &&
     Array.isArray(session.roles) && session.roles.every(isStudioRole) &&
     (session.firstName === undefined || typeof session.firstName === "string") &&
     (session.lastName === undefined || typeof session.lastName === "string");

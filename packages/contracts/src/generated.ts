@@ -732,6 +732,8 @@ export interface components {
             emailVerified: boolean;
             firstName?: string;
             lastName?: string;
+            /** @description True only when the original interactive authentication included the OTP method in the signed AMR claim. */
+            mfaVerified: boolean;
             roles: ("client" | "admin" | "super_admin")[];
         };
         InternalSessionCreateRequest: {

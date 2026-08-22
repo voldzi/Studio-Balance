@@ -117,11 +117,11 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
   neotevře obrazovku slibující nedostupný e-mail;
 - admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
   projeví v relaci a auditu;
-- admin relace vznikne až po heslu a TOTP, pak otevře správu i administrační
-  API bez dalšího zadání na zapamatovaném zařízení nejvýše 90 dní při aktivitě
-  aspoň jednou za 30 dní; běžná webová relace se
-  sebevyšší rolí admin nesmí admin API otevřít a anonymní vstup zůstává 401 /
-  přesměrován na oddělené přihlášení;
+- webová relace administrátora vzniklá po heslu a TOTP otevře správu i
+  administrační API bez dalšího zadání na zapamatovaném zařízení nejvýše 90 dní
+  při aktivitě aspoň jednou za 30 dní; stejná role bez podepsaného AMR `otp`
+  musí skončit `MFA_REQUIRED` / přesměrováním na záložní oddělené přihlášení;
+  refresh ani pozdější přiřazení role nesmí hodnotu MFA povýšit;
 - bez volby zapamatování je klientská cookie session-only; se zapamatováním má
   90denní absolutní a 30denní neaktivní limit. Browser token je neprůhledný,
   refresh token zůstává šifrovaný v databázi a po nejvýše 15 minutách se znovu

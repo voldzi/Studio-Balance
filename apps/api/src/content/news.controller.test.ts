@@ -50,7 +50,7 @@ describe("news API", () => {
   }
 
   async function adminCookie() {
-    const token = await new SignJWT({ email: "admin@example.test", email_verified: true, roles: ["admin"] })
+    const token = await new SignJWT({ email: "admin@example.test", email_verified: true, roles: ["admin"], amr: ["pwd", "otp"] })
       .setProtectedHeader({ alg: "HS256" }).setSubject("admin").setIssuer("studio-balance-web")
       .setAudience("studio-balance-api").setIssuedAt().setExpirationTime("1h")
       .sign(new TextEncoder().encode(config.sessionSecret));

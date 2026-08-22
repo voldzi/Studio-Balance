@@ -22,6 +22,7 @@ type SessionRow = {
   idle_expires_at: Date;
   last_name: string | null;
   last_revalidated_at: Date;
+  mfa_verified: boolean;
   oidc_subject: string;
   refresh_token_ciphertext: string | null;
   roles: string[];
@@ -46,8 +47,8 @@ export class OpaqueSessionService {
   }
 
   async create(input: { kind: ApplicationSessionKind; refreshToken: string; session: StudioSession }): Promise<{ token: string }> {
-    if (input.kind === "admin" && !isAdministrator(input.session.roles)) {
-      throw new Error("Admin role is required");
+    if (input.kind === "admin" && (!isAdministrator(input.session.roles) || !input.session.mfaVerified)) {
+      throw new Error("Admin role and MFA assurance are required");
     }
 
     const now = new Date();
@@ -57,9 +58,9 @@ export class OpaqueSessionService {
 
     await this.database.query(
       `INSERT INTO application_sessions (
-        token_hash, kind, oidc_subject, email, email_verified, first_name, last_name, roles,
+        token_hash, kind, oidc_subject, email, email_verified, first_name, last_name, mfa_verified, roles,
         refresh_token_ciphertext, absolute_expires_at, idle_expires_at, last_revalidated_at, last_seen_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)`,
       [
         hashToken(token),
         input.kind,
@@ -68,6 +69,7 @@ export class OpaqueSessionService {
         input.session.emailVerified,
         input.session.firstName ?? null,
         input.session.lastName ?? null,
+        input.session.mfaVerified,
         input.session.roles,
         this.encrypt(input.refreshToken),
         absoluteExpiresAt,
@@ -114,7 +116,10 @@ export class OpaqueSessionService {
           await this.revokeLocked(client, hashToken(token), kind);
           return undefined;
         }
-        session = refreshed.session;
+        // MFA assurance belongs to the original interactive authentication.
+        // A refresh may update identity and roles, but must never upgrade a
+        // password-only session into an administrator session.
+        session = { ...refreshed.session, mfaVerified: row.mfa_verified };
         refreshTokenCiphertext = refreshed.refreshToken ? this.encrypt(refreshed.refreshToken) : refreshTokenCiphertext;
         revalidatedAt = now;
       }
@@ -163,7 +168,7 @@ export class OpaqueSessionService {
 
   private async lockActiveSession(client: PoolClient, tokenHash: string, kind: ApplicationSessionKind): Promise<SessionRow | undefined> {
     const result = await client.query<SessionRow>(
-      `SELECT oidc_subject, email, email_verified, first_name, last_name, roles, refresh_token_ciphertext,
+      `SELECT oidc_subject, email, email_verified, first_name, last_name, mfa_verified, roles, refresh_token_ciphertext,
               absolute_expires_at, idle_expires_at, last_revalidated_at, revoked_at
        FROM application_sessions
        WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL
@@ -268,6 +273,7 @@ function sessionFromRow(row: SessionRow): StudioSession {
     subject: row.oidc_subject,
     email: row.email,
     emailVerified: row.email_verified,
+    mfaVerified: row.mfa_verified,
     ...(row.first_name ? { firstName: row.first_name } : {}),
     ...(row.last_name ? { lastName: row.last_name } : {}),
     roles: row.roles.filter(isStudioRole)
@@ -284,6 +290,7 @@ function sessionFromClaims(payload: Record<string, unknown>): StudioSession | un
     subject: payload.sub,
     email: payload.email,
     emailVerified: payload.email_verified === true,
+    mfaVerified: Array.isArray(payload.amr) && payload.amr.includes("otp"),
     ...(typeof payload.given_name === "string" ? { firstName: payload.given_name } : {}),
     ...(typeof payload.family_name === "string" ? { lastName: payload.family_name } : {}),
     roles

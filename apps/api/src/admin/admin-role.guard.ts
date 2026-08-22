@@ -12,14 +12,27 @@ export class AdminRoleGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AdminRequest>();
-    const adminSession = await this.sessions.resolveCookie(request.headers.cookie, "admin");
-    if (!adminSession) {
+    const separateAdminSession = await this.sessions.resolveCookie(request.headers.cookie, "admin");
+    const webSession = isMfaAdministrator(separateAdminSession)
+      ? undefined
+      : await this.sessions.resolveCookie(request.headers.cookie, "web");
+    // Prefer a proven fallback admin session, but never let a legacy/unproven
+    // admin cookie shadow a valid MFA-proven web session during migration.
+    const session = isMfaAdministrator(separateAdminSession) ? separateAdminSession : webSession ?? separateAdminSession;
+    if (!session) {
       throw new HttpException({ code: "AUTHENTICATION_REQUIRED", message: "Přihlaste se do administrace." }, HttpStatus.UNAUTHORIZED);
     }
-    if (!adminSession.roles.some((role) => role === "admin" || role === "super_admin")) {
+    if (!session.roles.some((role) => role === "admin" || role === "super_admin")) {
       throw new HttpException({ code: "PERMISSION_DENIED", message: "Pro tuto operaci nemáte oprávnění." }, HttpStatus.FORBIDDEN);
     }
-    request.studioSession = adminSession;
+    if (!session.mfaVerified) {
+      throw new HttpException({ code: "MFA_REQUIRED", message: "Administrace vyžaduje přihlášení s ověřovacím kódem." }, HttpStatus.FORBIDDEN);
+    }
+    request.studioSession = session;
     return true;
   }
+}
+
+function isMfaAdministrator(session: StudioSession | undefined): session is StudioSession {
+  return Boolean(session?.mfaVerified && session.roles.some((role) => role === "admin" || role === "super_admin"));
 }
