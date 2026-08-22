@@ -370,14 +370,17 @@ potvrzený jmenovitý účet, administrátorský přístup není předaný.
 `scripts/configure-production-keycloak-auth.sh` bezpečně nastaví produkční
 realm `studio-balance` bez e-mailového ověřování klienta a bez odkazu na reset
 hesla, dokud studio nemá nakonfigurovaný SMTP sender. Současně vytvoří nebo
-opraví oddělený browser flow klienta `studiobalance-admin`; obsahuje povinný
-formulář hesla i povinný TOTP formulář. Klientský OIDC flow zůstává beze změny.
+opraví dva výslovně oddělené browser flow: `studiobalance-web` má pouze formulář
+hesla a nikdy nevyžaduje TOTP; `studiobalance-admin` obsahuje povinný formulář
+hesla i povinný TOTP formulář. Oddělení je navázané přímo na oba OIDC klienty,
+nikoli ponechané na výchozím realm flow.
 
 Skript se spouští z lokálního Macu a interaktivně si vyžádá pouze master
 Keycloak jméno a heslo. Po úspěchu ověří, že e-mailové ověřování i reset hesla
 jsou vypnuté, odstraní z existujících účtů pouze starou required action
 `VERIFY_EMAIL` (ostatní akce včetně `UPDATE_PASSWORD` a `CONFIGURE_TOTP`
-zachová) a ověří, že je administrátorský flow skutečně navázaný na klienta.
+zachová) a ověří, že jsou klientský i administrátorský flow skutečně navázané
+na správné klienty a že klientský flow neobsahuje OTP.
 Současně zapne a kontroluje předávání realm rolí v podepsaném ID tokenu.
 Samotné přiřazení role uživateli v Keycloaku nestačí: bez tohoto mapperu by
 web ani oddělená administrace role `admin` a `super_admin` nerozpoznaly.

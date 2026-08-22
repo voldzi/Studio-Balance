@@ -4,8 +4,10 @@ set -euo pipefail
 
 realm="studio-balance"
 issuer="https://login.zeleznalady.cz"
+web_client="studiobalance-web"
 admin_client="studiobalance-admin"
-flow="studio-balance-admin-browser"
+web_flow="studio-balance-client-browser"
+admin_flow="studio-balance-admin-browser"
 config_path="/tmp/studiobalance-auth-kcadm.$$.config"
 
 for command in ssh node; do
@@ -73,38 +75,61 @@ done < <(node -e '
   }
 ' "$users")
 
-flows="$(remote get authentication/flows)"
-if ! node -e 'const flows=JSON.parse(process.argv[1]); process.exit(flows.some((flow)=>flow.alias===process.argv[2]) ? 0 : 1)' "$flows" "$flow"; then
-  remote create authentication/flows -s "alias=$flow" -s 'description=Studio Balance administration: password and required TOTP.' -s providerId=basic-flow -s topLevel=true -s builtIn=false
-fi
-flows="$(remote get authentication/flows)"
+ensure_flow() {
+  local alias="$1"
+  local description="$2"
+  local flows
+  flows="$(remote get authentication/flows)"
+  if ! node -e 'const flows=JSON.parse(process.argv[1]); process.exit(flows.some((flow)=>flow.alias===process.argv[2]) ? 0 : 1)' "$flows" "$alias"; then
+    remote create authentication/flows -s "alias=$alias" -s "description=$description" -s providerId=basic-flow -s topLevel=true -s builtIn=false
+  fi
+}
 
 ensure_execution() {
-  local provider="$1"
+  local target_flow="$1"
+  local provider="$2"
   local executions
-  executions="$(remote get "authentication/flows/$flow/executions")"
+  executions="$(remote get "authentication/flows/$target_flow/executions")"
   if ! node -e 'const executions=JSON.parse(process.argv[1]); process.exit(executions.some((execution)=>execution.providerId===process.argv[2]) ? 0 : 1)' "$executions" "$provider"; then
-    remote create "authentication/flows/$flow/executions/execution" -s "provider=$provider"
-    executions="$(remote get "authentication/flows/$flow/executions")"
+    remote create "authentication/flows/$target_flow/executions/execution" -s "provider=$provider"
+    executions="$(remote get "authentication/flows/$target_flow/executions")"
   fi
   local execution_id
   execution_id="$(node -e 'const executions=JSON.parse(process.argv[1]); const execution=executions.find((item)=>item.providerId===process.argv[2]); if (!execution) process.exit(1); process.stdout.write(execution.id)' "$executions" "$provider")"
   # This special endpoint returns an array on GET but accepts one execution
   # object on PUT. Disable kcadm's automatic GET-and-merge step, otherwise it
   # tries to deserialize the returned array as an ObjectNode and aborts.
-  remote update "authentication/flows/$flow/executions" -s "id=$execution_id" -s requirement=REQUIRED -n
+  remote update "authentication/flows/$target_flow/executions" -s "id=$execution_id" -s requirement=REQUIRED -n
 }
 
-ensure_execution auth-username-password-form
-ensure_execution auth-otp-form
+ensure_flow "$web_flow" 'Studio Balance client application: password only, never TOTP.'
+ensure_execution "$web_flow" auth-username-password-form
+ensure_flow "$admin_flow" 'Studio Balance administration: password and required TOTP.'
+ensure_execution "$admin_flow" auth-username-password-form
+ensure_execution "$admin_flow" auth-otp-form
 
-clients="$(remote get "clients?clientId=$admin_client")"
-client_id="$(node -e 'const clients=JSON.parse(process.argv[1]); if (clients.length!==1) process.exit(1); process.stdout.write(clients[0].id)' "$clients")"
-flow_id="$(node -e 'const flows=JSON.parse(process.argv[1]); const flow=flows.find((item)=>item.alias===process.argv[2]); if (!flow) process.exit(1); process.stdout.write(flow.id)' "$flows" "$flow")"
+client_id_for() {
+  local client_name="$1"
+  local clients
+  clients="$(remote get "clients?clientId=$client_name")"
+  node -e 'const clients=JSON.parse(process.argv[1]); if (clients.length!==1) process.exit(1); process.stdout.write(clients[0].id)' "$clients"
+}
+
+flows="$(remote get authentication/flows)"
+flow_id_for() {
+  local alias="$1"
+  node -e 'const flows=JSON.parse(process.argv[1]); const flow=flows.find((item)=>item.alias===process.argv[2]); if (!flow) process.exit(1); process.stdout.write(flow.id)' "$flows" "$alias"
+}
+
+web_client_id="$(client_id_for "$web_client")"
+admin_client_id="$(client_id_for "$admin_client")"
+web_flow_id="$(flow_id_for "$web_flow")"
+admin_flow_id="$(flow_id_for "$admin_flow")"
 # kcadm's partial field projection serialises a map inconsistently on this
 # Keycloak release. Set the one map entry explicitly so other overrides, if any,
 # are preserved as well.
-remote update "clients/$client_id" -s "authenticationFlowBindingOverrides.browser=$flow_id"
+remote update "clients/$web_client_id" -s "authenticationFlowBindingOverrides.browser=$web_flow_id"
+remote update "clients/$admin_client_id" -s "authenticationFlowBindingOverrides.browser=$admin_flow_id"
 
 # The application validates realm roles from the signed ID token. Keycloak's
 # built-in roles scope adds them to access tokens by default, but not to ID
@@ -117,40 +142,54 @@ realm_role_mapper_id="$(node -e 'const mappers=JSON.parse(process.argv[1]); cons
 remote update "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id" -s 'config."id.token.claim"=true'
 
 realm_state="$(remote get "realms/$realm" --fields verifyEmail,resetPasswordAllowed,rememberMe,ssoSessionIdleTimeout,ssoSessionMaxLifespan,clientSessionIdleTimeout,clientSessionMaxLifespan)"
-execution_state="$(remote get "authentication/flows/$flow/executions")"
+web_execution_state="$(remote get "authentication/flows/$web_flow/executions")"
+admin_execution_state="$(remote get "authentication/flows/$admin_flow/executions")"
 users_state="$(remote get 'users?max=1000')"
 realm_role_mapper_state="$(remote get "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id")"
 node -e '
   const realm=JSON.parse(process.argv[1]);
-  const executions=JSON.parse(process.argv[2]);
+  const webExecutions=JSON.parse(process.argv[2]);
+  const adminExecutions=JSON.parse(process.argv[3]);
   if (realm.verifyEmail!==false || realm.resetPasswordAllowed!==false) throw new Error("Simple client registration is not active.");
   const expectedSessions={rememberMe:false,ssoSessionIdleTimeout:2592000,ssoSessionMaxLifespan:7776000,clientSessionIdleTimeout:2592000,clientSessionMaxLifespan:7776000};
   for (const [name,value] of Object.entries(expectedSessions)) if (realm[name]!==value) throw new Error(`Unexpected realm session setting: ${name}`);
-  for (const provider of ["auth-username-password-form","auth-otp-form"]) {
-    const execution=executions.find((item)=>item.providerId===provider);
-    if (!execution || execution.requirement!=="REQUIRED") throw new Error(`Required execution missing: ${provider}`);
+  const clientPassword=webExecutions.find((item)=>item.providerId==="auth-username-password-form");
+  if (!clientPassword || clientPassword.requirement!=="REQUIRED") throw new Error("Client password execution is missing.");
+  if (webExecutions.some((item)=>item.providerId==="auth-otp-form" && item.requirement!=="DISABLED")) {
+    throw new Error("Client browser flow must never request TOTP.");
   }
-  const users=JSON.parse(process.argv[3]);
+  for (const provider of ["auth-username-password-form","auth-otp-form"]) {
+    const execution=adminExecutions.find((item)=>item.providerId===provider);
+    if (!execution || execution.requirement!=="REQUIRED") throw new Error(`Required admin execution missing: ${provider}`);
+  }
+  const users=JSON.parse(process.argv[4]);
   if (users.some((user)=>(user.requiredActions ?? []).includes("VERIFY_EMAIL"))) {
     throw new Error("A stale VERIFY_EMAIL required action remains on an account.");
   }
-  const mapper=JSON.parse(process.argv[4]);
+  const mapper=JSON.parse(process.argv[5]);
   if (mapper.config?.["id.token.claim"]!=="true") throw new Error("Realm roles are missing from ID tokens.");
-' "$realm_state" "$execution_state" "$users_state" "$realm_role_mapper_state"
+' "$realm_state" "$web_execution_state" "$admin_execution_state" "$users_state" "$realm_role_mapper_state"
 
 # Do not use --fields here: Keycloak 26's partial projection may turn this map
 # into an array. Read the complete representation only in a pipe, never log it,
 # and validate the one required binding without placing any client data in argv.
-remote get "clients/$client_id" | node -e '
+remote get "clients/$web_client_id" | node -e '
+  const client=JSON.parse(require("node:fs").readFileSync(0,"utf8"));
+  if (client.authenticationFlowBindingOverrides?.browser!==process.argv[1]) {
+    throw new Error("Client browser flow is not bound.");
+  }
+' "$web_flow_id"
+remote get "clients/$admin_client_id" | node -e '
   const client=JSON.parse(require("node:fs").readFileSync(0,"utf8"));
   if (client.authenticationFlowBindingOverrides?.browser!==process.argv[1]) {
     throw new Error("Admin browser flow is not bound.");
   }
-' "$flow_id"
+' "$admin_flow_id"
 
 echo "Configured: client registration without e-mail verification; password reset hidden until SMTP is available."
 echo "Configured: Keycloak's own Remember me checkbox is hidden; SSO/client sessions are 30 days idle / 90 days maximum for secure server-side refresh."
 echo "Configured: stale VERIFY_EMAIL actions removed while other account actions were preserved."
+echo "Configured: studiobalance-web uses a dedicated password-only flow and never asks clients for TOTP."
 echo "Configured: studiobalance-admin requires password and TOTP for a new or expired trusted device."
 echo "Configured: realm roles are included in signed ID tokens for web and administration."
 echo "Administrators without an authenticator app must first enroll TOTP through their required action using the regular web login, then use /admin/prihlaseni."

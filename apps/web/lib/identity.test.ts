@@ -73,4 +73,23 @@ describe("publicRedirectUrl", () => {
     const result = await createLoginAttempt("/muj-ucet", "web", undefined, true);
     expect(decodeJwt(result.cookieValue).rememberDevice).toBe(true);
   });
+
+  it("keeps the ordinary client login separate from the privileged fresh-login policy", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authorization_endpoint: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/auth",
+        issuer: "http://localhost:8081/realms/studio-balance",
+        jwks_uri: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/certs",
+        token_endpoint: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/token"
+      })
+    }));
+
+    const result = await createLoginAttempt("/muj-ucet", "web");
+    const authorizationUrl = new URL(result.authorizationUrl);
+
+    expect(authorizationUrl.searchParams.get("client_id")).toBe("studiobalance-web");
+    expect(authorizationUrl.searchParams.has("prompt")).toBe(false);
+    expect(authorizationUrl.searchParams.has("max_age")).toBe(false);
+  });
 });
