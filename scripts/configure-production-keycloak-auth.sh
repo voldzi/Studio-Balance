@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2029
 set -euo pipefail
 
 realm="studio-balance"
@@ -102,9 +102,63 @@ ensure_execution() {
   remote update "authentication/flows/$target_flow/executions" -s "id=$execution_id" -s requirement=REQUIRED -n
 }
 
+# The AMR protocol mapper only publishes authentication methods that successful
+# authenticator executions explicitly name. Merely adding the mapper therefore
+# produces no `otp` claim unless the password and OTP executions carry their
+# standard RFC 8176 reference values.
+ensure_authenticator_reference() {
+  local target_flow="$1"
+  local provider="$2"
+  local reference="$3"
+  local config_alias="$4"
+  local executions execution_id config_id
+
+  executions="$(remote get "authentication/flows/$target_flow/executions")"
+  execution_id="$(node -e '
+    const executions=JSON.parse(process.argv[1]);
+    const execution=executions.find((item)=>item.providerId===process.argv[2]);
+    if (!execution) process.exit(1);
+    process.stdout.write(execution.id);
+  ' "$executions" "$provider")"
+  config_id="$(node -e '
+    const executions=JSON.parse(process.argv[1]);
+    const execution=executions.find((item)=>item.providerId===process.argv[2]);
+    process.stdout.write(execution?.authenticationConfig ?? "");
+  ' "$executions" "$provider")"
+
+  if [[ -n "$config_id" ]]; then
+    remote update "authentication/config/$config_id" \
+      -s "alias=$config_alias" \
+      -s "config.\"default.reference.value\"=$reference"
+  else
+    remote create "authentication/executions/$execution_id/config" \
+      -s "alias=$config_alias" \
+      -s "config.\"default.reference.value\"=$reference"
+  fi
+}
+
+authenticator_reference_state() {
+  local target_flow="$1"
+  local provider="$2"
+  local executions config_id
+
+  executions="$(remote get "authentication/flows/$target_flow/executions")"
+  config_id="$(node -e '
+    const executions=JSON.parse(process.argv[1]);
+    const execution=executions.find((item)=>item.providerId===process.argv[2]);
+    if (!execution?.authenticationConfig) process.exit(1);
+    process.stdout.write(execution.authenticationConfig);
+  ' "$executions" "$provider")"
+  remote get "authentication/config/$config_id"
+}
+
 ensure_flow "$admin_flow" 'Studio Balance administration: password and required TOTP.'
 ensure_execution "$admin_flow" auth-username-password-form
 ensure_execution "$admin_flow" auth-otp-form
+ensure_authenticator_reference forms auth-username-password-form pwd studio-balance-web-password-amr
+ensure_authenticator_reference forms auth-otp-form otp studio-balance-web-otp-amr
+ensure_authenticator_reference "$admin_flow" auth-username-password-form pwd studio-balance-admin-password-amr
+ensure_authenticator_reference "$admin_flow" auth-otp-form otp studio-balance-admin-otp-amr
 
 client_id_for() {
   local client_name="$1"
@@ -172,6 +226,10 @@ users_state="$(remote get 'users?max=1000')"
 realm_role_mapper_state="$(remote get "client-scopes/$role_scope_id/protocol-mappers/models/$realm_role_mapper_id")"
 web_amr_state="$(remote get "clients/$web_client_id/protocol-mappers/models")"
 admin_amr_state="$(remote get "clients/$admin_client_id/protocol-mappers/models")"
+web_password_reference_state="$(authenticator_reference_state forms auth-username-password-form)"
+web_otp_reference_state="$(authenticator_reference_state forms auth-otp-form)"
+admin_password_reference_state="$(authenticator_reference_state "$admin_flow" auth-username-password-form)"
+admin_otp_reference_state="$(authenticator_reference_state "$admin_flow" auth-otp-form)"
 node -e '
   const realm=JSON.parse(process.argv[1]);
   const webExecutions=JSON.parse(process.argv[2]);
@@ -197,7 +255,20 @@ node -e '
     const amr=JSON.parse(rawMappers).find((item)=>item.protocolMapper==="oidc-amr-mapper");
     if (!amr || amr.config?.["id.token.claim"]!=="true") throw new Error("AMR is missing from signed ID tokens.");
   }
-' "$realm_state" "$web_execution_state" "$admin_execution_state" "$users_state" "$realm_role_mapper_state" "$web_amr_state" "$admin_amr_state"
+  const references=[
+    [process.argv[8], "pwd", "web password"],
+    [process.argv[9], "otp", "web OTP"],
+    [process.argv[10], "pwd", "admin password"],
+    [process.argv[11], "otp", "admin OTP"],
+  ];
+  for (const [rawConfig, expected, label] of references) {
+    const config=JSON.parse(rawConfig);
+    if (config.config?.["default.reference.value"]!==expected) {
+      throw new Error(`Missing ${label} authenticator reference for AMR.`);
+    }
+  }
+' "$realm_state" "$web_execution_state" "$admin_execution_state" "$users_state" "$realm_role_mapper_state" "$web_amr_state" "$admin_amr_state" \
+  "$web_password_reference_state" "$web_otp_reference_state" "$admin_password_reference_state" "$admin_otp_reference_state"
 
 # Do not use --fields here: Keycloak 26's partial projection may turn this map
 # into an array. Read the complete representation only in a pipe, never log it,
@@ -221,4 +292,5 @@ echo "Configured: stale VERIFY_EMAIL actions removed while other account actions
 echo "Configured: studiobalance-web uses Keycloak's standard browser flow; accounts without OTP use a password, administrators with OTP complete both factors once."
 echo "Configured: studiobalance-admin requires password and TOTP for a new or expired trusted device."
 echo "Configured: realm roles and AMR authentication evidence are included in signed ID tokens for web and administration."
+echo "Configured: password and OTP authenticator references publish pwd/otp in AMR for both browser flows."
 echo "An administrator who completes OTP in the normal application can open /admin without signing in again."

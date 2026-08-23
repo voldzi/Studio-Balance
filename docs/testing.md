@@ -117,6 +117,10 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
   neotevře obrazovku slibující nedostupný e-mail;
 - admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
   projeví v relaci a auditu;
+- produkční konfigurační kontrola vyžaduje nejen AMR mapper, ale i reference
+  `pwd` a `otp` na password/OTP executions obou browser flow; smoke z profilu
+  do administrace po novém heslo+TOTP přihlášení nesmí vytvořit událost
+  `ADMIN_MFA_REQUIRED` ani zobrazit druhý přihlašovací formulář;
 - webová relace administrátora vzniklá po heslu a TOTP otevře správu i
   administrační API bez dalšího zadání na zapamatovaném zařízení nejvýše 90 dní
   při aktivitě aspoň jednou za 30 dní; stejná role bez podepsaného AMR `otp`

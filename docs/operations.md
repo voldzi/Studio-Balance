@@ -383,6 +383,12 @@ navázané na správné klienty. Současně zapne a kontroluje předávání rea
 i standardního AMR důkazu v podepsaném ID tokenu.
 Samotné přiřazení role uživateli v Keycloaku nestačí: bez tohoto mapperu by
 web ani oddělená administrace role `admin` a `super_admin` nerozpoznaly.
+AMR mapper sám o sobě také nestačí. Skript nastaví na úspěšných password a OTP
+executions explicitní autentizační reference `pwd` a `otp` ve standardním
+webovém `forms` flow i v odděleném admin flow a jejich hodnoty po zápisu znovu
+ověří. Bez těchto referencí by uživatel mohl heslo i TOTP správně dokončit, ale
+podepsaný token by neobsahoval `amr: ["otp"]` a administrace by jej znovu
+vrátila na přihlášení.
 Skript vypne Keycloak checkbox „Zapamatovat si mě“ a nastaví SSO i client
 session na 30 dní neaktivity / 90 dní maximum; jedinou uživatelskou volbu
 zapamatování pak zobrazuje aplikace. Následné ověření se provede v anonymním
@@ -393,6 +399,9 @@ zapamatování končí se zavřením prohlížeče; zapamatovaná klientská i M
 admin relace má maximum 90 dní a 30denní neaktivní limit. Server nejpozději po
 15 minutách ověřuje účet a role znovu v Keycloaku; odhlášení zruší relace,
 refresh tokeny i oba cookies na daném zařízení.
+Změna AMR konfigurace zpětně nepovýší již existující webové relace. Po jejím
+nasazení musí administrátor jednou projít novým interaktivním přihlášením s
+heslem a TOTP; nově vydaná relace pak může správu otevírat bez dalšího formuláře.
 
 ## Health a readiness
 

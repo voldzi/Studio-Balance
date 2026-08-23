@@ -49,6 +49,9 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
   vrstva mimo browser JavaScript;
 - MFA je povinné pro `admin` i `super_admin`; takový účet při běžném přihlášení
   dokončí heslo i TOTP a Keycloak vloží metodu `otp` do podepsaného AMR claimu;
+- AMR mapper je doplněný explicitními autentizačními referencemi `pwd` a `otp`
+  na password/OTP executions standardního webového i odděleného admin flow;
+  existence mapperu bez těchto referencí se nepovažuje za důkaz funkčního MFA;
 - samostatná admin Authorization Code žádost s `prompt=login` a `max_age=0`
   zůstává záložní cestou, pokud chybí platná MFA-prokázaná webová relace;
   jmenovitý admin účet se před předáním ověří v nové anonymní relaci heslem i
