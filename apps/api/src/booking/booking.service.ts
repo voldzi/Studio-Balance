@@ -248,6 +248,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
       ct.name AS class_name,
       ct.slug AS class_slug,
       ct.tagline AS class_tagline,
+      ct.what_to_bring,
       i.id AS instructor_id,
       i.display_name AS instructor_name,
       (SELECT count(*)::text FROM bookings active WHERE active.session_id = s.id AND active.status = 'reserved') AS active_bookings,
@@ -268,7 +269,7 @@ async function lockedSession(client: PoolClient, id: string): Promise<LockedSess
       s.id, s.start_at, s.end_at, s.arrival_lead_minutes, s.location_name, s.location_address,
       s.price_cents, s.capacity, s.status, s.booking_opens_at, s.booking_closes_at,
       s.free_cancellation_until, s.equipment, s.suitability, s.change_notice,
-      ct.name AS class_name, ct.slug AS class_slug, ct.tagline AS class_tagline,
+      ct.name AS class_name, ct.slug AS class_slug, ct.tagline AS class_tagline, ct.what_to_bring,
       i.id AS instructor_id, i.display_name AS instructor_name
     FROM class_sessions s
     JOIN class_types ct ON ct.id = s.class_type_id

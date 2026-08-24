@@ -39,6 +39,7 @@ export type PublicSession = {
   startAt: string;
   suitability: string;
   timezone: "Europe/Prague";
+  whatToBring: string;
 };
 
 export type SessionRow = {
@@ -62,6 +63,7 @@ export type SessionRow = {
   start_at: Date;
   status: "scheduled" | "cancelled" | "completed";
   suitability: string;
+  what_to_bring: string;
 };
 
 const sessionSelect = `
@@ -83,6 +85,7 @@ const sessionSelect = `
     ct.name AS class_name,
     ct.slug AS class_slug,
     ct.tagline AS class_tagline,
+    ct.what_to_bring,
     i.id AS instructor_id,
     i.display_name AS instructor_name,
     count(b.id) FILTER (WHERE b.status = 'reserved')::text AS active_bookings
@@ -196,6 +199,7 @@ export function mapSession(row: SessionRow, now: Date): PublicSession {
     location: { name: row.location_name, address: row.location_address },
     equipment: row.equipment,
     suitability: row.suitability,
-    changeNotice: row.change_notice
+    changeNotice: row.change_notice,
+    whatToBring: row.what_to_bring
   };
 }

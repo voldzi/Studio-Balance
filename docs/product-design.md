@@ -126,6 +126,13 @@ Primární oblasti: Dashboard, Rozvrh, Typy lekcí, Instruktoři, Klienti,
 Rezervace/docházka, Storno poplatky, Obsah, Nastavení, Audit. Navigace je
 úkolová, ne kopie veřejného webu.
 
+Dashboard vedle dnešního provozu ukazuje oblíbenost typů lekcí za posledních
+90 dní, osmitýdenní trend potvrzených návštěv, týdenní rezervace, měsíční
+účast, pozdní storna a neúčasti. Finanční karta používá přesný název „Odhad
+hodnoty návštěv“ a nápovědu, že jde pouze o součet cen rezervací označených jako
+účast. Dokud systém neeviduje skutečné zaplacení, nesmí používat označení
+tržba, výdělek nebo příjem.
+
 ## Inventář hlavních povrchů
 
 | Povrch | Hlavní rozhodnutí / akce | Povinné stavy |
@@ -180,8 +187,10 @@ a rezervaci nelze bez připojení provést.
 V přihlášeném profilu se dočasně zobrazí srozumitelná karta „Měj studio vždy po
 ruce“. Na iOS vysvětluje postup Safari: Sdílet → Přidat na plochu → Přidat. Na
 zařízeních, která podporují instalační dialog prohlížeče, nabídne jediné
-tlačítko „Přidat na plochu“. Po instalaci ani po volbě „Teď ne“ se znovu
-neukazuje; návod se nesmí vydávat za nativní aplikaci.
+tlačítko „Přidat na plochu“. Když prohlížeč instalační dialog neposkytne,
+zobrazí očíslované kroky a výslovně uvede, že názvy položek nejsou tlačítka
+webu. Po instalaci ani po volbě „Teď ne“ se znovu neukazuje; návod se nesmí
+vydávat za nativní aplikaci.
 
 ## Rozvrh a veřejné stavy
 

@@ -92,6 +92,26 @@ describe("publicRedirectUrl", () => {
     expect(authorizationUrl.searchParams.has("prompt")).toBe(false);
     expect(authorizationUrl.searchParams.has("max_age")).toBe(false);
   });
+
+  it("uses a signed PKCE action request for a self-service password change", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authorization_endpoint: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/auth",
+        issuer: "http://localhost:8081/realms/studio-balance",
+        jwks_uri: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/certs",
+        token_endpoint: "http://localhost:8081/realms/studio-balance/protocol/openid-connect/token"
+      })
+    }));
+
+    const result = await createLoginAttempt("/muj-ucet?view=profile", "web", "client@example.test", true, "UPDATE_PASSWORD");
+    const authorizationUrl = new URL(result.authorizationUrl);
+
+    expect(authorizationUrl.searchParams.get("kc_action")).toBe("UPDATE_PASSWORD");
+    expect(authorizationUrl.searchParams.get("login_hint")).toBe("client@example.test");
+    expect(authorizationUrl.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(authorizationUrl.searchParams.has("prompt")).toBe(false);
+  });
 });
 
 describe("sessionFromClaims", () => {

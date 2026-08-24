@@ -813,6 +813,7 @@ export interface components {
             location: components["schemas"]["Location"];
             equipment: string;
             suitability: string;
+            whatToBring: string;
             changeNotice?: string | null;
         };
         MeResponse: {
@@ -1035,6 +1036,48 @@ export interface components {
             url: string;
             width: number;
             height: number;
+        };
+        AdminDashboardSession: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            startAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "cancelled" | "completed";
+            capacity: number;
+            bookingCount: number;
+            className: string;
+            instructorName: string;
+        };
+        AdminDashboardMetrics: {
+            reservationsThisWeek: number;
+            attendedThisMonth: number;
+            noShowsThisMonth: number;
+            lateCancellationsThisMonth: number;
+            attendanceRate90Days: number | null;
+            /** @description Sum of snapshotted prices for bookings marked attended. This is an operational estimate, not accounting revenue or proof of payment. */
+            estimatedAttendedValueThisMonthCents: number;
+        };
+        AdminClassPopularity: {
+            /** Format: uuid */
+            classTypeId: string;
+            className: string;
+            reservations: number;
+            attended: number;
+        };
+        AdminWeeklyAttendance: {
+            /** Format: date */
+            weekStart: string;
+            attended: number;
+        };
+        AdminDashboard: {
+            activeBookings: number;
+            clients: number;
+            today: components["schemas"]["AdminDashboardSession"][];
+            nextWeek: components["schemas"]["AdminDashboardSession"][];
+            metrics: components["schemas"]["AdminDashboardMetrics"];
+            classPopularity: components["schemas"]["AdminClassPopularity"][];
+            weeklyAttendance: components["schemas"]["AdminWeeklyAttendance"][];
         };
         AdminMutationResponse: {
             /** Format: uuid */
@@ -1721,15 +1764,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Operational summary. */
+            /** @description Operational summary with attendance and booking trends. Estimated visit value is not accounting revenue. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AdminDashboard"];
                 };
             };
             401: components["responses"]["Error"];

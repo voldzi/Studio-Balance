@@ -253,6 +253,11 @@ První provozní řez implementuje dashboard, typy lekcí, instruktory, termíny
 zrušení termínu, seznam klientů, seznam rezervací, evidenci účasti/neúčasti a
 `GET/POST/PATCH /api/v1/admin/content/reviews` pro koncept, publikaci, skrytí a
 řazení schválených recenzí.
+`GET /api/v1/admin/dashboard` vrací vedle dnešních termínů také týdenní počet
+rezervací, měsíční účasti, pozdní storna a neúčasti, oblíbenost typů lekcí za
+90 dní a osmitýdenní řadu potvrzené docházky. Pole
+`estimatedAttendedValueThisMonthCents` je pouze součet cenových snapshotů
+rezervací označených jako účast; není účetní tržbou ani potvrzením zaplacení.
 Stejný řez obsahuje `GET /api/v1/transformations`, administrační
 `GET/POST/PATCH /api/v1/admin/content/transformations`, binární upload
 `POST /api/v1/admin/media/transformation-image` a veřejné čtení pouze

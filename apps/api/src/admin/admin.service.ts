@@ -35,13 +35,24 @@ type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; ca
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
 type AdminBookingRow = { class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
 type AttendanceRow = { id: string; price_snapshot_cents: number; status: string; user_id: string };
+type DashboardMetricsRow = {
+  attended_90_days: string;
+  attended_this_month: string;
+  estimated_attended_value_this_month_cents: string;
+  late_cancellations_this_month: string;
+  no_shows_90_days: string;
+  no_shows_this_month: string;
+  reservations_this_week: string;
+};
+type ClassPopularityRow = { attended: number; class_name: string; class_type_id: string; reservations: number };
+type WeeklyAttendanceRow = { attended: number; week_start: string };
 
 @Injectable()
 export class AdminService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
   async dashboard() {
-    const [sessions, bookings, clients] = await Promise.all([
+    const [sessions, bookings, clients, metrics, classPopularity, weeklyAttendance] = await Promise.all([
       this.database.query<DashboardSessionRow>(`
         SELECT s.id, s.start_at, s.status, s.capacity, ct.name AS class_name, i.display_name AS instructor_name,
           count(b.id) FILTER (WHERE b.status = 'reserved')::int AS booking_count
@@ -54,17 +65,104 @@ export class AdminService {
         GROUP BY s.id, ct.name, i.display_name ORDER BY s.start_at
       `),
       this.database.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE status = 'reserved'"),
-      this.database.query<{ count: string }>("SELECT count(*)::text AS count FROM user_profiles")
+      this.database.query<{ count: string }>("SELECT count(*)::text AS count FROM user_profiles"),
+      this.database.query<DashboardMetricsRow>(`
+        WITH bounds AS (
+          SELECT
+            date_trunc('week', now() AT TIME ZONE 'Europe/Prague') AS week_start_local,
+            date_trunc('month', now() AT TIME ZONE 'Europe/Prague') AS month_start_local,
+            now() - interval '90 days' AS ninety_days_ago
+        )
+        SELECT
+          count(b.id) FILTER (
+            WHERE s.start_at >= bounds.week_start_local AT TIME ZONE 'Europe/Prague'
+              AND s.start_at < (bounds.week_start_local + interval '7 days') AT TIME ZONE 'Europe/Prague'
+              AND b.status IN ('reserved','attended','no_show','cancelled_late')
+          )::text AS reservations_this_week,
+          count(b.id) FILTER (
+            WHERE s.start_at >= bounds.month_start_local AT TIME ZONE 'Europe/Prague'
+              AND s.start_at < (bounds.month_start_local + interval '1 month') AT TIME ZONE 'Europe/Prague'
+              AND b.status = 'attended'
+          )::text AS attended_this_month,
+          count(b.id) FILTER (
+            WHERE s.start_at >= bounds.month_start_local AT TIME ZONE 'Europe/Prague'
+              AND s.start_at < (bounds.month_start_local + interval '1 month') AT TIME ZONE 'Europe/Prague'
+              AND b.status = 'no_show'
+          )::text AS no_shows_this_month,
+          count(b.id) FILTER (
+            WHERE s.start_at >= bounds.month_start_local AT TIME ZONE 'Europe/Prague'
+              AND s.start_at < (bounds.month_start_local + interval '1 month') AT TIME ZONE 'Europe/Prague'
+              AND b.status = 'cancelled_late'
+          )::text AS late_cancellations_this_month,
+          count(b.id) FILTER (WHERE s.start_at >= bounds.ninety_days_ago AND b.status = 'attended')::text AS attended_90_days,
+          count(b.id) FILTER (WHERE s.start_at >= bounds.ninety_days_ago AND b.status = 'no_show')::text AS no_shows_90_days,
+          coalesce(sum(b.price_snapshot_cents) FILTER (
+            WHERE s.start_at >= bounds.month_start_local AT TIME ZONE 'Europe/Prague'
+              AND s.start_at < (bounds.month_start_local + interval '1 month') AT TIME ZONE 'Europe/Prague'
+              AND b.status = 'attended'
+          ), 0)::text AS estimated_attended_value_this_month_cents
+        FROM bounds
+        LEFT JOIN class_sessions s ON true
+        LEFT JOIN bookings b ON b.session_id = s.id
+      `),
+      this.database.query<ClassPopularityRow>(`
+        SELECT ct.id AS class_type_id, ct.name AS class_name,
+          count(b.id) FILTER (WHERE b.status IN ('reserved','attended'))::int AS reservations,
+          count(b.id) FILTER (WHERE b.status = 'attended')::int AS attended
+        FROM class_types ct
+        LEFT JOIN class_sessions s ON s.class_type_id = ct.id AND s.start_at >= now() - interval '90 days'
+        LEFT JOIN bookings b ON b.session_id = s.id
+        WHERE ct.active = true
+        GROUP BY ct.id, ct.name, ct.sort_order
+        ORDER BY attended DESC, reservations DESC, ct.sort_order, ct.name
+      `),
+      this.database.query<WeeklyAttendanceRow>(`
+        WITH weeks AS (
+          SELECT generate_series(
+            date_trunc('week', now() AT TIME ZONE 'Europe/Prague') - interval '7 weeks',
+            date_trunc('week', now() AT TIME ZONE 'Europe/Prague'),
+            interval '1 week'
+          ) AS week_local
+        )
+        SELECT to_char(weeks.week_local::date, 'YYYY-MM-DD') AS week_start,
+          count(b.id) FILTER (WHERE b.status = 'attended')::int AS attended
+        FROM weeks
+        LEFT JOIN class_sessions s
+          ON s.start_at >= weeks.week_local AT TIME ZONE 'Europe/Prague'
+          AND s.start_at < (weeks.week_local + interval '1 week') AT TIME ZONE 'Europe/Prague'
+        LEFT JOIN bookings b ON b.session_id = s.id
+        GROUP BY weeks.week_local
+        ORDER BY weeks.week_local
+      `)
     ]);
     const items = sessions.rows.map((row) => ({
       id: row.id, startAt: row.start_at.toISOString(), status: row.status, capacity: row.capacity,
       bookingCount: row.booking_count, className: row.class_name, instructorName: row.instructor_name
     }));
+    const metric = metrics.rows[0];
+    const attended90Days = Number(metric?.attended_90_days ?? 0);
+    const noShows90Days = Number(metric?.no_shows_90_days ?? 0);
+    const attendanceDecisions90Days = attended90Days + noShows90Days;
     return {
       activeBookings: Number(bookings.rows[0]?.count ?? 0),
       clients: Number(clients.rows[0]?.count ?? 0),
       today: items.filter((item) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Prague" }).format(new Date(item.startAt)) === new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Prague" }).format(new Date())),
-      nextWeek: items
+      nextWeek: items,
+      metrics: {
+        reservationsThisWeek: Number(metric?.reservations_this_week ?? 0),
+        attendedThisMonth: Number(metric?.attended_this_month ?? 0),
+        noShowsThisMonth: Number(metric?.no_shows_this_month ?? 0),
+        lateCancellationsThisMonth: Number(metric?.late_cancellations_this_month ?? 0),
+        attendanceRate90Days: attendanceDecisions90Days ? Math.round(attended90Days / attendanceDecisions90Days * 100) : null,
+        estimatedAttendedValueThisMonthCents: Number(metric?.estimated_attended_value_this_month_cents ?? 0)
+      },
+      classPopularity: classPopularity.rows.map((row) => ({
+        classTypeId: row.class_type_id,
+        className: row.class_name,
+        reservations: row.reservations,
+        attended: row.attended
+      })),
+      weeklyAttendance: weeklyAttendance.rows.map((row) => ({ weekStart: row.week_start, attended: row.attended }))
     };
   }
 

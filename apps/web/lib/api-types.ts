@@ -14,6 +14,7 @@ export type PublicSession = {
   startAt: string;
   suitability: string;
   timezone: "Europe/Prague";
+  whatToBring: string;
 };
 
 export type ClassType = {

@@ -112,7 +112,8 @@ export async function createLoginAttempt(
   returnTo: string,
   mode: IdentityMode = "web",
   loginHint?: string,
-  rememberDevice = false
+  rememberDevice = false,
+  requiredAction?: "UPDATE_PASSWORD"
 ): Promise<{ authorizationUrl: string; cookieValue: string }> {
   const config = identityConfig(mode);
   const discovery = await discover(config);
@@ -137,13 +138,14 @@ export async function createLoginAttempt(
   url.searchParams.set("nonce", nonce);
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
+  if (requiredAction) url.searchParams.set("kc_action", requiredAction);
+  const normalizedLoginHint = loginHint?.trim();
+  if (normalizedLoginHint && normalizedLoginHint.length <= 254) url.searchParams.set("login_hint", normalizedLoginHint);
   if (mode === "admin") {
     // A distinct client and Keycloak flow require password + TOTP for a new
     // privileged device. Later requests use the opaque admin session instead.
     url.searchParams.set("prompt", "login");
     url.searchParams.set("max_age", "0");
-    const normalizedLoginHint = loginHint?.trim();
-    if (normalizedLoginHint && normalizedLoginHint.length <= 254) url.searchParams.set("login_hint", normalizedLoginHint);
   }
 
   return { authorizationUrl: url.toString(), cookieValue };

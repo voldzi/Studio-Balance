@@ -45,7 +45,8 @@ export function SessionDetail({ sessionId }: { sessionId: string }) {
           <div><dt>Stav</dt><dd>{publicSessionLabel(session.availability)}</dd></div>
         </dl>
         <div className="detail-notes">
-          <div><h2>Co si vzít</h2><p>{session.equipment}</p></div>
+          <div><h2>Co si vzít</h2><p>{session.whatToBring}</p></div>
+          <div><h2>Pomůcky ve studiu</h2><p>{session.equipment || "Všechny pomůcky potřebné pro lekci jsou připravené ve studiu."}</p></div>
           <div><h2>Pro koho</h2><p>{session.suitability}</p></div>
         </div>
         <p className="cancellation-copy">Bezplatné storno je možné nejpozději 24 hodin před začátkem. Později vzniká poplatek ve výši ceny lekce, hrazený pouze ve studiu.</p>

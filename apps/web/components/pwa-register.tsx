@@ -2,9 +2,23 @@
 
 import { useEffect } from "react";
 
+import { appInstalledEvent, clearInstallPrompt, rememberInstallPrompt } from "../lib/pwa-install";
+
 export function PwaRegister() {
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
+    const installed = () => {
+      clearInstallPrompt();
+      window.dispatchEvent(new Event(appInstalledEvent));
+    };
+    window.addEventListener("beforeinstallprompt", rememberInstallPrompt);
+    window.addEventListener("appinstalled", installed);
+
+    const removeInstallListeners = () => {
+      window.removeEventListener("beforeinstallprompt", rememberInstallPrompt);
+      window.removeEventListener("appinstalled", installed);
+    };
+
+    if (!("serviceWorker" in navigator)) return removeInstallListeners;
 
     if (process.env.NODE_ENV !== "production") {
       void navigator.serviceWorker.getRegistrations().then((registrations) =>
@@ -15,7 +29,7 @@ export function PwaRegister() {
           Promise.all(keys.filter((key) => key.startsWith("studio-balance-")).map((key) => caches.delete(key)))
         );
       }
-      return;
+      return removeInstallListeners;
     }
 
     const register = () => {
@@ -26,6 +40,11 @@ export function PwaRegister() {
 
     if (document.readyState === "complete") register();
     else window.addEventListener("load", register, { once: true });
+
+    return () => {
+      removeInstallListeners();
+      window.removeEventListener("load", register);
+    };
   }, []);
 
   return null;

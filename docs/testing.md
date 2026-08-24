@@ -156,7 +156,15 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
   neinterceptuje API ani neukládá rozvrh, účet nebo rezervace; bez připojení
   navigace zobrazí pravdivou offline stránku; instalovaná aplikace už návod
   nezobrazuje, iOS dostane postup Safari a podporovaný prohlížeč instalační
-  dialog.
+  dialog. Když instalační dialog není dostupný, názvy položek menu se nesmějí
+  tvářit jako nefunkční tlačítka stránky.
+- profil přihlášeného účtu otevře zesílenou Keycloak akci pro změnu vlastního
+  hesla a po dokončení se bezpečně vrátí do profilu; heslo ani token se
+  neobjeví v URL, logu ani JavaScriptu aplikace;
+- administrační dashboard počítá oblíbenost, osmitýdenní docházku, měsíční
+  neúčasti a odhad hodnoty návštěv z aktuálních stavů rezervací; prázdná data
+  mají čitelný stav, hranice týdnů používá Europe/Prague a odhad ceny se nikde
+  nevydává za skutečnou tržbu;
 - detail každé lekce na 360 px i desktopu: schválená fotografie nebo bezpečný
   fallback, sémantická náročnost 1–5 hvězdiček, praktické informace a odkaz na
   nejbližší termín;

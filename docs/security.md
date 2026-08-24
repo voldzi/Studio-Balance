@@ -43,7 +43,9 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
   moderním adaptivním hashem a schválenou password policy;
 - login a reset jsou rate-limited, monitorované a odolné proti enumeraci účtů;
 - reset token je náhodný, jednorázový, krátkodobý a v úložišti chráněný;
-- změna hesla a zrušení účtu vyžadují čerstvé/zesílené ověření;
+- změna hesla používá Keycloak Application Initiated Action `UPDATE_PASSWORD`,
+  vyžaduje čerstvé/zesílené ověření a po dokončení se vrací do profilu; aplikace
+  heslo nikdy nepřijímá ani neukládá;
 - webová session je neprůhledná, `HttpOnly`, `Secure`, vhodné `SameSite` a po loginu náhodně vydaná; její cookie neobsahuje OIDC token ani roli;
 - OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
   vrstva mimo browser JavaScript;

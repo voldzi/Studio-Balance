@@ -45,14 +45,14 @@ a obchodní pravidla.
 | WEB-002 | P0 | veřejné stránky Domů, O studiu, Lekce, detail lekce, Rozvrh, Balance Flow, Galerie, Recenze, Ceník, Kontakt, FAQ a právní stránky |
 | WEB-003 | P0 | veřejný týdenní rozvrh; na mobilu výběr dne a svislý seznam, ne sedmidenní stísněná tabulka |
 | WEB-004 | P0 | termín ukazuje čas, typ lekce, instruktora a jeden veřejný stav bez počtu míst |
-| WEB-005 | P0 | detail termínu obsahuje datum, čas, příchod, místo, instruktora, cenu, pomůcky, vhodnost, platbu ve studiu a storno |
+| WEB-005 | P0 | detail termínu obsahuje datum, čas, příchod, místo, instruktora, cenu, osobní věci „Co si vzít“, oddělené pomůcky zajištěné studiem, vhodnost, platbu ve studiu a storno |
 | WEB-006 | P1 | domovská stránka ukazuje několik nejbližších termínů a 3–6 skutečných schválených recenzí; bez publikovaného obsahu nevytváří náhradní citace |
 | WEB-007 | P1 | web může ukázat skutečné proměny před/po jen s doloženým souhlasem; při nulovém počtu publikovaných proměn se sekce na titulní stránce nezobrazuje |
 | WEB-007 | P1 | galerie má lightbox, ovládání klávesnicí, Escape, alt text a optimalizované obrazy |
 | WEB-008 | P1 | SEO: title, description, canonical, sitemap, robots, Open Graph a vhodná strukturovaná data |
 | WEB-009 | P0 | každý aktivní typ lekce má veřejný detail se schválenou fotografií, náročností 1–5, vhodností, přínosy, pomůckami, praktickou informací a nejbližšími termíny bez počtu volných míst |
 | WEB-010 | P0 | klientský účet ukazuje potvrzení rezervace a důležité změny termínu jako zprávy v účtu |
-| WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje. Přihlášený profil poskytne kontextový, jednorázově odmítnutelný návod k přidání na plochu telefonu. |
+| WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje. Přihlášený profil poskytne kontextový, jednorázově odmítnutelný a platformně správný návod: na iOS kroky v menu Safari, na Androidu/desktopu skutečné instalační tlačítko jen pokud jej prohlížeč nabízí, jinak výslovně označené kroky v menu. |
 | WEB-012 | P0 | přihlášený klientský web má prémiový mobilní přehled s přivítáním, nejbližší rezervací a fotografií, přímým stornem, nadcházejícími/minulými rezervacemi, oblíbenými typy lekcí, novinkami, zprávami účtu, profilem, nastavením a spodní navigací; všechna provozní data používají stejné API a databázi jako veřejný rozvrh a administrace |
 
 Aktuální typy lekcí jsou Barre Sculpt, Barre Strength, TRX, Balance Flow,
@@ -174,6 +174,11 @@ včetně dvojice fotografií, pořadí, vazby na lekci a doloženého souhlasu. 
 pole mají stručnou kontextovou nápovědu dostupnou i z klávesnice.
 Administrace spravuje také klientské novinky jako koncept nebo publikovanou
 položku s časem zveřejnění, pořadím a volitelným zvýrazněním.
+Dashboard zobrazuje rezervace, potvrzené návštěvy, docházku, neúčasti,
+oblíbenost typů lekcí a osmitýdenní vývoj návštěvnosti. Součet cen rezervací
+označených jako účast je vždy popsán jen jako provozní odhad hodnoty návštěv,
+nikoli skutečná tržba nebo potvrzení platby; účetní výdělek zůstává bez evidence
+zaplacení a permanentek mimo dostupná data.
 Rozvrh se nesmí hardcodovat z referenčního obrázku.
 
 Recenze je prostý text se schváleným jménem nebo iniciálou, volitelným zdrojem,
