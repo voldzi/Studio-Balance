@@ -100,6 +100,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: web-runtime
+      args:
+        APP_ENV: staging
+        PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:3280}
     environment:
       APP_VERSION: ${APP_VERSION:-preview}
       NODE_ENV: production

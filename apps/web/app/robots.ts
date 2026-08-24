@@ -1,16 +1,24 @@
 import type { MetadataRoute } from "next";
 
-const publicAppUrl = () => process.env.PUBLIC_APP_URL ?? (
-  process.env.APP_ENV === "production" ? "https://studio-balance.cz" : "http://localhost:3000"
-);
+import { absolutePublicUrl } from "../lib/seo";
+
+const privatePaths = ["/admin/", "/api/", "/auth/", "/muj-ucet", "/prihlaseni", "/rezervace/"];
+const searchAndAssistantAgents = [
+  "Googlebot",
+  "Bingbot",
+  "SeznamBot",
+  "OAI-SearchBot",
+  "ChatGPT-User",
+  "Claude-SearchBot",
+  "Claude-User"
+];
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      allow: "/",
-      disallow: ["/admin/", "/api/", "/auth/", "/muj-ucet"],
-      userAgent: "*"
-    },
-    sitemap: new URL("/sitemap.xml", publicAppUrl()).toString()
+    rules: [
+      ...searchAndAssistantAgents.map((userAgent) => ({ allow: "/", disallow: privatePaths, userAgent })),
+      { allow: "/", disallow: privatePaths, userAgent: "*" }
+    ],
+    sitemap: absolutePublicUrl("/sitemap.xml")
   };
 }

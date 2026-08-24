@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+import { privatePageMetadata } from "../../../lib/seo";
+
+export const metadata: Metadata = { ...privatePageMetadata, title: "Přihlášení do administrace" };
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;

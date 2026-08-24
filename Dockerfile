@@ -16,6 +16,10 @@ COPY packages/ui-tokens/package.json packages/ui-tokens/package.json
 RUN pnpm install --frozen-lockfile
 
 FROM dependencies AS builder
+ARG APP_ENV=local
+ARG PUBLIC_APP_URL=http://localhost:3000
+ENV APP_ENV=$APP_ENV
+ENV PUBLIC_APP_URL=$PUBLIC_APP_URL
 COPY . .
 RUN pnpm generate:contracts \
   && pnpm --filter @studiobalance/domain build \

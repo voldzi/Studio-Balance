@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -5,6 +6,9 @@ import { BookingFlow } from "../../../components/booking-flow";
 import { ClientRouteNavigation } from "../../../components/client-route-navigation";
 import { SiteHeader } from "../../../components/site-header";
 import { identityCookies, readWebSession } from "../../../lib/identity";
+import { privatePageMetadata } from "../../../lib/seo";
+
+export const metadata: Metadata = { ...privatePageMetadata, title: "Rezervace lekce" };
 
 export default async function BookingPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;

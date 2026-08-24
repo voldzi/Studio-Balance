@@ -116,6 +116,21 @@ Přesun podle ADR 0011 probíhá bez změny účtů a rezervačních dat:
    MFA, rezervace a storna se ověří 301 z `www`, sitemap, robots a kanonická
    metadata. Teprve potom se nový hostname předá Google Search
    Console a do nových QR kódů.
+6. Google Search Console, Bing Webmaster Tools a firemní profil na Seznamu
+   používají výhradně kanonickou adresu `https://studio-balance.cz`. Do obou
+   webmaster nástrojů se odešle `https://studio-balance.cz/sitemap.xml`.
+   Bing a další podporované vyhledávače lze po obsahové změně upozornit pomocí
+   `PUBLIC_APP_URL=https://studio-balance.cz bash scripts/submit-indexnow.sh`;
+   veřejný ověřovací klíč je uložený ve webovém `public/` a není tajemstvím.
+
+Veřejné stránky publikují vlastní canonical, Open Graph a Twitter metadata.
+Domovská stránka navíc publikuje strukturovaná data `WebSite` a
+`SportsActivityLocation` s adresou studia. Sitemap obsahuje všechny veřejné
+obsahové stránky a aktivní typy lekcí z produkčního API. Účet, přihlášení,
+rezervační kroky, administrace a technické endpointy se neindexují. Pravidla
+robots výslovně dovolují Googlebot, Bingbot, SeznamBot, OAI-SearchBot,
+ChatGPT-User, Claude-SearchBot a Claude-User, ale zachovávají stejná omezení
+privátních cest jako obecné pravidlo.
 
 Rollback vrátí produkční URL v secret souboru a předchozí Nginx zálohu;
 databáze se nemění.

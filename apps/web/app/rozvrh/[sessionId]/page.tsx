@@ -6,8 +6,9 @@ import { ClientRouteNavigation } from "../../../components/client-route-navigati
 import { SessionDetail } from "../../../components/session-detail";
 import { SiteHeader } from "../../../components/site-header";
 import { identityCookies, readWebSession } from "../../../lib/identity";
+import { privatePageMetadata } from "../../../lib/seo";
 
-export const metadata: Metadata = { title: "Detail lekce" };
+export const metadata: Metadata = { ...privatePageMetadata, title: "Detail termínu" };
 
 export default async function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;

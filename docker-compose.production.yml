@@ -98,6 +98,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: web-runtime
+      args:
+        APP_ENV: production
+        PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
     environment:
       APP_VERSION: ${APP_VERSION:?application version is required}
       NODE_ENV: production

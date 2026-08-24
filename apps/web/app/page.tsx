@@ -1,15 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SiteHeader } from "../components/site-header";
 import { LessonCatalog } from "../components/lesson-catalog";
 import { ReviewsShowcase } from "../components/reviews-showcase";
 import { SocialLinks } from "../components/social-links";
+import { StructuredData } from "../components/structured-data";
 import { TransformationsShowcase } from "../components/transformations-showcase";
+import { homeMetadata, studioStructuredData } from "../lib/seo";
+
+export const metadata: Metadata = homeMetadata;
 
 export default function HomePage() {
   return (
     <>
+      <StructuredData data={studioStructuredData()} />
       <SiteHeader />
       <main>
         <section className="hero" aria-labelledby="hero-title">

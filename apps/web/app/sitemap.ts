@@ -1,25 +1,40 @@
 import type { MetadataRoute } from "next";
 
-const publicAppUrl = () => process.env.PUBLIC_APP_URL ?? (
-  process.env.APP_ENV === "production" ? "https://studio-balance.cz" : "http://localhost:3000"
-);
+import type { ClassType } from "../lib/api-types";
+import { absolutePublicUrl } from "../lib/seo";
+
+export const dynamic = "force-dynamic";
 
 const publicPaths = [
   "",
   "/o-studiu",
   "/lekce",
   "/rozvrh",
+  "/balance-flow",
   "/promeny",
   "/galerie",
+  "/recenze",
   "/cenik",
   "/kontakt"
 ] as const;
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const origin = publicAppUrl();
-  return publicPaths.map((path, index) => ({
+async function lessonPaths(): Promise<string[]> {
+  const apiUrl = (process.env.API_URL ?? "http://localhost:3001").replace(/\/$/, "");
+  try {
+    const response = await fetch(`${apiUrl}/api/v1/class-types`, { next: { revalidate: 3600 } });
+    if (!response.ok) return [];
+    const body = await response.json() as { items?: ClassType[] };
+    return (body.items ?? []).filter((lesson) => lesson.active !== false).map((lesson) => `/lekce/${lesson.slug}`);
+  } catch {
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const paths = [...publicPaths, ...await lessonPaths()];
+  return paths.map((path, index) => ({
     changeFrequency: index === 0 || path === "/rozvrh" ? "weekly" : "monthly",
     priority: index === 0 ? 1 : path === "/rozvrh" || path === "/lekce" ? 0.9 : 0.7,
-    url: new URL(path || "/", origin).toString()
+    url: absolutePublicUrl(path || "/")
   }));
 }

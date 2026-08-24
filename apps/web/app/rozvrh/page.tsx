@@ -5,11 +5,9 @@ import { ClientRouteNavigation } from "../../components/client-route-navigation"
 import { ScheduleView } from "../../components/schedule-view";
 import { SiteHeader } from "../../components/site-header";
 import { identityCookies, readWebSession } from "../../lib/identity";
+import { pageMetadata } from "../../lib/seo";
 
-export const metadata: Metadata = {
-  description: "Aktuální rozvrh lekcí Studia Balance bez zveřejňování kapacity.",
-  title: "Rozvrh lekcí"
-};
+export const metadata: Metadata = pageMetadata({ path: "/rozvrh", title: "Rozvrh lekcí a rezervace", description: "Aktuální rozvrh lekcí Studia Balance v Bruntále. Prohlédněte si termíny, ceny a rezervujte si vybranou lekci online." });
 
 export default async function SchedulePage() {
   const cookieStore = await cookies();

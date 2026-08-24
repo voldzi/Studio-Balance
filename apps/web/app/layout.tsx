@@ -2,30 +2,28 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import { PwaRegister } from "../components/pwa-register";
+import { publicAppUrl } from "../lib/seo";
 import "./styles.css";
-
-const publicAppUrl = process.env.PUBLIC_APP_URL ?? (
-  process.env.APP_ENV === "production" ? "https://studio-balance.cz" : "http://localhost:3000"
-);
 
 export const metadata: Metadata = {
   applicationName: "Studio Balance",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Studio Balance" },
-  description: "Boutique pohybové studio pro sílu, klid a rovnováhu.",
+  description: "Studio Balance v Bruntále – lekce TRX, Barre, Jumping, Balance Flow, kruhový trénink a Power Yoga.",
   manifest: "/manifest.webmanifest",
-  metadataBase: new URL(publicAppUrl),
+  metadataBase: new URL(publicAppUrl()),
   openGraph: {
-    description: "Boutique pohybové studio pro sílu, klid a rovnováhu.",
+    description: "Studio Balance v Bruntále – pohybové lekce, aktuální rozvrh a online rezervace.",
+    images: [{ alt: "Interiér Studia Balance v Bruntále", url: "/images/studio-balance/studio-hero.jpg" }],
     locale: "cs_CZ",
     siteName: "Studio Balance",
-    title: "Studio Balance",
-    type: "website",
-    url: "/"
+    title: "Studio Balance Bruntál",
+    type: "website"
   },
   title: {
-    default: "Studio Balance",
+    default: "Studio Balance Bruntál | Rozvrh a rezervace lekcí",
     template: "%s | Studio Balance"
-  }
+  },
+  twitter: { card: "summary_large_image" }
 };
 
 export const viewport: Viewport = {

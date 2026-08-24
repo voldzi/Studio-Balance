@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+import { privatePageMetadata } from "../../lib/seo";
+
+export const metadata: Metadata = { ...privatePageMetadata, title: "Přihlášení" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ returnTo?: string }> }) {
   const { returnTo } = await searchParams;

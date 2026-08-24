@@ -1,10 +1,12 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { AdminDashboard } from "../../components/admin-dashboard";
 import { adminIdentityCookies, identityCookies, readWebSession, type WebSession } from "../../lib/identity";
+import { privatePageMetadata } from "../../lib/seo";
 
-export const metadata = { title: "Administrace" };
+export const metadata: Metadata = { ...privatePageMetadata, title: "Administrace" };
 
 export default async function AdminPage() {
   const cookieStore = await cookies();
