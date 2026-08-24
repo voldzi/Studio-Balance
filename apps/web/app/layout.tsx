@@ -23,7 +23,13 @@ export const metadata: Metadata = {
     default: "Studio Balance Bruntál | Rozvrh a rezervace lekcí",
     template: "%s | Studio Balance"
   },
-  twitter: { card: "summary_large_image" }
+  twitter: { card: "summary_large_image" },
+  verification: {
+    google: "bsph3gyErieQ82fvpW4O9lLyru-hryEet9WfnIhEhV8",
+    other: {
+      "seznam-wmt": "xEkR6Ht9omRLrPwLuNMMBgG5PJUw0avf"
+    }
+  }
 };
 
 export const viewport: Viewport = {
