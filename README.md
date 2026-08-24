@@ -60,7 +60,8 @@ Schválená infrastrukturní topologie je v
 [ADR 0002](docs/adr/0002-deployment-and-storage-topology.md):
 
 - kanonický GitHub repozitář: `git@github.com:voldzi/Studio-Balance.git`;
-- veřejná adresa: `https://studiobalance.zeleznalady.cz`;
+- veřejná adresa: `https://studio-balance.cz`;
+- přihlášení: `https://login.studio-balance.cz`;
 - internetový vstup: Nginx na `dmz.home.cz`;
 - produkční aplikace poběží jako Docker kontejnery na `docker.home.cz`;
 - produkční PostgreSQL je dostupný výhradně přes

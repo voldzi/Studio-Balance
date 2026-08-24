@@ -108,7 +108,8 @@ Výstupy:
 
 - produkční doména, TLS, prostředí a migrace počátečního obsahu;
 - Docker image registry a řízené nasazení/rollback na `docker.home.cz`;
-- Nginx route a TLS publikace `studiobalance.zeleznalady.cz` přes
+- Nginx route a TLS publikace `studio-balance.cz`,
+  `www.studio-balance.cz` a `login.studio-balance.cz` přes
   `dmz.home.cz`;
 - produkční DB připojení přes HAProxy a ověřený zákaz přímých DB node adres;
 - monitoring, alerty, zálohy a ověřený rollback;

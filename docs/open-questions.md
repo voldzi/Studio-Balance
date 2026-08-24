@@ -16,7 +16,7 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-003 | Produkční PostgreSQL se používá přes `haproxy.home.cz:5000`, ne přes přímý DB node | ADR 0002 |
 | RD-004 | Lokální vývojové služby poběží v Docker Desktop a budou oddělené od produkce | ADR 0002 |
 | RD-005 | PostgreSQL je zdroj pravdy pro relační data; existující S3-kompatibilní službu na `docker.home.cz` lze podle potřeby využít pro média s vlastním Studio Balance tenantem | ADR 0002 |
-| RD-006 | Veřejná URL je `https://studiobalance.zeleznalady.cz` | ADR 0002 |
+| RD-006 | Veřejná URL je `https://studio-balance.cz`; původní rozhodnutí nahrazuje CD-043 | ADR 0011, CD-043 |
 | RD-007 | Internetový provoz vede přes Nginx na `dmz.home.cz` do aplikace na `docker.home.cz` | ADR 0002 |
 | RD-008 | Read-only inventura `docker.home.cz` identifikovala jako preferovaného kandidáta samostatnou Studio Balance gateway nad `shared-seaweedfs`; projektové MinIO se bez změny provozního modelu nesdílí | ADR 0002, infrastructure-assessment.md |
 | RD-009 | Aplikační stack je TypeScript monorepo: Next.js, NestJS/Fastify, worker a `pnpm` | ADR 0003, CD-001 |

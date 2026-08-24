@@ -15,14 +15,14 @@ kontrakt.
 Schválená topologie:
 
 - repozitář `git@github.com:voldzi/Studio-Balance.git`;
-- veřejná URL `https://studiobalance.zeleznalady.cz`;
+- kanonická veřejná URL `https://studio-balance.cz`;
 - internetový Nginx reverse proxy na `dmz.home.cz`;
 - produkční Docker kontejnery na `docker.home.cz`;
 - produkční PostgreSQL 18 jen přes `haproxy.home.cz:5000`;
 - produkční S3-kompatibilní úložiště médií na `docker.home.cz` přes vyhrazený
   Studio Balance bucket/gateway;
 - Keycloak realm `studio-balance` na `docker.home.cz`, publikovaný jako
-  `https://login.zeleznalady.cz` přes Nginx na `dmz.home.cz`;
+  `https://login.studio-balance.cz` přes Nginx na `dmz.home.cz`;
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
 Read-only inventura hostitele a readiness omezení jsou v
@@ -69,7 +69,9 @@ Keycloak a S3 mají vlastní pozdější change plan.
 
 ## Publikace přes DMZ
 
-DNS A záznam `studiobalance.zeleznalady.cz` existuje. Nginx publikaci aktivuje
+DNS záznamy `studio-balance.cz`, `www.studio-balance.cz` a
+`login.studio-balance.cz` musí směřovat na IPv4 DMZ. Nefunkční AAAA se před
+aktivací odstraní. Nginx publikaci aktivuje
 verzovaný skript z `infra/nginx/install-studiobalance.sh`:
 
 ```bash
@@ -87,10 +89,36 @@ sudo ./install-studiobalance.sh --activate-production \
 Preview režim proxyuje `/` na interní web port 3280 a `/api/` na API port 4280;
 produkční režim používá 3281/4281 a ověřuje revizi z API readiness. Skript
 technické health endpointy veřejně blokuje, získá Let's Encrypt certifikát,
-ověří konfiguraci a při chybě obnoví předchozí site. Před spuštěním je nutné
+ověří konfiguraci, přesměruje `www` na kanonickou adresu a při chybě obnoví
+předchozí site. Před spuštěním je nutné
 nahradit `ADMIN_EMAIL` skutečným provozním kontaktem. Dokud správce skript
 nespustí a neprojde externí HTTPS smoke test, nesmí se DMZ publikace označit
 za aktivní.
+
+### Přechod na vlastní doménu
+
+Přesun podle ADR 0011 probíhá bez změny účtů a rezervačních dat:
+
+1. Ve WEDOS DNS se root, `www` a `login` nastaví na IPv4 DMZ; výchozí
+   parking AAAA se odstraní, protože DMZ zatím nemá ověřenou veřejnou IPv6.
+2. Omezený DMZ instalátor se obnoví přes
+   `scripts/grant-dmz-codex-access.sh` a spustí se s
+   `--activate-production`, přesnou revizí a ACME kontaktem.
+3. `scripts/configure-production-domain.sh` nastaví nový realm frontend a
+   callback originy pouze pro vlastní doménu; správcovské skripty následně
+   používají rovněž `login.studio-balance.cz`.
+4. V produkčním secret souboru se společně nastaví
+   `PUBLIC_APP_URL=https://studio-balance.cz`,
+   `ADMIN_APP_URL=https://studio-balance.cz/admin` a
+   `OIDC_ISSUER_URL=https://login.studio-balance.cz/realms/studio-balance`;
+   poté se znovu nasadí přesná revize.
+5. Po anonymním ověření webu, registrace, klientského loginu, administrátorského
+   MFA, rezervace a storna se ověří 301 z `www`, sitemap, robots a kanonická
+   metadata. Teprve potom se nový hostname předá Google Search
+   Console a do nových QR kódů.
+
+Rollback vrátí produkční URL v secret souboru a předchozí Nginx zálohu;
+databáze se nemění.
 
 ### Stav aktivace 2026-08-05
 
@@ -217,7 +245,7 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `S3_ACCESS_KEY_ID` | production media runtime | prázdné | ano | identifikátor dedikovaných credentials |
 | `S3_SECRET_ACCESS_KEY` | production media runtime | prázdné | ano | tajná část dedikovaných credentials |
 | `S3_FORCE_PATH_STYLE` | ne | `true` | ne | kompatibilita s lokální a SeaweedFS S3 implementací |
-| `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://login.zeleznalady.cz/realms/studio-balance` |
+| `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://login.studio-balance.cz/realms/studio-balance` |
 | `OIDC_WEB_CLIENT_ID` | ano | `studiobalance-web` | ne | OIDC klient veřejné/klientské webové plochy |
 | `OIDC_WEB_CLIENT_SECRET` | runtime | `local-web-client-only` | ano | veřejná lokální fixture; produkčně serverový secret webového OIDC klienta |
 | `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |
@@ -320,11 +348,11 @@ produkčním označením musí být nahrazen `verify-full` s vlastním CA. Vytv�
 `studio_balance_migrator` a jednorázově vypíše aplikační secrety pro vložení do
 secret store.
 
-`scripts/bootstrap-production-keycloak.sh` používá stávající přísný public
-hostname `login.zeleznalady.cz` a vytvoří vyhrazený realm `studio-balance` s
-oddělenými confidential klienty. Tento hostname dočasně nahrazuje dosud
-plánovaný `auth.studiobalance.zeleznalady.cz`; callbacky a web origins zůstávají
-omezené na `https://studiobalance.zeleznalady.cz`.
+`scripts/bootstrap-production-keycloak.sh` vytvoří vyhrazený realm
+`studio-balance` s oddělenými confidential klienty. Veřejný frontend realmu
+je `https://login.studio-balance.cz` a callbacky i web origins jsou omezené na
+`https://studio-balance.cz`. Sdílený master-admin hostname Keycloaku není
+aplikačním issuerem Studio Balance.
 
 Vlastní login theme je verzovaný v
 `infra/keycloak/themes/studio-balance/`. Lokální Keycloak jej připojuje pouze

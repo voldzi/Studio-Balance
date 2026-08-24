@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://studiobalance.zeleznalady.cz",
+      "url": "https://studio-balance.cz",
       "description": "Production through Nginx on dmz.home.cz"
     },
     {

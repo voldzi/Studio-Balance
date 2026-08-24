@@ -2,7 +2,7 @@
 set -euo pipefail
 
 realm="studio-balance"
-issuer="https://login.zeleznalady.cz"
+issuer="https://login.studio-balance.cz"
 username="${STUDIO_BALANCE_ADMIN_USERNAME:-}"
 config_path="/tmp/studiobalance-admin-kcadm.$$.config"
 
@@ -119,4 +119,4 @@ else
 fi
 echo "Verified: account enabled, e-mail verified and realm role admin assigned."
 echo "At the next admin login the account must change the temporary password and enroll the authenticator app."
-echo "Open: https://studiobalance.zeleznalady.cz/admin/prihlaseni"
+echo "Open: https://studio-balance.cz/admin/prihlaseni"

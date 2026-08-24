@@ -26,7 +26,7 @@ rozhodnutím zadavatele, aktualizací briefu/požadavků a podle významu také 
 Dne 2026-08-04 zadavatel doplnil provozní zadání:
 
 - repozitář `git@github.com:voldzi/Studio-Balance.git`;
-- veřejná URL `https://studiobalance.zeleznalady.cz`;
+- kanonická veřejná URL `https://studio-balance.cz`;
 - Nginx internetový vstup na `dmz.home.cz`;
 - produkční Docker runtime na `docker.home.cz`;
 - produkční PostgreSQL přes `haproxy.home.cz:5000`;

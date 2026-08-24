@@ -5,7 +5,8 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 theme_root="$root/infra/keycloak/themes"
 installer="$root/infra/keycloak/install-studio-balance-theme.sh"
 realm="studio-balance"
-issuer="https://login.zeleznalady.cz"
+public_issuer="https://login.studio-balance.cz"
+admin_issuer="$public_issuer"
 remote_archive="/tmp/studio-balance-keycloak-theme.$$.tar.gz"
 remote_installer="/tmp/install-studio-balance-keycloak-theme.$$.sh"
 archive="$(mktemp /tmp/studio-balance-keycloak-theme.XXXXXX.tar.gz)"
@@ -49,7 +50,7 @@ done
 printf '%s\n' "$admin_password" | ssh docker.home.cz \
   "docker exec -i keycloak sh -c 'IFS= read -r KC_CLI_PASSWORD; export KC_CLI_PASSWORD; \
   config=/tmp/studio-balance-theme-kcadm.config; \
-  /opt/keycloak/bin/kcadm.sh config credentials --config \"\$config\" --server \"$issuer\" --realm master --user \"$admin_user\" >/dev/null; \
+  /opt/keycloak/bin/kcadm.sh config credentials --config \"\$config\" --server \"$admin_issuer\" --realm master --user \"$admin_user\" >/dev/null; \
   /opt/keycloak/bin/kcadm.sh update --config \"\$config\" realms/$realm \
     -s loginTheme=studio-balance \
     -s internationalizationEnabled=true \
@@ -59,7 +60,7 @@ printf '%s\n' "$admin_password" | ssh docker.home.cz \
   rm -f \"\$config\"'"
 
 challenge="DudjUTF-D--ykHJv5sFO7istODKk8U-MlRd74GKh7Oo"
-auth_url="$issuer/realms/$realm/protocol/openid-connect/auth?client_id=studiobalance-web&redirect_uri=https%3A%2F%2Fstudiobalance.zeleznalady.cz%2Fauth%2Fcallback&response_type=code&scope=openid&state=theme-smoke&nonce=theme-smoke&code_challenge=$challenge&code_challenge_method=S256"
+auth_url="$public_issuer/realms/$realm/protocol/openid-connect/auth?client_id=studiobalance-web&redirect_uri=https%3A%2F%2Fstudio-balance.cz%2Fauth%2Fcallback&response_type=code&scope=openid&state=theme-smoke&nonce=theme-smoke&code_challenge=$challenge&code_challenge_method=S256"
 page="$(curl --fail --silent --show-error "$auth_url")"
 grep -q 'studio-balance-login.css' <<<"$page" || { echo "Public login did not load the Studio Balance theme." >&2; exit 1; }
 

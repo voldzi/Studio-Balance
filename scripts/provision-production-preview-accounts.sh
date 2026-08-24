@@ -2,7 +2,7 @@
 set -euo pipefail
 
 realm="studio-balance"
-issuer="https://login.zeleznalady.cz"
+issuer="https://login.studio-balance.cz"
 accounts=(
   "preview-zadavatel@studiobalance.invalid|Zadavatel|Preview"
   "preview-kontrola@studiobalance.invalid|Kontrola|Preview"

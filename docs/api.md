@@ -24,7 +24,7 @@ YAML může existovat jen jako generovaný export označený jako generovaný.
 | --- | --- |
 | lokální vývoj | `http://localhost:3001` |
 | test/staging | TBD |
-| produkce | `https://studiobalance.zeleznalady.cz` |
+| produkce | `https://studio-balance.cz` |
 
 Systémové cesty `/health` a `/ready` nejsou verzované. Produktové REST cesty
 používají `/api/v1/...`. Breaking změna vyžaduje novou verzi nebo migrační
@@ -185,7 +185,7 @@ implementované aplikační operace:
 Zprávy v účtu obsahují potvrzení rezervace a provozní změny. Nejsou určené pro
 marketingovou komunikaci a endpoint nikdy nevrací zprávy jiného klienta.
 
-Issuer je `https://login.zeleznalady.cz/realms/studio-balance`;
+Issuer je `https://login.studio-balance.cz/realms/studio-balance`;
 klienti jsou `studiobalance-web` a `studiobalance-admin`. Callback/logout URL
 mají přesný allowlist. Reset nesmí prozradit existenci e-mailu.
 

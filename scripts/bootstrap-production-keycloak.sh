@@ -3,7 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 template="$root/infra/keycloak/realm/studio-balance-realm.json"
-issuer_host="login.zeleznalady.cz"
+issuer_host="login.studio-balance.cz"
 realm="studio-balance"
 
 command -v ssh >/dev/null && command -v scp >/dev/null && command -v openssl >/dev/null && command -v node >/dev/null || { echo "ssh, scp, openssl and node are required." >&2; exit 1; }
@@ -23,8 +23,8 @@ const [source, destination] = process.argv.slice(2);
 const realm = JSON.parse(require('fs').readFileSync(source, 'utf8'));
 for (const client of realm.clients) {
   client.secret = client.clientId === 'studiobalance-web' ? process.env.WEB_SECRET : process.env.ADMIN_SECRET;
-  client.redirectUris = client.clientId === 'studiobalance-web' ? ['https://studiobalance.zeleznalady.cz/*'] : ['https://studiobalance.zeleznalady.cz/admin/*'];
-  client.webOrigins = ['https://studiobalance.zeleznalady.cz'];
+  client.redirectUris = client.clientId === 'studiobalance-web' ? ['https://studio-balance.cz/*'] : ['https://studio-balance.cz/admin/*'];
+  client.webOrigins = ['https://studio-balance.cz'];
 }
 require('fs').writeFileSync(destination, JSON.stringify(realm));
 NODE

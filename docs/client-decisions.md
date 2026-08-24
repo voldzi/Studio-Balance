@@ -53,6 +53,7 @@ zůstávají beze změny jako auditní stopa.
 | CD-040 | Přihlášení má na soukromém zařízení zůstávat použitelné déle, bez opakování hesla a OTP při každém vstupu | toto rozhodnutí nahrazuje CD-039 v části, která ztotožňovala běžnou klientskou a admin relaci. Browser obsahuje pouze neprůhlednou HTTP-only cookie, relace a šifrovaný obnovovací token jsou na serveru. Bez zaškrtnutí je cookie do zavření prohlížeče; se zaškrtnutím je zařízení důvěryhodné nejvýše 90 dní při aktivitě aspoň jednou za 30 dní. Server nejpozději po 15 minutách ověří účet i role v Keycloaku. Administrace vznikne pouze po samostatném hesle a TOTP, pak používá stejný režim důvěryhodného zařízení; běžná klientská relace, i s admin rolí, do správy nestačí. Odhlášení zruší obě relace na daném zařízení. |
 | CD-041 | Administrátor se přihlašuje do klientské aplikace i správy jednou | rozhodnutí nahrazuje CD-040 pouze v oddělení klientské a admin relace: účet s rolí `admin` nebo `super_admin` dokončí při běžném přihlášení heslo a OTP; podepsaný údaj AMR se uloží jako neměnný důkaz MFA v serverové relaci. Tato relace pak otevře správu bez dalšího přihlášení. Role bez důkazu OTP nestačí. Oddělený admin klient zůstává bezpečnou záložní cestou pro přímý nebo obnovovací vstup. Limity 90 dní, 30 dní neaktivity a revalidace do 15 minut zůstávají beze změny. |
 | CD-042 | Zadavatelka 24. 8. 2026 schválila provozní zpřesnění obsahu a administrace | neplatné instruktorky Barča a Týna se bezpečně skryjí se zachováním historie; klient si bere sportovní oblečení, pohodlnou obuv a pití, zatímco cvičební pomůcky zajišťuje studio; profil nabídne změnu vlastního stálého hesla přes Keycloak a admin MFA zůstává povinné; PWA návod rozlišuje skutečné tlačítko od kroků v menu prohlížeče; dashboard ukazuje návštěvnost a oblíbenost, ale bez evidence zaplacení smí finanční údaj označit pouze jako odhad hodnoty návštěv, nikoli tržbu. |
+| CD-043 | Zadavatel 24. 8. 2026 pořídil vlastní doménu `studio-balance.cz` a odmítl provozní závislost produktu na doméně `zeleznalady.cz` | kanonická adresa je `https://studio-balance.cz`, `www` přesměruje na kanonickou adresu a produkční realm používá issuer `https://login.studio-balance.cz/realms/studio-balance`; konfigurace Studio Balance nevytváří ani nevyžaduje hostname na `zeleznalady.cz` |
 
 ## Schválený týdenní rozvrh 2026-08-10
 
@@ -116,7 +117,7 @@ Keycloak při kontrole spuštěný.
 Keycloak je schválený identity provider. Závazné rozhodnutí je v ADR 0004:
 
 - realm `studio-balance` a oddělené klientské/admin OIDC policies;
-- produkční issuer `https://login.zeleznalady.cz/realms/studio-balance`;
+- produkční issuer `https://login.studio-balance.cz/realms/studio-balance`;
 - jednoduchá klientská registrace bez e-mailového ověření; před první rezervací se doplní profil a přijmou podmínky;
 - povinné MFA pro `admin` a `super_admin`;
 - lokální projektová instance stejné hlavní verze v Docker Desktop;

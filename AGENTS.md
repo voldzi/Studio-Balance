@@ -62,8 +62,11 @@ before encoding one interpretation in code.
   is unavailable, and mandatory admin MFA. See ADR 0004.
 - Production application workloads run as Docker containers on
   `docker.home.cz`.
-- Public traffic for `https://studiobalance.zeleznalady.cz` is published
+- Public traffic for `https://studio-balance.cz` is published
   through Nginx on `dmz.home.cz` before reaching `docker.home.cz`.
+- The dedicated Studio Balance realm is exposed at
+  `https://login.studio-balance.cz`; `www.studio-balance.cz` redirects to the
+  canonical origin. No Studio Balance hostname on `zeleznalady.cz` is required.
 - Production PostgreSQL is accessed through `haproxy.home.cz:5000`; do not
   configure or document a direct database-node endpoint.
 - Local development dependencies run in Docker Desktop and never use
@@ -98,7 +101,7 @@ The repository is a pnpm TypeScript monorepo with Next.js web, NestJS/Fastify
 API, a worker, shared packages, PostgreSQL 18 migrations, and a local Keycloak
 realm. The canonical remote is `git@github.com:voldzi/Studio-Balance.git`;
 production runs in Docker on `docker.home.cz`, public traffic for
-`https://studiobalance.zeleznalady.cz` passes through Nginx on `dmz.home.cz`,
+`https://studio-balance.cz` passes through Nginx on `dmz.home.cz`,
 production PostgreSQL is reached only through `haproxy.home.cz:5000`, and local
 services run in Docker Desktop.
 

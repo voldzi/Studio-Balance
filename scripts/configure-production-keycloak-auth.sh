@@ -3,7 +3,7 @@
 set -euo pipefail
 
 realm="studio-balance"
-issuer="https://login.zeleznalady.cz"
+issuer="https://login.studio-balance.cz"
 web_client="studiobalance-web"
 admin_client="studiobalance-admin"
 web_flow="browser"

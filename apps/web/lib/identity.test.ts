@@ -17,13 +17,13 @@ describe("publicRedirectUrl", () => {
   });
 
   it("always returns to the configured public origin behind a reverse proxy", () => {
-    process.env.PUBLIC_APP_URL = "https://studiobalance.zeleznalady.cz";
-    expect(publicRedirectUrl("/rezervace/session-id").toString()).toBe("https://studiobalance.zeleznalady.cz/rezervace/session-id");
+    process.env.PUBLIC_APP_URL = "https://studio-balance.cz";
+    expect(publicRedirectUrl("/rezervace/session-id").toString()).toBe("https://studio-balance.cz/rezervace/session-id");
   });
 
   it("uses the same public origin for the separate admin callback", () => {
-    process.env.PUBLIC_APP_URL = "https://studiobalance.zeleznalady.cz";
-    expect(publicRedirectUrl("/admin", "admin").toString()).toBe("https://studiobalance.zeleznalady.cz/admin");
+    process.env.PUBLIC_APP_URL = "https://studio-balance.cz";
+    expect(publicRedirectUrl("/admin", "admin").toString()).toBe("https://studio-balance.cz/admin");
   });
 
   it("forces fresh Keycloak authentication for the protected admin client", async () => {

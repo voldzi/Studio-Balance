@@ -208,7 +208,7 @@ autorizací, nikoli jen skrytým menu.
 - web používá OIDC Authorization Code flow s PKCE a serverovou HTTP-only relací;
 - identity provider je Keycloak 26.1.5, realm `studio-balance`, oddělené
   confidential klienty `studiobalance-web` a `studiobalance-admin` a produkční
-  issuer `https://login.zeleznalady.cz/realms/studio-balance`;
+  issuer `https://login.studio-balance.cz/realms/studio-balance`;
 - klientská registrace nevyžaduje e-mailové ověření; do zprovoznění SMTP se
   nezobrazuje ani obnova hesla. Booking vyžaduje platnou relaci, vyplněný
   profil a přijetí podmínek; role `admin`/`super_admin` vyžadují MFA nejméně
@@ -239,14 +239,14 @@ zrušení je povinný; mobilní push není součástí rozsahu.
 Požadována jsou oddělená `development`, `test/staging` a `production`
 prostředí, oddělené databáze/credentials a automatizované migrace. Lokální
 služby běží v Docker Desktop. Veřejná produkční cesta je
-`https://studiobalance.zeleznalady.cz` přes Nginx na `dmz.home.cz` do Docker
+`https://studio-balance.cz` přes Nginx na `dmz.home.cz` do Docker
 kontejnerů na `docker.home.cz`. Ty přistupují k PostgreSQL pouze přes
 `haproxy.home.cz:5000`.
 
 ```mermaid
 flowchart TB
-  internet["studiobalance.zeleznalady.cz"] --> dmz["dmz.home.cz / Nginx"]
-  authinternet["login.zeleznalady.cz"] --> dmz
+  internet["studio-balance.cz"] --> dmz["dmz.home.cz / Nginx"]
+  authinternet["login.studio-balance.cz"] --> dmz
   subgraph dockerhost["docker.home.cz / Docker"]
     dmz --> webdeploy[Web + Admin]
     webdeploy --> apideploy[API]

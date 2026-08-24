@@ -2,8 +2,11 @@
 
 Izolovaný preview na `docker.home.cz` používá web port 3280 a API port 4280;
 ověřený produkční kandidát používá porty 3281 a 4281. Instalační skript je určený pro Debian/Ubuntu Nginx host
-`dmz.home.cz`. Neobsahuje credentials a publikuje pouze web a `/api/`; interní
-API `/health` a `/ready` blokuje na veřejném virtual hostu.
+`dmz.home.cz`. Neobsahuje credentials a publikuje kanonický web
+`studio-balance.cz`, redirect z `www`, realm přes
+`login.studio-balance.cz` a pouze produktové `/api/`; interní API
+`/health` a `/ready` blokuje na veřejném virtual hostu. Konfigurace Studio
+Balance nevytváří ani nevyžaduje hostname na `zeleznalady.cz`.
 
 ## Jednorázové udělení správcovského přístupu
 
@@ -56,10 +59,10 @@ sudo ./install-studiobalance.sh --activate-production \
 
 `ADMIN_EMAIL` nahraďte skutečným provozním kontaktem pro Let's Encrypt. Skript:
 
-1. ověří DNS, dostupnost obou upstreamů a u produkce přesnou očekávanou revizi;
+1. ověří IPv4 DNS všech tří nových hostnames, web/API/Keycloak upstreamy a u produkce přesnou očekávanou revizi;
 2. zazálohuje případnou předchozí konfiguraci;
 3. nainstaluje HTTP virtual host a provede `nginx -t`;
-4. získá nebo znovu použije Let's Encrypt certifikát;
+4. získá nebo znovu použije Let's Encrypt certifikát pro root, `www` a `login`;
 5. vytvoří HTTPS konfiguraci, reloaduje Nginx a ověří načtení virtual hostu;
 6. při chybě obnoví předchozí Nginx konfiguraci.
 

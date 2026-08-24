@@ -204,7 +204,7 @@ Role:
 | soukromí | minimalizace údajů, verze souhlasů, export/smazání, retenční pravidla |
 | spolehlivost | denní automatická záloha a ověřená obnova |
 | provoz | dev/test/prod, strukturované logy, request ID, health/readiness, monitoring |
-| infrastruktura | `studiobalance.zeleznalady.cz` přes Nginx na `dmz.home.cz` do Dockeru na `docker.home.cz`; PostgreSQL pouze přes `haproxy.home.cz:5000`; lokálně Docker Desktop |
+| infrastruktura | `studio-balance.cz` a `login.studio-balance.cz` přes Nginx na `dmz.home.cz` do Dockeru na `docker.home.cz`; PostgreSQL pouze přes `haproxy.home.cz:5000`; lokálně Docker Desktop |
 | perzistence | PostgreSQL je zdroj pravdy pro relační a rezervační data; média lze uložit do S3-kompatibilní služby na `docker.home.cz` pouze v samostatném Studio Balance bucketu s oddělenými credentials, zálohou a řízenou síťovou cestou |
 | kompatibilita | současné Safari iOS/macOS, Chrome Android/desktop, Edge a Firefox jako webové prohlížeče |
 | lokalizace | první verze `cs-CZ`, čas `Europe/Prague`, srozumitelné české chyby |
