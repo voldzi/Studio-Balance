@@ -27,7 +27,8 @@ export const metadata: Metadata = {
   verification: {
     google: "bsph3gyErieQ82fvpW4O9lLyru-hryEet9WfnIhEhV8",
     other: {
-      "seznam-wmt": "xEkR6Ht9omRLrPwLuNMMBgG5PJUw0avf"
+      "seznam-wmt": "xEkR6Ht9omRLrPwLuNMMBgG5PJUw0avf",
+      "msvalidate.01": "10987C5E57AB2FD8F584F5C5C7FBEA6C"
     }
   }
 };
