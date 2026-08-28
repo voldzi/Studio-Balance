@@ -261,6 +261,7 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `S3_SECRET_ACCESS_KEY` | production media runtime | prázdné | ano | tajná část dedikovaných credentials |
 | `S3_FORCE_PATH_STYLE` | ne | `true` | ne | kompatibilita s lokální a SeaweedFS S3 implementací |
 | `OIDC_ISSUER_URL` | ano | `http://localhost:8081/realms/studio-balance` | ne | lokální Keycloak issuer; produkčně `https://login.studio-balance.cz/realms/studio-balance` |
+| `OIDC_BACKCHANNEL_ISSUER_URL` | ne | prázdné | ne | pouze produkční interní cesta z webového kontejneru do Keycloaku; produkčně `http://keycloak:8081/realms/studio-balance`, veřejný issuer a přihlašovací obrazovka zůstávají `https://login.studio-balance.cz` |
 | `OIDC_WEB_CLIENT_ID` | ano | `studiobalance-web` | ne | OIDC klient veřejné/klientské webové plochy |
 | `OIDC_WEB_CLIENT_SECRET` | runtime | `local-web-client-only` | ano | veřejná lokální fixture; produkčně serverový secret webového OIDC klienta |
 | `OIDC_ADMIN_CLIENT_ID` | ano | `studiobalance-admin` | ne | oddělený OIDC klient administrace |

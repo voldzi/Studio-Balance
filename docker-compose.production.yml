@@ -107,6 +107,7 @@ services:
       APP_ENV: production
       PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
+      OIDC_BACKCHANNEL_ISSUER_URL: ${OIDC_BACKCHANNEL_ISSUER_URL:-}
       OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
       OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}
       OIDC_ADMIN_CLIENT_ID: ${OIDC_ADMIN_CLIENT_ID:?OIDC admin client ID is required}
@@ -115,6 +116,9 @@ services:
       API_URL: http://api:3001
     ports:
       - "3281:3000"
+    networks:
+      - default
+      - keycloak
     healthcheck:
       test:
         ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
@@ -124,3 +128,8 @@ services:
       start_period: 10s
     cpus: 0.5
     mem_limit: 256m
+
+networks:
+  keycloak:
+    external: true
+    name: keycloak_default

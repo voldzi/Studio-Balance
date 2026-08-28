@@ -43,6 +43,7 @@ export type CompletedLogin = {
 
 type IdentityConfig = {
   apiUrl: string;
+  backchannelIssuer?: string;
   callbackPath: string;
   clientId: string;
   clientSecret: string;
@@ -64,9 +65,10 @@ export function identityConfig(mode: IdentityMode = "web"): IdentityConfig {
   const publicAppUrl = configuredValue("PUBLIC_APP_URL", "http://localhost:3000");
   const sessionSecret = configuredValue("SESSION_SECRET", "local-development-session-secret-change-before-sharing");
   const issuer = configuredValue("OIDC_ISSUER_URL", "http://localhost:8081/realms/studio-balance").replace(/\/$/, "");
+  const configuredBackchannelIssuer = process.env.OIDC_BACKCHANNEL_ISSUER_URL?.replace(/\/$/, "");
   const apiUrl = configuredValue("API_URL", "http://localhost:3001").replace(/\/$/, "");
 
-  if (!URL.canParse(publicAppUrl) || !URL.canParse(issuer) || !URL.canParse(apiUrl) || sessionSecret.length < 32) {
+  if (!URL.canParse(publicAppUrl) || !URL.canParse(issuer) || !URL.canParse(apiUrl) || (configuredBackchannelIssuer && !URL.canParse(configuredBackchannelIssuer)) || sessionSecret.length < 32) {
     throw new Error("Invalid web identity configuration");
   }
   if (process.env.NODE_ENV === "production" && process.env.APP_ENV === "production" && (!process.env.SESSION_SECRET || !process.env.API_URL)) {
@@ -76,6 +78,7 @@ export function identityConfig(mode: IdentityMode = "web"): IdentityConfig {
   return {
     apiUrl,
     callbackPath: mode === "admin" ? "/admin/auth/callback" : "/auth/callback",
+    ...(configuredBackchannelIssuer ? { backchannelIssuer: configuredBackchannelIssuer } : {}),
     publicAppUrl: publicAppUrl.replace(/\/$/, ""),
     issuer,
     sessionSecret,
@@ -171,6 +174,7 @@ export async function finishLogin(input: {
   const tokenResponse = await fetch(discovery.token_endpoint, {
     method: "POST",
     headers: {
+      ...backchannelHeaders(config),
       authorization: `Basic ${Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64")}`,
       "content-type": "application/x-www-form-urlencoded"
     },
@@ -182,7 +186,7 @@ export async function finishLogin(input: {
   const tokens = (await tokenResponse.json()) as { id_token?: unknown; refresh_token?: unknown };
   if (typeof tokens.id_token !== "string" || typeof tokens.refresh_token !== "string") throw new Error("OIDC response did not contain identity and refresh tokens");
 
-  const claims = await jwtVerify(tokens.id_token, createRemoteJWKSet(new URL(discovery.jwks_uri)), {
+  const claims = await jwtVerify(tokens.id_token, createRemoteJWKSet(new URL(discovery.jwks_uri), { headers: backchannelHeaders(config) }), {
     algorithms: ["RS256", "ES256"],
     issuer: config.issuer,
     audience: config.clientId
@@ -233,7 +237,11 @@ export const adminIdentityCookies = {
 };
 
 async function discover(config: IdentityConfig): Promise<OidcDiscovery> {
-  const response = await fetch(`${config.issuer}/.well-known/openid-configuration`, { cache: "no-store" });
+  const discoveryIssuer = config.backchannelIssuer ?? config.issuer;
+  const response = await fetch(`${discoveryIssuer}/.well-known/openid-configuration`, {
+    cache: "no-store",
+    headers: backchannelHeaders(config)
+  });
   if (!response.ok) throw new Error("OIDC discovery failed");
   const discovery = (await response.json()) as Partial<OidcDiscovery>;
   if (
@@ -247,7 +255,37 @@ async function discover(config: IdentityConfig): Promise<OidcDiscovery> {
   ) {
     throw new Error("OIDC discovery document is invalid");
   }
-  return discovery as OidcDiscovery;
+  return {
+    ...discovery,
+    jwks_uri: backchannelUrl(discovery.jwks_uri, config),
+    token_endpoint: backchannelUrl(discovery.token_endpoint, config)
+  } as OidcDiscovery;
+}
+
+function backchannelHeaders(config: IdentityConfig): Record<string, string> {
+  if (!config.backchannelIssuer) return {};
+  const publicIssuer = new URL(config.issuer);
+  return {
+    host: publicIssuer.host,
+    "x-forwarded-host": publicIssuer.host,
+    "x-forwarded-proto": publicIssuer.protocol.slice(0, -1)
+  };
+}
+
+function backchannelUrl(endpoint: string, config: IdentityConfig): string {
+  if (!config.backchannelIssuer) return endpoint;
+
+  const publicIssuer = new URL(config.issuer);
+  const target = new URL(endpoint);
+  if (target.origin !== publicIssuer.origin || !target.pathname.startsWith(`${publicIssuer.pathname}/`)) {
+    throw new Error("OIDC discovery endpoint is outside the configured issuer");
+  }
+
+  const backchannelIssuer = new URL(config.backchannelIssuer);
+  const relativePath = target.pathname.slice(publicIssuer.pathname.length);
+  backchannelIssuer.pathname = `${backchannelIssuer.pathname}${relativePath}`.replace(/\/+/g, "/");
+  backchannelIssuer.search = target.search;
+  return backchannelIssuer.toString();
 }
 
 async function readAttempt(cookieValue: string | undefined, config: IdentityConfig): Promise<LoginAttempt | undefined> {

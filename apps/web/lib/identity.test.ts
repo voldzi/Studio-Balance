@@ -4,11 +4,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLoginAttempt, publicRedirectUrl, rememberedDeviceMaxAgeSeconds, sessionFromClaims } from "./identity";
 
 const originalPublicAppUrl = process.env.PUBLIC_APP_URL;
+const originalIssuer = process.env.OIDC_ISSUER_URL;
+const originalBackchannelIssuer = process.env.OIDC_BACKCHANNEL_ISSUER_URL;
 
 afterEach(() => {
   vi.unstubAllGlobals();
   if (originalPublicAppUrl === undefined) delete process.env.PUBLIC_APP_URL;
   else process.env.PUBLIC_APP_URL = originalPublicAppUrl;
+  if (originalIssuer === undefined) delete process.env.OIDC_ISSUER_URL;
+  else process.env.OIDC_ISSUER_URL = originalIssuer;
+  if (originalBackchannelIssuer === undefined) delete process.env.OIDC_BACKCHANNEL_ISSUER_URL;
+  else process.env.OIDC_BACKCHANNEL_ISSUER_URL = originalBackchannelIssuer;
 });
 
 describe("publicRedirectUrl", () => {
@@ -111,6 +117,35 @@ describe("publicRedirectUrl", () => {
     expect(authorizationUrl.searchParams.get("login_hint")).toBe("client@example.test");
     expect(authorizationUrl.searchParams.get("code_challenge_method")).toBe("S256");
     expect(authorizationUrl.searchParams.has("prompt")).toBe(false);
+  });
+
+  it("uses a private backchannel only for server-side discovery while preserving the public authorization URL", async () => {
+    process.env.OIDC_ISSUER_URL = "https://login.studio-balance.cz/realms/studio-balance";
+    process.env.OIDC_BACKCHANNEL_ISSUER_URL = "http://keycloak:8081/realms/studio-balance";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authorization_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/auth",
+        issuer: "https://login.studio-balance.cz/realms/studio-balance",
+        jwks_uri: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/certs",
+        token_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/token"
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await createLoginAttempt("/muj-ucet");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://keycloak:8081/realms/studio-balance/.well-known/openid-configuration",
+      expect.objectContaining({
+        headers: {
+          host: "login.studio-balance.cz",
+          "x-forwarded-host": "login.studio-balance.cz",
+          "x-forwarded-proto": "https"
+        }
+      })
+    );
+    expect(new URL(result.authorizationUrl).origin).toBe("https://login.studio-balance.cz");
   });
 });
 
