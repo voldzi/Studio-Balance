@@ -10,8 +10,6 @@ import {
   type DeferredInstallPrompt
 } from "../lib/pwa-install";
 
-const dismissedKey = "studio-balance-pwa-install-dismissed";
-
 function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches
     || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
@@ -24,7 +22,7 @@ export function PwaInstallGuide() {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    if (isStandalone() || window.localStorage.getItem(dismissedKey) === "true") return;
+    if (isStandalone()) return;
 
     const userAgent = window.navigator.userAgent;
     const nextPlatform: "android" | "ios" | "other" = /iPad|iPhone|iPod/.test(userAgent) ? "ios" : /Android/.test(userAgent) ? "android" : "other";
@@ -42,11 +40,6 @@ export function PwaInstallGuide() {
       window.removeEventListener(appInstalledEvent, onAppInstalled);
     };
   }, []);
-
-  function dismiss() {
-    window.localStorage.setItem(dismissedKey, "true");
-    setVisible(false);
-  }
 
   async function install() {
     if (!deferredPrompt) return;
@@ -79,7 +72,6 @@ export function PwaInstallGuide() {
       </div>
       <div className="pwa-install-actions">
         {deferredPrompt && <button className="client-primary-action" disabled={installing} onClick={() => void install()} type="button">{installing ? "Přidávám…" : "Přidat na plochu"}</button>}
-        <button className="pwa-dismiss" onClick={dismiss} type="button">Teď ne</button>
       </div>
     </section>
   );
