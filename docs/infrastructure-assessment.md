@@ -11,16 +11,18 @@ produkčním nasazením musí znovu ověřit.
 ## Shrnutí rozhodnutí
 
 - Aplikace může běžet na existujícím Docker Engine/Compose hostiteli.
-- PostgreSQL zůstává dostupný pouze přes `haproxy.home.cz:5000`; lokální
+- PostgreSQL 18 zůstává dostupný pouze přes `haproxy.home.cz:5000`; lokální
   PostgreSQL kontejnery jiných projektů nejsou zdrojem pravdy pro Studio
   Balance.
-- Pro média lze využít existující S3-kompatibilní infrastrukturu.
+- Produkční média využijí existující S3-kompatibilní infrastrukturu po splnění
+  readiness podmínek.
 - Preferovaná cesta je samostatná Studio Balance S3 gateway, bucket a
   credentials nad backendem `shared-seaweedfs`.
 - MinIO instance `toilet-minio-1` se bez výslovné změny vlastnictví a provozního
   modelu nepoužije, protože její lifecycle je svázaný s projektem Toilet.
-- Produkční rollout je blokovaný kapacitou hostitele: root filesystem byl
-  zaplněný z 96 % a swap byl plně využitý.
+- Původní diskový blocker byl před interním preview deploymentem odstraněn;
+  veřejný produkční rollout nadále blokuje téměř vyčerpaný swap a neuzavřené
+  produkční integrace.
 
 ## Stav hostitele
 
@@ -32,6 +34,15 @@ produkčním nasazením musí znovu ověřit.
 | Disk `/` | 195 GiB celkem, 180 GiB použito, přibližně 7,6 GiB volno (96 %) | blokující riziko pro image pull, build, logy, databáze i objekty |
 | Docker objekty | 111 běžících kontejnerů, 3 zastavené, 542 images | host je sdílený a vyžaduje izolaci názvů, sítí a zdrojů |
 | Potenciálně uvolnitelné místo | Docker hlásil desítky GiB reclaimable images/cache/volumes | pouze podklad pro správce; žádné automatické mazání bez inventury a schválení |
+
+### Kontrolní přeměření před preview deploymentem
+
+Dne 2026-08-04 byla kapacita znovu ověřena bez změn hostitele: root filesystem
+měl přibližně 73 GiB volno (61 % využití), dostupná paměť byla přibližně
+7,1 GiB a Docker hlásil 105 kontejnerů, z toho 104 aktivních. Swap zůstal téměř
+vyčerpaný (přibližně 3,0 z 3,1 GiB). Porty 3280 a 4280 byly volné. Tento stav
+umožňuje pouze omezený interní preview workload s resource limits; neuzavírá
+produkční readiness gate.
 
 Před nasazením správce infrastruktury bezpečně prověří aktivní využití image,
 cache a volumes, určí retenci a teprve potom uvolní nebo rozšíří kapacitu.
@@ -77,11 +88,26 @@ upgradu, credential scope a smazání. Proto není výchozím kandidátem.
 | --- | --- | --- |
 | existující OpenTelemetry/Prometheus/Loki/Tempo/Grafana stack | logy, metriky, trace a alerty | potvrdit vlastníka, tenant/label izolaci, retenci, přístup a kapacitu |
 | běžící ClamAV | sken uploadovaných médií | potvrdit síťový přístup, SLA, limity a vlastnictví služby |
-| běžící Keycloak | identity provider | samostatné produktové a bezpečnostní rozhodnutí; současný auth model je stále otevřený |
+| Keycloak 26.1.5 na `docker.home.cz` | schválený OIDC identity provider | vlastní realm/klienti, HTTPS issuer přes DMZ, admin MFA a lokální instance jsou rozhodnuté; healthcheck, backup a provisioning zbývá realizovat |
 | Redis/Valkey kontejnery | queue/cache | jsou projektově specifické; nezapojují se bez vlastní instance nebo schváleného sdíleného provozu |
 
 Tyto služby nejsou přijetím této inventury automaticky schválené pro aplikaci.
 Pouze S3-kompatibilní uložení médií bylo zadavatelem výslovně povoleno.
+
+### Keycloak
+
+Následná read-only kontrola potvrdila samostatný Compose projekt `keycloak` s
+image `quay.io/keycloak/keycloak:26.1` (metadata verze 26.1.5), běžící na
+`docker.home.cz` a publikovaný na host portu 8081. Kontejner nemá Docker
+healthcheck. Kontrola nečetla environment hodnoty, realm konfiguraci ani
+credentials. V aktuálním lokálním Docker Desktop contextu `desktop-linux`
+nebyl Keycloak při kontrole spuštěný.
+
+Studio Balance použije vlastní realm/clients, HTTPS issuer cestu přes DMZ,
+email verification a admin MFA podle ADR 0004. Před produkcí zbývá doplnění
+healthchecku a potvrzení backup/upgrade odpovědnosti. Lokální
+vývoj má mít reprodukovatelnou projektovou instanci stejné hlavní verze, nikoli
+záviset na dostupnosti sdíleného serveru.
 
 ## Produkční readiness gate
 
@@ -89,9 +115,11 @@ Před prvním rolloutem na `docker.home.cz` musí být doloženo:
 
 - volná disková a paměťová rezerva s alert prahy a jmenovitým vlastníkem;
 - Compose project name, privátní sítě, porty, resource limits a restart policy;
+- Keycloak realm/clients, DNS/TLS issuer, healthcheck, backup/restore a admin
+  recovery smoke;
 - registry, immutable image tag/digest, deploy a rollback postup;
 - žádný přímý PostgreSQL node mimo `haproxy.home.cz:5000`;
-- při aktivním S3 vlastní gateway/bucket/credentials, pinned image, healthcheck,
+- vlastní S3 gateway/bucket/credentials, pinned image, healthcheck,
   quota/lifecycle, monitoring a úspěšný restore test;
 - Nginx upstream a TLS publikace přes `dmz.home.cz` pouze pro veřejné aplikační
   endpointy; administrační S3 konzole se nepublikuje;
@@ -101,10 +129,12 @@ Před prvním rolloutem na `docker.home.cz` musí být doloženo:
 ## Co inventura neověřila
 
 - obsah ani platnost credentials a secrets;
-- PostgreSQL major/TLS/failover semantics za HAProxy;
+- PostgreSQL TLS/failover semantics za HAProxy; major 18 a konkrétní verze 18.4
+  na `patroni1` byly ověřené;
 - garantovanou kapacitu, RPO/RTO nebo SLA existujících služeb;
 - backup retenci a poslední úspěšný restore S3 dat;
 - DNS, certifikát a konkrétní Nginx upstream konfiguraci na `dmz.home.cz`;
 - bezpečnostní zpevnění hostitele a síťových ACL mimo Docker metadata.
+- Keycloak realm/client konfiguraci, databázi, backup a veřejnou issuer URL.
 
 Tyto body zůstávají v `open-questions.md` a provozním readiness gate.

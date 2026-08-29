@@ -2,8 +2,17 @@
 
 ## Status a cíle
 
-Dokument definuje bezpečnostní baseline před implementací. Konkrétní knihovny,
-identity provider a cloud se doplní po schválení stacku. Systém zpracovává
+Identita používá Keycloak 26.1.5, realm `studio-balance` a oddělené web/admin
+OIDC policies podle ADR 0004. Implementovaný webový řez používá Authorization
+Code + PKCE, jednorázový state/nonce cookie a neprůhlednou `HttpOnly` relaci
+`sb_session`. Její hash je uložený na serveru; obnovovací token Keycloaku je
+v PostgreSQL šifrovaný AES-256-GCM klíčem odvozeným pomocí HKDF ze serverového
+`SESSION_SECRET`. Pokud podepsaný ID token prokáže metodou AMR dokončené OTP,
+server tento neměnný důkaz uloží do relace. API ověřuje klientskou relaci pro
+`GET /api/v1/me`; privilegované cesty přijmou jen relaci s admin rolí i důkazem
+OTP. Oddělená `sb_admin_session` zůstává bezpečnou záložní cestou. Registrace doplněná o klientský telefon, správa
+profilu, admin MFA enforcement a rezervační autorizace jsou navazující řezy.
+Systém zpracovává
 kontaktní údaje, rezervace, docházku a administrativní fee, ale nikdy platební
 karty nebo online platební tokeny.
 
@@ -30,13 +39,42 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 
 ## Autentizace
 
-- hesla se hashují moderním adaptivním algoritmem s bezpečnou konfigurací;
+- aplikace hesla neukládá; Keycloak je chrání
+  moderním adaptivním hashem a schválenou password policy;
 - login a reset jsou rate-limited, monitorované a odolné proti enumeraci účtů;
 - reset token je náhodný, jednorázový, krátkodobý a v úložišti chráněný;
-- změna hesla a zrušení účtu vyžadují čerstvé/zesílené ověření;
-- webová session je `HttpOnly`, `Secure`, vhodné `SameSite`, rotovaná po loginu;
-- mobilní credential je v Keychain/Keystore ekvivalentu, ne v běžném storage;
-- admin vstup je oddělený; MFA rozhodnutí je P0 v `open-questions.md`;
+- změna hesla používá Keycloak Application Initiated Action `UPDATE_PASSWORD`,
+  vyžaduje čerstvé/zesílené ověření a po dokončení se vrací do profilu; aplikace
+  heslo nikdy nepřijímá ani neukládá;
+- webová session je neprůhledná, `HttpOnly`, `Secure`, vhodné `SameSite` a po loginu náhodně vydaná; její cookie neobsahuje OIDC token ani roli;
+- OIDC Authorization Code flow používá PKCE; tokeny drží serverová BFF/session
+  vrstva mimo browser JavaScript;
+- MFA je povinné pro `admin` i `super_admin`; takový účet při běžném přihlášení
+  dokončí heslo i TOTP a Keycloak vloží metodu `otp` do podepsaného AMR claimu;
+- AMR mapper je doplněný explicitními autentizačními referencemi `pwd` a `otp`
+  na password/OTP executions standardního webového i odděleného admin flow;
+  existence mapperu bez těchto referencí se nepovažuje za důkaz funkčního MFA;
+- samostatná admin Authorization Code žádost s `prompt=login` a `max_age=0`
+  zůstává záložní cestou, pokud chybí platná MFA-prokázaná webová relace;
+  jmenovitý admin účet se před předáním ověří v nové anonymní relaci heslem i
+  TOTP a bez dokončeného testu se nepovažuje za aktivovaný;
+- profil účtu s rolí `admin` nebo `super_admin` nabízí přímý vstup do správy;
+  položka sama oprávnění neuděluje a administrace znovu serverově ověří roli i
+  uložený důkaz OTP. Webová relace bez tohoto důkazu se pro správu nikdy
+  neuzná, ani kdyby později získala admin roli. MFA-prokázaná relace může na
+  soukromém zařízení zůstat použitelná nejvýše 90 dní při aktivitě jednou za
+  30 dní;
+- bez volby zapamatování je aplikační cookie session-only; s volbou má cookie
+  maximum 90 dní a server vynucuje 30denní neaktivitu. Před více než 15 minutami
+  ověřená relace se při dalším použití obnovovacím tokenem znovu ověří u
+  Keycloaku včetně aktuálních rolí; refresh může roli změnit, ale nesmí z
+  relace bez OTP vytvořit MFA-prokázanou relaci. Selhání, disabled účet nebo
+  odebraná role relaci zneplatní. Keycloak nemá vlastní checkbox „Zapamatovat si mě“, aby
+  uživatel viděl jedinou, srozumitelnou volbu;
+- klientské i administrátorské odhlášení zruší serverový záznam, odstraní
+  šifrovaný refresh token, pokusí se o jeho revokaci u Keycloaku a smaže oba
+  aplikační cookies na zařízení;
+- klientská registrace nepoužívá e-mailové ověření, dokud není bezpečně provozovaný SMTP sender; konfigurační oprava odstraní i dříve uloženou required action `VERIFY_EMAIL`, ale zachová změnu hesla a registraci TOTP; booking nadále vyžaduje platnou relaci, vyplněné jméno, příjmení a telefon a přijetí podmínek;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
 
 ## Autorizace
@@ -48,6 +86,10 @@ vrstvě/API na každé operaci, nejen v routeru nebo UI.
 - admin spravuje provoz a obsah v rozsahu role;
 - super admin spravuje adminy, kritická nastavení, audit a exporty;
 - interní kapacita a seznam klientů nejsou veřejné;
+- oblíbené typy lekcí jsou vázané na serverový profil aktuálně přihlášeného
+  klienta; klient nikdy neposílá ani nevolí cizí `user_id`;
+- novinky jsou prostý text; veřejné API vrací pouze publikované položky po čase
+  zveřejnění a administrační změny vyžadují admin roli a audit;
 - odpověď na cizí objekt neodhalí, zda objekt existuje;
 - hromadný export, smazání, změna role a audited correction jsou privilegované
   akce s explicitním důvodem a auditní stopou.
@@ -65,11 +107,13 @@ scénáři.
   `haproxy.home.cz:5000`, nikdy na přímý databázový uzel;
 - produkční S3 access key/secret patří pouze serveru a vyhrazenému Studio
   Balance bucketu; nesdílí se s jiným projektem ani klientským bundlem;
+- OIDC web/admin client secrets a session secret patří pouze serveru; produkční
+  issuer je přes HTTPS na `login.studio-balance.cz`;
 - lokální Docker Desktop používá pouze lokální credentials a syntetická data;
 - rotace credentialu má dokumentovaný postup a nevyžaduje změnu zdrojového kódu;
-- logy, error tracking, build artefakty a mobilní bundle nesmí obsahovat server
-  secret;
-- mobilní/public build nikdy nedostane databázové nebo provider admin credentials.
+- logy, error tracking a build artefakty nesmí obsahovat server secret;
+- veřejný browser build nikdy nedostane databázové, S3, OIDC client secret nebo
+  provider admin credentials.
 
 ## TLS a webová ochrana
 
@@ -129,6 +173,13 @@ chráněného logu. Logovací redakce pokrývá credentials, authorization heade
 cookies, reset tokeny, e-mail provider payloady a volné poznámky. Osobní údaje
 se logují jen jako stabilní interní ID nebo bezpečně maskovaná hodnota.
 
+Keycloak theme dědí systémové `keycloak.v2` šablony a upravuje pouze CSS,
+lokalizované texty a statické schválené obrazové podklady. Neobsahuje vlastní
+JavaScript, formulářové endpointy ani kopii credential logiky. QR kód pro MFA,
+OTP, hesla a recovery kódy se nesmí přidat do repozitáře, screenshotů,
+analytiky ani provozních logů. Theme assety jsou lokální a neodesílají data na
+externí CDN nebo fontovou službu.
+
 ## Soukromí a práva subjektu
 
 - sbírat jen data potřebná pro účet a rezervaci;
@@ -139,7 +190,22 @@ se logují jen jako stabilní interní ID nebo bezpečně maskovaná hodnota.
 - zrušení účtu respektuje právní retenci: nepotřebná data se smažou nebo
   nevratně anonymizují, povinné záznamy se omezí;
 - konkrétní retenční lhůty a správce údajů musí dodat zadavatel/právní podpora;
-- foto klienta/recenze se zveřejní jen s doloženým souhlasem.
+- foto klienta/recenze se zveřejní jen s doloženým souhlasem; databázový
+  constraint i API odmítnou publikaci recenze bez jeho potvrzení;
+- recenze jsou prostý text renderovaný s výchozím output encodingem frameworku,
+  nikoli administrátorem vložené HTML, a změny publikace se auditují bez uložení
+  celého textu do auditních metadat;
+- změna recenze a její minimální auditní záznam jsou atomická databázová
+  transakce; koncept může odkazovat na neaktivní typ lekce, ale publikace
+  vyžaduje existující aktivní typ a neznámý identifikátor API odmítne;
+- zdroj reference je volitelný údaj, nikoli podmínka souhlasu nebo publikace,
+  a administrační výpis konceptů používá `Cache-Control: private, no-store`.
+- proměna před/po se zveřejní jen s doloženým výslovným souhlasem; databáze i
+  API odmítnou publikaci bez souhlasu a zvýraznění nepublikovaného záznamu;
+- upload proměn přijímá pouze JPG, PNG nebo WebP do 8 MB, skutečný obraz dekóduje,
+  odstraní metadata, omezí rozměry a ukládá jen serverem vytvořený WebP;
+- veřejně lze načíst jen objekt použitý publikovanou proměnou. S3 credentials
+  zůstávají výhradně na serveru a patří samostatnému Studio Balance tenantovi.
 
 ## Hrozby vyžadující test
 
@@ -170,6 +236,6 @@ Závislost se nepřidává bez účelu, licence a maintenance kontroly.
 - [ ] upload a rich text jsou omezené a testované;
 - [ ] žádný secret, karta, payment token nebo nadbytečné PII v repo/logu;
 - [ ] privacy texty, retence, export a smazání jsou schválené;
-- [ ] admin MFA rozhodnutí a auditní retence jsou uzavřené;
+- [ ] admin MFA, email verification, role mapping a recovery prošly testy;
 - [ ] záloha i obnova byly bezpečně ověřeny;
 - [ ] kritické dependency/secret scan nálezy jsou nulové.

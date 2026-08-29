@@ -2,17 +2,17 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Studio Balance API",
-    "version": "0.1.0",
-    "description": "Initial machine-readable contract for the shared Studio Balance API. Product endpoints remain proposed until added to this file."
+    "version": "0.2.0",
+    "description": "Shared API for the Studio Balance public schedule, client profile and transactional booking flow."
   },
   "servers": [
     {
-      "url": "https://studiobalance.zeleznalady.cz",
+      "url": "https://studio-balance.cz",
       "description": "Production through Nginx on dmz.home.cz"
     },
     {
-      "url": "http://localhost:3000",
-      "description": "Local development placeholder"
+      "url": "http://localhost:3001",
+      "description": "Local API development server"
     }
   ],
   "paths": {
@@ -25,13 +25,7 @@
         "responses": {
           "200": {
             "description": "The process is alive.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
           }
         }
       }
@@ -44,52 +38,437 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "The service is ready to serve traffic.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
+            "description": "The service is ready.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
           },
-          "503": {
-            "description": "A required dependency is not ready.",
+          "503": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/internal/sessions": {
+      "post": {
+        "summary": "Create an opaque application session",
+        "operationId": "createInternalApplicationSession",
+        "tags": ["Internal"],
+        "x-studioBalance-internal": true,
+        "description": "Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionCreateRequest" } } } },
+        "responses": { "201": { "description": "Opaque token stored only in an HTTP-only application cookie.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionCreated" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/internal/sessions/resolve": {
+      "post": {
+        "summary": "Resolve and revalidate an opaque application session",
+        "operationId": "resolveInternalApplicationSession",
+        "tags": ["Internal"],
+        "x-studioBalance-internal": true,
+        "description": "Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionTokenRequest" } } } },
+        "responses": { "201": { "description": "Current identity or null when the session was revoked or expired.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionResolved" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/internal/sessions/revoke": {
+      "post": {
+        "summary": "Revoke an opaque application session",
+        "operationId": "revokeInternalApplicationSession",
+        "tags": ["Internal"],
+        "x-studioBalance-internal": true,
+        "description": "Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak.",
+        "security": [],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionTokenRequest" } } } },
+        "responses": { "201": { "description": "Revoked or already absent.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["revoked"], "properties": { "revoked": { "type": "boolean", "const": true } } } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/v1/class-types": {
+      "get": {
+        "summary": "List active class types",
+        "operationId": "listClassTypes",
+        "tags": ["Schedule"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Active class types in display order.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/ClassType" } } }
                 }
               }
             }
           }
         }
       }
+    },
+    "/api/v1/class-types/{slug}": {
+      "get": {
+        "summary": "Get public class type detail and upcoming sessions",
+        "operationId": "getClassType",
+        "tags": ["Schedule"],
+        "security": [],
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } }],
+        "responses": {
+          "200": { "description": "Active class type and its upcoming sessions.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClassTypeDetail" } } } },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/reviews": {
+      "get": {
+        "summary": "List approved public reviews",
+        "operationId": "listReviews",
+        "tags": ["Content"],
+        "security": [],
+        "parameters": [{ "name": "featured", "in": "query", "schema": { "type": "boolean", "default": false } }],
+        "responses": {
+          "200": { "description": "Published reviews with confirmed consent, in display order.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Review" } } } } } } },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/news": {
+      "get": {
+        "summary": "List published Studio Balance news",
+        "operationId": "listNews",
+        "tags": ["Content"],
+        "security": [],
+        "responses": {
+          "200": { "description": "Published news in display order.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/NewsItem" } } } } } } }
+        }
+      }
+    },
+    "/api/v1/transformations": {
+      "get": { "summary": "List approved client transformations", "operationId": "listTransformations", "tags": ["Content"], "security": [], "parameters": [{ "name": "featured", "in": "query", "schema": { "type": "boolean", "default": false } }], "responses": { "200": { "description": "Published transformations with confirmed consent.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transformation" } } } } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/media/{id}": {
+      "get": { "summary": "Read a public transformation image", "operationId": "getPublicMedia", "tags": ["Content"], "security": [], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "responses": { "200": { "description": "Published WebP image.", "content": { "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "404": { "$ref": "#/components/responses/Error" }, "503": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/sessions": {
+      "get": {
+        "summary": "List public class sessions",
+        "operationId": "listSessions",
+        "tags": ["Schedule"],
+        "security": [],
+        "parameters": [
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public schedule without capacity numbers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items", "timezone"],
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/PublicSession" } },
+                    "timezone": { "type": "string", "const": "Europe/Prague" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/sessions/{sessionId}": {
+      "get": {
+        "summary": "Read a public class session",
+        "operationId": "getSession",
+        "tags": ["Schedule"],
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/SessionId" }],
+        "responses": {
+          "200": {
+            "description": "Public session detail.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PublicSession" } } }
+          },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "summary": "Read the authenticated client profile",
+        "operationId": "getCurrentAccount",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": {
+            "description": "Current Studio Balance profile.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "patch": {
+        "summary": "Update the authenticated client profile",
+        "operationId": "updateCurrentAccount",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateMeRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "summary": "List the authenticated client's account notifications",
+        "operationId": "listMyNotifications",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": {
+            "description": "Recent in-account booking and schedule messages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AccountNotification" } } }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/favorites": {
+      "get": {
+        "summary": "List the authenticated client's favorite class types",
+        "operationId": "listMyFavorites",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": { "description": "Favorite active class types.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/FavoriteClassType" } } } } } } },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/favorites/{classTypeId}": {
+      "post": {
+        "summary": "Add an active class type to favorites",
+        "operationId": "addMyFavorite",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ClassTypeId" }],
+        "responses": { "201": { "description": "Favorite saved.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "401": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } }
+      },
+      "delete": {
+        "summary": "Remove a class type from favorites",
+        "operationId": "removeMyFavorite",
+        "tags": ["Account"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ClassTypeId" }],
+        "responses": { "200": { "description": "Favorite removed or already absent.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "summary": "Create an idempotent booking",
+        "operationId": "createBooking",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateBookingRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Booking" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" },
+          "410": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/bookings": {
+      "get": {
+        "summary": "List the authenticated client's bookings",
+        "operationId": "listMyBookings",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "responses": {
+          "200": {
+            "description": "Client bookings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Booking" } } }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/bookings/{bookingId}/cancellation-preview": {
+      "get": {
+        "summary": "Preview the consequence of cancelling a booking",
+        "operationId": "previewBookingCancellation",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/BookingId" }],
+        "responses": {
+          "200": {
+            "description": "Authoritative cancellation mode and fee.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CancellationPreview" } } }
+          },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/me/bookings/{bookingId}/cancel": {
+      "post": {
+        "summary": "Cancel a client booking",
+        "operationId": "cancelBooking",
+        "tags": ["Booking"],
+        "security": [{ "studioSession": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/BookingId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CancelBookingRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Cancelled booking.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Booking" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "summary": "Read the operational dashboard", "operationId": "getAdminDashboard", "tags": ["Administration"], "security": [{ "adminSession": [] }],
+        "responses": { "200": { "description": "Operational summary with attendance and booking trends. Estimated visit value is not accounting revenue.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminDashboard" } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/api/v1/admin/class-types": {
+      "get": { "summary": "List all class types for administration", "operationId": "adminListClassTypes", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "Class types.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminClassType" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a class type", "operationId": "adminCreateClassType", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminClassTypeInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/class-types/{id}": {
+      "patch": { "summary": "Update a class type", "operationId": "adminUpdateClassType", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminClassTypeInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/instructors": {
+      "get": { "summary": "List instructors for administration", "operationId": "adminListInstructors", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "Instructors.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminInstructor" } } } } } } } } },
+      "post": { "summary": "Create an instructor", "operationId": "adminCreateInstructor", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminInstructorInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/instructors/{id}": {
+      "patch": { "summary": "Update an instructor", "operationId": "adminUpdateInstructor", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminInstructorInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/sessions": {
+      "get": { "summary": "List sessions including operational fields", "operationId": "adminListSessions", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } }, { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } }], "responses": { "200": { "description": "Admin schedule.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminSession" } } } } } } } } },
+      "post": { "summary": "Create a one-off session", "operationId": "adminCreateSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminSessionInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/sessions/{id}": {
+      "patch": { "summary": "Update a scheduled session", "operationId": "adminUpdateSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminSessionInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "409": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/sessions/{id}/cancel": {
+      "post": { "summary": "Cancel a session and all active bookings without fees", "operationId": "adminCancelSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReasonRequest" } } } }, "responses": { "200": { "description": "Cancelled." }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/reviews": {
+      "get": { "summary": "List reviews including drafts", "operationId": "adminListReviews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All reviews.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminReview" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a review draft or approved review", "operationId": "adminCreateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/reviews/{id}": {
+      "patch": { "summary": "Update, publish, feature or hide a review", "operationId": "adminUpdateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/news": {
+      "get": { "summary": "List news including drafts", "operationId": "adminListNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All news.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminNewsItem" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a news draft or published item", "operationId": "adminCreateNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminNewsInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/news/{id}": {
+      "patch": { "summary": "Update, publish, feature or hide news", "operationId": "adminUpdateNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminNewsInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/transformations": {
+      "get": { "summary": "List transformations including drafts", "operationId": "adminListTransformations", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All transformations.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminTransformation" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
+      "post": { "summary": "Create a transformation", "operationId": "adminCreateTransformation", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminTransformationInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/content/transformations/{id}": {
+      "patch": { "summary": "Update, publish, feature or hide a transformation", "operationId": "adminUpdateTransformation", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminTransformationInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/media/transformation-image": {
+      "post": { "summary": "Upload and normalize a transformation image", "operationId": "adminUploadTransformationImage", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "image/jpeg": { "schema": { "type": "string", "format": "binary" } }, "image/png": { "schema": { "type": "string", "format": "binary" } }, "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "responses": { "201": { "description": "Normalized media asset.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MediaUploadResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "503": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/media/{id}": {
+      "get": { "summary": "Read a transformation image in administration", "operationId": "adminGetMedia", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "responses": { "200": { "description": "Private WebP image.", "content": { "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/users": {
+      "get": { "summary": "List client profiles", "operationId": "adminListUsers", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "search", "in": "query", "schema": { "type": "string", "maxLength": 200 } }], "responses": { "200": { "description": "Clients.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/bookings": {
+      "get": { "summary": "List bookings for operations", "operationId": "adminListBookings", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "sessionId", "in": "query", "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Bookings.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+    },
+    "/api/v1/admin/bookings/{id}/attendance": {
+      "post": { "summary": "Record attendance or no-show", "operationId": "adminRecordAttendance", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminAttendanceRequest" } } } }, "responses": { "200": { "description": "Attendance recorded." }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
     }
   },
   "components": {
+    "responses": {
+      "Error": {
+        "description": "Request failed.",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      }
+    },
+    "parameters": {
+      "SessionId": { "name": "sessionId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "BookingId": { "name": "bookingId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ClassTypeId": { "name": "classTypeId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ResourceId": { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": { "type": "string", "minLength": 16, "maxLength": 100 }
+      }
+    },
     "schemas": {
       "HealthResponse": {
         "type": "object",
         "additionalProperties": false,
         "required": ["status", "service", "version", "timestamp"],
         "properties": {
-          "status": {
-            "type": "string",
-            "enum": ["ok"]
-          },
-          "service": {
-            "type": "string",
-            "examples": ["studio-balance-api"]
-          },
-          "version": {
-            "type": "string",
-            "examples": ["0.1.0"]
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
+          "status": { "type": "string", "enum": ["ok"] },
+          "service": { "type": "string" },
+          "version": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
         }
       },
       "ErrorResponse": {
@@ -102,36 +481,280 @@
             "additionalProperties": false,
             "required": ["code", "message", "requestId"],
             "properties": {
-              "code": {
-                "type": "string",
-                "examples": ["DEPENDENCY_UNAVAILABLE"]
-              },
-              "message": {
-                "type": "string",
-                "examples": ["The service is temporarily unavailable."]
-              },
-              "details": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              },
-              "requestId": {
-                "type": "string",
-                "examples": ["req_abc123"]
-              }
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "details": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+              "requestId": { "type": "string" }
             }
           }
         }
-      }
+      },
+      "InternalSessionKind": { "type": "string", "enum": ["web", "admin"] },
+      "InternalSessionIdentity": { "type": "object", "additionalProperties": false, "required": ["subject", "email", "emailVerified", "mfaVerified", "roles"], "properties": { "subject": { "type": "string", "minLength": 1, "maxLength": 255 }, "email": { "type": "string", "format": "email", "maxLength": 254 }, "emailVerified": { "type": "boolean" }, "firstName": { "type": "string", "minLength": 1, "maxLength": 100 }, "lastName": { "type": "string", "minLength": 1, "maxLength": 100 }, "mfaVerified": { "type": "boolean", "description": "True only when the original interactive authentication included the OTP method in the signed AMR claim." }, "roles": { "type": "array", "items": { "type": "string", "enum": ["client", "admin", "super_admin"] }, "maxItems": 3 } } },
+      "InternalSessionCreateRequest": { "type": "object", "additionalProperties": false, "required": ["kind", "refreshToken", "session"], "properties": { "kind": { "$ref": "#/components/schemas/InternalSessionKind" }, "refreshToken": { "type": "string", "minLength": 20, "maxLength": 16000, "writeOnly": true }, "session": { "$ref": "#/components/schemas/InternalSessionIdentity" } } },
+      "InternalSessionTokenRequest": { "type": "object", "additionalProperties": false, "required": ["kind", "token"], "properties": { "kind": { "$ref": "#/components/schemas/InternalSessionKind" }, "token": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "writeOnly": true } } },
+      "InternalSessionCreated": { "type": "object", "additionalProperties": false, "required": ["token"], "properties": { "token": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$", "writeOnly": true } } },
+      "InternalSessionResolved": { "type": "object", "additionalProperties": false, "required": ["session"], "properties": { "session": { "oneOf": [{ "$ref": "#/components/schemas/InternalSessionIdentity" }, { "type": "null" }] } } },
+      "Money": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount", "currency"],
+        "properties": {
+          "amount": { "type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$" },
+          "currency": { "type": "string", "const": "CZK" }
+        }
+      },
+      "ClassTypeSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "slug", "tagline"],
+        "properties": {
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "tagline": { "type": "string" }
+        }
+      },
+      "ClassType": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ClassTypeSummary" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "description", "durationMinutes", "arrivalLeadMinutes", "difficulty", "benefits", "audience", "suitableForBeginners", "defaultEquipment", "whatToBring", "practicalNotice", "heroImage", "seoTitle", "seoDescription"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "description": { "type": "string" },
+              "durationMinutes": { "type": "integer" },
+              "arrivalLeadMinutes": { "type": "integer" },
+              "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "benefits": { "type": "string" },
+              "audience": { "type": "string" },
+              "suitableForBeginners": { "type": "boolean" },
+              "defaultEquipment": { "type": "string" },
+              "whatToBring": { "type": "string" },
+              "practicalNotice": { "type": "string" },
+              "heroImage": { "oneOf": [{ "$ref": "#/components/schemas/MediaImage" }, { "type": "null" }] },
+              "seoTitle": { "type": "string" },
+              "seoDescription": { "type": "string" }
+            }
+          }
+        ]
+      },
+      "MediaImage": { "type": "object", "additionalProperties": false, "required": ["src", "alt"], "properties": { "src": { "type": "string" }, "alt": { "type": "string" } } },
+      "ClassTypeDetail": { "allOf": [{ "$ref": "#/components/schemas/ClassType" }, { "type": "object", "additionalProperties": false, "required": ["upcomingSessions"], "properties": { "upcomingSessions": { "type": "array", "items": { "$ref": "#/components/schemas/PublicSession" } } } }] },
+      "InstructorSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "displayName": { "type": "string" }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "address"],
+        "properties": {
+          "name": { "type": "string" },
+          "address": { "type": "string" }
+        }
+      },
+      "PublicSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "classType", "instructor", "startAt", "endAt", "timezone", "arrivalAt", "availability", "price", "location", "equipment", "suitability", "whatToBring"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "classType": { "$ref": "#/components/schemas/ClassTypeSummary" },
+          "instructor": { "$ref": "#/components/schemas/InstructorSummary" },
+          "startAt": { "type": "string", "format": "date-time" },
+          "endAt": { "type": "string", "format": "date-time" },
+          "timezone": { "type": "string", "const": "Europe/Prague" },
+          "arrivalAt": { "type": "string", "format": "date-time" },
+          "availability": { "type": "string", "enum": ["bookable", "full", "closed", "cancelled", "completed"] },
+          "price": { "$ref": "#/components/schemas/Money" },
+          "location": { "$ref": "#/components/schemas/Location" },
+          "equipment": { "type": "string" },
+          "suitability": { "type": "string" },
+          "whatToBring": { "type": "string" },
+          "changeNotice": { "type": ["string", "null"] }
+        }
+      },
+      "MeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subject", "email", "emailVerified", "roles", "firstName", "lastName", "phone", "termsVersion", "profileComplete"],
+        "properties": {
+          "subject": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "emailVerified": { "type": "boolean" },
+          "roles": { "type": "array", "items": { "type": "string", "enum": ["client", "admin", "super_admin"] } },
+          "firstName": { "type": ["string", "null"] },
+          "lastName": { "type": ["string", "null"] },
+          "phone": { "type": ["string", "null"] },
+          "termsVersion": { "type": ["string", "null"] },
+          "profileComplete": { "type": "boolean" }
+        }
+      },
+      "AccountNotification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "title", "body", "readAt", "createdAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string", "enum": ["booking_confirmed", "booking_cancelled", "lesson_reminder", "session_changed", "session_cancelled"] },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "readAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "FavoriteClassType": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "slug", "tagline", "difficulty", "heroImage", "favoritedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "tagline": { "type": "string" },
+          "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "heroImage": { "oneOf": [{ "$ref": "#/components/schemas/MediaImage" }, { "type": "null" }] },
+          "favoritedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NewsItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "summary", "body", "publishedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "minLength": 2, "maxLength": 160 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 400 },
+          "body": { "type": "string", "minLength": 10, "maxLength": 5000 },
+          "publishedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminNewsInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "summary", "body", "published", "featured", "publishedAt", "sortOrder"],
+        "properties": {
+          "title": { "type": "string", "minLength": 2, "maxLength": 160 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 400 },
+          "body": { "type": "string", "minLength": 10, "maxLength": 5000 },
+          "published": { "type": "boolean" },
+          "featured": { "type": "boolean" },
+          "publishedAt": { "type": ["string", "null"], "format": "date-time" },
+          "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 }
+        }
+      },
+      "AdminNewsItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "summary", "body", "published", "featured", "publishedAt", "sortOrder"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "summary": { "type": "string" },
+          "body": { "type": "string" },
+          "published": { "type": "boolean" },
+          "featured": { "type": "boolean" },
+          "publishedAt": { "type": ["string", "null"], "format": "date-time" },
+          "sortOrder": { "type": "integer" }
+        }
+      },
+      "UpdateMeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["firstName", "lastName", "phone"],
+        "properties": {
+          "firstName": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "lastName": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "phone": { "type": "string", "minLength": 7, "maxLength": 30 }
+        }
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sessionId", "termsVersion", "termsAccepted"],
+        "properties": {
+          "sessionId": { "type": "string", "format": "uuid" },
+          "termsVersion": { "type": "string", "const": "2026-08-04" },
+          "termsAccepted": { "type": "boolean", "const": true }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "createdAt", "cancellationCutoffAt", "fee", "session"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["reserved", "cancelled_on_time", "cancelled_late", "attended", "no_show", "cancelled_by_studio"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "cancellationCutoffAt": { "type": "string", "format": "date-time" },
+          "fee": { "oneOf": [{ "$ref": "#/components/schemas/Money" }, { "type": "null" }] },
+          "session": { "$ref": "#/components/schemas/PublicSession" }
+        }
+      },
+      "CancellationPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mode", "cutoffAt", "fee", "paymentMethod"],
+        "properties": {
+          "mode": { "type": "string", "enum": ["on_time", "late", "free_change_window"] },
+          "cutoffAt": { "type": "string", "format": "date-time" },
+          "fee": { "oneOf": [{ "$ref": "#/components/schemas/Money" }, { "type": "null" }] },
+          "paymentMethod": { "type": "string", "const": "at_studio" }
+        }
+      },
+      "CancelBookingRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["lateCancellationConfirmed"],
+        "properties": { "lateCancellationConfirmed": { "type": "boolean" } }
+      },
+      "Review": { "type": "object", "additionalProperties": false, "required": ["id","authorLabel","body","source","reviewedOn","rating","classType"], "properties": { "id": { "type": "string", "format": "uuid" }, "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] } } },
+      "AdminReviewInput": { "type": "object", "additionalProperties": false, "required": ["authorLabel","body","reviewedOn","rating","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean", "description": "Must be true before publication." }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
+      "AdminReview": { "type": "object", "additionalProperties": false, "required": ["id","authorLabel","body","source","reviewedOn","rating","classType","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "id": { "type": "string", "format": "uuid" }, "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean" }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
+      "TransformationImage": { "type": "object", "additionalProperties": false, "required": ["url","width","height"], "properties": { "url": { "type": "string", "pattern": "^/api/v1/(admin/)?media/" }, "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 } } },
+      "Transformation": { "type": "object", "additionalProperties": false, "required": ["id","title","story","attribution","beforeImage","afterImage","classType"], "properties": { "id": { "type": "string", "format": "uuid" }, "title": { "type": "string", "minLength": 2, "maxLength": 160 }, "story": { "type": "string", "minLength": 10, "maxLength": 2000 }, "attribution": { "type": "string", "minLength": 1, "maxLength": 120 }, "beforeImage": { "$ref": "#/components/schemas/TransformationImage" }, "afterImage": { "$ref": "#/components/schemas/TransformationImage" }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] } } },
+      "AdminTransformationInput": { "type": "object", "additionalProperties": false, "required": ["title","story","attribution","beforeAssetId","afterAssetId","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "title": { "type": "string", "minLength": 2, "maxLength": 160 }, "story": { "type": "string", "minLength": 10, "maxLength": 2000 }, "attribution": { "type": "string", "minLength": 1, "maxLength": 120 }, "beforeAssetId": { "type": "string", "format": "uuid" }, "afterAssetId": { "type": "string", "format": "uuid" }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean", "description": "Must be true before publication." }, "published": { "type": "boolean" }, "featured": { "type": "boolean", "description": "May be true only for published content." }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
+      "AdminTransformation": { "type": "object", "additionalProperties": false, "required": ["id","title","story","attribution","beforeImage","afterImage","classType","beforeAssetId","afterAssetId","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "id": { "type": "string", "format": "uuid" }, "title": { "type": "string" }, "story": { "type": "string" }, "attribution": { "type": "string" }, "beforeImage": { "$ref": "#/components/schemas/TransformationImage" }, "afterImage": { "$ref": "#/components/schemas/TransformationImage" }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] }, "beforeAssetId": { "type": "string", "format": "uuid" }, "afterAssetId": { "type": "string", "format": "uuid" }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean" }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer" } } },
+      "MediaUploadResponse": { "type": "object", "additionalProperties": false, "required": ["id","url","width","height"], "properties": { "id": { "type": "string", "format": "uuid" }, "url": { "type": "string" }, "width": { "type": "integer" }, "height": { "type": "integer" } } },
+      "AdminDashboardSession": { "type": "object", "additionalProperties": false, "required": ["id","startAt","status","capacity","bookingCount","className","instructorName"], "properties": { "id": { "type": "string", "format": "uuid" }, "startAt": { "type": "string", "format": "date-time" }, "status": { "type": "string", "enum": ["scheduled","cancelled","completed"] }, "capacity": { "type": "integer", "minimum": 1 }, "bookingCount": { "type": "integer", "minimum": 0 }, "className": { "type": "string" }, "instructorName": { "type": "string" } } },
+      "AdminDashboardMetrics": { "type": "object", "additionalProperties": false, "required": ["reservationsThisWeek","attendedThisMonth","noShowsThisMonth","lateCancellationsThisMonth","attendanceRate90Days","estimatedAttendedValueThisMonthCents"], "properties": { "reservationsThisWeek": { "type": "integer", "minimum": 0 }, "attendedThisMonth": { "type": "integer", "minimum": 0 }, "noShowsThisMonth": { "type": "integer", "minimum": 0 }, "lateCancellationsThisMonth": { "type": "integer", "minimum": 0 }, "attendanceRate90Days": { "oneOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }] }, "estimatedAttendedValueThisMonthCents": { "type": "integer", "minimum": 0, "description": "Sum of snapshotted prices for bookings marked attended. This is an operational estimate, not accounting revenue or proof of payment." } } },
+      "AdminClassPopularity": { "type": "object", "additionalProperties": false, "required": ["classTypeId","className","reservations","attended"], "properties": { "classTypeId": { "type": "string", "format": "uuid" }, "className": { "type": "string" }, "reservations": { "type": "integer", "minimum": 0 }, "attended": { "type": "integer", "minimum": 0 } } },
+      "AdminWeeklyAttendance": { "type": "object", "additionalProperties": false, "required": ["weekStart","attended"], "properties": { "weekStart": { "type": "string", "format": "date" }, "attended": { "type": "integer", "minimum": 0 } } },
+      "AdminDashboard": { "type": "object", "additionalProperties": false, "required": ["activeBookings","clients","today","nextWeek","metrics","classPopularity","weeklyAttendance"], "properties": { "activeBookings": { "type": "integer", "minimum": 0 }, "clients": { "type": "integer", "minimum": 0 }, "today": { "type": "array", "items": { "$ref": "#/components/schemas/AdminDashboardSession" } }, "nextWeek": { "type": "array", "items": { "$ref": "#/components/schemas/AdminDashboardSession" } }, "metrics": { "$ref": "#/components/schemas/AdminDashboardMetrics" }, "classPopularity": { "type": "array", "items": { "$ref": "#/components/schemas/AdminClassPopularity" } }, "weeklyAttendance": { "type": "array", "items": { "$ref": "#/components/schemas/AdminWeeklyAttendance" } } } },
+      "AdminMutationResponse": { "type": "object", "additionalProperties": false, "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } },
+      "AdminClassTypeInput": { "type": "object", "additionalProperties": false, "required": ["slug","name","tagline","description","durationMinutes","arrivalLeadMinutes","active","sortOrder","difficulty","benefits","audience","suitableForBeginners","defaultEquipment","whatToBring","practicalNotice","heroImagePath","heroImageAlt","seoTitle","seoDescription"], "properties": { "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "name": { "type": "string" }, "tagline": { "type": "string" }, "description": { "type": "string" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 }, "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 }, "benefits": { "type": "string" }, "audience": { "type": "string" }, "suitableForBeginners": { "type": "boolean" }, "defaultEquipment": { "type": "string" }, "whatToBring": { "type": "string" }, "practicalNotice": { "type": "string" }, "heroImagePath": { "type": "string" }, "heroImageAlt": { "type": "string" }, "seoTitle": { "type": "string" }, "seoDescription": { "type": "string" } } },
+      "AdminClassType": { "allOf": [{ "$ref": "#/components/schemas/AdminClassTypeInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },
+      "AdminInstructorInput": { "type": "object", "additionalProperties": false, "required": ["displayName","bio","active","sortOrder"], "properties": { "displayName": { "type": "string" }, "bio": { "type": "string" }, "active": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0 } } },
+      "AdminInstructor": { "allOf": [{ "$ref": "#/components/schemas/AdminInstructorInput" }, { "type": "object", "required": ["id"], "properties": { "id": { "type": "string", "format": "uuid" } } }] },
+      "AdminSessionInput": { "type": "object", "additionalProperties": false, "required": ["classTypeId","instructorId","startAt","durationMinutes","arrivalLeadMinutes","locationName","locationAddress","priceCents","capacity","equipment","suitability"], "properties": { "classTypeId": { "type": "string", "format": "uuid" }, "instructorId": { "type": "string", "format": "uuid" }, "startAt": { "type": "string", "format": "date-time" }, "durationMinutes": { "type": "integer", "minimum": 15, "maximum": 240 }, "arrivalLeadMinutes": { "type": "integer", "minimum": 0, "maximum": 120 }, "locationName": { "type": "string" }, "locationAddress": { "type": "string" }, "priceCents": { "type": "integer", "minimum": 0 }, "capacity": { "type": "integer", "minimum": 1, "maximum": 500 }, "equipment": { "type": "string" }, "suitability": { "type": "string" } } },
+      "AdminSession": { "type": "object", "additionalProperties": true, "required": ["id","classTypeId","className","instructorId","instructorName","startAt","endAt","capacity","bookingCount","status"], "properties": { "id": { "type": "string", "format": "uuid" }, "classTypeId": { "type": "string", "format": "uuid" }, "className": { "type": "string" }, "instructorId": { "type": "string", "format": "uuid" }, "instructorName": { "type": "string" }, "startAt": { "type": "string", "format": "date-time" }, "endAt": { "type": "string", "format": "date-time" }, "capacity": { "type": "integer" }, "bookingCount": { "type": "integer" }, "status": { "type": "string", "enum": ["scheduled","cancelled","completed"] } } },
+      "AdminReasonRequest": { "type": "object", "additionalProperties": false, "required": ["reason"], "properties": { "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } },
+      "AdminAttendanceRequest": { "type": "object", "additionalProperties": false, "required": ["status","reason"], "properties": { "status": { "type": "string", "enum": ["attended","no_show"] }, "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } }
     },
-    "securitySchemes": {}
+    "securitySchemes": {
+      "studioSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sb_session",
+        "description": "Opaque, HTTP-only Studio Balance server session. Browser JavaScript never receives an OIDC token."
+      },
+      "adminSession": { "type": "apiKey", "in": "cookie", "name": "sb_admin_session", "description": "Opaque, HTTP-only admin session that originated in the password + TOTP flow and is revalidated against Keycloak." }
+    }
   },
   "tags": [
-    {
-      "name": "System",
-      "description": "Liveness and readiness endpoints."
-    }
+    { "name": "System", "description": "Liveness and readiness." },
+    { "name": "Schedule", "description": "Public class catalogue and schedule." },
+    { "name": "Content", "description": "Approved public Studio Balance content." },
+    { "name": "Account", "description": "Authenticated client profile." },
+    { "name": "Booking", "description": "Transactional client booking and cancellation." },
+    { "name": "Administration", "description": "Role-protected operational administration with audit logging." },
+    { "name": "Internal", "description": "Non-public BFF-to-API session protocol, protected by a time-bound server HMAC." }
   ]
 }

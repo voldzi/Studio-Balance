@@ -1,0 +1,51 @@
+name: studio-balance
+
+services:
+  postgres:
+    image: postgres:18.4-alpine
+    environment:
+      POSTGRES_DB: studio_balance
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_USER: studio_balance
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio_balance -d studio_balance"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.5
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: local-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: local-development-only
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: local-development-only
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./infra/keycloak/realm:/opt/keycloak/data/import:ro
+      - ./infra/keycloak/themes:/opt/keycloak/themes:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/127.0.0.1/9000'"]
+      interval: 10s
+      timeout: 6s
+      retries: 18
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

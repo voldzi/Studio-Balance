@@ -9,14 +9,27 @@ permissions:
   contents: read
 
 jobs:
-  documentation-contract:
+  repository-contract:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate repository skeleton
-        run: bash scripts/validate-skeleton.sh
-      - name: Validate OpenAPI JSON syntax
-        run: python3 -m json.tool openapi/openapi.json >/dev/null
-
-  # Stack-specific install, lint, typecheck, test, build, OpenAPI schema lint,
-  # secret scan and dependency scan are required after ADR 0001 is accepted.
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install pinned dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint, typecheck, test, build and validate contracts
+        run: pnpm check
+      - name: Validate preview Compose contract
+        env:
+          POSTGRES_PASSWORD: ci-preview-only
+        run: APP_VERSION=${{ github.sha }} docker compose -f docker-compose.preview.yml config --quiet
+      - name: Build production container targets
+        run: |
+          docker build --target web-runtime --tag studiobalance/web:${{ github.sha }} .
+          docker build --target api-runtime --tag studiobalance/api:${{ github.sha }} .
+          docker build --target worker-runtime --tag studiobalance/worker:${{ github.sha }} .

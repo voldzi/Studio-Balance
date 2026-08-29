@@ -3,8 +3,34 @@
 ## Cíl
 
 Testy dokazují hlavně správnost rezervace, času, autorizace a komunikace – ne
-jen render happy path. Konkrétní frameworky a příkazy se doplní po volbě
-stacku; scénáře a release gate jsou závazné už nyní.
+jen render happy path. Scaffold používá Vitest pro unit/API testy, Fastify
+`inject` pro HTTP kontrakt a `pnpm check` jako souhrnnou lokální/CI bránu.
+Component/E2E a automatizovaný accessibility nástroj se vyberou s prvním
+interaktivním workflow; scénáře a release gate jsou závazné už nyní.
+
+## Stav ověření zákaznického preview (2026-08-04)
+
+- doménové unit testy pokrývají dostupnost a přesnou 24hodinovou hranici;
+- lokální PostgreSQL 18 smoke prošel pro doplnění profilu, vytvoření rezervace,
+  opakování se stejným idempotency key, výpis, cancellation preview a včasné storno;
+- browser smoke prošel pro veřejný úvod, rozvrh, přepnutí dne, detail termínu a
+  návrat z chráněné rezervace do přihlášení se zachovaným cílem;
+- vizuální kontrola prošla na 1536 × 1024 a 390 × 844, bez horizontálního
+  přetečení a bez číselné kapacity; důkaz je v `design-qa.md`;
+- preview neposílá e-maily skutečným adresátům; vytváří pouze interní zprávu v
+  účtu. E-mailové TC zůstávají release gate před ostrým provozem.
+
+Automatizovaný DB concurrency test posledního místa, plný Keycloak browser E2E,
+e-mail, administrace, S3 média a reálná zařízení zůstávají předprodukčními
+branami; zákaznické preview je nesmí vydávat za uzavřené.
+
+Řez recenzí ověřuje veřejné čtení bez přihlášení, oddělenou administrátorskou
+autorizaci, odmítnutí publikace bez souhlasu, volitelné skutečné hvězdičky a
+audit vytvoření/úpravy. Migrace neobsahuje žádné ukázkové reference; prázdný
+stav proto nesmí zobrazit vymyšlenou citaci.
+Admin formulář po validační chybě zachová rozepsanou skutečnou recenzi a
+publikovaná vazba na skrytý nebo neexistující typ lekce nesmí vytvářet veřejný
+odkaz vedoucí na 404.
 
 ## Vrstvy
 
@@ -14,7 +40,7 @@ stacku; scénáře a release gate jsou závazné už nyní.
 | DB/domain integration | constraints, transakce, outbox, recurrence, fee uniqueness |
 | API contract | OpenAPI, schema, status/error, auth a idempotency |
 | component | všechny UI stavy, formuláře, keyboard/focus a copy |
-| end-to-end | kritické cesty web/admin/mobile proti test backendu |
+| end-to-end | kritické cesty veřejného/klientského webu a administrace proti test backendu |
 | security | IDOR, role, CSRF/XSS, rate limit, reset, upload a secret leakage |
 | performance/concurrency smoke | poslední místo, schedule read, booking latency |
 | visual/accessibility | breakpointy, real device/browser, AA smoke a regrese |
@@ -32,7 +58,7 @@ stacku; scénáře a release gate jsou závazné už nyní.
 | TC-06 | zrušení studiem | `cancelled_by_studio`, žádný fee, nové booking blokovány, zprávy |
 | TC-07 | změna času | stará/nová hodnota, nový arrival/cutoff/reminders, klient informován |
 | TC-08 | DST | lokální čas, offset, cutoff a reminders správné na obou přechodech |
-| TC-09 | změna obsahu | web i app vidí změnu bez mobilního release |
+| TC-09 | změna obsahu | veřejný web i klientský účet vidí změnu bez aplikačního release |
 | TC-10 | přístup k cizí rezervaci | zamítnuto bez úniku, bezpečný log/request ID |
 
 ## Hraniční matice storna
@@ -85,7 +111,27 @@ jako produkce; in-memory mock není důkaz transakční správnosti.
 - role a objektová autorizace pro každou `me/admin` cestu;
 - pagination/filters/invalid ranges mají deterministické výsledky;
 - CSRF/CORS/cache headers odpovídají auth modelu;
-- starší podporovaná mobilní verze funguje během API rollout okna.
+- Keycloak issuer/audience/signature/expiry validace, jednoduchá klientská
+  registrace bez e-mailového ověření a odhlášení mají pozitivní i negativní
+  testy; existující účet se starou `VERIFY_EMAIL` akcí po konfigurační opravě
+  neotevře obrazovku slibující nedostupný e-mail;
+- admin bez MFA nesmí vstoupit do administrace; změna role nebo MFA reset se
+  projeví v relaci a auditu;
+- produkční konfigurační kontrola vyžaduje nejen AMR mapper, ale i reference
+  `pwd` a `otp` na password/OTP executions obou browser flow; smoke z profilu
+  do administrace po novém heslo+TOTP přihlášení nesmí vytvořit událost
+  `ADMIN_MFA_REQUIRED` ani zobrazit druhý přihlašovací formulář;
+- webová relace administrátora vzniklá po heslu a TOTP otevře správu i
+  administrační API bez dalšího zadání na zapamatovaném zařízení nejvýše 90 dní
+  při aktivitě aspoň jednou za 30 dní; stejná role bez podepsaného AMR `otp`
+  musí skončit `MFA_REQUIRED` / přesměrováním na záložní oddělené přihlášení;
+  refresh ani pozdější přiřazení role nesmí hodnotu MFA povýšit;
+- bez volby zapamatování je klientská cookie session-only; se zapamatováním má
+  90denní absolutní a 30denní neaktivní limit. Browser token je neprůhledný,
+  refresh token zůstává šifrovaný v databázi a po nejvýše 15 minutách se znovu
+  ověřuje účet i role v Keycloaku; odhlášení zneplatní obě aplikační relace i
+  jejich obnovovací tokeny;
+- web, API a worker zůstávají kompatibilní během rollout/rollback okna.
 
 ## UI a přístupnost
 
@@ -93,12 +139,44 @@ Každá kritická obrazovka pokryje loading, empty, disabled, success, validatio
 system error, permission denied a případný offline/stale stav. Povinný smoke:
 
 - 360 px, tablet a desktop;
+- mobilní veřejné menu obsahuje obecné cíle bez samostatné položky Balance
+  Flow, obsahuje „Přihlásit / Můj účet“ a nepřihlášeného dovede na přihlášení
+  bez ztráty návratu do účtu; otevřený panel se zavře klepnutím mimo něj,
+  výběrem odkazu i klávesou Escape a po Escape vrátí fokus na ovladač menu;
 - současné Safari iOS/macOS, Chrome Android/desktop, Edge, Firefox;
 - keyboard-only, viditelný fokus a dialog focus restore;
 - automated WCAG audit + ruční formuláře/live region/zoom/reduced motion;
+- Keycloak login theme na přihlášení, registraci, obnově hesla, validační chybě
+  a nastavení MFA při 360 px i desktopu; žádný horizontální scroll, useknutý
+  formulář ani únik QR secretu do důkazu;
 - žádný capacity count, waitlist, payment CTA nebo permanentka v DOM,
-  accessible name, deep link payloadu ani analytics eventu;
+  accessible name, URL payloadu ani analytics eventu;
 - schválené logo/fotografie, crop a layout bez překryvu/shiftu.
+- PWA smoke: manifest obsahuje název, barvy a instalační ikony; service worker
+  neinterceptuje API ani neukládá rozvrh, účet nebo rezervace; bez připojení
+  navigace zobrazí pravdivou offline stránku; instalovaná aplikace už návod
+  nezobrazuje, iOS dostane postup Safari a podporovaný prohlížeč instalační
+  dialog. Když instalační dialog není dostupný, názvy položek menu se nesmějí
+  tvářit jako nefunkční tlačítka stránky.
+- profil přihlášeného účtu otevře zesílenou Keycloak akci pro změnu vlastního
+  hesla a po dokončení se bezpečně vrátí do profilu; heslo ani token se
+  neobjeví v URL, logu ani JavaScriptu aplikace;
+- administrační dashboard počítá oblíbenost, osmitýdenní docházku, měsíční
+  neúčasti a odhad hodnoty návštěv z aktuálních stavů rezervací; prázdná data
+  mají čitelný stav, hranice týdnů používá Europe/Prague a odhad ceny se nikde
+  nevydává za skutečnou tržbu;
+- detail každé lekce na 360 px i desktopu: schválená fotografie nebo bezpečný
+  fallback, sémantická náročnost 1–5 hvězdiček, praktické informace a odkaz na
+  nejbližší termín;
+- klientský účet po rezervaci ukáže potvrzení jen přihlášenému klientovi;
+  nepřihlášený požadavek na zprávy vrací standardní `401` chybu.
+- klientský účet na 360 px ukáže přivítání, nejbližší rezervaci s fotografií,
+  přímé storno a spodní navigaci bez horizontálního přetečení; na desktopu
+  zachová stejná data a akce;
+- oblíbené jsou soukromé pro aktuální účet, idempotentně se přidají/odeberou a
+  skrytý typ lekce se veřejně nevrací;
+- novinky zobrazují jen publikované položky po čase zveřejnění; admin koncept,
+  publikace a úprava vyžadují admin roli a zapisují audit.
 
 ## Oznámení
 
@@ -108,14 +186,25 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
 - cancellation zruší budoucí reminders;
 - retry je idempotentní a neprodukuje nekontrolované duplicity;
 - permanent e-mail failure důležité změny vyvolá alert/ruční fallback;
-- push deep link otevře správný objekt po loginu i bez aktivní session;
+- odkaz z e-mailu otevře správný objekt po loginu i bez aktivní session;
 - marketing preference neblokuje provozní komunikaci a naopak.
+- rezervace vytvoří právě jedno potvrzení a pouze budoucí výchozí připomínky v
+  outboxu; při stornu se čekající úlohy označí jako zrušené;
+- bez nakonfigurovaného e-mailového poskytovatele nesmí žádná úloha přejít do
+  stavu `sent`.
 
 ## Admin, CMS a média
 
+Proměny před/po mají testovat: koncept bez souhlasu, odmítnutí publikace bez
+souhlasu, dvě různé fotografie, skrytí z veřejného API, pořadí, vazbu pouze na
+aktivní lekci, audit a `private, no-store` administrační odpověď. Upload ověřuje
+JPG/PNG/WebP do 8 MB, odmítnutí jiného či poškozeného obsahu, odstranění EXIF,
+limit rozměrů, nedostupné S3 a zákaz veřejného čtení osiřelého objektu. UI se
+ověří od 360 px, klávesnicí a s nápovědou otevřitelnou fokusem.
+
 - recurrence create/edit/exception/cancel bez hardcodovaného rozvrhu;
 - preview dopadu významné změny;
-- obsahová změna se projeví webu i app bez release;
+- obsahová změna se projeví veřejnému webu i klientskému účtu bez release;
 - publish/unpublish/order a audit;
 - upload type/signature/size/dimensions/malware a nebezpečné SVG/rich text;
 - CSV export má autorizaci, escaping, encoding a ochranu proti formula injection;
@@ -128,7 +217,7 @@ Konkrétní SLO prahy jsou TBD, ale před produkcí se provede:
 - schedule read na realistickém týdnu a cache miss/hit;
 - burst booking na stejný session;
 - velký admin seznam/export v definovaném limitu;
-- výpadek DB, e-mailu, push a storage;
+- výpadek DB, e-mailu a storage;
 - S3 permission denial, nedostupnost, zaplnění a chybějící objekt bez dopadu na
   rezervace;
 - worker restart uprostřed jobu;
@@ -138,16 +227,18 @@ Konkrétní SLO prahy jsou TBD, ale před produkcí se provede:
 ## Testovací data
 
 Používat syntetické české profily, deterministické UUID a explicitní timezone.
-Žádné produkční e-maily/telefony/fotografie v CI. E-mail/push sandbox nesmí
+Žádné produkční e-maily/telefony/fotografie v CI. E-mail sandbox nesmí
 kontaktovat reálné klienty. Seed rozlišuje běžný, full, closed, cancelled,
 historický a DST termín.
 
-Lokální integrační testy běží proti PostgreSQL v Docker Desktop. Verze a
+Lokální integrační testy běží proti PostgreSQL 18 v Docker Desktop. Verze a
 relevantní connection semantics musí odpovídat produkčnímu PostgreSQL za
 `haproxy.home.cz:5000`; testy se nikdy nepřipojují k produkční databázi.
-Pokud implementace aktivuje media storage, lokální S3-kompatibilní služba běží
-také v Docker Desktop s testovacím bucketem a credentials. Test nikdy nezapisuje
+Lokální S3-kompatibilní služba běží také v Docker Desktop s testovacím bucketem
+a credentials. Test nikdy nezapisuje
 do produkčního bucketu na `docker.home.cz`.
+Identity testy používají projektový lokální Keycloak stejné hlavní verze a
+syntetický realm; nikdy se nepřipojují k produkčnímu realmu.
 
 ## Traceability a report
 
@@ -166,7 +257,7 @@ secret scan a dependency scan. PR musí výslovně uvést neprovedenou kontrolu.
 - [ ] všechny P0 requirement a TC scénáře prošly;
 - [ ] concurrency/idempotency/DST test běžel na produkčně ekvivalentní DB;
 - [ ] authorization a privacy negativní testy prošly;
-- [ ] podporované browsery a reálná mobilní zařízení prošly smoke;
+- [ ] podporované desktopové i mobilní browsery na reálných zařízeních prošly smoke;
 - [ ] záloha/obnova a rollback byly prakticky ověřeny;
 - [ ] žádná kritická/vysoká vada a známé nižší vady mají ownera/rozhodnutí;
 - [ ] akceptaci lze reprodukovat z verzovaného reportu a artefaktu.

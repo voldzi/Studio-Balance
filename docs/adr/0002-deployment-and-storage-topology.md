@@ -22,10 +22,12 @@ samostatné object storage otevřené. Dne 2026-08-04 proběhla read-only invent
 5. Produkční PostgreSQL se připojuje výhradně přes
    `haproxy.home.cz:5000`; aplikace ani běžné migrace nepoužívají přímé adresy
    databázových uzlů.
+   Patroni API na `patroni1.home.cz` potvrdilo PostgreSQL 18.4; lokální vývoj
+   a CI používají PostgreSQL major 18.
 6. Lokální databáze a další vývojové závislosti běží v Docker Desktop se
    syntetickými daty a jinými credentials než produkce.
 7. PostgreSQL je zdroj pravdy pro relační, rezervační, auditní data a metadata
-   médií. Binární originály a odvozené varianty mohou podle potřeby používat
+   médií. Produkční binární originály a odvozené varianty používají
    existující S3-kompatibilní službu na `docker.home.cz`.
 8. Každé S3 využití musí mít samostatný Studio Balance bucket, vlastní
    credentials s nejmenšími oprávněními, neveřejnou nebo explicitně řízenou
@@ -58,8 +60,8 @@ Internet
 
 - Nginx routing, TLS certifikát a security headers musí být součástí release
   a provozního ověření;
-- zapojení S3 není povinné, ale při jeho použití musí aplikace bezpečně zvládat
-  dočasnou nedostupnost bez porušení rezervačního provozu;
+- aplikace musí bezpečně zvládat dočasnou nedostupnost S3 bez porušení
+  rezervačního provozu;
 - HAProxy je kritická cesta a potřebuje readiness, monitoring a runbook;
 - Docker host potřebuje definovaný registry, rollout a rollback;
 - produkční nasazení je blokováno, dokud není vyřešeno zaplnění disku
@@ -69,8 +71,8 @@ Internet
 
 ## Otevřené implementační detaily
 
-- PostgreSQL major, database name, TLS režim, credential provisioning a
-  failover semantics portu 5000;
+- PostgreSQL database name, TLS režim, credential provisioning a failover
+  semantics portu 5000;
 - Nginx upstream porty, TLS/certificate automation, HSTS a health-check cesta;
 - Docker Compose/Swarm/jiný mechanismus, image registry a deployment pipeline;
 - konkrétní SeaweedFS gateway/config, interní endpoint, bucket, lifecycle,

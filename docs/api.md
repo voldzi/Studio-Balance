@@ -2,11 +2,12 @@
 
 ## Status a účel
 
-Studio Balance potřebuje jedno API pro web, mobilní aplikaci a administraci.
-REST a katalog níže jsou doporučený návrh odvozený ze zadání. Závazným
-strojovým kontraktem je pouze `openapi/openapi.json`; v počátečním stavu
-obsahuje systémové endpointy `/health` a `/ready`. Funkční endpoint se smí
-implementovat až po doplnění do OpenAPI.
+Studio Balance potřebuje jedno API pro veřejný web, klientský účet a administraci.
+Závazným strojovým kontraktem je `openapi/openapi.json`. Aktuální první
+vertikální řez implementuje health/readiness, veřejné typy lekcí a termíny,
+schválené recenze, profil klienta, vytvoření a výpis vlastních rezervací a
+bezpečné storno s preview důsledku. Ostatní katalog v tomto dokumentu je
+roadmapa; funkční endpoint se smí implementovat až po doplnění do OpenAPI.
 
 ## Zdroje pravdy
 
@@ -21,9 +22,9 @@ YAML může existovat jen jako generovaný export označený jako generovaný.
 
 | Prostředí | URL |
 | --- | --- |
-| lokální návrh | `http://localhost:3000` |
+| lokální vývoj | `http://localhost:3001` |
 | test/staging | TBD |
-| produkce | `https://studiobalance.zeleznalady.cz` |
+| produkce | `https://studio-balance.cz` |
 
 Systémové cesty `/health` a `/ready` nejsou verzované. Produktové REST cesty
 používají `/api/v1/...`. Breaking změna vyžaduje novou verzi nebo migrační
@@ -31,17 +32,30 @@ strategii a ADR.
 
 ## Autentizace
 
-Přesný session/token mechanismus je otevřený. Kontrakt musí podporovat:
+Identita používá Keycloak/OIDC podle ADR 0004. Kontrakt musí podporovat:
 
-- bezpečnou HTTP-only webovou relaci;
-- bezpečné mobilní přihlášení s uložením credentialu v platformním secure
-  storage;
-- oddělené admin přihlášení a možnost MFA;
+- OIDC Authorization Code flow s PKCE a bezpečnou HTTP-only serverovou relaci;
+- klientské přihlášení s podmíněným admin OTP, podepsaný AMR důkaz a záložní oddělené admin přihlášení;
+- platnou klientskou relaci, vyplněný profil a přijaté podmínky jako podmínku vytvoření rezervace;
 - reset hesla s krátkou jednorázovou platností;
 - serverovou objektovou autorizaci každé chráněné operace.
 
 Veřejný obsah a rozvrh jsou anonymní. Rezervace a `me` cesty vyžadují klienta;
 `admin` cesty vyžadují příslušnou administrativní roli.
+
+`GET /api/v1/me` a `PATCH /api/v1/me` jsou implementované chráněné cesty. Čtou pouze relaci
+vydanou webovou BFF po OIDC callbacku, nikdy OIDC token z browser JavaScriptu.
+Cookie obsahuje jen náhodný neprůhledný identifikátor; jeho hash, šifrovaný
+refresh token a okamžik poslední revalidace jsou na serveru. Interní cesty
+`/api/internal/sessions*` jsou součástí OpenAPI kvůli implementačnímu kontraktu,
+ale nejsou veřejné: přijímají pouze časově omezený HMAC podepsaný webovým BFF.
+Role a stav účtu se přes refresh token ověří nejpozději po 15 minutách.
+Interní session objekt obsahuje také `mfaVerified`, které BFF nastaví pouze z
+podepsaného AMR claimu `otp`; následný refresh ani změna role hodnotu nesmí
+povýšit. Admin API přijme webovou nebo záložní admin relaci jen s touto hodnotou
+a aktuální rolí `admin` nebo `super_admin`.
+Profil je svázaný s Keycloak subjectem a ukládá jméno, příjmení, telefon,
+stav e-mailu z identity a přijatou verzi podmínek.
 
 ## Konvence
 
@@ -80,6 +94,7 @@ Doporučené doménové kódy:
 | 400 | `VALIDATION_ERROR` | neplatný vstup |
 | 401 | `AUTHENTICATION_REQUIRED` | chybí/propadla identita |
 | 403 | `FORBIDDEN` | identita nemá oprávnění |
+| 403 | `MFA_REQUIRED` | admin role nemá v aktuální relaci prokázané OTP |
 | 404 | `RESOURCE_NOT_FOUND` | objekt neexistuje nebo nesmí být odhalen |
 | 409 | `SESSION_FULL` | kapacita byla mezitím naplněna |
 | 409 | `BOOKING_ALREADY_EXISTS` | klient už má aktivní rezervaci |
@@ -89,7 +104,12 @@ Doporučené doménové kódy:
 | 429 | `RATE_LIMITED` | ochranný limit |
 | 503 | `DEPENDENCY_UNAVAILABLE` | potřebná závislost není připravena |
 
-## Veřejný endpoint katalog – návrh
+## Veřejný endpoint katalog
+
+Implementované jsou veřejný katalog a detail lekcí, seznam termínů, detail
+termínu, čtení publikovaných recenzí a novinek. Klientské oblíbené i správa
+novinek v administraci jsou rovněž součástí aktuálního OpenAPI. Ostatní řádky
+jsou plánované a nejsou součástí aktuálního OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
@@ -104,6 +124,14 @@ Doporučené doménové kódy:
 | GET | `/api/v1/prices` | informační ceník bez nákupu |
 | GET | `/api/v1/faq` | aktivní FAQ |
 | GET | `/api/v1/studio` | kontakty, mapa, sítě a provozní texty |
+
+Klientské endpointy `GET /api/v1/me/favorites`,
+`POST /api/v1/me/favorites/{classTypeId}` a
+`DELETE /api/v1/me/favorites/{classTypeId}` vyžadují klientskou HTTP-only
+relaci. Administrace spravuje novinky přes
+`GET/POST /api/v1/admin/content/news` a
+`PATCH /api/v1/admin/content/news/{id}`; změny se auditují a odpovědi jsou
+`private, no-store`.
 
 ### Veřejný termín
 
@@ -130,23 +158,42 @@ poznámka, seznam klientů a jakýkoli waitlist údaj.
 `availability` je jeden z `bookable`, `full`, `closed`, `cancelled`,
 `completed`.
 
-## Autentizační endpointy – návrh
+### Veřejná recenze
+
+`GET /api/v1/reviews` vrací pouze publikované recenze s doloženým souhlasem.
+Volitelný query parametr `featured=true` omezí výstup na nejvýše šest referencí
+pro titulní stránku. Response neobsahuje interní příznak souhlasu ani koncepty.
+`rating` je `null`, pokud klientka skutečné hodnocení neposkytla; nesmí se
+dopočítat z náročnosti lekce. `source` je volitelný údaj o původu reference a
+ve veřejné odpovědi je `null`, pokud nebyl zadán. Odkaz na typ lekce se vrací
+jen pro aktuálně aktivní typ, aby veřejná reference nevedla na neaktivní detail.
+
+## Identita a profil
+
+Registrace, login, logout, reset a ověření e-mailu jsou Keycloak
+OIDC/browser workflow, nikoli vlastní password endpointy doménového API. Webová
+BFF vrstva drží tokeny mimo browser JavaScript. Do OpenAPI patří až skutečně
+implementované aplikační operace:
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
-| POST | `/api/v1/auth/register` | registrace klienta |
-| POST | `/api/v1/auth/login` | přihlášení klienta |
-| POST | `/api/v1/auth/logout` | zneplatnění relace |
-| POST | `/api/v1/auth/forgot-password` | neutrální zahájení resetu |
-| POST | `/api/v1/auth/reset-password` | jednorázový reset |
-| POST | `/api/v1/auth/verify-email` | ověření e-mailu |
-| GET | `/api/v1/me` | profil klienta |
-| PATCH | `/api/v1/me` | povolené profilové změny |
+| GET | `/api/v1/me` | profil klienta spojený s OIDC subjectem |
+| PATCH | `/api/v1/me` | povolené doménové profilové změny |
+| GET | `/api/v1/me/notifications` | posledních 20 zpráv patřících přihlášenému klientovi |
 | DELETE | `/api/v1/me` | žádost/proces zrušení účtu |
 
-`forgot-password` vrací stejný výsledek bez ohledu na existenci e-mailu.
+Zprávy v účtu obsahují potvrzení rezervace a provozní změny. Nejsou určené pro
+marketingovou komunikaci a endpoint nikdy nevrací zprávy jiného klienta.
 
-## Rezervace – návrh
+Issuer je `https://login.studio-balance.cz/realms/studio-balance`;
+klienti jsou `studiobalance-web` a `studiobalance-admin`. Callback/logout URL
+mají přesný allowlist. Reset nesmí prozradit existenci e-mailu.
+
+## Rezervace
+
+V aktuálním řezu jsou implementované vytvoření rezervace, výpis vlastních
+rezervací, cancellation preview a storno. Samostatný detail rezervace je
+roadmapa a zatím není v OpenAPI.
 
 | Metoda | Cesta | Účel |
 | --- | --- | --- |
@@ -183,7 +230,7 @@ Late cancel request musí obsahovat potvrzení důsledku. Response uvádí stav
 rezervace, zda fee vznikl, jeho částku a že se řeší ve studiu. Online payment
 URL nebo payment token jsou zakázané.
 
-## Administrace – návrh
+## Administrace
 
 | Oblast | Doporučené cesty |
 | --- | --- |
@@ -201,6 +248,31 @@ URL nebo payment token jsou zakázané.
 | obsah | zdrojově specifické CRUD cesty pod `/api/v1/admin/content/...` |
 | média | bezpečný upload/finalize model pod `/api/v1/admin/media` |
 | audit | read-only `GET /api/v1/admin/audit-log` |
+
+První provozní řez implementuje dashboard, typy lekcí, instruktory, termíny,
+zrušení termínu, seznam klientů, seznam rezervací, evidenci účasti/neúčasti a
+`GET/POST/PATCH /api/v1/admin/content/reviews` pro koncept, publikaci, skrytí a
+řazení schválených recenzí.
+`GET /api/v1/admin/dashboard` vrací vedle dnešních termínů také týdenní počet
+rezervací, měsíční účasti, pozdní storna a neúčasti, oblíbenost typů lekcí za
+90 dní a osmitýdenní řadu potvrzené docházky. Pole
+`estimatedAttendedValueThisMonthCents` je pouze součet cenových snapshotů
+rezervací označených jako účast; není účetní tržbou ani potvrzením zaplacení.
+Stejný řez obsahuje `GET /api/v1/transformations`, administrační
+`GET/POST/PATCH /api/v1/admin/content/transformations`, binární upload
+`POST /api/v1/admin/media/transformation-image` a veřejné čtení pouze
+publikovaného obrázku přes `GET /api/v1/media/{id}`. Upload přijímá JPG, PNG
+nebo WebP do 8 MB a vrací identifikátor normalizovaného WebP assetu. Publikace
+vyžaduje dvě různé fotografie a potvrzený souhlas; zvýrazněná proměna musí být
+současně publikovaná. Při nenakonfigurovaném úložišti vrací upload
+`MEDIA_STORAGE_UNAVAILABLE` s HTTP 503.
+Všechny cesty používají serverově ověřenou HTTP-only webovou nebo admin relaci, vyžadují roli
+`admin` nebo `super_admin`; administrační výpis je `private, no-store` a každá
+změna se zapisuje spolu s auditním záznamem v jediné databázové transakci.
+Zdroj reference je volitelný. Při přiřazení lekce musí typ existovat a
+publikovaná reference i proměna smí odkazovat pouze na aktivní typ lekce. Série,
+ruční rezervace, poplatky a čtení auditu zůstávají následujícím
+řezem; tabulka výše je cílový kontrakt.
 
 Generické wildcard endpointy se v OpenAPI nepoužívají; každý konkrétní resource
 dostane vlastní operaci, schema, oprávnění a auditní pravidlo.
@@ -221,7 +293,7 @@ rezervace vždy provede autoritativní serverovou transakci.
 
 ## Client generation a změnový proces
 
-Web a mobil mají generovat nebo typově odvozovat klienty z
+Web, administrace a serverové integrace mají generovat nebo typově odvozovat klienty z
 `openapi/openapi.json`. Změna API probíhá v pořadí:
 
 1. aktualizovat požadavek a případně ADR;
@@ -240,5 +312,6 @@ python3 -m json.tool openapi/openapi.json >/dev/null
 bash scripts/validate-skeleton.sh
 ```
 
-Po schválení stacku se přidá OpenAPI schema lint, breaking-change diff a test
+Scaffold generuje TypeScript kontrakty z OpenAPI příkazem
+`pnpm generate:contracts`. OpenAPI schema lint, breaking-change diff a test
 shody implementace.

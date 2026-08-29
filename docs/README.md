@@ -6,24 +6,26 @@ vývojové dokumenty patří do `docs/archive/`.
 
 ## Autorita dokumentů
 
-Závazné zadání má přednost před odvozenou dokumentací. Odvozené dokumenty
-rozdělují požadavky podle témat a doplňují technické návrhy, ale nemění rozsah.
-Při rozporu se práce zastaví, rozpor se zapíše do `open-questions.md` a vyřeší se
-před implementací.
+Pozdější výslovná rozhodnutí v `client-decisions.md` mají v měněném tématu
+přednost před původním briefem. Odvozené dokumenty rozdělují oba zdroje podle
+témat a doplňují technické návrhy, ale samy nemění rozsah. Nevyřešený rozpor se
+zapíše do `open-questions.md` a vyřeší před implementací.
 
 ## Aktivní sada
 
 | Dokument | Kanonické téma | Stav |
 | --- | --- | --- |
+| `client-decisions.md` | závazné změny zadavatele po původním briefu | závazné |
 | `requirements.md` | rozsah, obchodní pravidla, priority a invarianty | výchozí baseline |
 | `product-design.md` | uživatelé, cesty, obrazovky, design systém a UX stavy | výchozí baseline |
-| `architecture.md` | hranice systému, komponenty, data, integrace a nasazení | navržený směr |
+| `architecture.md` | hranice systému, komponenty, data, integrace a nasazení | schválený směr |
 | `api.md` | lidsky čitelný popis REST API a kontraktních pravidel | návrh |
 | `security.md` | autentizace, oprávnění, soukromí a bezpečnostní minimum | baseline |
-| `operations.md` | konfigurace, prostředí, zálohy, nasazení a rollback | před implementací |
-| `observability.md` | logy, metriky, trace, health a alerty | před implementací |
-| `runbook.md` | provozní incidenty a ověření nápravy | před implementací |
+| `operations.md` | konfigurace, prostředí, zálohy, nasazení a rollback | první vývojový řez |
+| `observability.md` | logy, metriky, trace, health a alerty | baseline + základ logů |
+| `runbook.md` | provozní incidenty a ověření nápravy | baseline |
 | `testing.md` | testovací vrstvy, kritické scénáře a release gate | baseline |
+| `client-questionnaire-booking-rules.md` | připravený dotaz k odloženým rezervačním pravidlům | čeká na odeslání |
 | `infrastructure-assessment.md` | inventura hostitele, využitelné služby a readiness podmínky | ověřeno 2026-08-04 |
 | `delivery-plan.md` | etapy, závislosti, výstupy a vstupní/výstupní brány | návrh |
 | `open-questions.md` | neuzavřená produktová a technická rozhodnutí | živý registr |

@@ -1,0 +1,99 @@
+{
+  "realm": "studio-balance",
+  "enabled": true,
+  "displayName": "Studio Balance",
+  "loginTheme": "studio-balance",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["cs", "en"],
+  "defaultLocale": "cs",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "verifyEmail": false,
+  "rememberMe": false,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 7776000,
+  "clientSessionIdleTimeout": 2592000,
+  "clientSessionMaxLifespan": 7776000,
+  "roles": {
+    "realm": [
+      { "name": "client", "description": "Studio Balance client" },
+      { "name": "admin", "description": "Studio Balance administrator" },
+      { "name": "super_admin", "description": "Studio Balance super administrator" }
+    ]
+  },
+  "defaultRoles": ["client"],
+  "authenticationFlows": [
+    {
+      "alias": "studio-balance-admin-browser",
+      "description": "Studio Balance administration: password and required TOTP.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "studiobalance-web",
+      "name": "Studio Balance web",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-web-client-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "authenticationFlowBindingOverrides": { "browser": "browser" },
+      "protocolMappers": [
+        {
+          "name": "amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": { "access.token.claim": "true", "id.token.claim": "true" }
+        }
+      ]
+    },
+    {
+      "clientId": "studiobalance-admin",
+      "name": "Studio Balance administration",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "local-admin-client-only",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/admin/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "authenticationFlowBindingOverrides": { "browser": "studio-balance-admin-browser" },
+      "protocolMappers": [
+        {
+          "name": "amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "consentRequired": false,
+          "config": { "access.token.claim": "true", "id.token.claim": "true" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@studiobalance/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "generate": "openapi-typescript ../../openapi/openapi.json -o src/generated.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

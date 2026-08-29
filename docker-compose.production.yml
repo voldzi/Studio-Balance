@@ -1,0 +1,135 @@
+name: studio-balance-production
+
+x-runtime-defaults: &runtime-defaults
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  migrate:
+    image: studiobalance/api:${APP_VERSION:?application version is required}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-runtime
+    environment:
+      API_PORT: 3001
+      APP_ENV: production
+      APP_VERSION: ${APP_VERSION:?application version is required}
+      DATABASE_URL: ${DATABASE_URL_MIGRATOR:?production migrator URL is required}
+      SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}
+      OIDC_ADMIN_CLIENT_ID: ${OIDC_ADMIN_CLIENT_ID:?OIDC admin client ID is required}
+      OIDC_ADMIN_CLIENT_SECRET: ${OIDC_ADMIN_CLIENT_SECRET:?OIDC admin client secret is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    command: ["node", "dist/database/migrate.js"]
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    cpus: 0.5
+    mem_limit: 256m
+
+  api:
+    <<: *runtime-defaults
+    image: studiobalance/api:${APP_VERSION:?application version is required}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-runtime
+    environment:
+      API_PORT: 3001
+      APP_ENV: production
+      APP_VERSION: ${APP_VERSION:?application version is required}
+      DATABASE_URL: ${DATABASE_URL:?production application URL is required}
+      SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}
+      OIDC_ADMIN_CLIENT_ID: ${OIDC_ADMIN_CLIENT_ID:?OIDC admin client ID is required}
+      OIDC_ADMIN_CLIENT_SECRET: ${OIDC_ADMIN_CLIENT_SECRET:?OIDC admin client secret is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+    ports:
+      - "4281:3001"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 0.5
+    mem_limit: 256m
+
+  worker:
+    <<: *runtime-defaults
+    image: studiobalance/worker:${APP_VERSION:?application version is required}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker-runtime
+    environment:
+      APP_ENV: production
+      APP_VERSION: ${APP_VERSION:?application version is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.kill(1, 0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    cpus: 0.25
+    mem_limit: 128m
+
+  web:
+    <<: *runtime-defaults
+    image: studiobalance/web:${APP_VERSION:?application version is required}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web-runtime
+      args:
+        APP_ENV: production
+        PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
+    environment:
+      APP_VERSION: ${APP_VERSION:?application version is required}
+      NODE_ENV: production
+      APP_ENV: production
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
+      OIDC_BACKCHANNEL_ISSUER_URL: ${OIDC_BACKCHANNEL_ISSUER_URL:-}
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}
+      OIDC_ADMIN_CLIENT_ID: ${OIDC_ADMIN_CLIENT_ID:?OIDC admin client ID is required}
+      OIDC_ADMIN_CLIENT_SECRET: ${OIDC_ADMIN_CLIENT_SECRET:?OIDC admin client secret is required}
+      SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
+      API_URL: http://api:3001
+    ports:
+      - "3281:3000"
+    networks:
+      - default
+      - keycloak
+    healthcheck:
+      test:
+        ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 0.5
+    mem_limit: 256m
+
+networks:
+  keycloak:
+    external: true
+    name: keycloak_default

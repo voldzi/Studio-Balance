@@ -8,13 +8,15 @@ vizualizace omylem změnily schválené funkční zadání.
 
 ## Pořadí autority
 
-1. **Závazný brief:** `docs/01 Zadání/STUDIO_BALANCE_ZADANI_PRO_VYVOJ.md`,
+1. **Závazná následná rozhodnutí:** `docs/client-decisions.md`; mají přednost
+   pouze v tématech, která výslovně mění.
+2. **Původní závazný brief:** `docs/01 Zadání/STUDIO_BALANCE_ZADANI_PRO_VYVOJ.md`,
    verze 1.0, stav „Závazné funkční a UX/UI zadání pro vývoj“.
-2. **Aktivní vývojová dokumentace:** plochá sada v `docs/`.
-3. **API kontrakt:** `openapi/openapi.json` pro cesty a schémata, která již
+3. **Aktivní vývojová dokumentace:** plochá sada v `docs/`.
+4. **API kontrakt:** `openapi/openapi.json` pro cesty a schémata, která již
    obsahuje.
-4. **Doplňkové textové podklady:** tři jednorázové dokumenty Word.
-5. **Vizuální reference:** rasterové obrázky a screenshoty.
+5. **Doplňkové textové podklady:** tři jednorázové dokumenty Word.
+6. **Vizuální reference:** rasterové obrázky a screenshoty.
 
 Při rozporu platí výše uvedené pořadí. Rozsah lze změnit jen výslovným
 rozhodnutím zadavatele, aktualizací briefu/požadavků a podle významu také ADR.
@@ -24,19 +26,63 @@ rozhodnutím zadavatele, aktualizací briefu/požadavků a podle významu také 
 Dne 2026-08-04 zadavatel doplnil provozní zadání:
 
 - repozitář `git@github.com:voldzi/Studio-Balance.git`;
-- veřejná URL `https://studiobalance.zeleznalady.cz`;
+- kanonická veřejná URL `https://studio-balance.cz`;
 - Nginx internetový vstup na `dmz.home.cz`;
 - produkční Docker runtime na `docker.home.cz`;
 - produkční PostgreSQL přes `haproxy.home.cz:5000`;
-- možnost použít existující S3-kompatibilní úložiště na `docker.home.cz`, pokud
-  je pro aplikaci potřeba;
+- produkční média v existujícím S3-kompatibilním úložišti na `docker.home.cz`;
 - lokální vývoj přes Docker Desktop.
 
-Rozhodnutí je závazné pro infrastrukturu a je zaznamenáno v ADR 0002. Přesná
-verze databáze, TLS/auth parametry a Docker deployment mechanismus nebyly
-součástí pokynu a zůstávají otevřené. Read-only inventura hostitele je
+Zadavatel následně schválil TypeScript web-only stack, vyřadil nativní
+iOS/Android aplikaci a určil PostgreSQL major 18. Patroni API potvrdilo na
+`patroni1.home.cz` verzi 18.4. Schválil také Keycloak/OIDC model, email
+verification před bookingem a admin MFA. Rozhodnutí jsou v
+`client-decisions.md`, ADR 0002, ADR 0003 a ADR 0004. První technickou
+implementační baseline zaznamenává ADR 0005; nemění produktový rozsah.
+Zadavatel určil pořadí dalších kroků: interní náhled na `docker.home.cz`, potom
+DMZ publikace a následně produkční PostgreSQL a Keycloak. Izolovaný preview
+mechanismus zaznamenává ADR 0006. Databázové TLS/role parametry a veřejný
+produkční deployment mechanismus zůstávají otevřené. Přípravu Nginx publikace
+na DMZ a předání instalačního skriptu kvůli nedostupnému SSH zaznamenává ADR
+0007. Read-only inventura hostitele je
 zaznamenána v `infrastructure-assessment.md`; neobsahuje credentials ani změny
 provozu.
+
+Pro zákaznické preview zadavatel 2026-08-04 výslovně schválil použití jím
+dodaných rastrových obrázků a dočasné vypnutí e-mailové komunikace. Preview
+proto používá dodaný raster loga a samostatné fotografie studia. Toto rozhodnutí
+neprohlašuje rastry za finální produkční assety a nemění požadavek na jednotlivé
+originální fotografie lekcí a průhledné logo před finálním vydáním.
+
+Dne 2026-08-06 zadavatel výslovně potvrdil použití šesti dodaných plakátových
+vizuálů lekcí a vizualizace sálu v aktuální aplikaci. Dne 2026-08-07 následně
+dodal pro všech šest lekcí ostřejší náhradní podklady; ty jsou zařazené jako
+aktuální preview media v `apps/web/public/images/studio-balance/`. Od 2026-08-08
+se v katalogu zobrazují ve společném formátu s kontrolovaným cropem, zatímco
+detail lekce zachová celý plakát ve ztlumeném pozadí z téhož obrazu. Text uvnitř
+obrazů se nepřebírá jako funkční data. Finální produkční média zůstávají
+samostatným schvalovacím a S3 workflow.
+
+Dne 2026-08-09 zadavatel opravil slogan na „Najdi si svůj balanc.“ a schválil
+recenzní pás na titulní stránce. Implementace nevytváří ukázkové recenze:
+zobrazuje pouze ručně vložené reference s doloženým souhlasem a volitelné
+hvězdičky jen tehdy, pokud je klientka skutečně udělila.
+
+Dne 2026-08-10 zadavatel dodal první skutečnou recenzi, výslovný souhlas
+autorky s publikací, pevný týdenní rozvrh a kapacity. Původní obrázek ve složce
+`02 Recenze` je autoritativní podklad pro časy a rozlišení Barre Sculpt / Barre
+Strength; nejde o fotografii recenzentky. Novější soubor
+`03 Rozvrh/Studio_Balance_kompletni_rozvrh_2026-08-10.jpg` potvrzuje také ceny
+a lektorky a v těchto údajích má před starším podkladem přednost. Recenze
+neobsahuje hvězdičkové hodnocení, proto se žádné nedoplňuje. Otevřená zůstává
+jen konečná kapacita obou Barre variant.
+
+Stejná lokální složka obsahuje také historické screenshoty veřejných hodnocení
+a soukromých zpráv. Některé uvádějí zdravotní stav, hmotnost nebo tělesné míry
+a u jednotlivých zpráv není doložený souhlas s novou publikací na tomto webu.
+Tyto screenshoty se proto neukládají do Git historie ani nepřepisují do
+produkční databáze. Pro aktuální publikaci je schválená pouze výše uvedená
+recenze Markety Šímové, u které zadavatel výslovně předal odpověď „Ano“.
 
 ## Analyzované textové podklady
 
@@ -59,7 +105,7 @@ Jde o jediný podklad, který sám výslovně řeší kolize se staršími návr
 | --- | --- | --- |
 | `Studio_Balance_Webovky.docx` | jednostránkový souhrn webu, značky, lekcí a SEO | potvrzuje, ale nerozšiřuje brief |
 | `Studio_Balance_Rezervacni_System.docx` | jednostránkový souhrn rezervací, notifikací, platby ve studiu a storna | potvrzuje klíčová obchodní pravidla |
-| `Studio_Balance_Aplikace.docx` | jednostránkový souhrn mobilních obrazovek a notifikací | potvrzuje očekávání nativně stažitelné aplikace |
+| `Studio_Balance_Aplikace.docx` | jednostránkový souhrn mobilních obrazovek a notifikací | historická reference; nativní aplikaci později vyřadilo CD-006 |
 
 Všechny tři dokumenty byly vyrenderovány a vizuálně zkontrolovány. Neobsahují
 další požadavky, které by měly přednost před hlavním briefem.
@@ -106,13 +152,14 @@ Unikátní obsah zahrnuje:
 | --- | --- | --- | --- |
 | kompozitní koncept | počty volných míst | klient počet míst neuvidí | nepřebírat |
 | kompozitní koncept | „Přiveď kamarádku“ a sleva | referral/věrnost není v rozsahu | nepřebírat |
-| staré screenshoty | stísněná týdenní tabulka | mobil má svislý seznam podle dne | použít jen jako příklad problému |
+| staré screenshoty | stísněná týdenní tabulka | responzivní web má na úzkém viewportu svislý seznam podle dne | použít jen jako příklad problému |
 | logo/interiér | různé varianty značky | produkce smí použít jen poslední schválené logo | vyžádat SVG/PNG a potvrzení varianty |
 | plakáty | marketingová tvrzení a fotografie | texty a reálné pomůcky schvaluje provozovatelka | nepovažovat za finální obsah |
 
 ## Chybějící produkční podklady
 
-Před produkčním použitím je nutné potvrdit nebo dodat: finální logo v SVG a
-PNG, schválený hero obraz, reálné fotografie lekcí a instruktorů, přesné
-kontakty, ceník, rozvrh, texty, recenze, právní dokumenty, parkování, sociální
-profily, mapu a assety pro App Store/Google Play.
+Před finálním produkčním vydáním je nutné potvrdit nebo dodat: finální logo v
+SVG a PNG, schválený hero obraz, reálné fotografie lekcí a instruktorů, přesné
+kontakty, konečnou kapacitu Barre, texty, další recenze, právní dokumenty,
+parkování, sociální profily a mapu. App Store/Google Play assety se po
+rozhodnutí CD-006 nepožadují.

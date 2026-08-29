@@ -1,6 +1,6 @@
 # ADR 0001: Výchozí aplikační architektura
 
-- Status: Proposed
+- Status: Superseded by ADR 0003
 - Datum: 2026-08-04
 - Vlastníci rozhodnutí: product owner Studio Balance + technický vlastník (TBD)
 

@@ -3,8 +3,8 @@
 ## Princip etapizace
 
 Projekt se realizuje po ověřitelných vertikálních řezech. Každá etapa má vstupní
-podmínky, konkrétní výstupy a exit gate. Mobilní aplikace nezačne vytvářet druhý
-rezervační systém; navazuje na ověřené společné API a pravidla.
+podmínky, konkrétní výstupy a exit gate. Veřejný web, klientský účet a
+administrace používají jedno společné API a pravidla.
 
 ## Fáze 0 – rozhodnutí a obsah
 
@@ -14,11 +14,13 @@ Výstupy:
 - schválená architektura a technologický ADR;
 - potvrzené připojovací a release parametry pro Docker na `docker.home.cz` a
   PostgreSQL přes `haproxy.home.cz:5000`;
-- rozhodnutí, zda první verze aktivuje S3 media storage, a pokud ano potvrzený
-  bucket/gateway, credentials, kapacita, záloha a restore test;
+- potvrzený produkční S3 bucket/gateway, credentials, kapacita, záloha a
+  restore test;
+- implementovaný Keycloak realm/clients, issuer přes DMZ, email verification,
+  admin MFA, lokální dev realm a provozní restore/recovery;
 - produkční logo a prvotní fotografické/content balíčky;
 - potvrzené ceny, kontakty, storno znění a právní odpovědnosti;
-- vlastnictví domény, cloudových a mobilních účtů;
+- vlastnictví domény, identity, e-mailu a infrastrukturních účtů;
 - prioritizovaný backlog s návazností na ID z `requirements.md`.
 
 Exit gate: žádná otevřená P0 otázka, která mění aplikační scaffold, datový model,
@@ -26,11 +28,17 @@ rezervační pravidla nebo klíčové obrazovky.
 
 ## Fáze 1 – design systém a ověřený prototyp
 
+Stav k 2026-08-09: zákaznické webové preview používá dodané logo, sjednocené
+ostré plakáty všech šesti lekcí a responzivní úvod, katalog, detaily, rozvrh,
+rezervaci i klientský přehled. Zadavatelka vizuál kladně přijala; oprava sloganu
+a pás skutečných schválených recenzí jsou zapracované. Finální fotografie
+reálného dokončeného studia a výslovné finální schválení zůstávají exit gate.
+
 Výstupy:
 
 - potvrzené barvy, typografie, spacing, radius, elevation a motion tokeny;
 - desktop/mobil homepage, rozvrh, detail typu, detail termínu a rezervační tok;
-- mobilní Domů/Rozvrh/Rezervace a hlavní administrativní workflow;
+- responzivní klientský přehled/Rozvrh/Rezervace a hlavní admin workflow;
 - loading, empty, full, closed, cancelled, validation a system-error stavy;
 - přístupnostní a responzivní anotace;
 - obsahová matice assetů a textů.
@@ -40,6 +48,16 @@ nikde neukazuje počet míst, platba ani waitlist.
 
 ## Fáze 2 – aplikační základ, backend a administrace
 
+Stav k 2026-08-09: body 1–2 a první část bodů 3–6 mají implementovaný řez —
+spustitelný scaffold, health/readiness, konfiguraci, PostgreSQL 18 migrace,
+request ID, strukturované logy, auditní základ, OIDC BFF relaci, veřejný katalog
+termínů, klientský profil, transakční rezervaci, idempotenci, klientský přehled
+a včasné/pozdní storno. Image web/API/worker, oddělené preview/produkční Compose
+deploymenty, bezpečný rollback a první administrace lekcí, termínů, klientů,
+rezervací, docházky a recenzí jsou implementované. Opakované série, úplný auditní
+workflow, e-mail, S3 media workflow, jmenovité admin předání a všechny produkční
+release gates tím nejsou uzavřené.
+
 Pořadí vertikálních řezů:
 
 1. health/readiness, konfigurace, databáze, migrace, request ID a audit základ;
@@ -48,7 +66,7 @@ Pořadí vertikálních řezů:
 4. jednorázové/opakované termíny, výjimky a čas `Europe/Prague`;
 5. transakční rezervace, kapacita, idempotence a klientský přehled;
 6. včasné/pozdní storno, docházka, fee a audit oprav;
-7. e-mailové/push/in-app joby, retry a zneplatnění starých reminderů;
+7. e-mailové a provozní joby, retry a zneplatnění starých reminderů;
 8. CMS obsah, exporty a provozní dashboard.
 
 Exit gate: API kontrakt, migrace, integrační testy a administrativní akceptace
@@ -68,20 +86,7 @@ Výstupy:
 Exit gate: WEB/RES akceptační scénáře, přístupnostní smoke, podporované browsery,
 výkonové cíle a žádný zakázaný prvek v DOM/API.
 
-## Fáze 4 – mobilní aplikace
-
-Výstupy:
-
-- iOS a Android build ze sdílených API kontraktů;
-- Domů, Rozvrh, Rezervace, Novinky a Profil;
-- bezpečná relace, push permission flow, deep links a kalendář/navigace;
-- omezené offline čtení nejbližší rezervace;
-- testovací distribuce a store metadata.
-
-Exit gate: mobilní APP kritéria na podporovaných OS a reálných zařízeních,
-notifikační scénáře a potvrzené vlastnictví store účtů.
-
-## Fáze 5 – systémová akceptace
+## Fáze 4 – systémová akceptace
 
 Povinné sady:
 
@@ -90,25 +95,26 @@ Povinné sady:
 - změna/zrušení termínu a zastavení starých notifikací;
 - autorizace cizí rezervace a administrativních endpointů;
 - export, smazání/anonymizace a auditní stopa;
-- záloha/obnova, výpadek e-mailu/push a media delivery vrstvy;
+- záloha/obnova, výpadek e-mailu a media delivery vrstvy;
 - responzivita, přístupnost, performance smoke a vizuální regrese;
 - obsahová a právní kontrola produkčních dat.
 
 Exit gate: žádná otevřená kritická/vysoká vada, všechny P0 acceptance testy
 prokazatelně prošly a známá provozní rizika mají runbook.
 
-## Fáze 6 – spuštění a předání
+## Fáze 5 – spuštění a předání
 
 Výstupy:
 
 - produkční doména, TLS, prostředí a migrace počátečního obsahu;
 - Docker image registry a řízené nasazení/rollback na `docker.home.cz`;
-- Nginx route a TLS publikace `studiobalance.zeleznalady.cz` přes
+- Nginx route a TLS publikace `studio-balance.cz`,
+  `www.studio-balance.cz` a `login.studio-balance.cz` přes
   `dmz.home.cz`;
 - produkční DB připojení přes HAProxy a ověřený zákaz přímých DB node adres;
 - monitoring, alerty, zálohy a ověřený rollback;
-- při aktivním S3 vyhrazená media gateway/bucket a ověřená obnova objektů;
-- publikace aplikací;
+- vyhrazená S3 media gateway/bucket a ověřená obnova objektů;
+- publikace webové aplikace;
 - školení provozovatelky a administrativní příručka;
 - seznam účtů, služeb, licencí a nákladů;
 - zdrojové kódy, API, migrace, testy a dokumentace;
@@ -118,7 +124,7 @@ Výstupy:
 
 Každý merge musí projít buildem, lintem, typovou kontrolou, relevantními testy,
 kontrolou kostry, OpenAPI validací a secret/dependency scanem. Konkrétní příkazy
-se doplní po schválení stacku. Vývojový stav nelze označit jako hotový, pokud
+jsou v `README.md` a `docs/operations.md`. Vývojový stav nelze označit jako hotový, pokud
 chybí související dokumentace nebo nebyla spuštěna relevantní kontrola.
 
 ## Hlavní rizika
@@ -128,7 +134,7 @@ chybí související dokumentace nebo nebyla spuštěna relevantní kontrola.
 | nejasná finální značka a fotografie | přepracování designu, neprodukční obsah | asset gate ve fázi 0/1 |
 | souběh rezervací | přeplnění lekce | DB transakce, unikátní constraint a concurrency test |
 | chyby času/DST | nesprávné storno a reminder | IANA zóna, UTC instants, hraniční testy |
-| dvě implementace pravidel | rozdílný web/mobil/admin | společné API a doménová služba |
+| dvě implementace pravidel | rozdílný klientský web/admin | společné API a doménová služba |
 | nedoručené změny lekce | provozní a reputační dopad | fronta, retry, stav doručení, alert a povinný e-mail |
 | nejasná retence/právní texty | privacy riziko | uzavřít OQ-021 až OQ-024 před produkcí |
 | příliš široká první verze | zpoždění | neměnit P2 na P0 bez explicitní prioritizace |

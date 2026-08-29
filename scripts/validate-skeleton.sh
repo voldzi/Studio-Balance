@@ -31,7 +31,19 @@ required_files=(
   AGENTS.md
   CLAUDE.md
   .env.example
+  package.json
+  pnpm-workspace.yaml
+  docker-compose.yml
+  tsconfig.base.json
+  apps/web/package.json
+  apps/api/package.json
+  apps/worker/package.json
+  packages/contracts/package.json
+  packages/domain/package.json
+  packages/ui-tokens/package.json
   docs/README.md
+  docs/client-decisions.md
+  docs/client-questionnaire-booking-rules.md
   docs/requirements.md
   docs/product-design.md
   docs/architecture.md
@@ -55,6 +67,9 @@ done
 
 require_dir docs/adr
 require_dir docs/archive
+require_dir infra/keycloak/realm
+require_dir infra/keycloak/themes/studio-balance/login
+require_dir infra/postgres/migrations
 
 strip_compact() {
   sed '/^## Compact Instructions$/,$d' "$1" | grep -v '^[[:space:]]*$' || true

@@ -2,7 +2,8 @@
 
 ## Jak runbook používat
 
-Konkrétní provider příkazy nelze doplnit před volbou stacku. Každý incident
+Konkrétní provider a deployment příkazy nelze doplnit před volbou služeb a
+vytvořením scaffoldu. Každý incident
 začíná zaznamenáním času, prostředí, verze a request ID; chraňte osobní údaje a
 nedělejte nevratnou databázovou opravu bez zálohy a auditu.
 
@@ -44,6 +45,23 @@ uložené rezervace.
 **Ověření:** error rate se vrátí k baseline, stejný request scénář projde,
 `ErrorResponse` neuniká interní detail a data jsou konzistentní.
 
+## Keycloak nebo přihlášení není dostupné
+
+**Příznaky:** OIDC discovery/callback selhává, klient se nemůže přihlásit,
+administrace odmítá MFA nebo API vrací systematické 401/403.
+
+**Diagnostika:** ověřit produkční issuer přes DMZ, Keycloak health/logy, DNS/TLS,
+client ID a callback allowlist bez vypsání secretu. Rozlišit nedostupnost IdP,
+propadlou relaci, chybné audience/role a neprovedené MFA.
+
+**Náprava:** veřejné čtení může zůstat dostupné, ale booking a admin změny se
+nesmějí pustit bez platné identity. Obnovit Keycloak/proxy/config, neaktivovat
+nouzový bypass role nebo MFA. Recovery a reset faktoru jsou
+privilegované a auditované.
+
+**Ověření:** discovery, klientský login/logout, návrat na původní termín,
+jednoduchá klientská registrace, admin MFA, role denial a zneplatnění relace.
+
 ## Databáze není dostupná
 
 **Příznaky:** `/ready` 503, booking/read operace selhávají, DB connect/pool alert
@@ -70,7 +88,7 @@ nezvyšovat kapacitu jen kvůli technické chybě bez rozhodnutí admina.
 
 **Ověření:** unique invariant, veřejný stav a klientský účet souhlasí.
 
-## E-mail nebo push neodchází
+## E-mail neodchází
 
 **Diagnostika:** outbox/queue age, provider status, credentials, sender/domain,
 rate limit, konkrétní job attempts. Rozlišit dočasné a permanentní chyby.
@@ -92,7 +110,7 @@ verzovaným skriptem/migrací s preview a auditním záznamem. Dotčené klienty
 informovat schváleným provozním postupem.
 
 **Ověření:** přesné boundary testy, pending reminder instants a zobrazení webu,
-mobilu i e-mailu souhlasí.
+klientského účtu i e-mailu souhlasí.
 
 ## Média nebo obrazová delivery vrstva selhává
 

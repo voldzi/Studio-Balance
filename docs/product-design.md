@@ -10,6 +10,11 @@ klient bez zbytečné překážky najde, pochopí a rezervuje vhodný termín.
 Finální vizuál podléhá schválení produkčních assetů. Referenční screenshot není
 hotová obrazovka a nesmí převážit funkční zadání.
 
+Implementovaný webový povrch zahrnuje veřejný web, rozvrh, klientský účet,
+rezervaci/storno a první provozní řez administrace. Veřejný web používá dodané
+logo a reálné fotografie pro zákaznické preview; jejich finální schválení
+zůstává součástí akceptace.
+
 ## Uživatelé a jejich úlohy
 
 | Role | Primární úloha | Signál úspěchu |
@@ -41,11 +46,11 @@ sbírat osobní údaje bez účelu.
 | Cesta | Vstup | Úspěch | Selhání / fallback |
 | --- | --- | --- | --- |
 | první rezervace | homepage, detail lekce, rozvrh | účet + právě jedna potvrzená rezervace | zachovat vybraný termín a vysvětlit chybu |
-| rychlá rezervace klienta | aplikace nebo rozvrh | potvrzení bez platebního kroku | při souběhu nabídnout návrat na jiné termíny |
-| kontrola nejbližší lekce | mobilní Domů / účet | čas, příchod, místo, instruktor a navigace | offline zobrazit poslední známé údaje s označením |
+| rychlá rezervace klienta | klientský účet nebo rozvrh | potvrzení bez platebního kroku | při souběhu nabídnout návrat na jiné termíny |
+| kontrola nejbližší lekce | responzivní klientský účet | čas, příchod, místo, instruktor a navigace | při výpadku srozumitelná chyba a bezpečný retry |
 | včasné storno | detail rezervace | zrušeno bez poplatku a místo uvolněno | bezpečný retry bez dvojí změny |
 | pozdní storno | detail rezervace | klient nejprve pochopí cenu a potvrdí | výchozí akce je rezervaci ponechat |
-| změna/zrušení studiem | push/e-mail/účet | klient vidí aktuální stav a rozdíl | e-mail je povinný fallback, stav je v účtu |
+| změna/zrušení studiem | e-mail/účet | klient vidí aktuální stav a rozdíl | e-mail je povinný fallback, stav je v účtu |
 | správa termínu | admin rozvrh | vytvoření/změna/zrušení s auditní stopou | potvrzení dopadu před hromadnou notifikací |
 | evidence docházky | admin termín | attended/no_show, případně právě jeden fee | oprava jen s důvodem a auditem |
 
@@ -53,9 +58,14 @@ sbírat osobní údaje bez účelu.
 
 ### Veřejný web
 
-Hlavní navigace: Domů, O studiu, Lekce, Rozvrh, Balance Flow, Galerie, Recenze,
-Ceník, Kontakt a dominantní CTA „Rezervovat lekci“. Na mobilu je navigace
-kompaktní, ale CTA na rozvrh zůstává snadno dostupné.
+Hlavní navigace: Domů, O studiu, Všechny lekce, Rozvrh, Galerie, Recenze,
+Ceník, Kontakt a dominantní CTA „Rezervovat lekci“. Samostatná stránka metody
+Balance Flow zůstává dostupná z obsahového zvýraznění na homepage, ale není
+hlavní položkou mobilního menu. Na mobilu je navigace kompaktní, CTA na rozvrh
+zůstává snadno dostupné a poslední oddělená položka „Přihlásit / Můj účet“ vede
+nepřihlášeného návštěvníka přes přihlášení a přihlášeného přímo do klientského
+přehledu. Otevřený panel se zavře klepnutím mimo něj, výběrem odkazu nebo
+klávesou Escape.
 
 Routes:
 
@@ -80,17 +90,48 @@ Routes:
 /cookies
 ```
 
-### Mobilní aplikace
+### Klientský účet
 
-Spodní navigace má pět položek: Domů, Rozvrh, Rezervace, Novinky, Profil.
-Kontakt, právní texty a galerie mohou být sekundární. Push deep link vede na
-konkrétní rezervaci nebo novinku, ne pouze na homepage.
+Responzivní klientská část vychází ze směru schváleného 13. 8. 2026: krémové
+pozadí, hnědá typografie, měděné/zlatavé akce, elegantní nadpisové písmo,
+oficiální logo a schválené fotografie lekcí. Úvod přivítá klientku, ukáže její
+nejbližší rezervaci s fotografií a nabídne detail i bezpečné storno.
+
+Spodní mobilní navigace má přesné pořadí Domů, Rozvrh, Rezervace, Oblíbené a
+Profil. Klientský přehled dále obsahuje nadcházející/minulé rezervace, novinky,
+zprávy účtu, profil, nastavení a odhlášení. Rozvrh, detail i rezervační krok
+zůstávají součástí stejného responzivního webu a používají tentýž serverový stav
+jako desktop a administrace. Číselný počet volných míst z referenčních obrázků
+se nepřebírá; veřejné UI ukazuje pouze slovní stav. Permanentky, doporučovací
+slevy, nativní aplikace a mobilní push nejsou tímto vizuálem schválené.
+
+Pokud profil nese roli `admin` nebo `super_admin`, zobrazí v nastavení samostatný
+vstup „Správa studia“. Běžný klient jej nevidí. Administrátor při přihlášení do
+aplikace dokončí heslo i TOTP; stejná serverová relace pak otevře správu přímo,
+bez druhého formuláře. Pokud relace neobsahuje podepsaný důkaz OTP, přejde uživatel
+na záložní oddělené ověření. Po úspěchu zůstane zabezpečený přístup při volbě
+zapamatovaného zařízení použitelný až 90 dní, pokud se používá nejméně jednou za
+30 dní. Odkaz nenahrazuje serverovou kontrolu role ani povinné MFA.
+
+Klientský účet používá pouze neprůhlednou serverovou `HttpOnly` relaci. Volba
+„Zapamatovat toto soukromé zařízení na 90 dní“ je v aplikaci jediná volba pro
+trvalejší přihlášení; bez ní je cookie jen do zavření prohlížeče. Obě varianty
+se při neaktivitě po 30 dnech ukončí. Přihlášený klient proto při běžném návratu
+nezadává heslo znovu; explicitní odhlášení zruší klientskou i administrátorskou
+relaci aplikace na daném zařízení.
 
 ### Administrace
 
 Primární oblasti: Dashboard, Rozvrh, Typy lekcí, Instruktoři, Klienti,
 Rezervace/docházka, Storno poplatky, Obsah, Nastavení, Audit. Navigace je
 úkolová, ne kopie veřejného webu.
+
+Dashboard vedle dnešního provozu ukazuje oblíbenost typů lekcí za posledních
+90 dní, osmitýdenní trend potvrzených návštěv, týdenní rezervace, měsíční
+účast, pozdní storna a neúčasti. Finanční karta používá přesný název „Odhad
+hodnoty návštěv“ a nápovědu, že jde pouze o součet cen rezervací označených jako
+účast. Dokud systém neeviduje skutečné zaplacení, nesmí používat označení
+tržba, výdělek nebo příjem.
 
 ## Inventář hlavních povrchů
 
@@ -101,11 +142,11 @@ Rezervace/docházka, Storno poplatky, Obsah, Nastavení, Audit. Navigace je
 | detail typu | porozumět obsahu a najít termín | žádný budoucí termín |
 | rozvrh | vybrat den a termín | loading, prázdný den, full, closed, cancelled, chyba |
 | detail termínu | ověřit čas, vhodnost, cenu, pravidla | disabled CTA podle veřejného stavu |
-| auth v rezervaci | přihlásit/registrovat bez ztráty kontextu | validace, existující e-mail, neověřený e-mail |
+| auth v rezervaci | přihlásit/registrovat bez ztráty kontextu | validace, existující e-mail, nevyplněný profil |
 | potvrzení rezervace | zkontrolovat výsledek | nejasný timeout vede ke kontrole „Moje rezervace“ |
 | moje rezervace | otevřít nejbližší/historii | empty state pro nového klienta |
 | storno dialog | porozumět důsledku | on-time a late jsou dva rozdílné vzory |
-| mobilní Domů | jedním pohledem zjistit nejbližší termín | bez rezervace, offline/stale |
+| klientský přehled | jedním pohledem zjistit nejbližší termín | bez rezervace, loading, chyba |
 | admin rozvrh | řídit série a výjimky | konflikty, dopad na klienty, neuložené změny |
 | admin termín | seznam klientů a docházka | prázdný seznam, export, oprava stavu |
 
@@ -123,9 +164,34 @@ hero + značka + dvě CTA
 → právní a kontaktní footer
 ```
 
-Hero používá slogan „Najdi si svůj balans.“ a volitelně „Pohyb. Síla. Klid.
+Hero používá slogan „Najdi si svůj balanc.“ a volitelně „Pohyb. Síla. Klid.
 Rovnováha.“ Fotografie a text nesmí soupeřit; mobilní ořez zachová zrcadlo a
 atmosféru.
+
+Recenzní pás používá tři až šest ručně schválených referencí. Na desktopu jsou
+karty v klidné mřížce, na mobilu se posouvají po jedné bez autoplay. Hodnocení
+recenze je volitelné a vizuálně i přístupnostním popiskem se odlišuje od
+náročnosti lekce. Pokud není publikovaná žádná skutečná recenze, homepage celý
+pás vynechá a stránka Recenze zobrazí pravdivý prázdný stav. Schválený zdroj a
+datum se zobrazí jen tehdy, pokud byly skutečně dodány; samostatná stránka vždy
+nabídne CTA do rozvrhu a používá společný kontaktní footer.
+
+### Instalace webu (PWA)
+
+Web lze nainstalovat jako PWA pod názvem Studio Balance. Používá oficiální logo
+jako instalační ikonu, vlastní barevnost a samostatnou stránku pro stav bez
+připojení. Offline zůstávají dostupné jen bezpečně uložené statické soubory;
+rezervační data, rozvrh, přihlášený účet a API se necachují jako aktuální obsah
+a rezervaci nelze bez připojení provést.
+
+V přihlášeném profilu se dočasně zobrazí srozumitelná karta „Měj studio vždy po
+ruce“. Stejná volba „Přidat aplikaci“ je vždy dostupná i ve veřejném mobilním
+menu, aby instalace nevyžadovala přihlášení ani počítač. Na iOS otevře krátký
+návod Safari: Sdílet → Přidat na plochu → Přidat. Na zařízeních, která podporují
+instalační dialog prohlížeče, nabídne jediné tlačítko „Přidat na plochu“. Když
+prohlížeč instalační dialog neposkytne, zobrazí očíslované kroky a výslovně
+uvede, že názvy položek nejsou tlačítka webu. Po instalaci se volba již
+nezobrazuje; návod se nesmí vydávat za nativní aplikaci.
 
 ## Rozvrh a veřejné stavy
 
@@ -204,10 +270,14 @@ odladěny na kontrast; stav se nikdy nesděluje pouze barvou.
 ### Fotografie a značka
 
 - pouze poslední schválené logo, bez překreslování a deformace;
-- produkční SVG + transparentní PNG, zvláštní schválené varianty pro app icon,
-  favicon a splash;
+- produkční SVG + transparentní PNG a schválená varianta favicon;
 - skutečné schválené fotografie studia, lidí a používaných pomůcek;
 - desktop/mobil crop, moderní komprese, `srcset`, lazy loading mimo LCP a alt;
+- plakátové preview na kartě lekce vyplní jednotný rámeček (`cover`) s
+  kontrolovaným cropem od horní hrany; nesmí se oříznout název ani hlavní motiv;
+- detail lekce vždy zobrazí celý plakát (`contain`); přebytečný prostor vyplní
+  ztlumené pozadí vytvořené z téhož obrazu, aby se nezkreslil ani obsah plakátu,
+  ani rozvržení detailu;
 - žádné nesmyslné/deformované vybavení ani generický AI obraz v produkci.
 
 ## Komponenty a stavová pravidla
@@ -221,12 +291,48 @@ Každá znovupoužitelná komponenta definuje:
 - `validation_error`: chyba u pole i souhrn, fokus na první chybu;
 - `system_error`: lidský český text, retry a request ID pro podporu;
 - `permission_denied`: bez úniku existence cizího objektu;
-- `offline/stale` u mobilu: čas poslední synchronizace a zákaz změnové akce.
+- `network_error`: zachovat kontext, nabídnout bezpečný retry a nezobrazit
+  neověřený výsledek změnové akce.
 
 Formuláře mají trvalé labely, zachovají data po chybě, formátují telefon,
 umožní zobrazit heslo a nepředvyplní marketingový souhlas.
 
+Keycloak přihlášení vizuálně navazuje na Studio Balance, ale neskrývá význam
+bezpečnostních kroků. Nový klient po registraci doplní profil a vrátí se k
+vybranému termínu. Admin MFA vysvětlí nastavení faktoru,
+recovery a chybu bez možnosti bezpečnostní krok přeskočit.
+
+### Keycloak login theme
+
+Realm `studio-balance` používá vlastní responzivní login theme nad
+`keycloak.v2`. Desktop kombinuje schválenou fotografii studia, oficiální logo
+a samostatný světlý formulářový panel. Pod 900 px se fotografie mění na krátký
+horní vizuální pás a formulář zůstává v jediném sloupci bez horizontálního
+scrollu. Téma pokrývá přihlášení, registraci, obnovu hesla, chyby a nastavení
+ověřovací aplikace. Výchozí jazyk je čeština s angličtinou
+jako podporovanou variantou.
+
+Téma nemění OIDC, neobchází Keycloak formuláře a nenačítá externí fonty ani
+skripty. Hesla, OTP, QR secret, recovery kódy a validační chyby nadále zpracovává
+výhradně Keycloak. Všechny prvky mají trvalý label, dotykovou výšku alespoň
+48 px, viditelný fokus, kontrastní chybový stav a respektují
+`prefers-reduced-motion`.
+
 ## Interakce a motion
+
+### Proměny před/po a administrační nápověda
+
+Veřejná karta zobrazuje fotografie ve stejně velkých sousedních polích s
+trvalými štítky „Před“ a „Po“, pravdivým příběhem a schváleným označením
+klientky. Bez publikovaných položek se blok na titulní stránce vůbec nevykreslí;
+nevzniká náhradní nebo ilustrační proměna. Text neslibuje hubnutí ani léčebný
+výsledek a samostatná stránka připomíná individuálnost výsledků.
+
+Administrace používá u méně samozřejmých polí malé tlačítko s otazníkem.
+Nápověda se zobrazí hoverem i fokusem, má vlastní přístupný název, neotevírá
+novou stránku a na mobilu nepřetéká mimo viewport. Vysvětluje zejména souhlas,
+publikaci, zvýraznění, pořadí, kapacitu, cenu a pravidla fotografií; chyba po
+uložení zůstává samostatnou čitelnou zprávou.
 
 - motion slouží orientaci a zpětné vazbě, ne dekorativnímu předvádění;
 - mikroanimace typicky 150–250 ms; delší přechod jen s jasným důvodem;
@@ -270,7 +376,7 @@ adresa, platba ve studiu a viditelné storno pravidlo.
 
 Sledovat bez citlivého obsahu: načtení/selhání rozvrhu, otevření detailu,
 zahájení/dokončení rezervace, veřejný `SESSION_FULL`, chybu/timeout, storno,
-otevření push, crash a latency. Nikdy nelogovat heslo, token, obsah interní
+frontendovou výjimku a latency. Nikdy nelogovat heslo, token, obsah interní
 poznámky nebo nadbytečné osobní údaje.
 
 ## Vizuální QA gate
@@ -283,5 +389,5 @@ poznámky nebo nadbytečné osobní údaje.
 - [ ] CTA a texty odpovídají klidnému tónu a českému zadání;
 - [ ] produkční fotografie mají správný crop, kompresi a alt;
 - [ ] rezervace a storno mají jednoznačný výsledek i při pomalé síti;
-- [ ] mobilní aplikace přináší push/deep-link hodnotu a není jen webový wrapper;
+- [ ] klientský účet a rezervace jsou plnohodnotně použitelné v mobilním browseru;
 - [ ] admin workflow bylo ověřeno s provozovatelkou na notebooku/tabletu.
