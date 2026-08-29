@@ -424,6 +424,12 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
 .pwa-install-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
 .pwa-install-actions .client-primary-action { width: auto; }
 .pwa-install-actions .pwa-dismiss { color: var(--color-text-secondary); font-weight: 650; }
+
+/* An installed PWA already has its own app icon; installation guidance is irrelevant there. */
+@media (display-mode: standalone) {
+  .pwa-install-guide,
+  .mobile-nav-install { display: none !important; }
+}
 .client-admin-entry { margin: var(--space-6) 0; padding: var(--space-5); border: 1px solid #dfc3aa; border-radius: .75rem; background: #f7eee6; }
 .client-admin-entry h3 { margin: 0; display: flex; align-items: center; gap: .55rem; font-family: var(--font-body); font-size: 1.15rem; }
 .client-admin-entry p { margin: .65rem 0 1rem; font-size: .95rem; }
