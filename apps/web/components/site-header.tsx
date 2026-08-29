@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
+import { PwaInstallMenuAction } from "./pwa-install-menu-action";
+
 export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
   const mobileNavRef = useRef<HTMLDetailsElement>(null);
   const mobileNavSummaryRef = useRef<HTMLElement>(null);
@@ -71,6 +73,7 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
           <Link href="/galerie">Galerie</Link>
           <Link href="/cenik">Ceník</Link>
           <Link href="/kontakt">Kontakt</Link>
+          <PwaInstallMenuAction />
           <Link className="mobile-nav-account" href="/muj-ucet">Přihlásit / Můj účet</Link>
         </nav>
       </details>

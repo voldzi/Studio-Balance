@@ -185,12 +185,13 @@ rezervační data, rozvrh, přihlášený účet a API se necachují jako aktuá
 a rezervaci nelze bez připojení provést.
 
 V přihlášeném profilu se dočasně zobrazí srozumitelná karta „Měj studio vždy po
-ruce“. Na iOS vysvětluje postup Safari: Sdílet → Přidat na plochu → Přidat. Na
-zařízeních, která podporují instalační dialog prohlížeče, nabídne jediné
-tlačítko „Přidat na plochu“. Když prohlížeč instalační dialog neposkytne,
-zobrazí očíslované kroky a výslovně uvede, že názvy položek nejsou tlačítka
-webu. Po instalaci ani po volbě „Teď ne“ se znovu neukazuje; návod se nesmí
-vydávat za nativní aplikaci.
+ruce“. Stejná volba „Přidat aplikaci“ je vždy dostupná i ve veřejném mobilním
+menu, aby instalace nevyžadovala přihlášení ani počítač. Na iOS otevře krátký
+návod Safari: Sdílet → Přidat na plochu → Přidat. Na zařízeních, která podporují
+instalační dialog prohlížeče, nabídne jediné tlačítko „Přidat na plochu“. Když
+prohlížeč instalační dialog neposkytne, zobrazí očíslované kroky a výslovně
+uvede, že názvy položek nejsou tlačítka webu. Po instalaci se volba již
+nezobrazuje; návod se nesmí vydávat za nativní aplikaci.
 
 ## Rozvrh a veřejné stavy
 
