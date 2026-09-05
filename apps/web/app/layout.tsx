@@ -6,6 +6,9 @@ import { PwaRegister } from "../components/pwa-register";
 import { publicAppUrl } from "../lib/seo";
 import "./styles.css";
 
+// HTML contains operational controls; do not retain old releases in a CDN.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   applicationName: "Studio Balance",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Studio Balance" },

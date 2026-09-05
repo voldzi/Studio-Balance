@@ -3,15 +3,23 @@
 with --production, or locally with --local. Bootstrap credentials remain in memory.
 Production runtime receives only the realm-scoped service account secret.
 """
-import argparse, json, os, pathlib, secrets, subprocess, urllib.request, urllib.parse
+import argparse, getpass, json, os, pathlib, secrets, subprocess, tempfile, urllib.request, urllib.parse
 parser = argparse.ArgumentParser()
 parser.add_argument('--production', action='store_true')
 parser.add_argument('--local', action='store_true')
 a = parser.parse_args()
 if a.production == a.local: raise SystemExit('Choose exactly --production or --local')
-container = 'keycloak' if a.production else subprocess.check_output(['docker','compose','ps','-q','keycloak'],text=True).strip()
-if not container: raise SystemExit('Local Keycloak is not running')
-e = dict(v.split('=',1) for v in json.loads(subprocess.check_output(['docker','inspect',container,'--format','{{json .Config.Env}}'],text=True)))
+if a.production:
+    if not pathlib.Path('/home/voldzi/deployments/studio-balance/.env.production').is_file():
+        raise SystemExit('Spusťte skript na docker.home.cz.')
+    username = input('Správce Keycloak master [admin]: ').strip() or 'admin'
+    password = getpass.getpass('Heslo správce (nezobrazuje se): ')
+    otp = getpass.getpass('Jednorázový kód MFA, pokud je vyžadován (jinak Enter): ')
+else:
+    container = subprocess.check_output(['docker','compose','ps','-q','keycloak'],text=True).strip()
+    if not container: raise SystemExit('Local Keycloak is not running')
+    e = dict(v.split('=',1) for v in json.loads(subprocess.check_output(['docker','inspect',container,'--format','{{json .Config.Env}}'],text=True)))
+    username, password, otp = e['KC_BOOTSTRAP_ADMIN_USERNAME'], e['KC_BOOTSTRAP_ADMIN_PASSWORD'], ''
 base = 'https://login.studio-balance.cz' if a.production else 'http://127.0.0.1:8081'
 def request(path, method='GET', data=None, token=None):
     headers = {}
@@ -21,7 +29,8 @@ def request(path, method='GET', data=None, token=None):
     with urllib.request.urlopen(urllib.request.Request(base+path,data=data,headers=headers,method=method),timeout=10) as r:
         raw=r.read(); return json.loads(raw) if raw else None
 try:
-    admin=request('/realms/master/protocol/openid-connect/token','POST',urllib.parse.urlencode({'grant_type':'password','client_id':'admin-cli','username':e['KC_BOOTSTRAP_ADMIN_USERNAME'],'password':e['KC_BOOTSTRAP_ADMIN_PASSWORD']}).encode())['access_token']
+    admin=request('/realms/master/protocol/openid-connect/token','POST',urllib.parse.urlencode({'grant_type':'password','client_id':'admin-cli','username':username,'password':password,**({'totp':otp} if otp else {})}).encode())['access_token']
+    password = otp = ''
     realm='/admin/realms/studio-balance'
     client_id='studio-balance-operations'
     clients=request(realm+'/clients?clientId='+client_id,token=admin)
@@ -48,9 +57,10 @@ try:
         if not backup.exists(): backup.write_text(original); backup.chmod(0o600)
     lines=[x for x in original.splitlines() if not x.startswith(('OIDC_OPERATIONS_CLIENT_ID=','OIDC_OPERATIONS_CLIENT_SECRET='))]
     lines += ['OIDC_OPERATIONS_CLIENT_ID='+client_id,'OIDC_OPERATIONS_CLIENT_SECRET='+secret]
-    fd=os.open(envpath,os.O_WRONLY|os.O_TRUNC,0o600)
-    with os.fdopen(fd,'w') as f:f.write('\n'.join(lines)+'\n')
-    envpath.chmod(0o600)
+    fd, temporary = tempfile.mkstemp(prefix='.registration-env-', dir=envpath.parent)
+    with os.fdopen(fd,'w') as f:
+        f.write('\n'.join(lines)+'\n'); f.flush(); os.fsync(f.fileno())
+    os.replace(temporary,envpath)
     print('Dedicated registration control provisioned; registration disabled; runtime credential saved privately.')
 except Exception as error:
     # Emit only recognized OAuth failure categories, never credentials or tokens.

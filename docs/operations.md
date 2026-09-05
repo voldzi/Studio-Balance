@@ -615,3 +615,15 @@ metadata v PostgreSQL, viz runbook.
 ADR 0013 configuration: OIDC_OPERATIONS_CLIENT_ID (default studio-balance-operations), OIDC_OPERATIONS_CLIENT_SECRET (required for switching registration; distinct local/production secret). Pending identity sync retries at startup and every 30 seconds; admin displays pending/error until confirmed. Review existing future reservations manually when closing; no automatic cancellations. Check public no-store status and direct Keycloak registration denial after rollout.
 
 OIDC_OPERATIONS_ISSUER_URL: optional trusted internal Keycloak realm URL; production compose maps existing OIDC_BACKCHANNEL_ISSUER_URL and joins the existing Keycloak network for API operations. Public admin endpoints of Keycloak need not be exposed. Provision with scripts/provision-registration-control.py --production on docker.home.cz, or --local for local dependencies. Provisioning initially disables registration and preserves existing runtime variables in a private backup.
+
+Production activation can be completed interactively with
+`ssh -t docker.home.cz 'bash /home/voldzi/deployments/studio-balance/activate-production-registration.sh'`.
+The wrapper prompts for master admin credentials/MFA without echo or history,
+provisions only the dedicated studio realm account, backs up runtime configuration,
+recreates only API with the same image, verifies readiness and closes both controls.
+Master credentials are never written to disk. Failed startup restores runtime config.
+
+HTML is dynamic/no-store to prevent a CDN from retaining old operational UI.
+WEDOS Protection may still hold HTML cached before this change; purge the
+studio-balance.cz CDN cache once in the WEDOS administration after deployment.
+Verification must distinguish fresh origin/query responses from the ordinary public URL.
