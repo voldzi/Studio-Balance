@@ -46,3 +46,5 @@ jen tím, že je zmíněn v návrhu `api.md`.
   `Accepted`, `Superseded` nebo `Rejected`.
 - Původní podklady zadavatele se neupravují ani nepřesouvají.
 - Kontrola kostry: `bash scripts/validate-skeleton.sh`.
+
+Aktuální S3 zapojení: [ADR 0012 – vlastní media bucket](adr/0012-dedicated-media-bucket.md).

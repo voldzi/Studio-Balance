@@ -20,21 +20,20 @@ Schválená topologie:
 - internetový Nginx reverse proxy na `dmz.home.cz`;
 - produkční Docker kontejnery na `docker.home.cz`;
 - produkční PostgreSQL 18 jen přes `haproxy.home.cz:5000`;
-- produkční S3-kompatibilní úložiště médií na `docker.home.cz` přes vyhrazený
-  Studio Balance bucket/gateway;
+- produkční SeaweedFS na `storage.home.cz:8333`, bucket `studio-balance-media`;
 - Keycloak realm `studio-balance` na `docker.home.cz`, publikovaný jako
   `https://login.studio-balance.cz` přes Nginx na `dmz.home.cz`;
 - lokální služby v Docker Desktop, bez produkčních dat a credentials.
 
 Read-only inventura hostitele a readiness omezení jsou v
 `docs/infrastructure-assessment.md`. Disková kapacita, readiness aplikace a
-externí HTTPS smoke test byly před publikací ověřeny. S3 a e-mail zůstávají
-vědomě mimo rozsah tohoto zákaznického preview.
+externí HTTPS smoke test byly před publikací ověřeny. S3 je od 5. 9. 2026
+připojené dle ADR 0012; e-mailové odesílání zůstává vypnuté.
 
 Zákaznické preview používá klientem dodané rastrové logo a fotografie. E-mail
 je pro tuto etapu záměrně vypnutý; potvrzení se ukládá pouze jako interní zpráva
-v účtu. S3 není pro tyto verzované statické preview assety potřeba a zůstává
-vyhrazené pro budoucí administrativní media workflow.
+v účtu. Dodané statické assety dále fungují; nové uploady v administraci již
+používají vlastní S3 bucket.
 
 ## Izolovaný preview deployment
 
@@ -288,11 +287,9 @@ interním logu, ale nesmí vypsat hodnotu secretu.
 - observability/error monitoring;
 - DNS/TLS a případně queue runtime.
 
-S3 je schválené pro produkční media workflow, ale služba zatím není pro Studio
-Balance připravená. Před použitím je nutné vytvořit vlastní
-gateway/bucket/credentials,
-připnout image, doplnit healthcheck, vyřešit kapacitu hostitele a prokázat
-backup/restore. Keycloak vyžaduje healthcheck, zálohu realm/databáze, bezpečný
+S3 media workflow je připojené k existujícímu SeaweedFS 4.29 na
+`storage.home.cz:8333`. Vlastní bucket, účty, verzování a test obnovy
+popisuje ADR 0012 a provozní postup níže. Keycloak vyžaduje healthcheck, zálohu realm/databáze, bezpečný
 admin recovery a TLS issuer přes DMZ. PostgreSQL major je 18; otevřené jsou
 databázové TLS/auth, Docker deployment, registry, Nginx upstream/TLS
 konfigurace, poskytovatelé, ceny a limity. Žádná
@@ -535,7 +532,7 @@ Keycloak production preview accounts: scripts/provision-production-preview-accou
 Keycloak production admin with mandatory MFA enrollment: scripts/provision-production-admin.sh
 Nginx preview publish through dmz.home.cz: infra/nginx/install-studiobalance.sh
 backup/restore test: TBD
-S3 provision/backup/restore test: TBD
+S3 provision/backup/restore: scripts/provision-media-storage.py, scripts/media-backup.mjs; viz ADR 0012
 production deploy/rollback: infra/scripts/deploy-production.sh | infra/scripts/rollback-production.sh
 ```
 
@@ -564,3 +561,52 @@ U přesunutých rezervací je zpráva v účtu a e-mail v outboxu, nikoli tvrzen
 doručení: aktuální worker e-maily neodesílá. Provozní informování řeší studio.
 Rollback aplikace automaticky nevrací termíny na čtvrtek; případná náprava dat
 musí respektovat nové rezervace a audit `session.rescheduled`.
+
+## Připojené úložiště a zálohy (CD-046, 2026-09-05)
+
+Runtime API používá `http://storage.home.cz:8333`, region `us-east-1`,
+`S3_FORCE_PATH_STYLE=true` a bucket `studio-balance-media`. SeaweedFS 4.29 má
+verzování bucketu Enabled. Nevyžaduje se nová služba na Docker hostiteli.
+Endpoint je ze serveru aplikace dostupný; přímý přístup z vývojového počítače
+může být síťově omezený. Nové fotografie proměn, instruktorů a týmu se
+nahrávají do tohoto bucketu. Dodané statické obrázky dál fungují jako výchozí
+obsah, dokud je administrátor nevymění.
+
+Provisioning: `scripts/provision-media-storage.py` spustit přes SSH se sudo
+na `storage.home.cz` (SSH účet `voldzi`, klíč `~/.ssh/id_ed25519_intranet_codex`). Skript očekává existující infrastrukturu a nikdy
+nepřebírá neznámý existující bucket ani účet. Zálohu konfigurace, vlastní
+identities a exporty 0600 ukládá pod `/srv/seaweedfs/studio-balance/` (0700).
+Statický bind-mountovaný soubor přepisuje při zachování inode a následně
+načte pomocí HUP. Opakované spuštění zachovává klíče a ověřuje jejich rozsah.
+
+Přenášet výhradně vlastní exporty `studio-balance-app.env` a
+`studio-balance-backup.env` přes SSH do provozního adresáře na Docker hostiteli,
+nikdy celý sdílený S3 konfigurační soubor. Runtime export je
+`.env.media-incoming`, zálohovací export `.env.media-backup`, oba 0600.
+`scripts/connect-media-runtime.sh` pod produkčním zámkem zálohuje a upraví
+`.env.production`, obnoví jen API ze stejného image a při neúspěchu vrátí
+předchozí konfiguraci. Žádné tajné hodnoty nepatří do repozitáře ani výstupu.
+
+`scripts/backup-media.sh` a `scripts/media-backup.mjs` jsou instalované v
+`/home/voldzi/deployments/studio-balance/`. Záloha se spouští denně ve 03:40
+časové zóny serveru; každou hodinu v :15 probíhá `--check` (stáří do 36 h a
+SHA-256). `scripts/install-media-backup-cron.py` idempotentně spravuje pouze
+označený blok crontabu účtu `voldzi`, se zálohou původního crontabu. Není
+potřeba sudo ani trvale přihlášená uživatelská session.
+
+Zálohy leží v `media-backups/` (0700) na `docker.home.cz`, odděleně od storage
+hostitele. Manifest obsahuje původní klíč, S3 verzi, velikost a SHA-256;
+soubory mají oprávnění 0600. Snapshot se zveřejní jako dokončený až po
+dokončení všech zápisů. Automatické mazání ani retence se nezapínají bez
+rozhodnutí správce. Záloha vyžaduje po zápisu rezervu aspoň 5 GiB.
+
+Ověření 5. 9. 2026: aplikace provedla `prepareImage`, upload a readback;
+verzování je aktivní; neautorizované čtení, cizí bucket a zápis read-only účtem
+byly odmítnuté. Obnova testovacího objektu z kopie na druhém serveru po
+smazání aktuálního originálu prošla porovnáním SHA-256. Test nevytváří
+veřejný obsah a nenahrazuje přihlášený akceptační průchod administrátora.
+
+S3 availability nezpřísňuje celkovou readiness rezervací. Selhání zálohy je
+v `media-backup.log` a nenulovém návratovém kódu; doručování centrálního alertu
+je samostatné provozní zapojení. Obnova publikovaných médií musí respektovat
+metadata v PostgreSQL, viz runbook.

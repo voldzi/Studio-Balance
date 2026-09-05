@@ -339,3 +339,9 @@ ID, opakovaná přiřazení a neznámé lekce vracejí 400 s `ErrorResponse`.
 Veřejný `/api/v1/media/{id}` zpřístupní kromě publikovaných proměn také
 fotografii aktivního instruktora nebo publikovaného týmu. Nepřiřazený upload
 vrací 404; administrace používá chráněnou adresu a private/no-store.
+
+## Provozní připojení médií (2026-09-05)
+
+Existující uploady proměn a studiových fotografií nyní používají bucket
+`studio-balance-media` na `storage.home.cz:8333` (ADR 0012). HTTP kontrakt,
+admin oprávnění a pravidla publikace se nemění. Textové recenze S3 nepotřebují.

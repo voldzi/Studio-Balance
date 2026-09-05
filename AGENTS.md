@@ -84,7 +84,7 @@ before encoding one interpretation in code.
 - Local development dependencies run in Docker Desktop and never use
   production data or credentials.
 - PostgreSQL is the system of record for relational and booking data.
-  Production media use S3-compatible storage on `docker.home.cz` only through a
+  Production media use S3-compatible storage on `storage.home.cz:8333` only through a
   dedicated Studio Balance bucket, credentials, backup policy, and approved
   network boundary; do not reuse another application's tenant credentials.
 

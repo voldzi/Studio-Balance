@@ -251,3 +251,14 @@ storage key od klienta. Chrání tím i oddělení od soukromých fotografií pr
 Veřejné čtení assetu kontroluje aktivního instruktora nebo publikovaný tým;
 čerstvý nepřiřazený upload veřejný není. Chráněné náhledy jdou přímo přes admin
 media API bez veřejné optimalizační cache. Produkční S3 izolace zůstává platná.
+
+## Připojené S3 (CD-046)
+
+API má pouze `Read`, `Write` a `List` pro `studio-balance-media`; zálohovací
+účet pouze `Read` a `List`. Globální infrastrukturní admin zůstává pouze na
+storage hostiteli. Provisioning zálohuje statickou konfiguraci a zachovává
+ostatní identity. Testy potvrzují odmítnutí cizího bucketu, anonymního čtení
+i zápisu zálohovacím účtem. Endpoint `http://storage.home.cz:8333` používá
+interní síť bez TLS dle zadavatelem určené adresy; není zveřejněn přes DMZ.
+Secrets se přenášejí pouze SSH a ukládají do souborů 0600. Zálohy médií jsou
+v neveřejném adresáři 0700 na jiném hostiteli a obsahují soubory 0600.

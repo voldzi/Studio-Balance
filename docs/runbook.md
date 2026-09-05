@@ -178,3 +178,14 @@ hotové, dokud neprojde kontrola chybějících a osiřelých objektů.
 Jmenné kontakty, on-call kanál, P1/P2 reakční doby a provider support odkazy jsou
 TBD a blokují produkční readiness. Produktový owner rozhoduje o komunikaci
 klientům; technický incident owner řídí nápravu a evidenci.
+
+## Samostatná záloha médií (ADR 0012)
+
+Na `docker.home.cz` spustit `bash /home/voldzi/deployments/studio-balance/backup-media.sh --check`.
+Při chybě zkontrolovat interní dostupnost `storage.home.cz:8333`, volné místo,
+read-only účet a `media-backup.log`. Ruční záloha: stejný příkaz bez `--check`.
+Snapshot má manifest s původním S3 klíčem, verzí, velikostí a SHA-256; binární
+soubory mají názvy podle SHA-256. Obnovu skutečných dat provádět s
+kontrolou databázových vazeb, nepřepisovat současné fotografie automaticky.
+Denní a hodinový záznam je v crontabu provozního účtu mezi značkami
+`BEGIN/END STUDIO BALANCE MEDIA BACKUP`. Ostatní cron úlohy se nemění.

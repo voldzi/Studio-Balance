@@ -66,9 +66,8 @@ Schválená infrastrukturní topologie je v
 - produkční aplikace poběží jako Docker kontejnery na `docker.home.cz`;
 - produkční PostgreSQL je dostupný výhradně přes
   `haproxy.home.cz:5000`; Patroni potvrdil PostgreSQL 18.4;
-- produkční obsahová média budou po provozním zpevnění používat existující
-  S3-kompatibilní úložiště na `docker.home.cz`; doporučená varianta je
-  samostatná Studio Balance brána, bucket a credentials nad sdíleným SeaweedFS;
+- produkční obsahová média používají SeaweedFS na `storage.home.cz:8333`,
+  vlastní bucket `studio-balance-media` a omezený účet podle ADR 0012;
 - lokální závislosti poběží v Docker Desktop, odděleně od produkčních dat.
 
 Aktuální inventura, využitelné služby a podmínky produkční připravenosti jsou v
@@ -119,7 +118,7 @@ DMZ směruje na samostatný produkční stack na portech 3281/4281 s produkční
 Keycloakem a PostgreSQL přes HAProxy; izolovaný preview stack zůstává neveřejný.
 Přesný čistý produkční commit se nasadí pomocí
 `pnpm deploy:production -- <sha>` a předchozí kompatibilní image se obnoví přes
-`pnpm rollback:production -- <previous-sha>`. S3 media workflow, e-mail a
+`pnpm rollback:production -- <previous-sha>`. S3 uploady jsou připojené; e-mail a
 zbývající release gates se nesmí vydávat za dokončené. Přesné kontroly a
 rollback popisuje [provozní dokumentace](docs/operations.md).
 

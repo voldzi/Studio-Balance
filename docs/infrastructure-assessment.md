@@ -1,5 +1,9 @@
 # Posouzení infrastruktury `docker.home.cz`
 
+> Aktualizace 2026-09-05: S3 bylo zadavatelem určeno na `storage.home.cz:8333`.
+> Připojení vlastního bucketu popisuje ADR 0012. Níže uvedená inventura
+> původního Docker hostitele zachycuje tehdejší stav, nikoli aktuální S3 endpoint.
+
 ## Účel a rozsah
 
 Tento dokument zaznamenává read-only inventuru provedenou 2026-08-04 pro

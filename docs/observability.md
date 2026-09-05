@@ -137,3 +137,13 @@ Admin změna týmu zapisuje `team.updated`; změna profilu zachovává
 `instructor.updated`, upload `media.uploaded`. Všechny záznamy mají request ID
 a aktéra. Sleduje se chyba úložiště a stav outboxu; vložení e-mailu do outboxu
 není důkaz o jeho doručení.
+
+## Kontroly zálohy médií CD-046
+
+`backup-media.sh` zapisuje strukturovaný výsledek s počtem objektů, velikostí
+a časem; `--check` kontroluje každou hodinu SHA-256 a stáří nejvýše 36 h.
+Provozní log je `/home/voldzi/deployments/studio-balance/media-backup.log`,
+poslední úspěch `media-backups/latest.json`. Neúspěšný běh vrací nenulový kód
+a nezmění poslední úspěšný manifest. Před zálohou se kontroluje rezerva 5 GiB
+na cílovém disku. Log a návratový kód jsou připravené pro centrální alerting;
+externí doručování upozornění tímto krokem nevzniká.

@@ -15,10 +15,10 @@ dokumentu a významné technické rozhodnutí také do ADR.
 | RD-002 | Produkční aplikace poběží v Dockeru na `docker.home.cz` | ADR 0002 |
 | RD-003 | Produkční PostgreSQL se používá přes `haproxy.home.cz:5000`, ne přes přímý DB node | ADR 0002 |
 | RD-004 | Lokální vývojové služby poběží v Docker Desktop a budou oddělené od produkce | ADR 0002 |
-| RD-005 | PostgreSQL je zdroj pravdy pro relační data; existující S3-kompatibilní službu na `docker.home.cz` lze podle potřeby využít pro média s vlastním Studio Balance tenantem | ADR 0002 |
+| RD-005 | PostgreSQL je zdroj pravdy pro relační data; S3 na `storage.home.cz:8333` používá vlastní Studio Balance bucket | ADR 0012, CD-046 |
 | RD-006 | Veřejná URL je `https://studio-balance.cz`; původní rozhodnutí nahrazuje CD-043 | ADR 0011, CD-043 |
 | RD-007 | Internetový provoz vede přes Nginx na `dmz.home.cz` do aplikace na `docker.home.cz` | ADR 0002 |
-| RD-008 | Read-only inventura `docker.home.cz` identifikovala jako preferovaného kandidáta samostatnou Studio Balance gateway nad `shared-seaweedfs`; projektové MinIO se bez změny provozního modelu nesdílí | ADR 0002, infrastructure-assessment.md |
+| RD-008 | Aktuální endpoint poskytl zadavatel: `storage.home.cz:8333`; používá se vlastní bucket a účty bez sdílení projektového MinIO | ADR 0012, CD-046 |
 | RD-009 | Aplikační stack je TypeScript monorepo: Next.js, NestJS/Fastify, worker a `pnpm` | ADR 0003, CD-001 |
 | RD-010 | Produkční databázová major verze je PostgreSQL 18; `patroni1` potvrdil 18.4 | ADR 0002, CD-002 |
 | RD-011 | Produkční binární média se ukládají do vyhrazeného S3-kompatibilního tenant úložiště | ADR 0002, CD-005 |
@@ -65,7 +65,7 @@ blokátorem implementace.
 | OQ-020 | Jaké RPO/RTO a retenční dobu mají databázové zálohy? | baseline je denní záloha a pravidelný test obnovy; čísla chybí |
 | OQ-030 | Jaký database name, TLS režim, admin role, credentials policy a failover očekávání platí za `haproxy.home.cz:5000`? | major 18 je potvrzený; tyto údaje jsou nutné pro bezpečný produkční bootstrap skript |
 | OQ-031 | Jaký image registry a retenční okno produkčních image se použije na `docker.home.cz`? | produkční deploy i rollback přes verzované lokální image a kontrolu přesné revize jsou implementované; před úklidem starších image zbývá schválit registry/retenci a obnovu image po ztrátě hostitele |
-| OQ-032 | Jak se provisionuje vyhrazená Studio Balance gateway nad `shared-seaweedfs`? | S3 použití je schválené; potvrdit interní endpoint, bucket, credentials, pinned image, healthcheck, backup/restore, vlastníka a lifecycle |
+| OQ-032 | Připojení S3 uzavřeno CD-046 / ADR 0012: vlastní bucket na `storage.home.cz:8333` | Denní záloha a kontrola obnovy jsou zavedené; správce ještě určí retenční politiku. Do té doby se zálohy automaticky nemažou. |
 | OQ-033 | Kdo vlastní kapacitní alerty `docker.home.cz`, jaké jsou jejich prahy a jak se vyřeší téměř vyčerpaný swap? | disk byl 2026-08-04 přeměřen na přibližně 73 GiB volno, swap však zůstává produkčním rizikem; interní preview má resource limits a preflight |
 
 ## P0 – právo, data a analytika

@@ -282,3 +282,14 @@ a zákaz veřejného čtení nepřiřazeného uploadu. Komponentové testy ově�
 instruktory Jumpingu, fallback bez fotky a úplnou skupinovou fotografii.
 Ruční kontrola zahrnuje 360 px, tablet, desktop, klávesnici, chybějící obrázek
 a cesty rozvrh → detail → rezervace a katalog → detail → termín.
+
+## S3 provozní ověření CD-046
+
+Provisioning kontroluje omezení na vlastní bucket, read-only zálohovací účet,
+odmítnutí anonymního čtení a verzování. V nasazené aplikaci se ověří skutečný
+`MediaStorageService.prepareImage/put/get` se syntetickým neveřejným objektem
+`_checks/backup-restore-source.webp`. Po záloze na docker hostiteli se tento
+objekt smaže a obnoví pod dočasným klíčem výhradně ze záložního souboru;
+porovnává se SHA-256 a dočasná obnovená kopie se smaže. Test nepublikuje obsah
+ani nevytváří uživatelskou relaci. Přihlášené UI nahrávání je samostatný
+akceptační průchod; samotný storage test jej nenahrazuje.

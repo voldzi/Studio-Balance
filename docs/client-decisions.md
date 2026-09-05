@@ -62,6 +62,13 @@ zůstávají beze změny jako auditní stopa.
 | CD-044 | Zadavatel schválil přesun ranního Barre Strength na nejbližší středu, 9. 9. 2026, v původním čase 8:30–9:30 | mění se pouze ranní čtvrteční Barre; ostatní lekce, ceny a délky zůstávají. Budoucí standardní termíny se přesunou při zachování rezervací, přepočtu storno hranic a připomínek, auditu a zprávě v účtu. Původní možnost bezplatného storna se zachová nejvýše do nového začátku. Individuální výjimky a kolize vyžadují provozní kontrolu. |
 | CD-045 | Zadavatel schválil dodané portréty u instruktorů v detailu termínu i typu lekce a týmovou fotografii v samostatné sekci Náš tým na O studiu | existující jména Katka Adamovská, Monika Kubincová a Nicola Lojšková zůstávají; Kača, Monča a Nicol v předání označují stejné osoby. Katka vede Barre Strength, Xavier Power Yoga, Nicola TRX / středeční Jumping / Barre Sculpt / Balance Flow, Monika nedělní Jumping a Tereza Kruhový trénink. Plakáty dle CD-016 zůstávají. Fotografie se spravují centrálně; pro současné zákaznické preview se použijí verzované deriváty dodaných fotografií, administrativní upload a finální media workflow využijí vyhrazené S3 dle CD-005. |
 
+CD-046 (2026-09-05): Zadavatel určil existující SeaweedFS na
+`http://storage.home.cz:8333` a poskytl administrační SSH přístup pro vytvoření
+izolovaného bucketu a připojení administrace. Studio Balance používá vlastní
+bucket `studio-balance-media` a vlastní omezené credentials. Tím se nahrazuje
+dřívější umístění médií na `docker.home.cz`; aplikace a PostgreSQL trasování
+zůstávají beze změny. Viz ADR 0012.
+
 ## Schválený týdenní rozvrh (od 9. 9. 2026 upraven dle CD-044)
 
 | Den | Čas | Lekce | Lekci vede |

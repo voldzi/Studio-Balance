@@ -14,8 +14,8 @@ Keycloak Authorization Code + PKCE, oddělenou web/admin serverovou HTTP-only
 relaci a chráněné `GET /api/v1/me`. Implementované jsou veřejné typy a termíny
 lekcí, schválené recenze, klientský profil, rezervace/storno a první správa
 lekcí, termínů, klientů, rezervací, docházky a recenzí. Produkční stack používá
-Keycloak a PostgreSQL přes HAProxy; produkční S3 media workflow a e-mail zatím
-implementované nejsou.
+Keycloak a PostgreSQL přes HAProxy. S3 uploady používají vlastní bucket na
+`storage.home.cz:8333` podle ADR 0012; e-mailové odesílání zatím není zapnuté.
 
 ## Kontext a hranice systému
 
@@ -222,9 +222,8 @@ autorizací, nikoli jen skrytým menu.
 Upload používá povolené MIME/extension kombinace, limit rozměrů/velikosti,
 bezpečné názvy, skenování a oddělené originály/varianty. Metadata a vazby jsou v
 PostgreSQL; produkční binární objekty se ukládají do S3-kompatibilního úložiště na
-`docker.home.cz`. Preferovaný kandidát je vlastní Studio Balance gateway,
-bucket a credentials nad `shared-seaweedfs`, nikoli sdílení tenant konfigurace
-jiné aplikace. Originál není automaticky veřejný. Změna běžného obsahu je datová
+`storage.home.cz:8333` ve vlastním bucketu `studio-balance-media` s omezenými
+credentials podle ADR 0012. Originál není automaticky veřejný. Změna běžného obsahu je datová
 a nevyžaduje nový aplikační release.
 
 ## Notifikační architektura
@@ -257,7 +256,7 @@ flowchart TB
   apideploy --> dbproxy["haproxy.home.cz:5000"]
   workerdeploy --> dbproxy
   dbproxy --> proddb[(PostgreSQL cluster)]
-  apideploy --> s3gateway["Studio Balance S3 gateway"]
+  apideploy --> s3gateway["storage.home.cz:8333 / studio-balance-media"]
   workerdeploy --> s3gateway
   s3gateway --> seaweed[(shared-seaweedfs)]
   apideploy --> otel[OTel / Error Monitoring TBD]
