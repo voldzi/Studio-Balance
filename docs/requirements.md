@@ -239,3 +239,16 @@ testovatelná kritéria a schválený obsah/asset tam, kde je potřeba.
 - administrace a data: kapitoly 31–44;
 - bezpečnost a soukromí: kapitoly 48–49;
 - NFR, realizace a předání: kapitoly 59–67.
+
+## Portréty a přesun ranního Barre (CD-044 / CD-045)
+
+Od 9. 9. 2026 probíhá ranní Barre Strength ve středu 8:30–9:30. Cena 250 Kč,
+délka a dočasná kapacita zůstávají. Přesun již rezervovaného termínu zachová ID,
+cenové snapshoty, historii a původní možnost bezplatného storna nejvýše do nového
+začátku; přepočítá storno hranici, připomínky a zprávu o změně v účtu.
+
+Každý instruktor má vlastní volitelný portrét. Detail termínu používá instruktora
+přiřazeného k tomuto termínu. Katalogové přiřazení lektorů existuje nezávisle na
+budoucím rozvrhu: Jumping vede ve středu Nicola Lojšková a v neděli Monika
+Kubincová. Ostatní vazby jsou v CD-045. Typ lekce zachová schválený plakát.
+Stránka O studiu obsahuje spravovanou sekci Náš tým s dodanou skupinovou fotografií.

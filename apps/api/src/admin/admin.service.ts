@@ -1,3 +1,5 @@
+import { instructorPortraitSql, type StudioImage } from "../media/studio-image.js";
+import { requireStudioAsset } from "../media/require-studio-asset.js";
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import type { PoolClient } from "pg";
 
@@ -26,11 +28,11 @@ export type AdminClassTypeInput = {
   tagline: string;
   whatToBring: string;
 };
-export type AdminInstructorInput = { active: boolean; bio: string; displayName: string; sortOrder: number };
+export type AdminInstructorInput = { active: boolean; bio: string; displayName: string; sortOrder: number; portraitAssetId?: string | null | undefined; classes?: { classTypeId: string; scheduleNote: string }[] | undefined };
 export type AdminSessionInput = { arrivalLeadMinutes: number; capacity: number; classTypeId: string; durationMinutes: number; equipment: string; instructorId: string; locationAddress: string; locationName: string; priceCents: number; startAt: string; suitability: string };
 type DashboardSessionRow = { booking_count: number; capacity: number; class_name: string; id: string; instructor_name: string; start_at: Date; status: string };
 type ClassTypeRow = { active: boolean; arrival_lead_minutes: number; audience: string; benefits: string; default_equipment: string; description: string; difficulty: number; duration_minutes: number; hero_image_alt: string; hero_image_path: string; id: string; name: string; practical_notice: string; seo_description: string; seo_title: string; slug: string; sort_order: number; suitable_for_beginners: boolean; tagline: string; what_to_bring: string };
-type InstructorRow = { active: boolean; bio: string; display_name: string; id: string; sort_order: number };
+type InstructorRow = { active: boolean; bio: string; display_name: string; id: string; sort_order: number; portrait_asset_id: string | null; portrait: StudioImage | null; classes: { classTypeId: string; scheduleNote: string }[] };
 type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; capacity: number; change_notice: string | null; class_name: string; class_type_id: string; end_at: Date; equipment: string; id: string; instructor_id: string; instructor_name: string; location_address: string; location_name: string; price_cents: number; start_at: Date; status: string; suitability: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
 type AdminBookingRow = { class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
@@ -194,21 +196,47 @@ export class AdminService {
   }
 
   async listInstructors() {
-    const result = await this.database.query<InstructorRow>("SELECT id, display_name, bio, active, sort_order FROM instructors ORDER BY sort_order, display_name");
-    return { items: result.rows.map((row) => ({ id: row.id, displayName: row.display_name, bio: row.bio, active: row.active, sortOrder: row.sort_order })) };
+    const result = await this.database.query<InstructorRow>(`SELECT i.id, i.display_name, i.bio, i.active, i.sort_order,
+      i.portrait_asset_id, ${instructorPortraitSql} AS portrait,
+      COALESCE((SELECT jsonb_agg(jsonb_build_object('classTypeId', a.class_type_id, 'scheduleNote', a.schedule_note)
+        ORDER BY a.class_type_id) FROM class_type_instructors a WHERE a.instructor_id=i.id), '[]'::jsonb) AS classes
+      FROM instructors i ORDER BY i.sort_order, i.display_name`);
+    return { items: result.rows.map((row) => ({ id: row.id, displayName: row.display_name, bio: row.bio, active: row.active,
+      sortOrder: row.sort_order, portraitAssetId: row.portrait_asset_id, classes: row.classes,
+      portrait: row.portrait && { ...row.portrait, src: row.portrait.src.replace("/api/v1/media/", "/api/v1/admin/media/") } })) };
   }
 
   async createInstructor(data: AdminInstructorInput, context: MutationContext) {
-    const result = await this.database.query<{ id: string }>("INSERT INTO instructors (display_name, bio, active, sort_order) VALUES ($1,$2,$3,$4) RETURNING id", [data.displayName, data.bio, data.active, data.sortOrder]);
-    await this.audit(context, "instructor.created", "instructor", result.rows[0]!.id);
-    return { id: result.rows[0]!.id };
+    return this.saveInstructor(undefined, data, context);
   }
 
   async updateInstructor(id: string, data: AdminInstructorInput, context: MutationContext) {
-    const result = await this.database.query("UPDATE instructors SET display_name=$2, bio=$3, active=$4, sort_order=$5, updated_at=now() WHERE id=$1 RETURNING id", [id, data.displayName, data.bio, data.active, data.sortOrder]);
-    if (!result.rowCount) throw notFound("Instruktor nebyl nalezen.");
-    await this.audit(context, "instructor.updated", "instructor", id);
-    return { id };
+    return this.saveInstructor(id, data, context);
+  }
+
+  private async saveInstructor(id: string | undefined, data: AdminInstructorInput, context: MutationContext) {
+    return this.database.transaction(async (client) => {
+      await requireStudioAsset(client, data.portraitAssetId);
+      const result = id
+        ? await client.query<{ id: string }>("UPDATE instructors SET display_name=$2,bio=$3,active=$4,sort_order=$5,updated_at=now() WHERE id=$1 RETURNING id", [id, data.displayName, data.bio, data.active, data.sortOrder])
+        : await client.query<{ id: string }>("INSERT INTO instructors (display_name,bio,active,sort_order) VALUES ($1,$2,$3,$4) RETURNING id", [data.displayName, data.bio, data.active, data.sortOrder]);
+      const savedId = result.rows[0]?.id;
+      if (!savedId) throw notFound("Instruktor nebyl nalezen.");
+      if (data.portraitAssetId !== undefined) {
+        await client.query("UPDATE instructors SET portrait_asset_id=$2,portrait_preview_path='' WHERE id=$1", [savedId, data.portraitAssetId]);
+      }
+      if (data.classes !== undefined) {
+        const types = await client.query("SELECT id FROM class_types WHERE id=ANY($1::uuid[]) FOR SHARE", [data.classes.map((item) => item.classTypeId)]);
+        if (types.rowCount !== data.classes.length) throw new HttpException({ code: "VALIDATION_ERROR", message: "Vyberte platné, neopakující se typy lekcí." }, HttpStatus.BAD_REQUEST);
+        await client.query("DELETE FROM class_type_instructors WHERE instructor_id=$1", [savedId]);
+        for (const item of data.classes) {
+          await client.query("INSERT INTO class_type_instructors (class_type_id,instructor_id,schedule_note) VALUES ($1,$2,$3)", [item.classTypeId, savedId, item.scheduleNote]);
+        }
+      }
+      await client.query(`INSERT INTO application_audit (actor_type,actor_id,action,entity_type,entity_id,request_id)
+        VALUES ('admin',$1,$2,'instructor',$3,$4)`, [context.session.subject, id ? "instructor.updated" : "instructor.created", savedId, context.requestId]);
+      return { id: savedId };
+    });
   }
 
   async listSessions(from: Date, to: Date) {

@@ -11,13 +11,25 @@ and consistent with the real studio while keeping booking rules unambiguous.
 
 - Prefer retrieval-first work over broad repository scanning.
 - Use Chroma `search_code`, `search_docs`, or `search_all` before reading many
-  files. Use `get_file_context` after choosing a useful hit.
-- If Chroma MCP tools are unavailable, use:
+  files. Check `list_repositories` and use the exact managed root with MCP;
+  use `get_file_context` after choosing a useful hit.
+- If MCP tools are unavailable, or this repository is missing from
+  `list_repositories` / rejected as `repository root is not managed`, use the
+  CLI from this repository directory:
   `"/Users/voldzi/Developer/18 2026/chromadb/tools/chroma-dev.sh" search-all "<query>" --root . --limit 5`
+- A missing MCP managed root is an MCP allowlist issue, not evidence that
+  Chroma or this repository's index is unavailable. The CLI can query the
+  index independently of that allowlist. Read the selected files directly
+  when MCP `get_file_context` cannot access this root.
+- If the CLI reports `Operation not permitted` while connecting to the local
+  service, use the normal tool approval mechanism to retry the same scoped
+  command outside the network-restricted sandbox. Do not treat a sandbox
+  denial as a stopped service or restart shared Chroma to work around it.
 - If retrieval is unavailable or insufficient, inspect files directly and say
-  so once. Do not let retrieval block delivery.
+  which access path failed once. Do not let retrieval block delivery.
 - Reindex after meaningful repository changes with the available Chroma MCP
-  tool or `chroma-dev reindex --root .`.
+  tool or, from this repository directory,
+  `"/Users/voldzi/Developer/18 2026/chromadb/tools/chroma-dev.sh" reindex --root .`.
 
 ## Source of Truth and Precedence
 

@@ -1,3 +1,4 @@
+import { TeamController, AdminTeamController } from "./content/team.controller.js";
 import { Module } from "@nestjs/common";
 
 import { RuntimeConfigService } from "./config/runtime-config.js";
@@ -26,7 +27,7 @@ import { AdminNewsController, NewsController } from "./content/news.controller.j
 import { NewsService } from "./content/news.service.js";
 
 @Module({
-  controllers: [SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
+  controllers: [TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
   providers: [RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService]
 })
 export class AppModule {}

@@ -16,10 +16,19 @@ export class AdminMediaController {
 
   @Post("transformation-image")
   async upload(@Req() request: AdminRequest, @Body() body: unknown) {
+    return this.saveImage(request, body, "transformations");
+  }
+
+  @Post("studio-image")
+  async uploadStudioImage(@Req() request: AdminRequest, @Body() body: unknown) {
+    return this.saveImage(request, body, "studio");
+  }
+
+  private async saveImage(request: AdminRequest, body: unknown, namespace: "transformations" | "studio") {
     if (!Buffer.isBuffer(body)) throw invalidImage();
     const image = await this.storage.prepareImage(body);
     const id = randomUUID();
-    const key = `transformations/${id}.webp`;
+    const key = `${namespace}/${id}.webp`;
     await this.storage.put(key, image.body);
     try {
       await this.database.transaction(async (client) => {
@@ -55,11 +64,15 @@ export class MediaController {
     if (!uuid.safeParse(id).success) throw notFound();
     const result = await this.database.query<{ storage_key: string }>(`
       SELECT ma.storage_key FROM media_assets ma
-      WHERE ma.id=$1 AND EXISTS (
+      WHERE ma.id=$1 AND (EXISTS (
         SELECT 1 FROM client_transformations t
         WHERE t.published=true AND t.consent_confirmed=true
           AND (t.before_asset_id=ma.id OR t.after_asset_id=ma.id)
-      )
+      ) OR EXISTS (
+        SELECT 1 FROM instructors i WHERE i.active=true AND i.portrait_asset_id=ma.id
+      ) OR EXISTS (
+        SELECT 1 FROM studio_team t WHERE t.published=true AND t.photo_asset_id=ma.id
+      ))
     `, [id]);
     const asset = result.rows[0];
     if (!asset) throw notFound();

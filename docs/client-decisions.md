@@ -55,7 +55,14 @@ zůstávají beze změny jako auditní stopa.
 | CD-042 | Zadavatelka 24. 8. 2026 schválila provozní zpřesnění obsahu a administrace | neplatné instruktorky Barča a Týna se bezpečně skryjí se zachováním historie; klient si bere sportovní oblečení, pohodlnou obuv a pití, zatímco cvičební pomůcky zajišťuje studio; profil nabídne změnu vlastního stálého hesla přes Keycloak a admin MFA zůstává povinné; PWA návod rozlišuje skutečné tlačítko od kroků v menu prohlížeče; dashboard ukazuje návštěvnost a oblíbenost, ale bez evidence zaplacení smí finanční údaj označit pouze jako odhad hodnoty návštěv, nikoli tržbu. |
 | CD-043 | Zadavatel 24. 8. 2026 pořídil vlastní doménu `studio-balance.cz` a odmítl provozní závislost produktu na doméně `zeleznalady.cz` | kanonická adresa je `https://studio-balance.cz`, `www` přesměruje na kanonickou adresu a produkční realm používá issuer `https://login.studio-balance.cz/realms/studio-balance`; konfigurace Studio Balance nevytváří ani nevyžaduje hostname na `zeleznalady.cz` |
 
-## Schválený týdenní rozvrh 2026-08-10
+## Rozhodnutí 2026-09-05
+
+| ID | Rozhodnutí | Dopad |
+| --- | --- | --- |
+| CD-044 | Zadavatel schválil přesun ranního Barre Strength na nejbližší středu, 9. 9. 2026, v původním čase 8:30–9:30 | mění se pouze ranní čtvrteční Barre; ostatní lekce, ceny a délky zůstávají. Budoucí standardní termíny se přesunou při zachování rezervací, přepočtu storno hranic a připomínek, auditu a zprávě v účtu. Původní možnost bezplatného storna se zachová nejvýše do nového začátku. Individuální výjimky a kolize vyžadují provozní kontrolu. |
+| CD-045 | Zadavatel schválil dodané portréty u instruktorů v detailu termínu i typu lekce a týmovou fotografii v samostatné sekci Náš tým na O studiu | existující jména Katka Adamovská, Monika Kubincová a Nicola Lojšková zůstávají; Kača, Monča a Nicol v předání označují stejné osoby. Katka vede Barre Strength, Xavier Power Yoga, Nicola TRX / středeční Jumping / Barre Sculpt / Balance Flow, Monika nedělní Jumping a Tereza Kruhový trénink. Plakáty dle CD-016 zůstávají. Fotografie se spravují centrálně; pro současné zákaznické preview se použijí verzované deriváty dodaných fotografií, administrativní upload a finální media workflow využijí vyhrazené S3 dle CD-005. |
+
+## Schválený týdenní rozvrh (od 9. 9. 2026 upraven dle CD-044)
 
 | Den | Čas | Lekce | Lekci vede |
 | --- | --- | --- | --- |
@@ -65,7 +72,7 @@ zůstávají beze změny jako auditní stopa.
 | úterý | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
 | středa | 16:00–17:00 | TRX | Nicola Lojšková |
 | středa | 17:15–18:15 | Jumping | Nicola Lojšková |
-| čtvrtek | 8:30–9:30 | Barre Strength | Katka Adamovská |
+| středa | 8:30–9:30 | Barre Strength | Katka Adamovská |
 | čtvrtek | 17:00–18:00 | Balance Flow | Nicola Lojšková |
 | čtvrtek | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
 | pátek | 17:30–18:30 | Power Yoga | Xavier Tihelka |
@@ -92,7 +99,7 @@ zůstávají beze změny jako auditní stopa.
 | Jumping | 160 Kč |
 | Power Yoga | 160 Kč |
 
-Celý rozvrh je obsahově finální a platí od 10. 8. 2026. U obou Barre variant
+Základní rozvrh platí od 10. 8. 2026; přesun ranního Barre platí od 9. 9. 2026. U obou Barre variant
 se do konečného potvrzení používá předběžná kapacita 10 míst.
 
 ## Schválené náročnosti lekcí

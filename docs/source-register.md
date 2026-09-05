@@ -163,3 +163,13 @@ SVG a PNG, schválený hero obraz, reálné fotografie lekcí a instruktorů, p�
 kontakty, konečnou kapacitu Barre, texty, další recenze, právní dokumenty,
 parkování, sociální profily a mapu. App Store/Google Play assety se po
 rozhodnutí CD-006 nepožadují.
+
+## Portréty a společná fotografie dodané 5. 9. 2026
+
+Zadavatel předal pět souborů pojmenovaných Kača Adamovská, Monča Kubincová,
+Nicola Lojšková, Tereza Sitková, Xavier Tihelka a společnou fotografii
+tým studio balance. Následně schválil plán použití v detailech lekcí a na
+O studiu (CD-045). Originály z předání nebyly změněny. WebP deriváty nemění
+obsah ani proporce; přesné názvy zdrojů, rozměry a SHA-256 originálů/výstupů
+obsahuje `infra/media/studio-team.json`. Pro přiřazení se používají stávající
+ID osob a veřejná jména z CD-035.

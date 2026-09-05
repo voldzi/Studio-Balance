@@ -1,3 +1,4 @@
+import { instructorPortraitSql } from "../media/studio-image.js";
 import { createHash } from "node:crypto";
 
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
@@ -251,6 +252,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
       ct.what_to_bring,
       i.id AS instructor_id,
       i.display_name AS instructor_name,
+      ${instructorPortraitSql} AS instructor_portrait,
       (SELECT count(*)::text FROM bookings active WHERE active.session_id = s.id AND active.status = 'reserved') AS active_bookings,
       cf.amount_cents AS fee_amount_cents
     FROM bookings b
@@ -270,7 +272,8 @@ async function lockedSession(client: PoolClient, id: string): Promise<LockedSess
       s.price_cents, s.capacity, s.status, s.booking_opens_at, s.booking_closes_at,
       s.free_cancellation_until, s.equipment, s.suitability, s.change_notice,
       ct.name AS class_name, ct.slug AS class_slug, ct.tagline AS class_tagline, ct.what_to_bring,
-      i.id AS instructor_id, i.display_name AS instructor_name
+      i.id AS instructor_id, i.display_name AS instructor_name,
+      ${instructorPortraitSql} AS instructor_portrait
     FROM class_sessions s
     JOIN class_types ct ON ct.id = s.class_type_id
     JOIN instructors i ON i.id = s.instructor_id
@@ -294,7 +297,12 @@ async function readIdempotency(client: PoolClient, userId: string, key: string, 
   const row = result.rows[0];
   if (!row) return undefined;
   if (row.request_hash !== requestHash) throw domainError("IDEMPOTENCY_KEY_REUSED", "Tento opakovací klíč už patří jinému požadavku.", HttpStatus.CONFLICT);
-  return row.response_body;
+  // Responses stored before portraits were introduced still satisfy the
+  // current contract when an old booking request is replayed.
+  const response = row.response_body;
+  return { ...response, session: { ...response.session, instructor: {
+    ...response.session.instructor, portrait: response.session.instructor.portrait ?? null
+  } } };
 }
 
 async function storeIdempotency(client: PoolClient, userId: string, key: string, requestHash: string, bookingId: string, response: BookingResponse): Promise<void> {

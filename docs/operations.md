@@ -5,8 +5,9 @@
 Repozitář obsahuje první funkční zákaznickou verzi: Next.js web,
 NestJS/Fastify API, worker, generované OpenAPI kontrakty, veřejný rozvrh,
 klientský profil, transakční rezervaci/storno a první administrační řez pro
-rozvrh, lekce, klienty a rezervace. Revize `905647e` běží veřejně
-přes DMZ, používá produkční PostgreSQL přes HAProxy a produkční Keycloak.
+rozvrh, lekce, klienty a rezervace. Aplikace běží veřejně přes DMZ, používá
+produkční PostgreSQL přes HAProxy a produkční Keycloak. Přesnou běžící revizi
+vrací readiness endpoint; před změnou CD-044/CD-045 byla ověřena `e85bf88`.
 Izolovaný starší náhled zůstává oddělený na interních portech a není veřejným
 zdrojem dat.
 Směr je schválený v ADR 0003 a níže uvedené příkazy jsou aktuální vývojový
@@ -541,3 +542,25 @@ production deploy/rollback: infra/scripts/deploy-production.sh | infra/scripts/r
 První lokální spuštění používá `cp .env.example .env`, `pnpm infra:up`,
 `pnpm db:migrate` a `pnpm dev`. Compose credentials a OIDC client secrets jsou
 záměrně veřejné lokální fixtures. Nesmějí být převzaty do produkce.
+
+## Vydání portrétů a středečního Barre (2026-09-05)
+
+Migrace 0016 přidá portréty, katalogové vazby instruktorů a týmovou sekci.
+Dodané fotografie mají verzované WebP deriváty v
+`apps/web/public/images/studio-balance/team/`; původ, rozměry a SHA-256 jsou
+v `infra/media/studio-team.json`. Současné zákaznické preview pokračuje ve
+stávajícím režimu statických assetů. Nahrávání náhradních fotografií používá
+vyhrazené S3 a bez jeho konfigurace vrací srozumitelnou 503; nelze použít
+cizí bucket nebo credentials. Fotografie se přiřazují v Lekce a lektoři,
+tým ve stejné sekci níže.
+
+Před aplikací 0017 zkontrolovat budoucí Barre Strength, rezervace a středeční
+kolize. Migrace se atomicky zastaví při kolizi nebo právě zpracovávaném
+upozornění. Změna má účinnost 9. 9. 2026 8:30 Europe/Prague. Přesune existující
+standardní termíny a doplní chybějící středy v 30denním horizontu od spuštění;
+nezavádí automatické prodlužování rozvrhu. Další týdny nadále spravuje studio.
+Individuálně upravené a zrušené termíny zůstávají k samostatnému posouzení.
+U přesunutých rezervací je zpráva v účtu a e-mail v outboxu, nikoli tvrzení o
+doručení: aktuální worker e-maily neodesílá. Provozní informování řeší studio.
+Rollback aplikace automaticky nevrací termíny na čtvrtek; případná náprava dat
+musí respektovat nové rezervace a audit `session.rescheduled`.

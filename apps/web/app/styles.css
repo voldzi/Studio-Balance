@@ -674,3 +674,46 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
   html { scroll-behavior: auto; }
   .button, .lesson-image { transition: none; }
 }
+
+/* Real people: natural portrait proportions, accessible fallback and compact mobile details. */
+.studio-photo { overflow: hidden; border-radius: var(--radius-md); background: #dbc6b1; }
+.studio-photo img { display: block; width: 100%; height: auto; }
+.studio-photo-fallback { display: grid; place-content: center; min-height: 10rem; padding: 1rem; margin: 0; color: var(--color-text-primary); text-align: center; }
+.session-instructor { margin: 0; padding: clamp(1.5rem, 4vw, 3rem); align-self: start; }
+.session-instructor .studio-photo { max-width: 28rem; margin: 0 auto; }
+.session-instructor figcaption { display: grid; gap: .5rem; margin-top: 1rem; text-align: center; }
+.session-instructor figcaption strong { font-size: 1.7rem; }
+.session-instructor figcaption .eyebrow { margin: 0; }
+.lesson-instructors { grid-column: 1 / -1; padding: clamp(1.5rem, 5vw, 4rem); border-top: 1px solid var(--color-border); }
+.instructor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.instructor-card { display: grid; grid-template-columns: minmax(6rem, 9rem) minmax(0, 1fr); gap: 1.5rem; align-items: center; }
+.instructor-card h3 { margin: 0 0 .5rem; font-size: 1.6rem; }
+.instructor-card p { color: var(--color-text-secondary); }
+.instructor-card .instructor-schedule-note { font-weight: 700; color: var(--color-text-primary); }
+.studio-team-section { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(2rem, 5vw, 5rem); margin-top: 5rem; }
+.studio-team-section .studio-photo { width: 100%; max-width: 32rem; }
+.studio-team-section h2 { font-size: clamp(2.5rem, 5vw, 4rem); }
+.studio-team-section p:not(.eyebrow) { max-width: 38rem; color: var(--color-text-secondary); }
+.studio-team-section .button { margin-top: 1rem; }
+.team-message { margin-top: 3rem; min-height: 8rem; }
+.admin-portrait-preview { max-width: 10rem; }
+.instructor-editor { margin-top: 1.5rem; }
+.instructor-editor fieldset, .team-editor fieldset { display: grid; gap: 1rem; min-width: 0; border: 1px solid var(--color-border); padding: 1rem; }
+.instructor-assignment { border-bottom: 1px solid var(--color-border); padding-bottom: .75rem; }
+.admin-simple-list > li > div { min-width: 0; flex: 1; }
+.admin-simple-list details { margin-top: .75rem; }
+.admin-simple-list summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; text-decoration: underline; }
+@media (max-width: 900px) {
+  .instructor-grid { grid-template-columns: 1fr; }
+  .session-instructor { display: flex; align-items: center; gap: 1.5rem; padding-bottom: 0; }
+  .session-instructor .studio-photo { width: 8rem; flex-shrink: 0; margin: 0; }
+  .session-instructor figcaption { margin: 0; text-align: left; }
+}
+@media (max-width: 620px) {
+  .studio-team-section { grid-template-columns: 1fr; gap: 1.5rem; margin-top: 3rem; }
+  .instructor-card { grid-template-columns: 6rem minmax(0, 1fr); gap: 1rem; }
+  .instructor-card h3 { font-size: 1.35rem; }
+  .session-instructor { padding: 1.5rem 1.5rem 0; gap: 1rem; }
+  .session-instructor .studio-photo { width: 6rem; }
+  .session-instructor figcaption strong { font-size: 1.45rem; }
+}

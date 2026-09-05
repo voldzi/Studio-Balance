@@ -295,3 +295,22 @@ Stack a PostgreSQL major verze jsou rozhodnuté. Docker/Nginx release workflow,
 PostgreSQL TLS/role provisioning, Keycloak provozní provisioning, poskytovatel
 e-mailu, media cache model, analytika a RPO/RTO jsou evidovány v
 `open-questions.md`.
+
+## Profily lektorů a tým studia
+
+`instructors.portrait_asset_id` odkazuje na `media_assets`; do importu do
+vyhrazeného S3 zachovává současné zákaznické preview verzovaný
+`portrait_preview_path`. `class_type_instructors` je centrální katalogová
+vazba M:N s krátkým upřesněním (např. Středa / Neděle). Je nezávislá na
+`upcomingSessions`; skutečného lektora vždy určuje `class_sessions.instructor_id`.
+Singleton `studio_team` drží text, publikaci a fotografii sekce O studiu.
+Oba druhy nových uploadů používají existující bezpečnou normalizaci a vyhrazené
+S3 s prefixem `studio/`; obrázky proměn se za portréty nepřiřazují.
+
+Migrace 0017 je jednorázová změna konkrétních termínů, nikoli implementace
+opakovaných sérií. Přesouvá jen budoucí standardní čtvrteční Barre od CD-044,
+při exkluzivních zámcích serializuje zápis s rezervací/stornem, před změnou
+odmítne kolize a zpracovávané notifikace. Přepočítá rezervace, čekající
+připomínky a uložené odpovědi idempotentních rezervací, zapíše starý/nový čas
+a zprávu o změně. Chybějící středeční Barre zveřejní pouze v 30denním horizontu;
+výjimky, zrušené středy a historické termíny nepřepisuje.

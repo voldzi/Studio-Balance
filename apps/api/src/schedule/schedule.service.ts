@@ -2,7 +2,11 @@ import { Inject, Injectable } from "@nestjs/common";
 
 import { sessionAvailability, type PublicSessionStatus } from "@studiobalance/domain";
 
+import { instructorPortraitSql, type StudioImage } from "../media/studio-image.js";
+
 import { DatabaseService } from "../database/database.service.js";
+
+type ClassInstructor = { id: string; displayName: string; bio: string; portrait: StudioImage | null; scheduleNote: string };
 
 type ClassTypeRow = {
   arrival_lead_minutes: number;
@@ -33,7 +37,7 @@ export type PublicSession = {
   endAt: string;
   equipment: string;
   id: string;
-  instructor: { displayName: string; id: string };
+  instructor: { displayName: string; id: string; portrait: StudioImage | null };
   location: { address: string; name: string };
   price: { amount: string; currency: "CZK" };
   startAt: string;
@@ -57,6 +61,7 @@ export type SessionRow = {
   id: string;
   instructor_id: string;
   instructor_name: string;
+  instructor_portrait?: StudioImage | null;
   location_address: string;
   location_name: string;
   price_cents: number;
@@ -88,6 +93,7 @@ const sessionSelect = `
     ct.what_to_bring,
     i.id AS instructor_id,
     i.display_name AS instructor_name,
+    ${instructorPortraitSql} AS instructor_portrait,
     count(b.id) FILTER (WHERE b.status = 'reserved')::text AS active_bookings
   FROM class_sessions s
   JOIN class_types ct ON ct.id = s.class_type_id
@@ -111,7 +117,7 @@ export class ScheduleService {
     return { items: result.rows.map(mapClassType) };
   }
 
-  async getClassType(slug: string): Promise<(ReturnType<typeof mapClassType> & { upcomingSessions: PublicSession[] }) | undefined> {
+  async getClassType(slug: string): Promise<(ReturnType<typeof mapClassType> & { upcomingSessions: PublicSession[]; instructors: ClassInstructor[] }) | undefined> {
     const classTypes = await this.database.query<ClassTypeRow>(`
       SELECT id, slug, name, tagline, description, duration_minutes, arrival_lead_minutes,
         difficulty, benefits, audience, suitable_for_beginners, default_equipment,
@@ -127,8 +133,14 @@ export class ScheduleService {
       ORDER BY s.start_at
       LIMIT 12
     `, [classType.id]);
+    const people = await this.database.query<ClassInstructor>(`
+      SELECT i.id, i.display_name AS "displayName", i.bio,
+        ${instructorPortraitSql} AS portrait, assignment.schedule_note AS "scheduleNote"
+      FROM class_type_instructors assignment JOIN instructors i ON i.id=assignment.instructor_id
+      WHERE assignment.class_type_id=$1 AND i.active=true ORDER BY i.sort_order, i.display_name
+    `, [classType.id]);
     const now = new Date();
-    return { ...mapClassType(classType), upcomingSessions: sessions.rows.map((row) => mapSession(row, now)) };
+    return { ...mapClassType(classType), instructors: people.rows, upcomingSessions: sessions.rows.map((row) => mapSession(row, now)) };
   }
 
   async listSessions(from: Date, to: Date): Promise<{ items: PublicSession[]; timezone: "Europe/Prague" }> {
@@ -180,7 +192,7 @@ export function mapSession(row: SessionRow, now: Date): PublicSession {
   return {
     id: row.id,
     classType: { name: row.class_name, slug: row.class_slug, tagline: row.class_tagline },
-    instructor: { id: row.instructor_id, displayName: row.instructor_name },
+    instructor: { id: row.instructor_id, displayName: row.instructor_name, portrait: row.instructor_portrait ?? null },
     startAt: row.start_at.toISOString(),
     endAt: row.end_at.toISOString(),
     timezone: "Europe/Prague",

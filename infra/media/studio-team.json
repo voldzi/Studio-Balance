@@ -1,0 +1,60 @@
+{
+  "decision": "CD-045",
+  "suppliedOn": "2026-09-05",
+  "assets": [
+    {
+      "source": "Kača Adamovská.jpeg",
+      "sourceSha256": "146f16c7a07ed0721e33772ad65711c3685bd9a00d443a92f0327a8998a65c72",
+      "filename": "katka-adamovska.webp",
+      "sha256": "10bf0fb60a60797b0a7c4e8495a79fe17c0f50f271065e83d59d94b38ea50775",
+      "instructorId": "10000000-0000-4000-8000-000000000005",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "source": "Monča Kubincová.jpeg",
+      "sourceSha256": "9ec1c504cd68ab75b62a9827c7627e29a9b1c0ed657fd5fe1b24afdbb3d7a062",
+      "filename": "monika-kubincova.webp",
+      "sha256": "b38f0e0761f8416eddb2c031fdf5af9e65e39814d1b7a555768b8c7bf46235ac",
+      "instructorId": "10000000-0000-4000-8000-000000000007",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "source": "Nicola Lojšková.jpeg",
+      "sourceSha256": "fd0fc8c8368dbd9b0a8f19950e7833238d141827100cc1d20e30e1dd7876009c",
+      "filename": "nicola-lojskova.webp",
+      "sha256": "63bd350fae7a96641cd778af2e1c7010f2e264c810155879fe8a6d385c218306",
+      "instructorId": "10000000-0000-4000-8000-000000000001",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "source": "Tereza Sitková.jpeg",
+      "sourceSha256": "b10e3eceba4530a9c253d1f0d16144af4d32932b69489176f2b3bfe307b04c5d",
+      "filename": "tereza-sitkova.webp",
+      "sha256": "7dd097300d0a8d40f417e90f1405fa05383e35c1ca5d4fdab105ebb61e0fc176",
+      "instructorId": "10000000-0000-4000-8000-000000000004",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "source": "Xavier Tihelka.jpeg",
+      "sourceSha256": "77fed5d23344ab8296259c5c451de2991257ce7b192da7b5aec3dc218f31d691",
+      "filename": "xavier-tihelka.webp",
+      "sha256": "cb6177275b9dd2f2996b191435faee4e10d9e4383afb10c14ec3951703331199",
+      "instructorId": "10000000-0000-4000-8000-000000000006",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "source": "tým studio balance.jpeg",
+      "sourceSha256": "18cb3fd71c24ba6ac0dca11fda40e420e04e9ef506a594832128d27888486bee",
+      "filename": "studio-balance-team.webp",
+      "sha256": "55cbdd33491f87f75cb518db6203e11c727e083c9e3e6ebe21ff71174614dce4",
+      "instructorId": null,
+      "width": 1024,
+      "height": 1535
+    }
+  ]
+}

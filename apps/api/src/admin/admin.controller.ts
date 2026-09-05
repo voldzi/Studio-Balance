@@ -15,7 +15,7 @@ const classTypeSchema = z.object({
   heroImagePath: z.string().trim().max(500).refine((value) => !value || value.startsWith("/images/studio-balance/"), "Invalid image path"),
   heroImageAlt: z.string().trim().max(500), seoTitle: z.string().trim().max(120), seoDescription: z.string().trim().max(320)
 }).strict();
-const instructorSchema = z.object({ displayName: z.string().trim().min(2).max(160), bio: z.string().trim().max(5000), active: z.boolean(), sortOrder: z.number().int().min(0).max(10000) }).strict();
+const instructorSchema = z.object({ displayName: z.string().trim().min(2).max(160), bio: z.string().trim().max(5000), active: z.boolean(), sortOrder: z.number().int().min(0).max(10000), portraitAssetId: uuid.nullable().optional(), classes: z.array(z.object({ classTypeId: uuid, scheduleNote: z.string().trim().max(160) }).strict()).max(50).refine((items) => new Set(items.map((item) => item.classTypeId)).size === items.length).optional() }).strict();
 const sessionSchema = z.object({
   classTypeId: uuid, instructorId: uuid, startAt: z.iso.datetime({ offset: true }), durationMinutes: z.number().int().min(15).max(240),
   arrivalLeadMinutes: z.number().int().min(0).max(120), locationName: z.string().trim().min(2).max(160), locationAddress: z.string().trim().min(2).max(300),

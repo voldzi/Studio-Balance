@@ -128,3 +128,12 @@ přístup. Export logů se považuje za citlivou operaci.
 - [ ] health/readiness odpovídají skutečné závislosti;
 - [ ] kritické alerty mají vlastníka a odkaz na `runbook.md`;
 - [ ] dashboard rozliší aktuální a předchozí verzi při rollout/rollbacku.
+
+## Změna rozvrhu a portréty
+
+CD-044 zapisuje `session.rescheduled` s původním a novým časem, časovou zónou
+a bezplatným storno oknem; nově zveřejněné středy mají `session.created`.
+Admin změna týmu zapisuje `team.updated`; změna profilu zachovává
+`instructor.updated`, upload `media.uploaded`. Všechny záznamy mají request ID
+a aktéra. Sleduje se chyba úložiště a stav outboxu; vložení e-mailu do outboxu
+není důkaz o jeho doručení.

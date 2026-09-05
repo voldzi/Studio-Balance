@@ -315,3 +315,27 @@ bash scripts/validate-skeleton.sh
 Scaffold generuje TypeScript kontrakty z OpenAPI příkazem
 `pnpm generate:contracts`. OpenAPI schema lint, breaking-change diff a test
 shody implementace.
+
+## Fotografie instruktorů a tým (CD-045)
+
+`InstructorSummary` v termínech a rezervacích obsahuje `portrait`: null nebo
+`StudioImage` (`src`, `alt`, `width`, `height`). Detail typu lekce obsahuje
+`instructors` se jménem, portrétem, představením a `scheduleNote`, i když je
+`upcomingSessions` prázdné. Veřejné odpovědi nadále neobsahují číselnou kapacitu.
+
+| Metoda | Cesta | Chování |
+| --- | --- | --- |
+| GET | `/api/v1/content/team` | `{ team: TeamContent nebo null }`, pouze publikovaná sekce |
+| GET | `/api/v1/admin/content/team` | text, fotografie a publikační stav pro správu |
+| PUT | `/api/v1/admin/content/team` | změna sekce s admin MFA a auditem |
+| POST | `/api/v1/admin/media/studio-image` | normalizovaný JPG/PNG/WebP do vyhrazeného S3, nejvýše 8 MB |
+
+Stávající admin create/update instruktora přijímá navíc volitelné
+`portraitAssetId` a `classes` (pole `classTypeId`, `scheduleNote`). Vynechání
+ponechá dosavadní hodnotu, null u fotografie ji odebere včetně preview
+náhrady, prázdné `classes` odebere pouze katalogové vazby. Totéž platí pro
+`photoAssetId` týmu. Nahraný asset musí existovat v prefixu `studio/`; neplatné
+ID, opakovaná přiřazení a neznámé lekce vracejí 400 s `ErrorResponse`.
+Veřejný `/api/v1/media/{id}` zpřístupní kromě publikovaných proměn také
+fotografii aktivního instruktora nebo publikovaného týmu. Nepřiřazený upload
+vrací 404; administrace používá chráněnou adresu a private/no-store.

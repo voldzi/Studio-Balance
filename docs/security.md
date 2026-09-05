@@ -239,3 +239,15 @@ Závislost se nepřidává bez účelu, licence a maintenance kontroly.
 - [ ] admin MFA, email verification, role mapping a recovery prošly testy;
 - [ ] záloha i obnova byly bezpečně ověřeny;
 - [ ] kritické dependency/secret scan nálezy jsou nulové.
+
+## Portréty a skupinová fotografie
+
+Upload `/api/v1/admin/media/studio-image`, editace lektora i týmu vyžadují
+stejnou admin roli, MFA a ochranu zápisu jako ostatní administrace. Zpracování
+sdílí kontrolu skutečného obrazového formátu, limit 8 MB / 40 milionů pixelů,
+orientaci, odstranění metadat a WebP výstup se stávajícím media workflow.
+Přiřazení přijímá pouze ID existujícího assetu z prefixu `studio/`, ne URL ani
+storage key od klienta. Chrání tím i oddělení od soukromých fotografií proměn.
+Veřejné čtení assetu kontroluje aktivního instruktora nebo publikovaný tým;
+čerstvý nepřiřazený upload veřejný není. Chráněné náhledy jdou přímo přes admin
+media API bez veřejné optimalizační cache. Produkční S3 izolace zůstává platná.

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SessionInstructor } from "./lesson-instructors";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -13,7 +13,11 @@ export function SessionDetail({ sessionId }: { sessionId: string }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    void apiRequest<PublicSession>(`/api/v1/sessions/${sessionId}`).then(setSession).catch(() => setFailed(true));
+    const controller = new AbortController();
+    setSession(undefined); setFailed(false);
+    void apiRequest<PublicSession>(`/api/v1/sessions/${sessionId}`, { signal: controller.signal })
+      .then(setSession).catch(() => { if (!controller.signal.aborted) setFailed(true); });
+    return () => controller.abort();
   }, [sessionId]);
 
   if (failed) return <p className="schedule-message" role="alert">Detail lekce se nepodařilo načíst.</p>;
@@ -22,15 +26,7 @@ export function SessionDetail({ sessionId }: { sessionId: string }) {
   const bookable = session.availability === "bookable";
   return (
     <article className="session-detail">
-      <div className="session-detail-image">
-        <Image
-          alt="Interiér Studia Balance připravený na lekci"
-          fill
-          priority
-          sizes="(max-width: 760px) 100vw, 55vw"
-          src="/images/studio-balance/studio-gallery.jpeg"
-        />
-      </div>
+      <SessionInstructor instructor={session.instructor} />
       <div className="session-detail-copy">
         <p className="eyebrow">{formatStudioDate(session.startAt, { weekday: "long", day: "numeric", month: "long" })}</p>
         <h1>{session.classType.name}</h1>
@@ -44,6 +40,7 @@ export function SessionDetail({ sessionId }: { sessionId: string }) {
           <div><dt>Místo</dt><dd>{session.location.name}, {session.location.address}</dd></div>
           <div><dt>Stav</dt><dd>{publicSessionLabel(session.availability)}</dd></div>
         </dl>
+        {session.changeNotice && <aside className="lesson-notice"><h2>Změna termínu</h2><p>{session.changeNotice}</p><p>Přihlášení klienti najdou podrobnosti včetně bezplatného storna ve zprávách svého účtu.</p></aside>}
         <div className="detail-notes">
           <div><h2>Co si vzít</h2><p>{session.whatToBring}</p></div>
           <div><h2>Pomůcky ve studiu</h2><p>{session.equipment || "Všechny pomůcky potřebné pro lekci jsou připravené ve studiu."}</p></div>

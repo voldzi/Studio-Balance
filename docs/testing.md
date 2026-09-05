@@ -261,3 +261,24 @@ secret scan a dependency scan. PR musí výslovně uvést neprovedenou kontrolu.
 - [ ] záloha/obnova a rollback byly prakticky ověřeny;
 - [ ] žádná kritická/vysoká vada a známé nižší vady mají ownera/rozhodnutí;
 - [ ] akceptaci lze reprodukovat z verzovaného reportu a artefaktu.
+
+## CD-044 / CD-045 – portréty a středeční Barre
+
+`studio-people.integration.test.ts` používá výhradně lokální PostgreSQL a
+vlastní dočasné schéma. Aktivuje se proměnnou `STUDIO_TEST_DATABASE_URL`;
+bez ní je výslovně přeskočený. Příklad pro Docker Desktop:
+
+```bash
+STUDIO_TEST_DATABASE_URL=postgresql://studio_balance:local-development-only@localhost:5433/studio_balance pnpm --filter @studiobalance/api exec vitest run src/database/studio-people.integration.test.ts
+```
+
+Kontroluje přesun rezervovaného termínu, ID a cenu rezervace, storno hranici,
+bezplatné okno, nahrazení připomínek, idempotenci, souběh se zámkem rezervace,
+rollback kolize, historii,
+výjimky, zimní/letní čas a portréty u Jumpingu i bez budoucích termínů. Ověří
+také centrální úpravu fotografií a odmítnutí assetů z jiného účelu.
+API testy týmu ověřují veřejný kontrakt, prázdný stav, validaci, admin MFA
+a zákaz veřejného čtení nepřiřazeného uploadu. Komponentové testy ověřují oba
+instruktory Jumpingu, fallback bez fotky a úplnou skupinovou fotografii.
+Ruční kontrola zahrnuje 360 px, tablet, desktop, klávesnici, chybějící obrázek
+a cesty rozvrh → detail → rezervace a katalog → detail → termín.

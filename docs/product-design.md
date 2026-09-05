@@ -391,3 +391,20 @@ poznámky nebo nadbytečné osobní údaje.
 - [ ] rezervace a storno mají jednoznačný výsledek i při pomalé síti;
 - [ ] klientský účet a rezervace jsou plnohodnotně použitelné v mobilním browseru;
 - [ ] admin workflow bylo ověřeno s provozovatelkou na notebooku/tabletu.
+
+## Instruktoři v detailu a Náš tým (CD-045)
+
+Detail konkrétního termínu ukazuje skutečně přiřazeného instruktora s portrétem
+a jménem; mobil má kompaktní portrét vedle jména, aby čas a rezervace zůstaly
+brzy dostupné. Detail typu zachová celý plakát dle CD-016 a přidá samostatný
+blok Lekci vede / Lekci vedou. U Jumpingu rozlišuje Středa / Neděle.
+Katalogové představení funguje i bez vypsaných termínů. Žádná UI mapa názvu
+lekce nebo dne na fotografii není zdrojem dat.
+
+Na O studiu je pod úvodem sekce Náš tým. Desktop má celou skupinovou fotografii
+vedle textu a CTA Vybrat lekci; mobil má fotografii nad textem. Přirozený
+poměr 1024:1535 zachová všech pět lidí. Portréty 1024:1536 se nedeformují.
+Chybějící či nenačtená fotografie zachová jméno a dostupnost rezervace, tým má
+loading, skrytý nepublikovaný stav a chybu s opakováním. Administrace umožňuje
+změnit portrét, jméno, představení a katalogové vazby lektora; tým má vlastní
+text, fotografii, alt a publikování. Formuláře zachovají vstup po chybě.

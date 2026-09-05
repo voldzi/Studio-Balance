@@ -1,3 +1,8 @@
+export type StudioImage = { src: string; alt: string; width: number; height: number };
+export type InstructorSummary = { id: string; displayName: string; portrait: StudioImage | null };
+export type ClassInstructor = InstructorSummary & { bio: string; scheduleNote: string };
+export type TeamContent = { title: string; body: string; photo: StudioImage | null };
+
 export type Money = { amount: string; currency: "CZK" };
 
 export type PublicSession = {
@@ -8,7 +13,7 @@ export type PublicSession = {
   endAt: string;
   equipment: string;
   id: string;
-  instructor: { displayName: string; id: string };
+  instructor: InstructorSummary;
   location: { address: string; name: string };
   price: Money;
   startAt: string;
@@ -38,7 +43,7 @@ export type ClassType = {
   whatToBring: string;
 };
 
-export type ClassTypeDetail = ClassType & { upcomingSessions: PublicSession[] };
+export type ClassTypeDetail = ClassType & { upcomingSessions: PublicSession[]; instructors: ClassInstructor[] };
 
 export type Profile = {
   email: string;
