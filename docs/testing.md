@@ -293,3 +293,6 @@ objekt smaže a obnoví pod dočasným klíčem výhradně ze záložního soubo
 porovnává se SHA-256 a dočasná obnovená kopie se smaže. Test nepublikuje obsah
 ani nevytváří uživatelskou relaci. Přihlášené UI nahrávání je samostatný
 akceptační průchod; samotný storage test jej nenahrazuje.
+
+
+CD-047/048 checks: closed/open booking gate, concurrent close versus booking, successful idempotent replay while closed, admin authorization and invalid body, Keycloak sync success/failure/recovery, no-store status. Existing DST, 24-hour cancellation and fee checks remain required. Mobile install guide opens on first click after menu closes, traps focus, closes with Escape and returns focus to Menu.

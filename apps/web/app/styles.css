@@ -309,7 +309,7 @@ footer .social-links a:hover { border-color: #f7eee5; color: #fff; }
 .auth-card > .button { width: 100%; margin-top: var(--space-6); }
 .auth-login-form { display: grid; gap: var(--space-4); margin-top: var(--space-6); }
 .auth-login-form .button { width: 100%; }
-.remember-device { display: flex; align-items: flex-start; gap: .75rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; color: var(--color-text); }
+.remember-device { display: flex; align-items: flex-start; gap: .75rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; color: var(--color-text-primary); }
 .remember-device input { width: 1.2rem; height: 1.2rem; margin-top: .15rem; accent-color: var(--color-accent); }
 .remember-device span { display: grid; gap: .25rem; }
 .remember-device small { color: var(--color-text-muted); font-size: .88rem; line-height: 1.35; }
@@ -717,3 +717,11 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
   .session-instructor .studio-photo { width: 6rem; }
   .session-instructor figcaption strong { font-size: 1.45rem; }
 }
+
+.studio-announcement { padding: .7rem max(1rem, calc((100vw - 1200px) / 2)); background: #efe0d2; color: #483025; text-align: center; display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem .8rem; font-size: .95rem; line-height: 1.5; }
+.studio-announcement strong { white-space: nowrap; }
+.studio-operations { padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #d8bfa9; border-radius: 1rem; background: #fffaf6; }
+dialog.pwa-install-modal { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; border: 0; background: transparent; color: var(--color-text-primary); }
+dialog.pwa-install-modal::backdrop { background: transparent; }
+
+.pwa-install-modal-panel { padding-top: 3.5rem; }

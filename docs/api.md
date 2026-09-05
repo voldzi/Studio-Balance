@@ -345,3 +345,6 @@ vrací 404; administrace používá chráněnou adresu a private/no-store.
 Existující uploady proměn a studiových fotografií nyní používají bucket
 `studio-balance-media` na `storage.home.cz:8333` (ADR 0012). HTTP kontrakt,
 admin oprávnění a pravidla publikace se nemění. Textové recenze S3 nepotřebují.
+
+
+GET /api/v1/studio-status returns open and announcement, no-store. GET/PUT /api/v1/admin/studio-status requires admin; PUT {open:boolean} records desired state and synchronizes registration. Admin response includes requestedOpen and registrationSynced. Pending sync blocks booking. POST bookings returns 409 STUDIO_CLOSED when closed; successful idempotent replay remains available.

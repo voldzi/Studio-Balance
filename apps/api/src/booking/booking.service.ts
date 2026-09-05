@@ -1,3 +1,4 @@
+import { requireOpenStudio } from "../studio/studio-status.service.js";
 import { instructorPortraitSql } from "../media/studio-image.js";
 import { createHash } from "node:crypto";
 
@@ -62,6 +63,7 @@ export class BookingService {
       const replay = await readIdempotency(client, profile.id, input.idempotencyKey, requestHash);
       if (replay) return replay;
 
+      await requireOpenStudio(client);
       const row = await lockedSession(client, input.sessionId);
       if (!row) throw domainError("RESOURCE_NOT_FOUND", "Termín nebyl nalezen.", HttpStatus.NOT_FOUND);
       const activeBookings = await activeBookingCount(client, row.id);

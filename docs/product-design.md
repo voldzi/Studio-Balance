@@ -408,3 +408,6 @@ Chybějící či nenačtená fotografie zachová jméno a dostupnost rezervace, 
 loading, skrytý nepublikovaný stav a chybu s opakováním. Administrace umožňuje
 změnit portrét, jméno, představení a katalogové vazby lektora; tým má vlastní
 text, fotografii, alt a publikování. Formuláře zachovají vstup po chybě.
+
+
+CD-047: prominent warm neutral announcement above main navigation: Momentálně zavřeno. Registrace a rezervace spustíme, až oznámíme otevření. Keep schedule browsable, show closed context before booking. Admin overview shows current, requested and pending states plus retry/error/success. CD-048: install guide outside collapsed navigation, native modal focus containment, Escape and focus return; verify 360 px and desktop.

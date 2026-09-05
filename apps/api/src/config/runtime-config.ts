@@ -17,6 +17,9 @@ const schema = z.object({
   OIDC_WEB_CLIENT_SECRET: z.string().min(1).default("local-web-client-only"),
   OIDC_ADMIN_CLIENT_ID: z.string().min(1).default("studiobalance-admin"),
   OIDC_ADMIN_CLIENT_SECRET: z.string().min(1).default("local-admin-client-only"),
+  OIDC_OPERATIONS_ISSUER_URL: optional(z.string().url()),
+  OIDC_OPERATIONS_CLIENT_ID: z.string().min(1).default("studio-balance-operations"),
+  OIDC_OPERATIONS_CLIENT_SECRET: optional(z.string().min(1)),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   S3_ENDPOINT: optional(z.string().url()),
   S3_REGION: z.preprocess((input) => input === "" ? undefined : input, z.string().min(1).default("us-east-1")),
@@ -42,6 +45,9 @@ export type RuntimeConfig = {
   logLevel: z.infer<typeof schema>["LOG_LEVEL"];
   mediaStorage?: MediaStorageConfig;
   oidc: {
+    operationsIssuer?: string | undefined;
+    operationsClientId?: string;
+    operationsClientSecret?: string | undefined;
     adminClientId: string;
     adminClientSecret: string;
     issuer: string;
@@ -103,6 +109,9 @@ export function loadRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
       secretAccessKey: result.data.S3_SECRET_ACCESS_KEY!
     } } : {}),
     oidc: {
+      operationsIssuer: result.data.OIDC_OPERATIONS_ISSUER_URL,
+      operationsClientId: result.data.OIDC_OPERATIONS_CLIENT_ID,
+      operationsClientSecret: result.data.OIDC_OPERATIONS_CLIENT_SECRET,
       adminClientId: result.data.OIDC_ADMIN_CLIENT_ID,
       adminClientSecret: result.data.OIDC_ADMIN_CLIENT_SECRET,
       issuer: result.data.OIDC_ISSUER_URL.replace(/\/$/, ""),

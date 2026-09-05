@@ -32,6 +32,8 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
     for (const file of (await readdir(directory)).filter((name) => name.endsWith(".sql") && name < "0017").sort()) {
       await client.query(await readFile(new URL(file, directory), "utf8"));
     }
+    await client.query(await readFile(new URL("0018_studio_opening.sql", directory), "utf8"));
+    await client.query("UPDATE studio_operation SET requested_open=true, registration_synced=true");
     const date = new Date(Date.UTC(new Date().getUTCFullYear() + 2, 2, 23));
     while (date.getUTCDay() !== 4) date.setUTCDate(date.getUTCDate() + 1);
     oldStart = `${date.toISOString().slice(0, 10)} 08:30 Europe/Prague`;

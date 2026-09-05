@@ -147,3 +147,6 @@ poslední úspěch `media-backups/latest.json`. Neúspěšný běh vrací nenulo
 a nezmění poslední úspěšný manifest. Před zálohou se kontroluje rezerva 5 GiB
 na cílovém disku. Log a návratový kód jsou připravené pro centrální alerting;
 externí doručování upozornění tímto krokem nevzniká.
+
+
+Studio opening changes produce studio.opening.requested audit entries with admin subject and request ID. Pending registrationSynced=false is visible in admin and retried; never log identity tokens or credentials.

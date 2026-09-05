@@ -610,3 +610,8 @@ S3 availability nezpřísňuje celkovou readiness rezervací. Selhání zálohy 
 v `media-backup.log` a nenulovém návratovém kódu; doručování centrálního alertu
 je samostatné provozní zapojení. Obnova publikovaných médií musí respektovat
 metadata v PostgreSQL, viz runbook.
+
+
+ADR 0013 configuration: OIDC_OPERATIONS_CLIENT_ID (default studio-balance-operations), OIDC_OPERATIONS_CLIENT_SECRET (required for switching registration; distinct local/production secret). Pending identity sync retries at startup and every 30 seconds; admin displays pending/error until confirmed. Review existing future reservations manually when closing; no automatic cancellations. Check public no-store status and direct Keycloak registration denial after rollout.
+
+OIDC_OPERATIONS_ISSUER_URL: optional trusted internal Keycloak realm URL; production compose maps existing OIDC_BACKCHANNEL_ISSUER_URL and joins the existing Keycloak network for API operations. Public admin endpoints of Keycloak need not be exposed. Provision with scripts/provision-registration-control.py --production on docker.home.cz, or --local for local dependencies. Provisioning initially disables registration and preserves existing runtime variables in a private backup.

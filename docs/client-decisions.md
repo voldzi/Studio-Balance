@@ -144,3 +144,18 @@ release, App Store/Google Play, mobilnímu secure storage, deep linkům a push
 notifikacím jsou rozhodnutím CD-006 nahrazené a nejsou součástí rozsahu. Pojem
 „mobil“ v aktivní dokumentaci znamená responzivní web od šířky 360 px, nikoli
 samostatnou aplikaci.
+
+## CD-047 — Dočasně zavřené studio (5. 9. 2026)
+
+Na výslovný požadavek zadavatele je studio do spuštění administrátorem zavřené.
+Web viditelně oznamuje „Momentálně zavřeno“ a že spuštění registrací a rezervací
+bude oznámeno. Rozvrh lze prohlížet, nové rezervace server nepřijímá a Keycloak
+nepovoluje nové registrace. Přihlášení existujících účtů, administrace, historie
+a storna zůstávají dostupné. Existující rezervace se automaticky neruší.
+Administrátor v Přehledu spustí nebo pozastaví registrace a rezervace společně.
+Toto rozhodnutí dočasně omezuje dřívější rozhodnutí o veřejné registraci.
+
+## CD-048 — Instalace z mobilního menu (5. 9. 2026)
+
+Kliknutí na „Přidat aplikaci“ otevře návod hned napoprvé, i když se menu zavře.
+Návod má samostatný dialog, ovládání klávesnicí a návrat fokusu na tlačítko Menu.

@@ -47,6 +47,7 @@ export type PublicSession = {
 };
 
 export type SessionRow = {
+  studio_open?: boolean;
   active_bookings: string;
   arrival_lead_minutes: number;
   booking_closes_at: Date;
@@ -73,6 +74,7 @@ export type SessionRow = {
 
 const sessionSelect = `
   SELECT
+    (SELECT requested_open AND registration_synced FROM studio_operation WHERE id=true) AS studio_open,
     s.id,
     s.start_at,
     s.end_at,
@@ -197,7 +199,7 @@ export function mapSession(row: SessionRow, now: Date): PublicSession {
     endAt: row.end_at.toISOString(),
     timezone: "Europe/Prague",
     arrivalAt: new Date(row.start_at.getTime() - row.arrival_lead_minutes * 60_000).toISOString(),
-    availability: sessionAvailability({
+    availability: row.studio_open === false && row.status === "scheduled" && row.end_at > now ? "closed" : sessionAvailability({
       activeBookings: Number(row.active_bookings),
       bookingClosesAt: row.booking_closes_at,
       bookingOpensAt: row.booking_opens_at,

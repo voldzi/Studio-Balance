@@ -71,7 +71,8 @@ before encoding one interpretation in code.
 - Identity uses the dedicated Keycloak `studio-balance` realm with separate
   web/admin OIDC policies, Authorization Code + PKCE, server-side HTTP-only
   sessions, simple client registration without e-mail verification while SMTP
-  is unavailable, and mandatory admin MFA. See ADR 0004.
+  is unavailable, and mandatory admin MFA. See ADR 0004. Registration and booking
+  remain paused until an administrator opens the studio (CD-047 / ADR 0013).
 - Production application workloads run as Docker containers on
   `docker.home.cz`.
 - Public traffic for `https://studio-balance.cz` is published

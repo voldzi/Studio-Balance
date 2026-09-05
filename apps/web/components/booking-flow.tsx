@@ -5,9 +5,12 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { ApiError, apiRequest, formatPrice, formatStudioDate, type Booking, type Profile, type PublicSession } from "../lib/api-types";
 
+import { useStudioStatus } from "./studio-status";
+
 const termsVersion = "2026-08-04";
 
 export function BookingFlow({ sessionId }: { sessionId: string }) {
+  const studio = useStudioStatus();
   const [profile, setProfile] = useState<Profile>();
   const [session, setSession] = useState<PublicSession>();
   const [booking, setBooking] = useState<Booking>();
@@ -70,6 +73,7 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
     }
   }
 
+  if (!studio.open) return <p className="schedule-message" role="status">{studio.announcement}</p>;
   if (message && (!profile || !session)) return <p className="schedule-message" role="alert">{message}</p>;
   if (!profile || !session) return <p className="schedule-message" role="status">Připravujeme potvrzení rezervace…</p>;
 

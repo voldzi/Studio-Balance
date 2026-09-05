@@ -1,3 +1,5 @@
+import { StudioStatusController, AdminStudioStatusController } from "./studio/studio-status.controller.js";
+import { StudioStatusService, RegistrationControl } from "./studio/studio-status.service.js";
 import { TeamController, AdminTeamController } from "./content/team.controller.js";
 import { Module } from "@nestjs/common";
 
@@ -27,7 +29,7 @@ import { AdminNewsController, NewsController } from "./content/news.controller.j
 import { NewsService } from "./content/news.service.js";
 
 @Module({
-  controllers: [TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
-  providers: [RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService]
+  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
+  providers: [StudioStatusService, RegistrationControl, RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService]
 })
 export class AppModule {}

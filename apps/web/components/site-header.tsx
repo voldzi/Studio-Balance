@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
+import { StudioAnnouncement, useStudioStatus } from "./studio-status";
 import { PwaInstallMenuAction } from "./pwa-install-menu-action";
 
 export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
+  const { open } = useStudioStatus();
   const mobileNavRef = useRef<HTMLDetailsElement>(null);
   const mobileNavSummaryRef = useRef<HTMLElement>(null);
 
@@ -42,7 +44,7 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
   }, []);
 
   return (
-    <header className={`site-header${inverse ? " site-header-inverse" : ""}`}>
+    <><StudioAnnouncement /><header className={`site-header${inverse ? " site-header-inverse" : ""}`}>
       <Link className="brand-image" href="/" aria-label="Studio Balance – domovská stránka">
         <Image
           alt="Studio Balance"
@@ -61,11 +63,11 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
       </nav>
       <div className="header-actions">
         <Link className="header-account" href="/muj-ucet">Můj účet</Link>
-        <Link className="button button-small" href="/rozvrh">Rezervovat lekci</Link>
+        <Link className="button button-small" href="/rozvrh">{open ? "Rezervovat lekci" : "Prohlédnout rozvrh"}</Link>
       </div>
       <details className="mobile-nav" ref={mobileNavRef}>
         <summary ref={mobileNavSummaryRef}><span className="mobile-nav-open-label">Menu</span><span className="mobile-nav-close-label">Zavřít</span></summary>
-        <nav aria-label="Mobilní navigace" onClick={closeMobileNav}>
+        <nav aria-label="Mobilní navigace" onClick={(event) => { if (event.target instanceof Element && event.target.closest("a")) closeMobileNav(); }}>
           <Link href="/o-studiu">O studiu</Link>
           <Link href="/lekce">Všechny lekce</Link>
           <Link href="/rozvrh">Rozvrh a rezervace</Link>
@@ -73,7 +75,7 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
           <Link href="/galerie">Galerie</Link>
           <Link href="/cenik">Ceník</Link>
           <Link href="/kontakt">Kontakt</Link>
-          <PwaInstallMenuAction />
+          <PwaInstallMenuAction onOpen={closeMobileNav} onClose={() => mobileNavSummaryRef.current?.focus()} />
           <Link className="mobile-nav-account" href="/muj-ucet">Přihlásit / Můj účet</Link>
         </nav>
       </details>
@@ -84,6 +86,6 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
         tabIndex={-1}
         type="button"
       />
-    </header>
+    </header></>
   );
 }

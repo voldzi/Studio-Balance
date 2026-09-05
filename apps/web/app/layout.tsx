@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { StudioStatusProvider } from "../components/studio-status";
 import { PwaRegister } from "../components/pwa-register";
 import { publicAppUrl } from "../lib/seo";
 import "./styles.css";
@@ -41,7 +42,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="cs">
-      <body><PwaRegister />{children}</body>
+      <body><StudioStatusProvider><PwaRegister />{children}</StudioStatusProvider></body>
     </html>
   );
 }

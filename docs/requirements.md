@@ -252,3 +252,6 @@ přiřazeného k tomuto termínu. Katalogové přiřazení lektorů existuje nez
 budoucím rozvrhu: Jumping vede ve středu Nicola Lojšková a v neděli Monika
 Kubincová. Ostatní vazby jsou v CD-045. Typ lekce zachová schválený plakát.
 Stránka O studiu obsahuje spravovanou sekci Náš tým s dodanou skupinovou fotografií.
+
+
+CD-047: studio starts closed; one audited admin control opens registration and booking after identity synchronization. Existing bookings are preserved.

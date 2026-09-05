@@ -262,3 +262,6 @@ i zápisu zálohovacím účtem. Endpoint `http://storage.home.cz:8333` použív
 interní síť bez TLS dle zadavatelem určené adresy; není zveřejněn přes DMZ.
 Secrets se přenášejí pouze SSH a ukládají do souborů 0600. Zálohy médií jsou
 v neveřejném adresáři 0700 na jiném hostiteli a obsahují soubory 0600.
+
+
+ADR 0013: API-only dedicated studio-balance-operations service account, realm-management/manage-realm within this realm only. No master credentials in runtime. Registration disabled at identity provider; booking gated transactionally. Admin role, MFA, server session and mutation origin protections apply.

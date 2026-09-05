@@ -4,9 +4,12 @@
   "displayName": "Studio Balance",
   "loginTheme": "studio-balance",
   "internationalizationEnabled": true,
-  "supportedLocales": ["cs", "en"],
+  "supportedLocales": [
+    "cs",
+    "en"
+  ],
   "defaultLocale": "cs",
-  "registrationAllowed": true,
+  "registrationAllowed": false,
   "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -19,12 +22,23 @@
   "clientSessionMaxLifespan": 7776000,
   "roles": {
     "realm": [
-      { "name": "client", "description": "Studio Balance client" },
-      { "name": "admin", "description": "Studio Balance administrator" },
-      { "name": "super_admin", "description": "Studio Balance super administrator" }
+      {
+        "name": "client",
+        "description": "Studio Balance client"
+      },
+      {
+        "name": "admin",
+        "description": "Studio Balance administrator"
+      },
+      {
+        "name": "super_admin",
+        "description": "Studio Balance super administrator"
+      }
     ]
   },
-  "defaultRoles": ["client"],
+  "defaultRoles": [
+    "client"
+  ],
   "authenticationFlows": [
     {
       "alias": "studio-balance-admin-browser",
@@ -58,17 +72,28 @@
       "secret": "local-web-client-only",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:3000/*"],
-      "webOrigins": ["http://localhost:3000"],
-      "attributes": { "pkce.code.challenge.method": "S256" },
-      "authenticationFlowBindingOverrides": { "browser": "browser" },
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "authenticationFlowBindingOverrides": {
+        "browser": "browser"
+      },
       "protocolMappers": [
         {
           "name": "amr",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-amr-mapper",
           "consentRequired": false,
-          "config": { "access.token.claim": "true", "id.token.claim": "true" }
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
         }
       ]
     },
@@ -81,19 +106,53 @@
       "secret": "local-admin-client-only",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:3000/admin/*"],
-      "webOrigins": ["http://localhost:3000"],
-      "attributes": { "pkce.code.challenge.method": "S256" },
-      "authenticationFlowBindingOverrides": { "browser": "studio-balance-admin-browser" },
+      "redirectUris": [
+        "http://localhost:3000/admin/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "authenticationFlowBindingOverrides": {
+        "browser": "studio-balance-admin-browser"
+      },
       "protocolMappers": [
         {
           "name": "amr",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-amr-mapper",
           "consentRequired": false,
-          "config": { "access.token.claim": "true", "id.token.claim": "true" }
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
         }
       ]
+    },
+    {
+      "clientId": "studio-balance-operations",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "local-operations-client-only",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "fullScopeAllowed": true,
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-studio-balance-operations",
+      "enabled": true,
+      "serviceAccountClientId": "studio-balance-operations",
+      "clientRoles": {
+        "realm-management": [
+          "manage-realm"
+        ]
+      }
     }
   ]
 }

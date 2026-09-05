@@ -1,3 +1,4 @@
+import { ScheduleCallToAction } from "../components/studio-status";
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -34,7 +35,7 @@ export default function HomePage() {
             <h1 id="hero-title">Najdi si svůj balanc.</h1>
             <p className="hero-lead">Pohyb, síla a klid v komorním studiu s osobním přístupem.</p>
             <div className="actions">
-              <Link className="button" href="/rozvrh">Rezervovat lekci</Link>
+              <ScheduleCallToAction />
               <Link className="button button-ghost" href="#lekce">Prohlédnout lekce</Link>
             </div>
           </div>

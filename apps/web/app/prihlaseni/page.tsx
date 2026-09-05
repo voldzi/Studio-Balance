@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { RegistrationNotice } from "../../components/studio-status";
 import { privatePageMetadata } from "../../lib/seo";
 
 export const metadata: Metadata = { ...privatePageMetadata, title: "Přihlášení" };
@@ -17,7 +18,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <p className="eyebrow">Klientský účet</p>
         <h1 id="login-title">Přihlásit se</h1>
         <p>
-          Přihlášení a registraci bezpečně zajišťuje Studio Balance účet. Po přihlášení se vrátíte tam,
+          Přihlášení bezpečně zajišťuje Studio Balance účet. Po přihlášení se vrátíte tam,
           kde jste skončili.
         </p>
         <form action="/auth/login" method="get" className="auth-login-form">
@@ -28,7 +29,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </label>
           <button className="button" type="submit">Pokračovat k přihlášení</button>
         </form>
-        <p className="auth-help">Bez zaškrtnutí zůstane přihlášení jen do zavření prohlížeče. Nový účet vytvoříte v následujícím bezpečném kroku.</p>
+        <p className="auth-help">Bez zaškrtnutí zůstane přihlášení jen do zavření prohlížeče.</p>
+      <RegistrationNotice />
       </section>
     </main>
   );

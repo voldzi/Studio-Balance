@@ -144,3 +144,7 @@ Vývoj probíhá po vertikálních řezech z `docs/delivery-plan.md`. Neověřen
 fotografie ani logo se v produkčním povrchu nepoužívají a otevřená rezervační
 pravidla se neodhadují. Každá změna musí současně udržet aktuální požadavky,
 API kontrakt, testy, bezpečnostní pravidla a provozní dokumentaci.
+
+Studio opening: administration → Přehled → Otevření studia. Registration and
+booking start closed; the control synchronizes the dedicated Keycloak realm.
+See [ADR 0013](docs/adr/0013-studio-opening-control.md).
