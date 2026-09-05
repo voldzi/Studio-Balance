@@ -627,3 +627,10 @@ HTML is dynamic/no-store to prevent a CDN from retaining old operational UI.
 WEDOS Protection may still hold HTML cached before this change; purge the
 studio-balance.cz CDN cache once in the WEDOS administration after deployment.
 Verification must distinguish fresh origin/query responses from the ordinary public URL.
+
+Deployment check, 2026-09-05: production 605c3f9 runs the announcement, booking
+gate and PWA dialog fix. The interactive registration setup scripts are copied to
+the deployment root. Keycloak synchronization awaits a valid master administrator.
+The subsequent HTML no-store change in 2c79dc5 built successfully, but its deployment
+was refused by the existing 20 GiB disk guard (about 19.1 GiB available); do not
+bypass that guard. Clear the old WEDOS CDN cache to expose the already deployed UI.
