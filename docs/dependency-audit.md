@@ -65,5 +65,9 @@ registru (s výjimkou výše uvedených hlavních migrací).
 
 ## Nasazení
 
-Tato aktualizace je připravená v pracovním repozitáři; produkční nasazení
-v rámci tohoto auditu neproběhlo. Stav živého webu se tímto auditem nemění.
+Revize `a92bdb1` byla 2026-09-05 nasazena do produkce. API readiness potvrzuje
+tuto revizi; API, web a worker jsou healthy. Veřejné API potvrzuje zavřený stav.
+Před nasazením byla po souhlasu uživatele odstraněna nepoužívaná Docker build
+cache (celkem přibližně 2,9 GB); obrazy, kontejnery a datové svazky zůstaly zachované.
+Origin HTML nově vrací private/no-store. Běžná veřejná domovská URL ještě
+vrací starou CDN kopii ze 4. září; je nutné vyčistit cache ve WEDOS administraci.

@@ -628,12 +628,14 @@ WEDOS Protection may still hold HTML cached before this change; purge the
 studio-balance.cz CDN cache once in the WEDOS administration after deployment.
 Verification must distinguish fresh origin/query responses from the ordinary public URL.
 
-Deployment check, 2026-09-05: production 605c3f9 runs the announcement, booking
-gate and PWA dialog fix. The interactive registration setup scripts are copied to
-the deployment root. Keycloak synchronization awaits a valid master administrator.
-The subsequent HTML no-store change in 2c79dc5 built successfully, but its deployment
-was refused by the existing 20 GiB disk guard (about 19.1 GiB available); do not
-bypass that guard. Clear the old WEDOS CDN cache to expose the already deployed UI.
+Deployment check, 2026-09-05: production a92bdb1 runs the updated dependencies,
+announcement, booking gate, PWA dialog fix and HTML private/no-store response.
+API, web and worker are healthy; readiness confirms a92bdb1. The dedicated
+Keycloak operations credential was securely imported and temporary transfer files
+removed; closed registration synchronization was verified before this rollout.
+The disk guard passed after user-approved cleanup of unused build cache; images
+and data volumes were preserved. The ordinary public homepage still returns an
+old WEDOS CDN response; clear that cache once to expose the fresh origin HTML.
 
 The approved UI setup may instead create studio-balance-operations and assign
 realm-management/manage-realm in the studio-balance realm. After authorized secure
