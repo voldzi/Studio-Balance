@@ -634,3 +634,10 @@ the deployment root. Keycloak synchronization awaits a valid master administrato
 The subsequent HTML no-store change in 2c79dc5 built successfully, but its deployment
 was refused by the existing 20 GiB disk guard (about 19.1 GiB available); do not
 bypass that guard. Clear the old WEDOS CDN cache to expose the already deployed UI.
+
+The approved UI setup may instead create studio-balance-operations and assign
+realm-management/manage-realm in the studio-balance realm. After authorized secure
+credential transfer, scripts/connect-registration-runtime.sh consumes only the
+mode-0600 .env.registration-incoming with the dedicated client ID and secret,
+merges the API runtime, removes the transfer file, and verifies closed synchronized state.
+Never export a master browser session/token or print any client secret.
