@@ -7,29 +7,7 @@ allowBuilds:
   unrs-resolver: true
 
 overrides:
-  fastify: 5.11.2
-  find-my-way: 9.7.0
-
-minimumReleaseAgeExclude:
-  - '@next/env@16.3.0'
-  - '@next/eslint-plugin-next@16.3.0'
-  - '@next/swc-darwin-arm64@16.3.0'
-  - '@next/swc-darwin-x64@16.3.0'
-  - '@next/swc-linux-arm64-gnu@16.3.0'
-  - '@next/swc-linux-arm64-musl@16.3.0'
-  - '@next/swc-linux-x64-gnu@16.3.0'
-  - '@next/swc-linux-x64-musl@16.3.0'
-  - '@next/swc-win32-arm64-msvc@16.3.0'
-  - '@next/swc-win32-x64-msvc@16.3.0'
-  - '@typescript-eslint/eslint-plugin@8.66.0'
-  - '@typescript-eslint/parser@8.66.0'
-  - '@typescript-eslint/project-service@8.66.0'
-  - '@typescript-eslint/scope-manager@8.66.0'
-  - '@typescript-eslint/tsconfig-utils@8.66.0'
-  - '@typescript-eslint/type-utils@8.66.0'
-  - '@typescript-eslint/types@8.66.0'
-  - '@typescript-eslint/typescript-estree@8.66.0'
-  - '@typescript-eslint/utils@8.66.0'
-  - '@typescript-eslint/visitor-keys@8.66.0'
-  - next@16.3.0
-  - typescript-eslint@8.66.0
+  fastify: 5.12.3
+  find-my-way: 9.9.0
+  # PostCSS still pins an affected nanoid 3 patch; remove after upstream updates.
+  'nanoid@>=3.0.0 <3.3.18': 3.3.18

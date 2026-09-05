@@ -641,3 +641,7 @@ credential transfer, scripts/connect-registration-runtime.sh consumes only the
 mode-0600 .env.registration-incoming with the dedicated client ID and secret,
 merges the API runtime, removes the transfer file, and verifies closed synchronized state.
 Never export a master browser session/token or print any client secret.
+
+## Kontrola knihoven
+
+Při aktualizacích ověřit `pnpm outdated -r`, aktualizovat přímé i nepřímé závislosti, spustit `pnpm audit`, `pnpm check` a místní integrační testy. Výsledek poslední aktualizace je v [dependency-audit.md](dependency-audit.md). Aktualizace pracovního repozitáře sama o sobě nemění produkční kontejnery.
