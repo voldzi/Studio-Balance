@@ -98,6 +98,13 @@ registru (s výjimkou výše uvedených hlavních migrací).
 
 ## Nasazení
 
+Revize `2ed030d` byla 2026-09-08 nasazena do produkce standardním postupem
+s automatickým rollbackem. Readiness potvrzuje přesnou revizi a API, web i
+worker jsou healthy. Veřejné API vrací zavřený stav, HTML má `private/no-store`
+a CDN odpověď je `BYPASS`. V runtime kontejnerech není npm ani Corepack.
+Před sestavením bylo odstraněno přibližně 1,7 GB nepoužívané Docker build cache;
+obrazy pro návrat, kontejnery, databáze a datové svazky zůstaly zachované.
+
 Revize `a92bdb1` byla 2026-09-05 nasazena do produkce. API readiness potvrzuje
 tuto revizi; API, web a worker jsou healthy. Veřejné API potvrzuje zavřený stav.
 Před nasazením byla po souhlasu uživatele odstraněna nepoužívaná Docker build

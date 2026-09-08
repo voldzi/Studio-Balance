@@ -637,6 +637,13 @@ The disk guard passed after user-approved cleanup of unused build cache; images
 and data volumes were preserved. The ordinary public homepage still returns an
 old WEDOS CDN response; clear that cache once to expose the fresh origin HTML.
 
+Deployment check, 2026-09-08: production 2ed030d runs NestJS 12, Vitest 5,
+the refreshed runtime dependencies and hardened Node.js 24.20.0 Alpine images.
+API, web and worker are healthy and readiness confirms 2ed030d. Public studio
+status remains closed; registration and booking stay paused. Fresh public HTML
+returns private/no-store and the CDN bypasses it. Runtime containers contain no
+npm/Corepack CLI. The rollout preserved the previous a92bdb1 images for rollback.
+
 The approved UI setup may instead create studio-balance-operations and assign
 realm-management/manage-realm in the studio-balance realm. After authorized secure
 credential transfer, scripts/connect-registration-runtime.sh consumes only the
