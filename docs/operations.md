@@ -647,3 +647,9 @@ Never export a master browser session/token or print any client secret.
 ## Kontrola knihoven
 
 Při aktualizacích ověřit `pnpm outdated -r`, aktualizovat přímé i nepřímé závislosti, spustit `pnpm audit`, `pnpm check` a místní integrační testy. Výsledek poslední aktualizace je v [dependency-audit.md](dependency-audit.md). Aktualizace pracovního repozitáře sama o sobě nemění produkční kontejnery.
+
+Produkční runtime obrazy musí před vydáním projít skenem známých zranitelností.
+Dockerfile používá digestem připnutý Node.js obraz, během sestavení aktualizuje
+Alpine balíčky a z runtime vrstev odstraňuje npm a Corepack. Při změně digestu
+se znovu sestaví a zkontrolují všechny tři cíle: web, API a worker.
+Stejný gate běží v CI pomocí Trivy; vysoké a kritické nálezy blokují vydání.

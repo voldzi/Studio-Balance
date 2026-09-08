@@ -6,6 +6,9 @@ allowBuilds:
   esbuild: true
   unrs-resolver: true
 
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+
 overrides:
   fastify: 5.12.3
   find-my-way: 9.9.0

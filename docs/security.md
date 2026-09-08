@@ -267,3 +267,13 @@ v neveřejném adresáři 0700 na jiném hostiteli a obsahují soubory 0600.
 ADR 0013: API-only dedicated studio-balance-operations service account, realm-management/manage-realm within this realm only. No master credentials in runtime. Registration disabled at identity provider; booking gated transactionally. Admin role, MFA, server session and mutation origin protections apply.
 
 Aktuální audit npm knihoven a jeho omezení popisuje [dependency-audit.md](dependency-audit.md). CI po pinned instalaci spouští `pnpm audit --audit-level=high`; vysoké a kritické nálezy blokují kontrolu.
+
+Workspace navíc striktně odmítá balíčky vydané před méně než 24 hodinami.
+Produkční obrazy používají digestem připnutý Node.js base image, aplikují
+aktuální Alpine opravy při sestavení a neobsahují nepotřebné npm/Corepack CLI.
+Před vydáním se výsledné runtime obrazy kontrolují na známé zranitelnosti.
+CI používá Gitleaks pro kontrolu tajných údajů a Trivy pro web, API i worker;
+vysoký nebo kritický nález sestavení zablokuje. Externí CI akce jsou připnuté
+na přesný commit.
+Celý bezpečnostní gate se spouští denně. Dependabot sleduje npm, Docker a
+GitHub Actions jednou týdně.

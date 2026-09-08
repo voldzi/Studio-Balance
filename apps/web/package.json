@@ -13,7 +13,7 @@
   "dependencies": {
     "@studiobalance/domain": "workspace:*",
     "@studiobalance/ui-tokens": "workspace:*",
-    "jose": "6.2.11",
+    "jose": "6.2.12",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -24,6 +24,6 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
     "typescript": "5.9.3",
-    "vitest": "4.1.11"
+    "vitest": "5.0.0"
   }
 }

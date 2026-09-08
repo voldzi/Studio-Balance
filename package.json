@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@11.26.0",
   "engines": {
     "node": ">=24 <27",
     "pnpm": ">=11 <12"
@@ -25,7 +25,7 @@
     "rollback:preview": "bash scripts/rollback-preview-remote.sh",
     "rollback:production": "bash scripts/rollback-production-remote.sh",
     "lint": "eslint .",
-    "test": "pnpm -r --if-present test",
+    "test": "pnpm --filter @studiobalance/domain build && pnpm -r --if-present test",
     "typecheck": "pnpm generate:contracts && pnpm -r --if-present typecheck",
     "validate:keycloak-theme": "bash scripts/validate-keycloak-theme.sh",
     "validate:openapi": "python3 -m json.tool openapi/openapi.json >/dev/null",
@@ -39,6 +39,6 @@
     "tsx": "4.23.13",
     "typescript": "5.9.3",
     "typescript-eslint": "8.69.0",
-    "vitest": "4.1.11"
+    "vitest": "5.0.0"
   }
 }

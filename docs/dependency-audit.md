@@ -1,4 +1,37 @@
-# Audit a aktualizace knihoven — 2026-09-05
+# Audit a aktualizace knihoven
+
+## Kontrola 2026-09-08
+
+Audit pokryl přímé a nepřímé npm závislosti, kompatibilitu peer dependencies,
+produkční sestavení a výsledné obrazy webu, API a workeru.
+
+- `pnpm audit` po aktualizaci: 0 nálezů ve všech kategoriích.
+- Docker Scout nad třemi výslednými produkčními obrazy: 0 zranitelných balíčků.
+- CI nově kontroluje tajné údaje pomocí Gitleaks a po sestavení blokuje vysoké
+  a kritické nálezy v každém runtime obrazu pomocí Trivy. Všechny CI akce jsou
+  připnuté na konkrétní commit, ne na pohyblivý tag.
+- Bezpečnostní kontrola běží denně i při změnách. Dependabot týdně kontroluje
+  npm, Docker base image a GitHub Actions.
+- `pnpm outdated`: zbývá pouze TypeScript 7.0.2. Ten zatím nelze bezpečně
+  použít, protože `typescript-eslint` 8.69.0 podporuje TypeScript `<6.1` a
+  `openapi-typescript` 7.13.0 požaduje TypeScript 5.x.
+- Peer dependency kontrola: bez konfliktů.
+- Kompletní kontrola: 85 testů, lint, typová kontrola, produkční build,
+  validace repozitáře, Keycloak tématu a OpenAPI prošly.
+- Doplňkové databázové ověření: 14 testů ve 4 souborech prošlo nad izolovanými
+  lokálními schématy PostgreSQL.
+
+Aktualizace zahrnuje AWS S3 klienta 3.1127.0, JOSE 6.2.12, NestJS 12.0.1 a
+Vitest 5.0.0. Testovací příkaz nyní před spuštěním testů explicitně sestaví
+sdílený doménový balíček, který Vitest 5 vyžaduje pro korektní rozlišení exportu.
+
+Sestavovací řetězec používá poslední řadu pnpm 11 (11.26.0), protože projektová
+pravidla zatím vyžadují pnpm 11. Nové balíčky podléhají 24hodinové karanténě a
+kontrola je striktní. Produkční obraz byl posunut na Node.js 24.20.0 Alpine a
+připnut digestem. Při sestavení se aplikují dostupné opravy Alpine; runtime
+obrazy neobsahují nepoužívané npm ani Corepack nástroje.
+
+## Kontrola 2026-09-05
 
 Rozsah: npm závislosti všech sedmi workspace projektů, lockfile a bezpečnostní
 kontrola v CI. Audit balíčků není penetrační test ani audit operačního systému,
