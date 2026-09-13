@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 
 import { SiteHeader } from "../components/site-header";
 import { LessonCatalog } from "../components/lesson-catalog";
+import { MassagePartnerSection } from "../components/massage-partner-section";
 import { ReviewsShowcase } from "../components/reviews-showcase";
 import { SocialLinks } from "../components/social-links";
 import { StructuredData } from "../components/structured-data";
@@ -92,6 +93,7 @@ export default function HomePage() {
 
         <TransformationsShowcase homepage />
         <ReviewsShowcase homepage />
+        <MassagePartnerSection />
       </main>
 
       <footer id="kontakt">

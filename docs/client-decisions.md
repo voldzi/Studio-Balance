@@ -177,3 +177,14 @@ rezervací a cenových snapshotů. Rezervovaným klientkám se zachová původn�
 bezplatného storna, přepočítají se připomínky a změna se zobrazí v účtu i odešle
 provozním e-mailem. Veřejné jméno lektorky je `Kača Adamovská`; toto rozhodnutí
 nahrazuje dřívější variantu `Katka Adamovská` v CD-045 a v rozvrhu CD-044.
+
+## CD-051 — Partnerské doporučení Masáží Jiřina (13. 9. 2026)
+
+Zadavatel schválil jedno pevné, nerušivé partnerské doporučení na domovské
+stránce Studia Balance. Sekce je umístěná za recenzemi a před kontaktním
+footerem, používá označení „Partnerské doporučení“, text o regeneraci po pohybu
+a odkaz „Poznat Masáže Jiřina“ na `https://masaze.zeleznalady.cz/`. Používá
+oficiální veřejně publikovanou fotografii Masáží Jiřina. Odkaz vede na jiný web
+ve stejném okně a přístupnostní název tuto skutečnost oznamuje. Partnerský obsah
+není součástí hlavní navigace, rezervací ani administrace a nepřidává se obecná
+správa partnerů.

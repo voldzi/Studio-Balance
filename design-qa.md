@@ -21,3 +21,29 @@
 Implementace odpovídá schválenému směru; odchylky jsou omezené na skutečný počet testovacích rezervací a použití dodaných fotografií místo ilustračního obsahu reference.
 
 final result: passed
+
+---
+
+# Design QA — partnerské doporučení Masáží Jiřina
+
+- Source visual: `output/proposals/studio-balance-partnerske-doporuceni-masaze-jirina.png` (1600 × 1200 px)
+- Implementation: `http://localhost:3000/`
+- Implementation screenshots: captured and inspected in the Codex in-app browser; the browser tool did not emit a filesystem path
+- Viewports: default desktop 1280 × 720 px and mobile 390 × 844 px plus the supported minimum width of 360 px
+- Checked: 2026-09-13
+
+## Comparison
+
+| Area | Result |
+| --- | --- |
+| Placement | Matches the approved hierarchy: after reviews and before the contact footer. |
+| Layout | Desktop uses image-left/copy-right; mobile stacks the image above the copy. No clipping or horizontal overflow was observed. |
+| Typography and colour | Uses the existing Studio Balance display/body fonts, warm neutral card, copper eyebrow and primary CTA from the approved direction. |
+| Copy | Eyebrow, heading, description and CTA match the approved Czech wording. |
+| Photography | The illustrative proposal image was intentionally replaced by the official public Masáže Jiřina image. The image preserves its proportions and has a calm crop at both viewports. |
+| Accessibility | Semantic labelled section, descriptive image alt, visible keyboard focus inherited from the site, 44 px-plus CTA target and an accessible link name that announces the destination site. |
+| Interaction | CTA was activated in the in-app browser and reached `https://masaze.zeleznalady.cz/` in the same tab. |
+
+No P0, P1 or P2 visual mismatch remains.
+
+Final result: passed

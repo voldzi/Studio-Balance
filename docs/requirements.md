@@ -55,11 +55,12 @@ a obchodní pravidla.
 | WEB-011 | P0 | administrátor může upravit existující budoucí termín včetně typu lekce, instruktora a času; změna zachová rezervace, audit a provozní oznámení |
 | WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje. Přihlášený profil poskytne kontextový, jednorázově odmítnutelný a platformně správný návod: na iOS kroky v menu Safari, na Androidu/desktopu skutečné instalační tlačítko jen pokud jej prohlížeč nabízí, jinak výslovně označené kroky v menu. |
 | WEB-012 | P0 | přihlášený klientský web má prémiový mobilní přehled s přivítáním, nejbližší rezervací a fotografií, přímým stornem, nadcházejícími/minulými rezervacemi, oblíbenými typy lekcí, novinkami, zprávami účtu, profilem, nastavením a spodní navigací; všechna provozní data používají stejné API a databázi jako veřejný rozvrh a administrace |
+| WEB-013 | P1 | domovská stránka obsahuje za recenzemi a před footerem jedno pevné partnerské doporučení Masáží Jiřina se schváleným textem, oficiální fotografií a přístupným odkazem na `https://masaze.zeleznalady.cz/`; partner se nespravuje v administraci a doporučení nevstupuje do rezervačního toku ani hlavní navigace |
 
-Aktuální typy lekcí jsou Barre Sculpt, Barre Strength, TRX, Balance Flow,
-Jumping, Kruhový trénink a Power Yoga. Jde o data spravovaná administrací, ne
-enum nebo pevné karty v kódu. Barre Sculpt se zaměřuje na tvarování postavy,
-Barre Strength na sílu a stabilitu.
+Aktuální typy lekcí jsou Barre, TRX, Balance Flow, Jumping, Kruhový trénink a
+Power Yoga. Jde o data spravovaná administrací, ne enum nebo pevné karty v
+kódu. Historické typy Barre Sculpt a Barre Strength se po CD-050 nepoužívají
+pro nové termíny.
 Administrace spravuje také náročnost, publikum, přínosy, praktické informace,
 SEO a schválenou cestu fotografie typu lekce.
 

@@ -161,6 +161,7 @@ hero + značka + dvě CTA
 → příběh/interiér
 → zvýrazněný Balance Flow
 → galerie a recenze
+→ partnerské doporučení regenerace
 → kontakt, mapa a finální CTA
 → právní a kontaktní footer
 ```
@@ -176,6 +177,14 @@ náročnosti lekce. Pokud není publikovaná žádná skutečná recenze, homepa
 pás vynechá a stránka Recenze zobrazí pravdivý prázdný stav. Schválený zdroj a
 datum se zobrazí jen tehdy, pokud byly skutečně dodány; samostatná stránka vždy
 nabídne CTA do rozvrhu a používá společný kontaktní footer.
+
+Partnerské doporučení podle CD-051 je jediná klidná karta za recenzemi a před
+footerem. Na desktopu má oficiální fotografii vlevo a krátký text s jedním CTA
+vpravo; na mobilu je fotografie nad textem a CTA přes dostupnou šířku. Označení
+„Partnerské doporučení“ musí být viditelné. Odkaz vede ve stejném okně přímo na
+domovskou stránku Masáží Jiřina a přístupnostní název sdělí, že uživatel opustí
+web Studia Balance. Sekce nesmí soupeřit s rozvrhem, překrývat obsah ani se
+objevit v hlavní navigaci, klientském účtu nebo rezervaci.
 
 ### Instalace webu (PWA)
 

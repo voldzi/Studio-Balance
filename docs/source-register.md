@@ -173,3 +173,13 @@ O studiu (CD-045). Originály z předání nebyly změněny. WebP deriváty nem�
 obsah ani proporce; přesné názvy zdrojů, rozměry a SHA-256 originálů/výstupů
 obsahuje `infra/media/studio-team.json`. Pro přiřazení se používají stávající
 ID osob a veřejná jména z CD-035.
+
+## Partnerská fotografie Masáží Jiřina (13. 9. 2026)
+
+Soubor `apps/web/public/images/studio-balance/partners/masaze-jirina-studio.jpg`
+je lokální kopie oficiálního veřejného Open Graph obrazu z
+`https://masaze.zeleznalady.cz/og/zeleznalady-og-v2.jpg` (1200 × 630 px), který
+zdrojový web popisuje jako „Klidné masážní studio Železná Lady“. Zadavatel
+schválil zařazení partnerské sekce podle CD-051. Generovaný ilustrační obraz z
+návrhu se v produkci nepoužívá. SHA-256 lokální kopie je
+`553bcd84e37d5b9fa15dba2b7f7c2eb9708b5191f8881bc5e6fad4e2b140b767`.
