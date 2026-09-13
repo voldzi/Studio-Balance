@@ -16,6 +16,7 @@ const nicola = "10000000-0000-4000-8000-000000000001";
 const monika = "10000000-0000-4000-8000-000000000007";
 const movedSql = await readFile(new URL("0017_barre_strength_wednesday.sql", directory), "utf8");
 const unifiedSql = await readFile(new URL("0019_unified_barre_schedule.sql", directory), "utf8");
+const barreContentSql = await readFile(new URL("0020_barre_content_cleanup.sql", directory), "utf8");
 
 describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (local PostgreSQL)", () => {
   let client: Client;
@@ -57,7 +58,7 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
     return result.rows[0]!.id;
   }
   async function migrate() { await client.query("BEGIN"); try { await client.query(movedSql); await client.query("COMMIT"); } catch (error) { await client.query("ROLLBACK"); throw error; } }
-  async function unifyBarre() { await client.query("BEGIN"); try { await client.query(unifiedSql); await client.query("COMMIT"); } catch (error) { await client.query("ROLLBACK"); throw error; } }
+  async function unifyBarre() { await client.query("BEGIN"); try { await client.query(unifiedSql); await client.query(barreContentSql); await client.query("COMMIT"); } catch (error) { await client.query("ROLLBACK"); throw error; } }
   const local = (date: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", weekday: "short", hour: "2-digit", minute: "2-digit" }).format(date);
 
   it("preserves booked IDs/prices, gives a free-change window and replaces reminder times atomically", async () => {
@@ -105,6 +106,10 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
     expect(preserved.status).toBe("reserved"); expect(preserved.price_snapshot_cents).toBe(23000);
     const source = (await client.query("SELECT active FROM class_types WHERE slug='barre-strength'")).rows[0];
     expect(source.active).toBe(false);
+    const content = (await client.query("SELECT hero_image_alt FROM class_types WHERE slug='barre'")).rows[0];
+    expect(content.hero_image_alt).toBe("Ukázkový vizuál lekce Barre ve Studio Balance.");
+    const founder = (await client.query("SELECT bio FROM instructors WHERE id=$1", [nicola])).rows[0];
+    expect(founder.bio).toContain("Jumpingu, Barre a Balance Flow");
     const reminders = (await client.query("SELECT scheduled_at,payload FROM notification_outbox WHERE booking_id=$1 AND kind='lesson_reminder' AND status='pending' ORDER BY scheduled_at", [booking.id])).rows;
     expect(reminders.map((row) => (changed.start_at.getTime()-row.scheduled_at.getTime())/60000)).toEqual([1440,120,30]);
     expect(reminders.every((row) => row.payload.className === "Barre")).toBe(true);
