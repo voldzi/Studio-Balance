@@ -15,6 +15,7 @@ const katka = "10000000-0000-4000-8000-000000000005";
 const nicola = "10000000-0000-4000-8000-000000000001";
 const monika = "10000000-0000-4000-8000-000000000007";
 const movedSql = await readFile(new URL("0017_barre_strength_wednesday.sql", directory), "utf8");
+const unifiedSql = await readFile(new URL("0019_unified_barre_schedule.sql", directory), "utf8");
 
 describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (local PostgreSQL)", () => {
   let client: Client;
@@ -56,6 +57,7 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
     return result.rows[0]!.id;
   }
   async function migrate() { await client.query("BEGIN"); try { await client.query(movedSql); await client.query("COMMIT"); } catch (error) { await client.query("ROLLBACK"); throw error; } }
+  async function unifyBarre() { await client.query("BEGIN"); try { await client.query(unifiedSql); await client.query("COMMIT"); } catch (error) { await client.query("ROLLBACK"); throw error; } }
   const local = (date: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Prague", weekday: "short", hour: "2-digit", minute: "2-digit" }).format(date);
 
   it("preserves booked IDs/prices, gives a free-change window and replaces reminder times atomically", async () => {
@@ -80,6 +82,33 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
     expect((await client.query("SELECT count(*)::int n FROM cancellation_fees")).rows[0].n).toBe(0);
     await migrate();
     expect((await client.query("SELECT count(*)::int n FROM account_notifications WHERE booking_id=$1", [b.id])).rows[0].n).toBe(1);
+  });
+
+  it("unifies future Barre, moves mornings to 08:00 and preserves booked records", async () => {
+    const wednesdayStart = (await client.query("SELECT (($1::timestamptz AT TIME ZONE 'Europe/Prague')-interval '1 day') AT TIME ZONE 'Europe/Prague' AS start", [oldStart])).rows[0].start.toISOString();
+    const id = await session(wednesdayStart);
+    const user = (await client.query("INSERT INTO user_profiles (oidc_subject,email,email_verified) VALUES ('unified','unified@example.test',false) RETURNING id")).rows[0].id;
+    const booking = (await client.query(`INSERT INTO bookings (user_id,session_id,source,price_snapshot_cents,terms_version,cancellation_cutoff_at)
+      VALUES ($1,$2,'web',23000,'test',$3::timestamptz-interval '24 hours') RETURNING id`, [user,id,wednesdayStart])).rows[0];
+    await client.query(`INSERT INTO notification_outbox (user_id,booking_id,kind,channel,scheduled_at,payload)
+      VALUES ($1,$2,'lesson_reminder','email',$3::timestamptz-interval '2 hours','{}')`, [user,booking.id,wednesdayStart]);
+
+    await unifyBarre();
+
+    const changed = (await client.query(`SELECT session.id,session.start_at,session.end_at,type.slug,type.name,instructor.display_name
+      FROM class_sessions session JOIN class_types type ON type.id=session.class_type_id
+      JOIN instructors instructor ON instructor.id=session.instructor_id WHERE session.id=$1`, [id])).rows[0];
+    expect(changed.slug).toBe("barre"); expect(changed.name).toBe("Barre");
+    expect(changed.display_name).toBe("Kača Adamovská"); expect(local(changed.start_at)).toBe("Wed 08:00");
+    expect(changed.end_at.getTime()-changed.start_at.getTime()).toBe(3_600_000);
+    const preserved = (await client.query("SELECT status,price_snapshot_cents,cancellation_cutoff_at FROM bookings WHERE id=$1", [booking.id])).rows[0];
+    expect(preserved.status).toBe("reserved"); expect(preserved.price_snapshot_cents).toBe(23000);
+    const source = (await client.query("SELECT active FROM class_types WHERE slug='barre-strength'")).rows[0];
+    expect(source.active).toBe(false);
+    const reminders = (await client.query("SELECT scheduled_at,payload FROM notification_outbox WHERE booking_id=$1 AND kind='lesson_reminder' AND status='pending' ORDER BY scheduled_at", [booking.id])).rows;
+    expect(reminders.map((row) => (changed.start_at.getTime()-row.scheduled_at.getTime())/60000)).toEqual([1440,120,30]);
+    expect(reminders.every((row) => row.payload.className === "Barre")).toBe(true);
+    expect((await client.query("SELECT count(*)::int n FROM account_notifications WHERE booking_id=$1 AND title='Ranní Barre nově začíná v 8:00'", [booking.id])).rows[0].n).toBe(1);
   });
 
   it("rolls back the whole change on a Wednesday conflict", async () => {
@@ -141,6 +170,36 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
     expect((await service.getSession(id))?.instructor.portrait?.src).toContain("monika-kubincova");
     await client.query("UPDATE instructors SET portrait_preview_path='' WHERE id=$1", [monika]);
     expect((await service.getSession(id))?.instructor).toEqual({ id: monika, displayName: "Monika Kubincová", portrait: null });
+  });
+
+  it("lets administration edit a booked occurrence with audit, a safe cutoff and replacement reminders", async () => {
+    const id = await session();
+    const user = (await client.query("INSERT INTO user_profiles (oidc_subject,email,email_verified) VALUES ('admin-edit','admin-edit@example.test',false) RETURNING id")).rows[0].id;
+    const booking = (await client.query(`INSERT INTO bookings (user_id,session_id,source,price_snapshot_cents,terms_version,cancellation_cutoff_at)
+      VALUES ($1,$2,'web',23000,'test',$3::timestamptz-interval '24 hours') RETURNING id`, [user,id,oldStart])).rows[0];
+    await client.query(`INSERT INTO notification_outbox (user_id,booking_id,kind,channel,scheduled_at,payload)
+      VALUES ($1,$2,'lesson_reminder','email',$3::timestamptz-interval '2 hours','{}')`, [user,booking.id,oldStart]);
+    const database = {
+      query: client.query.bind(client),
+      transaction: async (work: (db: Client) => Promise<unknown>) => {
+        await client.query("BEGIN");
+        try { const result = await work(client); await client.query("COMMIT"); return result; }
+        catch (error) { await client.query("ROLLBACK"); throw error; }
+      }
+    } as unknown as DatabaseService;
+    const admin = new AdminService(database);
+    const target = (await client.query("SELECT id FROM class_types WHERE slug='barre'")).rows[0].id;
+    const newStart = (await client.query("SELECT (($1::timestamptz AT TIME ZONE 'Europe/Prague')-interval '30 minutes') AT TIME ZONE 'Europe/Prague' AS start", [oldStart])).rows[0].start;
+    await admin.updateSession(id, { classTypeId: target,instructorId: katka,startAt: newStart.toISOString(),durationMinutes: 60,
+      arrivalLeadMinutes: 10,locationName: "Studio Balance",locationAddress: "Ruská 10, 792 01 Bruntál",priceCents: 25000,
+      capacity: 10,equipment: "Barre tyč",suitability: "Pro všechny",changeReason: "Ranní Barre nově začíná v 8:00." },
+    { requestId: "admin-edit",session: { subject: "operator" } as StudioSession });
+    const changed = (await client.query("SELECT start_at,free_cancellation_until,change_notice FROM class_sessions WHERE id=$1", [id])).rows[0];
+    expect(changed.change_notice).toBe("Ranní Barre nově začíná v 8:00.");
+    expect((await client.query("SELECT count(*)::int n FROM account_notifications WHERE booking_id=$1 AND kind='session_changed'", [booking.id])).rows[0].n).toBe(1);
+    const reminders = (await client.query("SELECT scheduled_at FROM notification_outbox WHERE booking_id=$1 AND kind='lesson_reminder' AND status='pending' ORDER BY scheduled_at", [booking.id])).rows;
+    expect(reminders.map((row) => (changed.start_at.getTime()-row.scheduled_at.getTime())/60000)).toEqual([1440,120,30]);
+    expect((await client.query("SELECT count(*)::int n FROM application_audit WHERE request_id='admin-edit' AND action='session.updated'", [])).rows[0].n).toBe(1);
   });
 
   it("edits portraits and catalogue assignments centrally without accepting transformation assets", async () => {

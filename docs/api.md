@@ -203,6 +203,12 @@ roadmapa a zatím není v OpenAPI.
 | GET | `/api/v1/me/bookings/{id}/cancellation-preview` | on-time/late důsledek před akcí |
 | POST | `/api/v1/me/bookings/{id}/cancel` | idempotentní potvrzené storno |
 
+Administrace může upravit konkrétní budoucí termín přes
+`PATCH /api/v1/admin/sessions/{id}`. Povinný `changeReason` se uloží k termínu;
+při aktivních rezervacích server zachová jejich identifikátory a cenové
+snapshoty, přepočítá bezpečné storno okno a připomínky a vytvoří zprávu v účtu
+i provozní e-mail. Kolize instruktora nebo studia vrací `409`.
+
 ### Vytvoření rezervace
 
 Request nese `sessionId`, `termsVersion` a důkaz požadovaného potvrzení. Server

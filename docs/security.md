@@ -20,6 +20,8 @@ Hlavní cíle:
 
 - klient přistupuje pouze ke svým datům;
 - privilegovaná změna je autorizovaná a auditovaná;
+- úprava termínu vyžaduje admin roli s MFA, povinný důvod, serverovou kontrolu
+  kolize a audit starého i nového času, typu lekce a instruktora;
 - booking pravidla nelze obejít klientským UI nebo opakovaným requestem;
 - uniklý log, chyba nebo export nezpůsobí zbytečný únik osobních údajů;
 - provozovatelka může bezpečně vyřídit export, opravu a zrušení účtu.

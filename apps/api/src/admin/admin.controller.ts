@@ -19,7 +19,8 @@ const instructorSchema = z.object({ displayName: z.string().trim().min(2).max(16
 const sessionSchema = z.object({
   classTypeId: uuid, instructorId: uuid, startAt: z.iso.datetime({ offset: true }), durationMinutes: z.number().int().min(15).max(240),
   arrivalLeadMinutes: z.number().int().min(0).max(120), locationName: z.string().trim().min(2).max(160), locationAddress: z.string().trim().min(2).max(300),
-  priceCents: z.number().int().min(0).max(1_000_000), capacity: z.number().int().min(1).max(500), equipment: z.string().trim().max(2000), suitability: z.string().trim().max(2000)
+  priceCents: z.number().int().min(0).max(1_000_000), capacity: z.number().int().min(1).max(500), equipment: z.string().trim().max(2000), suitability: z.string().trim().max(2000),
+  changeReason: z.string().trim().min(3).max(1000).optional()
 }).strict();
 
 @Controller("api/v1/admin")
@@ -41,8 +42,8 @@ export class AdminController {
     if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start || end.getTime() - start.getTime() > 366 * 86_400_000) throw validation();
     return this.admin.listSessions(start, end);
   }
-  @Post("sessions") createSession(@Req() request: AdminRequest, @Body() body: unknown) { return this.admin.createSession(parse(sessionSchema, body), context(request)); }
-  @Patch("sessions/:id") updateSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) { return this.admin.updateSession(parseId(id), parse(sessionSchema, body), context(request)); }
+  @Post("sessions") createSession(@Req() request: AdminRequest, @Body() body: unknown) { return this.admin.createSession(parse(sessionSchema.omit({ changeReason: true }), body), context(request)); }
+  @Patch("sessions/:id") updateSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) { return this.admin.updateSession(parseId(id), parse(sessionSchema.required({ changeReason: true }), body), context(request)); }
   @Post("sessions/:id/cancel") cancelSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     const data = parse(z.object({ reason: z.string().trim().min(3).max(1000) }).strict(), body);
     return this.admin.cancelSession(parseId(id), data.reason, context(request));

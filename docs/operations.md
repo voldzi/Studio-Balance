@@ -337,6 +337,9 @@ být bezpečně rolloutovány a rollbackovány bez výpadku rezervací.
 - migrace jsou verzované a součástí repozitáře;
 - lokální vývoj a CI používají PostgreSQL 18 v Docker Desktop;
 - produkční migrace neběží z vývojářského notebooku bez kontrolovaného postupu;
+- migrace `0019_unified_barre_schedule.sql` před změnou zamkne rozvrh a
+  rezervační outbox, odmítne neočekávaný budoucí termín nebo časovou kolizi a
+  teprve poté atomicky převede budoucí ranní Barre na středu 8:00;
 - produkční connection konfigurace i migrace používají schválený HAProxy
   endpoint, ne přímý PostgreSQL node;
 - destruktivní změna používá etapizaci a předchozí backup;

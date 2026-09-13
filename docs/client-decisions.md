@@ -75,11 +75,11 @@ zůstávají beze změny. Viz ADR 0012.
 | --- | --- | --- | --- |
 | pondělí | 17:00–18:00 | TRX | Nicola Lojšková |
 | pondělí | 18:10–19:10 | Balance Flow | Nicola Lojšková |
-| úterý | 17:00–18:00 | Barre Sculpt | Nicola Lojšková |
+| úterý | 17:00–18:00 | Barre | Nicola Lojšková |
 | úterý | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
 | středa | 16:00–17:00 | TRX | Nicola Lojšková |
 | středa | 17:15–18:15 | Jumping | Nicola Lojšková |
-| středa | 8:30–9:30 | Barre Strength | Katka Adamovská |
+| středa | 8:00–9:00 | Barre | Kača Adamovská |
 | čtvrtek | 17:00–18:00 | Balance Flow | Nicola Lojšková |
 | čtvrtek | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
 | pátek | 17:30–18:30 | Power Yoga | Xavier Tihelka |
@@ -90,31 +90,29 @@ zůstávají beze změny. Viz ADR 0012.
 | --- | ---: |
 | TRX | 8 |
 | Balance Flow | 10 |
-| Barre Sculpt | přibližně 10, čeká na potvrzení |
-| Barre Strength | přibližně 10, čeká na potvrzení |
+| Barre | přibližně 10, čeká na potvrzení |
 | Kruhový trénink | 16 |
 | Jumping | 16 |
 | Power Yoga | 16 |
 
 | Lekce | Cena |
 | --- | ---: |
-| Barre Sculpt | 250 Kč |
-| Barre Strength | 250 Kč |
+| Barre | 250 Kč |
 | TRX | 160 Kč |
 | Balance Flow | 200 Kč |
 | Kruhový trénink | 160 Kč |
 | Jumping | 160 Kč |
 | Power Yoga | 160 Kč |
 
-Základní rozvrh platí od 10. 8. 2026; přesun ranního Barre platí od 9. 9. 2026. U obou Barre variant
-se do konečného potvrzení používá předběžná kapacita 10 míst.
+Základní rozvrh platí od 10. 8. 2026; středeční ranní Barre od 8:00 a sjednocený
+název platí od nejbližšího budoucího termínu po rozhodnutí CD-050. Do konečného
+potvrzení se používá předběžná kapacita 10 míst.
 
 ## Schválené náročnosti lekcí
 
 | Lekce | Náročnost |
 | --- | ---: |
-| Barre Sculpt | 3/5 |
-| Barre Strength | 3/5 |
+| Barre | 3/5 |
 | TRX | 4/5 |
 | Balance Flow | 2/5 |
 | Jumping | 5/5 |
@@ -167,3 +165,15 @@ zůstat aktivní až 90 dní při splnění stávajícího 30denního limitu nea
 Volba zapamatování je proto na klientském přihlášení předem zvolená a uživatel
 ji může vypnout na sdíleném zařízení. Administrátorské přihlášení zůstává
 výchozím stavem nezapamatované a nadále vyžaduje MFA.
+
+## CD-050 — Jednotné Barre a ranní čas (13. 9. 2026)
+
+Barre Sculpt a Barre Strength se sjednocují do jediného veřejného typu lekce
+`Barre`. Budoucí ranní lekce vede Kača Adamovská každou středu v 8:00–9:00;
+odpolední Barre nadále vede Nicola Lojšková. `Barre Strength` se skryje pro nové
+termíny, ale historické termíny a rezervace se nemažou. Již zveřejněné budoucí
+lekce se převedou na Barre a posunou z 8:30 na 8:00 při zachování identifikátorů,
+rezervací a cenových snapshotů. Rezervovaným klientkám se zachová původní možnost
+bezplatného storna, přepočítají se připomínky a změna se zobrazí v účtu i odešle
+provozním e-mailem. Veřejné jméno lektorky je `Kača Adamovská`; toto rozhodnutí
+nahrazuje dřívější variantu `Katka Adamovská` v CD-045 a v rozvrhu CD-044.

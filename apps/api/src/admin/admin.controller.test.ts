@@ -3,7 +3,7 @@ import "reflect-metadata";
 import { Test } from "@nestjs/testing";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 import { SignJWT } from "jose";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RuntimeConfigService, type RuntimeConfig } from "../config/runtime-config.js";
 import { OpaqueSessionService } from "../auth/opaque-session.service.js";
@@ -17,10 +17,11 @@ const config: RuntimeConfig = { apiPort: 3001, databaseUrl: "postgresql://unused
 
 describe("admin authorization", () => {
   let app: NestFastifyApplication | undefined;
+  const updateSession = vi.fn(async (id: string) => ({ id }));
   afterEach(async () => { await app?.close(); });
 
   async function createApplication() {
-    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }) } }] }).compile();
+    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession } }] }).compile();
     const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false });
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
@@ -64,5 +65,15 @@ describe("admin authorization", () => {
     const provenWeb = await cookie(["client", "admin"], "sb_session", true);
     const response = await (await createApplication()).inject({ method: "GET", url: "/api/v1/admin/dashboard", headers: { cookie: `${legacyAdmin}; ${provenWeb}` } });
     expect(response.statusCode).toBe(200);
+  });
+
+  it("requires a client-facing reason when an administrator changes a session", async () => {
+    const payload = { classTypeId: "20000000-0000-4000-8000-000000000001", instructorId: "10000000-0000-4000-8000-000000000005", startAt: "2026-09-16T06:00:00.000Z", durationMinutes: 60, arrivalLeadMinutes: 10, locationName: "Studio Balance", locationAddress: "Ruská 10, 792 01 Bruntál", priceCents: 25000, capacity: 10, equipment: "Barre", suitability: "Pro všechny" };
+    const current = await createApplication();
+    const headers = { cookie: await cookie(["admin"]) };
+    expect((await current.inject({ method: "PATCH", url: "/api/v1/admin/sessions/71ff7570-dabb-488b-bb6e-43e36ddc602e", headers, payload })).statusCode).toBe(400);
+    const response = await current.inject({ method: "PATCH", url: "/api/v1/admin/sessions/71ff7570-dabb-488b-bb6e-43e36ddc602e", headers, payload: { ...payload, changeReason: "Ranní Barre nově začíná v 8:00." } });
+    expect(response.statusCode).toBe(200);
+    expect(updateSession).toHaveBeenCalledWith("71ff7570-dabb-488b-bb6e-43e36ddc602e", { ...payload, changeReason: "Ranní Barre nově začíná v 8:00." }, expect.any(Object));
   });
 });

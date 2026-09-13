@@ -577,7 +577,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update a scheduled session */
+        /** Update a scheduled session and notify clients with active bookings */
         patch: operations["adminUpdateSession"];
         trace?: never;
     };
@@ -1314,6 +1314,9 @@ export interface components {
             capacity: number;
             equipment: string;
             suitability: string;
+        };
+        AdminSessionUpdateInput: components["schemas"]["AdminSessionInput"] & {
+            changeReason: string;
         };
         AdminSession: {
             /** Format: uuid */
@@ -2401,11 +2404,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AdminSessionInput"];
+                "application/json": components["schemas"]["AdminSessionUpdateInput"];
             };
         };
         responses: {
-            /** @description Updated. */
+            /** @description Updated; booking IDs and price snapshots are preserved. */
             200: {
                 headers: {
                     [name: string]: unknown;

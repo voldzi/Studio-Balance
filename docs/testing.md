@@ -208,6 +208,7 @@ ověří od 360 px, klávesnicí a s nápovědou otevřitelnou fokusem.
 
 - recurrence create/edit/exception/cancel bez hardcodovaného rozvrhu;
 - preview dopadu významné změny;
+- administrativní úprava termínu předvyplní aktuální hodnoty, nabízí jen aktivní typy pro nový termín a při změně zachová rezervace, storno okno, připomínky a audit;
 - obsahová změna se projeví veřejnému webu i klientskému účtu bez release;
 - publish/unpublish/order a audit;
 - upload type/signature/size/dimensions/malware a nebezpečné SVG/rich text;

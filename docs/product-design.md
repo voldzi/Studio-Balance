@@ -412,3 +412,8 @@ text, fotografii, alt a publikování. Formuláře zachovají vstup po chybě.
 
 
 CD-047: prominent warm neutral announcement above main navigation: Momentálně zavřeno. Registrace a rezervace spustíme, až oznámíme otevření. Keep schedule browsable, show closed context before booking. Admin overview shows current, requested and pending states plus retry/error/success. CD-048: install guide outside collapsed navigation, native modal focus containment, Escape and focus return; verify 360 px and desktop.
+V Rozvrhu má každý budoucí naplánovaný termín akci `Upravit`. Formulář
+předvyplní typ lekce, instruktora, místní čas, délku, cenu, kapacitu, místo a
+praktické údaje. U změny je povinný srozumitelný důvod pro klientky; pokud má
+termín aktivní rezervace, rozhraní před uložením výslovně ukáže jejich počet a
+dopad oznámení. Nový termín nabízí pouze aktivní typy lekcí a instruktory.

@@ -114,6 +114,11 @@ runbooku není připravený.
 4. **Client quality:** Web Vitals, frontend errors, API latency.
 5. **Backup/operations:** backup age, restore test date, migration/deploy state.
 
+Administrativní změna termínu zapisuje `session.updated` s počtem aktivních
+rezervací, důvodem a starým/novým časem, typem lekce a instruktorem. Sjednocení
+Barre zapisuje systémové události s `requestId=CD-050` pro každý změněný termín
+a samostatnou událost `class_type.merged`.
+
 ## Retence a přístup
 
 Log/trace/metric retence se stanoví podle privacy, provozní potřeby a nákladů.
