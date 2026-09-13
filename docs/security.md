@@ -64,7 +64,9 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
   neuzná, ani kdyby později získala admin roli. MFA-prokázaná relace může na
   soukromém zařízení zůstat použitelná nejvýše 90 dní při aktivitě jednou za
   30 dní;
-- bez volby zapamatování je aplikační cookie session-only; s volbou má cookie
+- bez volby zapamatování je aplikační cookie session-only; klientské přihlášení
+  má tuto volbu předem zvolenou s možností vypnutí na sdíleném zařízení,
+  administrátorské přihlášení ji má výchozím stavem vypnutou; s volbou má cookie
   maximum 90 dní a server vynucuje 30denní neaktivitu. Před více než 15 minutami
   ověřená relace se při dalším použití obnovovacím tokenem znovu ověří u
   Keycloaku včetně aktuálních rolí; refresh může roli změnit, ale nesmí z

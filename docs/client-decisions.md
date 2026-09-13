@@ -159,3 +159,11 @@ Toto rozhodnutí dočasně omezuje dřívější rozhodnutí o veřejné registr
 
 Kliknutí na „Přidat aplikaci“ otevře návod hned napoprvé, i když se menu zavře.
 Návod má samostatný dialog, ovládání klávesnicí a návrat fokusu na tlačítko Menu.
+
+## CD-049 — Výchozí zapamatování klientského zařízení (13. 9. 2026)
+
+Klientské přihlášení má na osobním telefonu po prvním úspěšném přihlášení
+zůstat aktivní až 90 dní při splnění stávajícího 30denního limitu neaktivity.
+Volba zapamatování je proto na klientském přihlášení předem zvolená a uživatel
+ji může vypnout na sdíleném zařízení. Administrátorské přihlášení zůstává
+výchozím stavem nezapamatované a nadále vyžaduje MFA.

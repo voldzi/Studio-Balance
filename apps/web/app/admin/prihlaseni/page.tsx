@@ -5,12 +5,15 @@ import { privatePageMetadata } from "../../../lib/seo";
 
 export const metadata: Metadata = { ...privatePageMetadata, title: "Přihlášení do administrace" };
 
-export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ error?: string; requestId?: string }> }) {
+  const { error, requestId } = await searchParams;
+  const safeRequestId = requestId && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(requestId) ? requestId : undefined;
   const errorMessage = error === "role"
     ? "Přihlášený účet nemá roli administrátora. Použijte účet určený pro správu studia."
     : error === "mfa"
       ? "Administrace vyžaduje ověřovací kód. Přihlaste se znovu a dokončete dvoufaktorové ověření."
+      : error === "unavailable"
+        ? `Přihlášení je teď dočasně nedostupné. Zkuste to prosím za chvíli znovu.${safeRequestId ? ` Kód pro podporu: ${safeRequestId}.` : ""}`
       : error
         ? "Přihlášení se nepodařilo dokončit. Zkuste jej znovu; pokud chyba trvá, předejte správci čas pokusu."
         : undefined;

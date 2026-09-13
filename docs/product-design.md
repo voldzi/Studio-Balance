@@ -115,7 +115,8 @@ zapamatovaného zařízení použitelný až 90 dní, pokud se používá nejmé
 
 Klientský účet používá pouze neprůhlednou serverovou `HttpOnly` relaci. Volba
 „Zapamatovat toto soukromé zařízení na 90 dní“ je v aplikaci jediná volba pro
-trvalejší přihlášení; bez ní je cookie jen do zavření prohlížeče. Obě varianty
+trvalejší přihlášení a na klientském přihlášení je předem zvolená; uživatel ji
+vypne na sdíleném zařízení. Bez ní je cookie jen do zavření prohlížeče. Obě varianty
 se při neaktivitě po 30 dnech ukončí. Přihlášený klient proto při běžném návratu
 nezadává heslo znovu; explicitní odhlášení zruší klientskou i administrátorskou
 relaci aplikace na daném zařízení.

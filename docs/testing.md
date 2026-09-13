@@ -158,6 +158,10 @@ system error, permission denied a případný offline/stale stav. Povinný smoke
   nezobrazuje, iOS dostane postup Safari a podporovaný prohlížeč instalační
   dialog. Když instalační dialog není dostupný, názvy položek menu se nesmějí
   tvářit jako nefunkční tlačítka stránky.
+- produkční OIDC smoke ověří, že klientské i administrátorské zahájení
+  přihlášení vrací přesměrování na veřejný Keycloak; test používá i skutečný
+  tvar dynamických backchannel metadat s interními token a JWKS endpointy a
+  odmítne endpoint mimo veřejný issuer a přesně nakonfigurovaný backchannel;
 - profil přihlášeného účtu otevře zesílenou Keycloak akci pro změnu vlastního
   hesla a po dokončení se bezpečně vrátí do profilu; heslo ani token se
   neobjeví v URL, logu ani JavaScriptu aplikace;

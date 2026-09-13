@@ -276,12 +276,16 @@ function backchannelUrl(endpoint: string, config: IdentityConfig): string {
   if (!config.backchannelIssuer) return endpoint;
 
   const publicIssuer = new URL(config.issuer);
+  const backchannelIssuer = new URL(config.backchannelIssuer);
   const target = new URL(endpoint);
+
+  if (target.origin === backchannelIssuer.origin && target.pathname.startsWith(`${backchannelIssuer.pathname}/`)) {
+    return target.toString();
+  }
   if (target.origin !== publicIssuer.origin || !target.pathname.startsWith(`${publicIssuer.pathname}/`)) {
     throw new Error("OIDC discovery endpoint is outside the configured issuer");
   }
 
-  const backchannelIssuer = new URL(config.backchannelIssuer);
   const relativePath = target.pathname.slice(publicIssuer.pathname.length);
   backchannelIssuer.pathname = `${backchannelIssuer.pathname}${relativePath}`.replace(/\/+/g, "/");
   backchannelIssuer.search = target.search;

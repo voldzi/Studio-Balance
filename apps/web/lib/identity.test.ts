@@ -119,7 +119,7 @@ describe("publicRedirectUrl", () => {
     expect(authorizationUrl.searchParams.has("prompt")).toBe(false);
   });
 
-  it("uses a private backchannel only for server-side discovery while preserving the public authorization URL", async () => {
+  it("accepts Keycloak dynamic backchannel endpoints while preserving the public authorization URL", async () => {
     process.env.OIDC_ISSUER_URL = "https://login.studio-balance.cz/realms/studio-balance";
     process.env.OIDC_BACKCHANNEL_ISSUER_URL = "http://keycloak:8081/realms/studio-balance";
     const fetchMock = vi.fn().mockResolvedValue({
@@ -127,8 +127,8 @@ describe("publicRedirectUrl", () => {
       json: async () => ({
         authorization_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/auth",
         issuer: "https://login.studio-balance.cz/realms/studio-balance",
-        jwks_uri: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/certs",
-        token_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/token"
+        jwks_uri: "http://keycloak:8081/realms/studio-balance/protocol/openid-connect/certs",
+        token_endpoint: "http://keycloak:8081/realms/studio-balance/protocol/openid-connect/token"
       })
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -146,6 +146,22 @@ describe("publicRedirectUrl", () => {
       })
     );
     expect(new URL(result.authorizationUrl).origin).toBe("https://login.studio-balance.cz");
+  });
+
+  it("rejects token endpoints outside both the public issuer and configured backchannel", async () => {
+    process.env.OIDC_ISSUER_URL = "https://login.studio-balance.cz/realms/studio-balance";
+    process.env.OIDC_BACKCHANNEL_ISSUER_URL = "http://keycloak:8081/realms/studio-balance";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authorization_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/auth",
+        issuer: "https://login.studio-balance.cz/realms/studio-balance",
+        jwks_uri: "https://attacker.example/certs",
+        token_endpoint: "http://keycloak:8081/realms/studio-balance/protocol/openid-connect/token"
+      })
+    }));
+
+    await expect(createLoginAttempt("/muj-ucet")).rejects.toThrow("OIDC discovery endpoint is outside the configured issuer");
   });
 });
 
