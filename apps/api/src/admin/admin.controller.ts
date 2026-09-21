@@ -22,6 +22,10 @@ const sessionSchema = z.object({
   priceCents: z.number().int().min(0).max(1_000_000), capacity: z.number().int().min(1).max(500), equipment: z.string().trim().max(2000), suitability: z.string().trim().max(2000),
   changeReason: z.string().trim().min(3).max(1000).optional()
 }).strict();
+const scheduleBatchSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("cancel"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000) }).strict(),
+  z.object({ action: z.literal("move"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000), sourceWeekday: z.number().int().min(1).max(7), targetWeekday: z.number().int().min(1).max(7), targetTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/) }).strict()
+]);
 
 @Controller("api/v1/admin")
 @UseGuards(AdminRoleGuard)
@@ -47,6 +51,11 @@ export class AdminController {
   @Post("sessions/:id/cancel") cancelSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     const data = parse(z.object({ reason: z.string().trim().min(3).max(1000) }).strict(), body);
     return this.admin.cancelSession(parseId(id), data.reason, context(request));
+  }
+  @Post("sessions/batch") scheduleBatch(@Req() request: AdminRequest, @Body() body: unknown) {
+    const data = parse(scheduleBatchSchema, body);
+    if (new Date(data.to) <= new Date(data.from)) throw validation();
+    return this.admin.changeScheduleBatch(data, context(request));
   }
   @Get("users") users(@Query("search") search?: string) { return this.admin.listUsers(search); }
   @Get("bookings") bookings(@Query("sessionId") sessionId?: string) { return this.admin.listBookings(sessionId ? parseId(sessionId) : undefined); }

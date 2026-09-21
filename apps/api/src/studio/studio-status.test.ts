@@ -16,6 +16,10 @@ describe("studio opening and identity synchronization", () => {
     }
     await expect(requireOpenStudio({ query: async () => ({ rows: [{ requested_open: true, registration_synced: true }] }) } as unknown as PoolClient)).resolves.toBeUndefined();
   });
+  it("uses an administrator announcement without opening the studio", () => {
+    expect(statusFromRow({ requested_open: false, registration_synced: true, announcement: "Barre spustíme od poloviny října." })).toMatchObject({ open: false, announcement: "Barre spustíme od poloviny října." });
+    expect(statusFromRow({ requested_open: true, registration_synced: true, announcement: "Změna rozvrhu tento týden." })).toMatchObject({ open: true, announcement: "Změna rozvrhu tento týden." });
+  });
   it("keeps failed synchronization pending and recovers on retry", async () => {
     const row = { requested_open: false, registration_synced: true };
     const query = vi.fn(async (sql: string, args?: unknown[]) => {

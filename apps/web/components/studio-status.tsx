@@ -21,8 +21,9 @@ export function StudioStatusProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={status}>{children}</Context.Provider>;
 }
 export function StudioAnnouncement() {
-  const { open } = useStudioStatus();
-  return open ? null : <aside className="studio-announcement" aria-label="Provoz studia"><strong>Momentálně zavřeno</strong><span>Studio zatím není v provozu. Registrace a rezervace spustíme, až oznámíme otevření.</span></aside>;
+  const { open, announcement } = useStudioStatus();
+  if (!announcement) return null;
+  return <aside className="studio-announcement" aria-label="Provoz studia"><strong>{open ? "Aktuální informace" : "Momentálně zavřeno"}</strong><span>{announcement}</span></aside>;
 }
 export function RegistrationNotice() {
   const { open } = useStudioStatus();

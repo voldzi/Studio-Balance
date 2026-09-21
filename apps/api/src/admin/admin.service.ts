@@ -30,11 +30,13 @@ export type AdminClassTypeInput = {
 };
 export type AdminInstructorInput = { active: boolean; bio: string; displayName: string; sortOrder: number; portraitAssetId?: string | null | undefined; classes?: { classTypeId: string; scheduleNote: string }[] | undefined };
 export type AdminSessionInput = { arrivalLeadMinutes: number; capacity: number; changeReason?: string; classTypeId: string; durationMinutes: number; equipment: string; instructorId: string; locationAddress: string; locationName: string; priceCents: number; startAt: string; suitability: string };
+export type AdminScheduleBatchInput = { action: "cancel" | "move"; classTypeId: string; from: string; reason: string; sourceWeekday?: number; targetTime?: string; targetWeekday?: number; to: string };
 type DashboardSessionRow = { booking_count: number; capacity: number; class_name: string; id: string; instructor_name: string; start_at: Date; status: string };
 type ClassTypeRow = { active: boolean; arrival_lead_minutes: number; audience: string; benefits: string; default_equipment: string; description: string; difficulty: number; duration_minutes: number; hero_image_alt: string; hero_image_path: string; id: string; name: string; practical_notice: string; seo_description: string; seo_title: string; slug: string; sort_order: number; suitable_for_beginners: boolean; tagline: string; what_to_bring: string };
 type InstructorRow = { active: boolean; bio: string; display_name: string; id: string; sort_order: number; portrait_asset_id: string | null; portrait: StudioImage | null; classes: { classTypeId: string; scheduleNote: string }[] };
 type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; capacity: number; change_notice: string | null; class_name: string; class_type_id: string; end_at: Date; equipment: string; id: string; instructor_id: string; instructor_name: string; location_address: string; location_name: string; price_cents: number; start_at: Date; status: string; suitability: string };
 type EditableSessionRow = { arrival_lead_minutes: number; booking_closes_at: Date; booking_opens_at: Date; capacity: number; class_type_id: string; end_at: Date; equipment: string; free_cancellation_until: Date | null; instructor_id: string; location_address: string; location_name: string; price_cents: number; start_at: Date; suitability: string };
+type BatchSessionRow = EditableSessionRow & { id: string; class_name: string; class_slug: string; class_tagline: string; instructor_name: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
 type AdminBookingRow = { class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
 type AttendanceRow = { id: string; price_snapshot_cents: number; status: string; user_id: string };
@@ -353,6 +355,80 @@ export class AdminService {
       await auditWithClient(client, context, "session.cancelled", "session", id, { reason });
       return { id, status: "cancelled" };
     });
+  }
+
+  async changeScheduleBatch(data: AdminScheduleBatchInput, context: MutationContext) {
+    const from = new Date(data.from);
+    const to = new Date(data.to);
+    return this.database.transaction(async (client) => {
+      const params: unknown[] = [data.classTypeId, from, to];
+      let weekdaySql = "";
+      if (data.action === "move") { params.push(data.sourceWeekday); weekdaySql = " AND extract(isodow FROM s.start_at AT TIME ZONE 'Europe/Prague')=$4"; }
+      const result = await client.query<BatchSessionRow>(`SELECT s.id,s.class_type_id,s.instructor_id,s.start_at,s.end_at,s.arrival_lead_minutes,s.location_name,s.location_address,s.price_cents,s.capacity,s.booking_opens_at,s.booking_closes_at,s.free_cancellation_until,s.equipment,s.suitability,ct.name AS class_name,ct.slug AS class_slug,ct.tagline AS class_tagline,i.display_name AS instructor_name
+        FROM class_sessions s JOIN class_types ct ON ct.id=s.class_type_id JOIN instructors i ON i.id=s.instructor_id
+        WHERE s.class_type_id=$1 AND s.status='scheduled' AND s.start_at >= $2 AND s.start_at < $3${weekdaySql} FOR UPDATE`, params);
+      const sessions = result.rows;
+      if (!sessions.length) return { affectedSessions: 0, affectedBookings: 0 };
+      if (data.action === "cancel") {
+        let affectedBookings = 0;
+        for (const session of sessions) affectedBookings += await this.cancelSessionWithClient(client, session.id, data.reason, context);
+        await auditWithClient(client, context, "schedule.batch_cancelled", "class_type", data.classTypeId, { from, to, sessions: sessions.length, reason: data.reason });
+        return { affectedSessions: sessions.length, affectedBookings };
+      }
+      const targets = await client.query<{ id: string; start_at: Date }>(`SELECT s.id, (date_trunc('day', s.start_at AT TIME ZONE 'Europe/Prague') + (($2::int - extract(isodow FROM s.start_at AT TIME ZONE 'Europe/Prague')::int + 7) % 7) * interval '1 day' + $3::time) AT TIME ZONE 'Europe/Prague' AS start_at
+        FROM class_sessions s WHERE s.id=ANY($1::uuid[])`, [sessions.map((session) => session.id), data.targetWeekday, data.targetTime]);
+      const targetById = new Map(targets.rows.map((target) => [target.id, target.start_at]));
+      for (const session of sessions) {
+        const startAt = targetById.get(session.id)!;
+        const endAt = new Date(startAt.getTime() + (session.end_at.getTime() - session.start_at.getTime()));
+        const collision = await client.query(`SELECT id FROM class_sessions WHERE id<>$1 AND id<>ALL($2::uuid[]) AND status='scheduled'
+          AND start_at<$4 AND end_at>$3 AND (instructor_id=$5 OR (location_name=$6 AND location_address=$7)) LIMIT 1`, [session.id, sessions.map((item) => item.id), startAt, endAt, session.instructor_id, session.location_name, session.location_address]);
+        if (collision.rowCount) throw conflict("Přesouvaná řada koliduje s jiným termínem instruktora nebo studia.");
+      }
+      let affectedBookings = 0;
+      for (const session of sessions) {
+        const startAt = targetById.get(session.id)!;
+        affectedBookings += await this.moveSessionWithClient(client, session, startAt, data.reason, context);
+      }
+      await auditWithClient(client, context, "schedule.batch_moved", "class_type", data.classTypeId, { from, to, sessions: sessions.length, sourceWeekday: data.sourceWeekday, targetWeekday: data.targetWeekday, targetTime: data.targetTime, reason: data.reason });
+      return { affectedSessions: sessions.length, affectedBookings };
+    });
+  }
+
+  private async cancelSessionWithClient(client: PoolClient, id: string, reason: string, context: MutationContext) {
+    const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [id]);
+    await client.query("UPDATE class_sessions SET status='cancelled', change_notice=$2, updated_at=now() WHERE id=$1", [id, reason]);
+    await client.query("UPDATE bookings SET status='cancelled_by_studio', cancelled_at=now(), updated_at=now() WHERE session_id=$1 AND status='reserved'", [id]);
+    await client.query("UPDATE cancellation_fees SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='due'", [id]);
+    await client.query(`INSERT INTO account_notifications (user_id, booking_id, kind, title, body) SELECT user_id,id,'session_cancelled','Lekce byla zrušena',$2 FROM bookings WHERE session_id=$1 AND status='cancelled_by_studio'`, [id, reason]);
+    await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='pending'", [id]);
+    await auditWithClient(client, context, "session.cancelled", "session", id, { reason });
+    return Number(active.rows[0]?.count ?? 0);
+  }
+
+  private async moveSessionWithClient(client: PoolClient, session: BatchSessionRow, startAt: Date, reason: string, context: MutationContext) {
+    const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [session.id]);
+    const activeBookings = Number(active.rows[0]?.count ?? 0);
+    const endAt = new Date(startAt.getTime() + (session.end_at.getTime() - session.start_at.getTime()));
+    const bookingOpenLead = session.start_at.getTime() - session.booking_opens_at.getTime();
+    const bookingCloseLead = session.start_at.getTime() - session.booking_closes_at.getTime();
+    const cutoff = new Date(startAt.getTime() - 24 * 60 * 60_000);
+    await client.query(`UPDATE class_sessions SET start_at=$2,end_at=$3,booking_opens_at=$4,booking_closes_at=$5,free_cancellation_until=$6,change_notice=$7,updated_at=now() WHERE id=$1`, [session.id, startAt, endAt, new Date(startAt.getTime() - bookingOpenLead), new Date(startAt.getTime() - bookingCloseLead), activeBookings ? cutoff : session.free_cancellation_until, reason]);
+    if (activeBookings) {
+      await client.query("UPDATE bookings SET cancellation_cutoff_at=$2,updated_at=now() WHERE session_id=$1 AND status='reserved'", [session.id, cutoff]);
+      await client.query(`INSERT INTO account_notifications (user_id,booking_id,kind,title,body) SELECT user_id,id,'session_changed',$2,$3 FROM bookings WHERE session_id=$1 AND status='reserved'`, [session.id, `Změna lekce ${session.class_name}`, reason]);
+      await client.query("UPDATE notification_outbox SET status='cancelled',updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1 AND status='reserved') AND kind='lesson_reminder' AND status IN ('pending','failed')", [session.id]);
+      await client.query(`INSERT INTO notification_outbox (user_id,booking_id,kind,channel,scheduled_at,payload) SELECT user_id,id,'session_changed','email',now(),jsonb_build_object('className',$2::text,'subject',$3::text,'oldStartAt',$4::timestamptz,'startAt',$5::timestamptz,'arrivalAt',$5::timestamptz-make_interval(mins=>$6),'freeCancellationUntil',$7::timestamptz,'timezone','Europe/Prague') FROM bookings WHERE session_id=$1 AND status='reserved'`, [session.id, session.class_name, `Změna lekce ${session.class_name}`, session.start_at, startAt, session.arrival_lead_minutes, cutoff]);
+      await client.query(`INSERT INTO notification_outbox (user_id,booking_id,kind,channel,scheduled_at,payload)
+        SELECT booking.user_id,booking.id,'lesson_reminder','email',$2::timestamptz-reminder.lead_time,
+          jsonb_build_object('className',$3::text,'startAt',$2::timestamptz,'subject',reminder.subject,'timezone','Europe/Prague')
+        FROM bookings booking CROSS JOIN (VALUES (interval '24 hours','Zítra vás čeká lekce'),(interval '2 hours','Dnes vás čeká lekce'),(interval '30 minutes','Za chvíli začínáme')) reminder(lead_time,subject)
+        WHERE booking.session_id=$1 AND booking.status='reserved' AND $2::timestamptz-reminder.lead_time>now()
+        ON CONFLICT (booking_id,kind,scheduled_at) DO UPDATE SET payload=excluded.payload,status='pending',updated_at=now()
+        WHERE notification_outbox.status IN ('pending','failed','cancelled')`, [session.id, startAt, session.class_name]);
+    }
+    await auditWithClient(client, context, "session.updated", "session", session.id, { activeBookings, reason, oldStartAt: session.start_at, startAt, batch: true });
+    return activeBookings;
   }
 
   async listUsers(search?: string) {

@@ -24,4 +24,11 @@ export class AdminStudioStatusController {
     if (!parsed.success) throw new HttpException({ code: "VALIDATION_ERROR", message: "Vyberte stav otevření studia." }, HttpStatus.BAD_REQUEST);
     return this.status.update(parsed.data.open, request.studioSession!.subject, request.id);
   }
+  @Put("announcement")
+  @Header("Cache-Control", "no-store")
+  announcement(@Req() request: AdminRequest, @Body() body: unknown) {
+    const parsed = z.object({ announcement: z.string().trim().min(3).max(600).nullable() }).strict().safeParse(body);
+    if (!parsed.success) throw new HttpException({ code: "VALIDATION_ERROR", message: "Oznámení musí mít 3 až 600 znaků, nebo je můžete odstranit." }, HttpStatus.BAD_REQUEST);
+    return this.status.updateAnnouncement(parsed.data.announcement, request.studioSession!.subject, request.id);
+  }
 }

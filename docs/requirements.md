@@ -169,6 +169,11 @@ typy lekcí, instruktory, jednorázové a opakované termíny, výjimky, rezerva
 docházku, klienty, storno poplatky, novinky, galerii, recenze, webový obsah,
 nastavení a auditní log.
 
+Hromadná změna rozvrhu umožní administrátorce v určeném budoucím období
+pozastavit vybraný typ lekce nebo přesunout jeho týdenní řadu na jiný den a
+čas. Před uložením potvrzuje dopad; server zachová rezervace při přesunu,
+zruší je bez poplatku při pozastavení, ověří kolize a vše zapíše do auditu.
+
 Administrátor musí bez nasazení nové verze upravit běžný text, fotografie,
 kontakty, ceník, FAQ, recenze, novinky, instruktory, typy lekcí a termíny.
 Administrace navíc spravuje proměny klientek jako koncept/publikovaný obsah,

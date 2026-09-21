@@ -22,6 +22,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/studio-status/announcement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Publish or clear a schedule announcement */
+        put: operations["updateStudioAnnouncement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studio-status": {
         parameters: {
             query?: never;
@@ -558,6 +575,23 @@ export interface paths {
         put?: never;
         /** Create a one-off session */
         post: operations["adminCreateSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sessions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel or move matching future sessions in a weekly schedule */
+        post: operations["adminChangeScheduleBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1318,6 +1352,34 @@ export interface components {
         AdminSessionUpdateInput: components["schemas"]["AdminSessionInput"] & {
             changeReason: string;
         };
+        AdminScheduleBatchInput: {
+            /** @constant */
+            action: "cancel";
+            /** Format: uuid */
+            classTypeId: string;
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+            reason: string;
+        } | {
+            /** @constant */
+            action: "move";
+            /** Format: uuid */
+            classTypeId: string;
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+            reason: string;
+            sourceWeekday: number;
+            targetWeekday: number;
+            targetTime: string;
+        };
+        AdminScheduleBatchResponse: {
+            affectedSessions: number;
+            affectedBookings: number;
+        };
         AdminSession: {
             /** Format: uuid */
             id: string;
@@ -1473,6 +1535,35 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    updateStudioAnnouncement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    announcement: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Current studio status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStudioStatus"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
         };
     };
     getStudioStatus: {
@@ -2391,6 +2482,32 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+        };
+    };
+    adminChangeScheduleBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminScheduleBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Number of changed sessions and notified bookings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScheduleBatchResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
     adminUpdateSession: {

@@ -282,6 +282,10 @@ bezplatné okno, nahrazení připomínek, idempotenci, souběh se zámkem rezerv
 rollback kolize, historii,
 výjimky, zimní/letní čas a portréty u Jumpingu i bez budoucích termínů. Ověří
 také centrální úpravu fotografií a odmítnutí assetů z jiného účelu.
+Hromadné změny rozvrhu ověří výběr pouze budoucích naplánovaných termínů,
+správný den a čas v Europe/Prague včetně změny letního času, rollback při
+kolizi, zrušení bez poplatku a zachování rezervace, oznámení i auditu při
+přesunu.
 API testy týmu ověřují veřejný kontrakt, prázdný stav, validaci, admin MFA
 a zákaz veřejného čtení nepřiřazeného uploadu. Komponentové testy ověřují oba
 instruktory Jumpingu, fallback bez fotky a úplnou skupinovou fotografii.

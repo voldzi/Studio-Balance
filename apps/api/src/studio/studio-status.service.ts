@@ -3,11 +3,11 @@ import type { PoolClient } from "pg";
 import { DatabaseService } from "../database/database.service.js";
 import { RuntimeConfigService } from "../config/runtime-config.js";
 
-type State = { requested_open: boolean; registration_synced: boolean };
+type State = { requested_open: boolean; registration_synced: boolean; announcement?: string | null };
 export const closedAnnouncement = "Momentálně zavřeno. Studio zatím není v provozu. Registrace a rezervace spustíme, až oznámíme otevření.";
 export function statusFromRow(row?: State) {
   const open = row?.requested_open === true && row.registration_synced === true;
-  return { open, announcement: open ? null : closedAnnouncement,
+  return { open, announcement: row?.announcement ?? (open ? null : closedAnnouncement),
     requestedOpen: row?.requested_open ?? false, registrationSynced: row?.registration_synced ?? false };
 }
 export async function requireOpenStudio(client: PoolClient) {
@@ -57,7 +57,7 @@ export class StudioStatusService implements OnModuleInit, OnModuleDestroy {
     finally { this.syncing = false; }
   }
   async get() {
-    const result = await this.database.query<State>("SELECT requested_open, registration_synced FROM studio_operation WHERE id=true");
+    const result = await this.database.query<State>("SELECT requested_open, registration_synced, announcement FROM studio_operation WHERE id=true");
     return statusFromRow(result.rows[0]);
   }
   async update(open: boolean, subject: string, requestId: string) {
@@ -68,6 +68,14 @@ export class StudioStatusService implements OnModuleInit, OnModuleDestroy {
     });
     try { await this.synchronize(); }
     catch { throw new HttpException({ code: "REGISTRATION_SYNC_PENDING", message: "Rezervace jsou pozastavené. Změnu registrací se zatím nepodařilo potvrdit. Zkusíme to automaticky znovu; stav můžete obnovit." }, HttpStatus.SERVICE_UNAVAILABLE); }
+    return this.get();
+  }
+  async updateAnnouncement(announcement: string | null, subject: string, requestId: string) {
+    await this.database.transaction(async (client) => {
+      await client.query("UPDATE studio_operation SET announcement=$1, updated_at=now() WHERE id=true", [announcement]);
+      await client.query(`INSERT INTO application_audit (actor_type,actor_id,action,entity_type,entity_id,request_id,metadata)
+        VALUES ('admin',$1,'studio.announcement.updated','studio_operation','announcement',$2,jsonb_build_object('hasAnnouncement',$3::boolean))`, [subject, requestId, Boolean(announcement)]);
+    });
     return this.get();
   }
   async synchronize() {

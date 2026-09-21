@@ -6,8 +6,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { publicSessionLabel } from "@studiobalance/domain";
 
 import { apiRequest, formatPrice, formatStudioDate, type PublicSession } from "../lib/api-types";
+import { useStudioStatus } from "./studio-status";
 
 export function ScheduleView() {
+  const studio = useStudioStatus();
   const [sessions, setSessions] = useState<PublicSession[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>();
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -42,6 +44,7 @@ export function ScheduleView() {
 
   return (
     <div className="schedule-panel">
+      {studio.announcement && <p className="schedule-message" role="status">{studio.announcement}</p>}
       <div className="day-tabs" role="tablist" aria-label="Vyberte den">
         {days.map((day) => {
           const date = new Date(`${day}T12:00:00+02:00`);

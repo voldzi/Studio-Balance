@@ -209,6 +209,13 @@ při aktivních rezervacích server zachová jejich identifikátory a cenové
 snapshoty, přepočítá bezpečné storno okno a připomínky a vytvoří zprávu v účtu
 i provozní e-mail. Kolize instruktora nebo studia vrací `409`.
 
+Pro opakované provozní změny slouží `POST /api/v1/admin/sessions/batch`.
+Administrátorka v něm zvolí lekci a období a buď zruší všechny budoucí
+naplánované termíny, nebo přesune termíny z jednoho dne týdne na jiný den a
+čas. Server pracuje v `Europe/Prague`, kontroluje kolize, ruší rezervace bez
+poplatku při pozastavení a při přesunu zachová rezervaci, storno okno a odešle
+provozní informaci.
+
 ### Vytvoření rezervace
 
 Request nese `sessionId`, `termsVersion` a důkaz požadovaného potvrzení. Server
@@ -353,4 +360,4 @@ Existující uploady proměn a studiových fotografií nyní používají bucket
 admin oprávnění a pravidla publikace se nemění. Textové recenze S3 nepotřebují.
 
 
-GET /api/v1/studio-status returns open and announcement, no-store. GET/PUT /api/v1/admin/studio-status requires admin; PUT {open:boolean} records desired state and synchronizes registration. Admin response includes requestedOpen and registrationSynced. Pending sync blocks booking. POST bookings returns 409 STUDIO_CLOSED when closed; successful idempotent replay remains available.
+GET /api/v1/studio-status returns open and announcement, no-store. GET/PUT /api/v1/admin/studio-status requires admin; PUT {open:boolean} records desired state and synchronizes registration. `PUT /api/v1/admin/studio-status/announcement` accepts `{announcement:string|null}` and publishes a visible note on the site and schedule without changing registration. Admin response includes requestedOpen and registrationSynced. Pending sync blocks booking. POST bookings returns 409 STUDIO_CLOSED when closed; successful idempotent replay remains available.
