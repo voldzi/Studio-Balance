@@ -37,17 +37,19 @@ používají vlastní S3 bucket.
 
 ## Izolovaný preview deployment
 
-Náhled používá Compose projekt `studio-balance-preview`, web na interním host
-portu 3280, API na 4280 a vlastní PostgreSQL 18 volume bez host portu. Neobsahuje
+Náhled používá na `devapps.home.cz` Compose projekt `studio-balance-preview`, web na
+lokálním host portu 3280, API na 4280 a vlastní PostgreSQL 18 volume bez host portu.
+Porty se vážou pouze na `127.0.0.1`; preview je vypnuté mimo dobu výslovného testování.
+Neobsahuje
 produkční data, S3, Keycloak ani HAProxy připojení a není publikovaný přes DMZ.
 
 Nasazuje se pouze čistý commit dostupný v lokálním repozitáři:
 
 ```bash
 pnpm deploy:preview -- <git-sha>
-curl --fail http://docker.home.cz:4280/health
-curl --fail http://docker.home.cz:4280/ready
-curl --fail --head http://docker.home.cz:3280/
+ssh -i ~/.ssh/id_ed25519_intranet_codex voldzi@devapps.home.cz 'curl --fail http://127.0.0.1:4280/health'
+ssh -i ~/.ssh/id_ed25519_intranet_codex voldzi@devapps.home.cz 'curl --fail http://127.0.0.1:4280/ready'
+ssh -i ~/.ssh/id_ed25519_intranet_codex voldzi@devapps.home.cz 'curl --fail --head http://127.0.0.1:3280/'
 ```
 
 Nasazovací skript přenese přesný archiv commitu, sestaví image označené SHA,

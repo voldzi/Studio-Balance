@@ -107,7 +107,7 @@ nebo produkčnímu Keycloak realmu.
 ## Nasazení na Docker hostiteli
 
 Přesný čistý Git commit lze nasadit příkazem `pnpm deploy:preview -- <sha>`.
-Na `docker.home.cz` vznikne izolovaný Compose projekt s webem na portu 3280,
+Na `devapps.home.cz` vznikne izolovaný Compose projekt s webem na lokálním portu 3280,
 API na 4280 a vlastním nepublikovaným PostgreSQL 18 volume. Jde pouze o interní
 náhled bez DMZ, produkčního Keycloaku, HAProxy databáze a S3. Ověření a rollback
 popisuje [provozní dokumentace](docs/operations.md).
