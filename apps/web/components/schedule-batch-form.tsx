@@ -9,6 +9,15 @@ export function ScheduleBatchForm({ busy, classTypes, onSubmit }: { busy: boolea
   const [action, setAction] = useState<"cancel" | "move">("cancel");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Prague" });
   return <form className="admin-form admin-form-grid" onSubmit={(event) => void onSubmit(event)}>
+    <details className="admin-form-wide admin-guide">
+      <summary>Rychlý návod</summary>
+      <ol>
+        <li><strong>Dočasně zastavit Barre:</strong> vyberte „Pozastavit vybranou lekci“, lekci Barre, dnešní datum a datum, od kterého se má znovu objevit. Do informace pro klientky napište například „Barre bude spuštěné od poloviny října.“</li>
+        <li><strong>Přesunout Power Yogu:</strong> vyberte „Přesunout týdenní řadu“, zvolte původní den, nový den a čas. Období nastavte na všechny již vypsané termíny, které chcete změnit.</li>
+        <li><strong>Po potvrzení:</strong> zkontrolujte seznam termínů níže. Klientky s rezervací dostanou zprávu; při pozastavení se jejich rezervace zruší bez poplatku.</li>
+      </ol>
+      <p>Viditelnou obecnou informaci pro návštěvnice upravíte nahoře na kartě „Otevření studia“ v poli „Informace v rozvrhu“.</p>
+    </details>
     <label><span className="admin-label-row">Akce</span><select name="action" onChange={(event) => setAction(event.target.value as "cancel" | "move")} value={action}><option value="cancel">Pozastavit vybranou lekci</option><option value="move">Přesunout týdenní řadu</option></select></label>
     <label><span className="admin-label-row">Lekce</span><select name="classTypeId" required>{classTypes.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
     <label><span className="admin-label-row">Od data</span><input defaultValue={today} min={today} name="from" required type="date" /></label>

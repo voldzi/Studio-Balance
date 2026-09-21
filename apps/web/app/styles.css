@@ -532,6 +532,11 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
 .admin-table-wrap th { color: var(--color-text-secondary); font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; }
 .admin-row-actions { display: flex; gap: var(--space-2); }
 .admin-form-note { margin: 0; color: var(--color-text-secondary); font-size: .78rem; }
+.admin-guide { padding: .85rem 1rem; border: 1px solid #dcc4b0; border-radius: var(--radius-sm); background: #fffaf6; color: var(--color-text-secondary); font-size: .9rem; line-height: 1.5; }
+.admin-guide summary { cursor: pointer; color: var(--color-text-primary); font-weight: 800; }
+.admin-guide ol { margin: .65rem 0 .45rem; padding-left: 1.35rem; }
+.admin-guide li + li { margin-top: .4rem; }
+.admin-guide p { margin: .45rem 0 0; }
 .admin-review-list li div { min-width: 0; }
 .admin-review-list li span { max-width: 42rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-label-row { display: flex; align-items: center; gap: .45rem; }
