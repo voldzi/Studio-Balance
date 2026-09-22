@@ -1,7 +1,7 @@
 import { decodeJwt } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createLoginAttempt, publicRedirectUrl, rememberedDeviceMaxAgeSeconds, sessionFromClaims } from "./identity";
+import { createLoginAttempt, isMfaAdministrator, publicRedirectUrl, rememberedDeviceMaxAgeSeconds, sessionFromClaims } from "./identity";
 
 const originalPublicAppUrl = process.env.PUBLIC_APP_URL;
 const originalIssuer = process.env.OIDC_ISSUER_URL;
@@ -179,5 +179,19 @@ describe("sessionFromClaims", () => {
 
   it("does not infer MFA from the administrator role alone", () => {
     expect(sessionFromClaims({ ...baseClaims, amr: ["pwd"] })?.mfaVerified).toBe(false);
+  });
+
+  it("reuses only a session that already proves both an administrator role and MFA", () => {
+    const verifiedAdmin = sessionFromClaims({ ...baseClaims, amr: ["pwd", "otp"] });
+    const adminWithoutMfa = sessionFromClaims({ ...baseClaims, amr: ["pwd"] });
+    const verifiedClient = sessionFromClaims({
+      ...baseClaims,
+      realm_access: { roles: ["client"] },
+      amr: ["pwd", "otp"]
+    });
+
+    expect(isMfaAdministrator(verifiedAdmin)).toBe(true);
+    expect(isMfaAdministrator(adminWithoutMfa)).toBe(false);
+    expect(isMfaAdministrator(verifiedClient)).toBe(false);
   });
 });

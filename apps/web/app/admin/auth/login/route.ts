@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { adminIdentityCookies, createLoginAttempt, identityConfig, identityCookies, isSecureCookie, publicRedirectUrl, readWebSession, safeReturnTo } from "../../../../lib/identity";
+import { adminIdentityCookies, createLoginAttempt, identityConfig, identityCookies, isMfaAdministrator, isSecureCookie, publicRedirectUrl, readWebSession, safeReturnTo } from "../../../../lib/identity";
 import { logIdentityFailure } from "../../../../lib/identity-log";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const returnTo = safeReturnTo(request.nextUrl.searchParams.get("returnTo") ?? "/admin");
-  const webSession = await readWebSession(request.cookies.get(identityCookies.session)?.value);
+  const webSession = await readWebSession(request.cookies.get(identityCookies.session)?.value, "web");
+  if (isMfaAdministrator(webSession)) {
+    return NextResponse.redirect(publicRedirectUrl(returnTo, "admin"));
+  }
+  const adminSession = await readWebSession(request.cookies.get(adminIdentityCookies.session)?.value, "admin");
+  if (isMfaAdministrator(adminSession)) {
+    return NextResponse.redirect(publicRedirectUrl(returnTo, "admin"));
+  }
   const loginHint = webSession?.roles.some((role) => role === "admin" || role === "super_admin") ? webSession.email : undefined;
   const rememberDevice = request.nextUrl.searchParams.get("rememberDevice") === "1";
   let loginAttempt: Awaited<ReturnType<typeof createLoginAttempt>>;

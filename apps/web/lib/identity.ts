@@ -33,6 +33,13 @@ export type WebSession = {
   subject: string;
 };
 
+export function isMfaAdministrator(session: WebSession | undefined): boolean {
+  return Boolean(
+    session?.mfaVerified &&
+    session.roles.some((role) => role === "admin" || role === "super_admin")
+  );
+}
+
 export type CompletedLogin = {
   refreshToken: string;
   rememberDevice: boolean;

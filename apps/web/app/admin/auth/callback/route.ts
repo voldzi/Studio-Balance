@@ -9,9 +9,10 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const code = request.nextUrl.searchParams.get("code");
   if (!code) {
-    logAdminLoginFailure(request, { errorCode: "ADMIN_OIDC_CODE_MISSING", stage: "authorization_response" });
-    const response = NextResponse.redirect(publicRedirectUrl("/admin/prihlaseni?error=callback", "admin"));
+    const requestId = logAdminLoginFailure(request, { errorCode: "ADMIN_OIDC_CODE_MISSING", stage: "authorization_response" });
+    const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?error=callback&requestId=${encodeURIComponent(requestId)}`, "admin"));
     response.cookies.delete(adminIdentityCookies.attempt);
+    response.cookies.delete(adminIdentityCookies.session);
     return response;
   }
   try {
@@ -26,13 +27,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     const roleMissing = error instanceof Error && error.message === "Admin role is required";
     const mfaMissing = error instanceof Error && error.message === "Admin MFA is required";
-    logAdminLoginFailure(request, roleMissing
+    const requestId = logAdminLoginFailure(request, roleMissing
       ? { errorCode: "ADMIN_ROLE_REQUIRED", stage: "authorization" }
       : mfaMissing
         ? { errorCode: "ADMIN_MFA_REQUIRED", stage: "authorization" }
       : classifyCallbackFailure(error));
-    const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?error=${roleMissing ? "role" : mfaMissing ? "mfa" : "callback"}`, "admin"));
+    const params = new URLSearchParams({
+      error: roleMissing ? "role" : mfaMissing ? "mfa" : "callback",
+      requestId
+    });
+    const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?${params.toString()}`, "admin"));
     response.cookies.delete(adminIdentityCookies.attempt);
+    response.cookies.delete(adminIdentityCookies.session);
     return response;
   }
 }
@@ -68,7 +74,7 @@ function classifyCallbackFailure(error: unknown): AdminLoginFailure {
   }
 }
 
-function logAdminLoginFailure(request: NextRequest, failure: AdminLoginFailure): void {
+function logAdminLoginFailure(request: NextRequest, failure: AdminLoginFailure): string {
   const incomingRequestId = request.headers.get("x-request-id");
   const requestId = incomingRequestId && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(incomingRequestId)
     ? incomingRequestId
@@ -84,4 +90,5 @@ function logAdminLoginFailure(request: NextRequest, failure: AdminLoginFailure):
     errorCode: failure.errorCode,
     stage: failure.stage
   }));
+  return requestId;
 }
