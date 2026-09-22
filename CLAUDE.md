@@ -13,6 +13,9 @@ and consistent with the real studio while keeping booking rules unambiguous.
 - Use Chroma `search_code`, `search_docs`, or `search_all` before reading many
   files. Check `list_repositories` and use the exact managed root with MCP;
   use `get_file_context` after choosing a useful hit.
+- Chroma MCP tools may be exposed through the dynamic tool catalog instead of
+  the initial top-level tool list. Before declaring MCP unavailable, discover
+  the callable `mcp__chroma_dev__*` tools and call `list_repositories`.
 - If MCP tools are unavailable, or this repository is missing from
   `list_repositories` / rejected as `repository root is not managed`, use the
   CLI from this repository directory:
@@ -25,6 +28,9 @@ and consistent with the real studio while keeping booking rules unambiguous.
   service, use the normal tool approval mechanism to retry the same scoped
   command outside the network-restricted sandbox. Do not treat a sandbox
   denial as a stopped service or restart shared Chroma to work around it.
+- If Chroma reports `Error finding id`, treat the repository index as stale or
+  inconsistent: verify `/readyz`, then run an isolated forced `reindex_repo`
+  for this repository and confirm both search and `get_file_context` afterward.
 - If retrieval is unavailable or insufficient, inspect files directly and say
   which access path failed once. Do not let retrieval block delivery.
 - Reindex after meaningful repository changes with the available Chroma MCP
