@@ -10,15 +10,17 @@ and consistent with the real studio while keeping booking rules unambiguous.
 ## Working Style
 
 - Prefer retrieval-first work over broad repository scanning.
-- Use Chroma `search_code`, `search_docs`, or `search_all` before reading many
-  files. Check `list_repositories` and use the exact managed root with MCP;
-  use `get_file_context` after choosing a useful hit.
+- Chroma MCP is the primary retrieval and indexing interface. Start with its
+  `list_repositories`, then use MCP `search_code`, `search_docs`, or
+  `search_all` before reading many files; use MCP `get_file_context` after
+  choosing a useful hit and MCP `reindex_repo` after meaningful changes.
 - Chroma MCP tools may be exposed through the dynamic tool catalog instead of
   the initial top-level tool list. Before declaring MCP unavailable, discover
   the callable `mcp__chroma_dev__*` tools and call `list_repositories`.
-- If MCP tools are unavailable, or this repository is missing from
-  `list_repositories` / rejected as `repository root is not managed`, use the
-  CLI from this repository directory:
+- Use the CLI only as a fallback after an actual MCP discovery or tool call
+  proves unavailable, or when this repository is missing from
+  `list_repositories` / rejected as `repository root is not managed`. Run the
+  fallback from this repository directory:
   `"/Users/voldzi/Developer/18 2026/chromadb/tools/chroma-dev.sh" search-all "<query>" --root . --limit 5`
 - A missing MCP managed root is an MCP allowlist issue, not evidence that
   Chroma or this repository's index is unavailable. The CLI can query the
