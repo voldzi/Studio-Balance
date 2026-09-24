@@ -113,6 +113,11 @@ na záložní oddělené ověření. Po úspěchu zůstane zabezpečený příst
 zapamatovaného zařízení použitelný až 90 dní, pokud se používá nejméně jednou za
 30 dní. Odkaz nenahrazuje serverovou kontrolu role ani povinné MFA.
 
+Pokud administrační relace během práce vyprší, stránka vysvětlí nutnost nového
+přihlášení a nabídne jeho otevření v nové kartě. Rozepsaný formulář v původní
+kartě zůstane zachovaný, aby šlo po návratu uložení zopakovat. Pravidelné
+obnovování provozního stavu nesmí přepsat rozepsané oznámení.
+
 Klientský účet používá pouze neprůhlednou serverovou `HttpOnly` relaci. Volba
 „Zapamatovat toto soukromé zařízení na 90 dní“ je v aplikaci jediná volba pro
 trvalejší přihlášení a na klientském přihlášení je předem zvolená; uživatel ji
