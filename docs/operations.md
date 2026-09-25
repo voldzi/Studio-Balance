@@ -567,6 +567,19 @@ doručení: aktuální worker e-maily neodesílá. Provozní informování řeš
 Rollback aplikace automaticky nevrací termíny na čtvrtek; případná náprava dat
 musí respektovat nové rezervace a audit `session.rescheduled`.
 
+### Potvrzený rozvrh od 29. 9. 2026 (CD-052)
+
+Dne 25. 9. 2026 bylo po kontrolním výpočtu atomicky vypsáno 35 termínů od
+29. 9. do 28. 10. včetně: 9 TRX, 9 Jumping, 9 kruhových tréninků a 8 Power Yoga.
+Podkladem byl zadavatelkou potvrzený týdenní rozvrh v `docs/client-decisions.md`.
+Barre a Balance Flow se nevypsaly; již zrušené Barre 30. 9. zůstalo beze změny.
+Zápisy mají auditní `request_id=confirmed-schedule-2026-09-25`. Kontrolní výpočet
+ověřil aktivní typy a lektory, hodinovou délku i kolize. Šest vzdálenějších
+termínů se začne rezervovat až 30 dní před začátkem podle `booking_opens_at`.
+Tento jednorázový zápis nezajišťuje automatické prodlužování rozvrhu za
+28. 10.; před vyčerpáním horizontu je nutné rozhodnout o provozním postupu pro
+další týdny. Případná náprava musí respektovat mezitím vzniklé rezervace a audit.
+
 ## Připojené úložiště a zálohy (CD-046, 2026-09-05)
 
 Runtime API používá `http://storage.home.cz:8333`, region `us-east-1`,

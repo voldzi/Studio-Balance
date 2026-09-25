@@ -69,12 +69,12 @@ bucket `studio-balance-media` a vlastní omezené credentials. Tím se nahrazuje
 dřívější umístění médií na `docker.home.cz`; aplikace a PostgreSQL trasování
 zůstávají beze změny. Viz ADR 0012.
 
-## Schválený týdenní rozvrh (od 9. 9. 2026 upraven dle CD-044)
+## Schválený týdenní rozvrh (upraven dle CD-052)
 
 | Den | Čas | Lekce | Lekci vede |
 | --- | --- | --- | --- |
-| pondělí | 17:00–18:00 | TRX | Nicola Lojšková |
-| pondělí | 18:10–19:10 | Balance Flow | Nicola Lojšková |
+| pondělí | 16:45–17:45 | TRX | Nicola Lojšková |
+| pondělí | 18:00–19:00 | Balance Flow | Nicola Lojšková |
 | úterý | 17:00–18:00 | Barre | Nicola Lojšková |
 | úterý | 18:15–19:15 | Kruhový trénink | Tereza Sitková |
 | středa | 16:00–17:00 | TRX | Nicola Lojšková |
@@ -188,3 +188,16 @@ oficiální veřejně publikovanou fotografii Masáží Jiřina. Odkaz vede na j
 ve stejném okně a přístupnostní název tuto skutečnost oznamuje. Partnerský obsah
 není součástí hlavní navigace, rezervací ani administrace a nepřidává se obecná
 správa partnerů.
+
+## CD-052 — Potvrzený týdenní rozvrh a dočasné pozastavení (25. 9. 2026)
+
+Zadavatelka označila nově zaslaný rozvrh za platný. Pondělní TRX je
+16:45–17:45 a Balance Flow 18:00–19:00. Power Yoga zůstává v pátek
+17:30–18:30 i v neděli 18:00–19:00. Sobota nemá žádnou lekci. Starší označení
+Barre Sculpt a Barre Strength v obrázku se dle CD-050 čtou jako jediné Barre:
+úterý 17:00–18:00 vede Nicola Lojšková, středu 8:00–9:00 Kača Adamovská.
+Čtvrteční ranní Barre v obrázku se tedy nepoužije. Ostatní dny a časy platí
+podle tabulky výše. Barre i Balance Flow zůstávají dočasně bez možnosti
+rezervace a jejich spuštění vyžaduje nové oznámení zadavatelky. Ostatní
+potvrzené lekce se vypsají od oznámeného otevření 29. 9. 2026 v prvním
+30denním horizontu; další horizont musí mít samostatný provozní postup.
