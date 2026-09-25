@@ -580,6 +580,11 @@ Tento jednorázový zápis nezajišťuje automatické prodlužování rozvrhu za
 28. 10.; před vyčerpáním horizontu je nutné rozhodnout o provozním postupu pro
 další týdny. Případná náprava musí respektovat mezitím vzniklé rezervace a audit.
 
+Dne 25. 9. zadavatelka poslala finální verzi rozvrhu (CD-053). Čtyři pondělní
+termíny TRX z tohoto horizontu se opravují z 16:45 na 17:00 při zachování ID,
+rezervačního okna a auditní stopy. Před změnou neměly žádné rezervace. Ostatní
+vypsané termíny již odpovídaly finální verzi.
+
 ## Připojené úložiště a zálohy (CD-046, 2026-09-05)
 
 Runtime API používá `http://storage.home.cz:8333`, region `us-east-1`,
