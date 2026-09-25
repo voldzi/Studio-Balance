@@ -585,6 +585,18 @@ termíny TRX z tohoto horizontu se opravují z 16:45 na 17:00 při zachování I
 rezervačního okna a auditní stopy. Před změnou neměly žádné rezervace. Ostatní
 vypsané termíny již odpovídaly finální verzi.
 
+Dne 25. 9. zadavatel výslovně otevřel také Barre a Balance Flow (CD-054).
+Po snapshotu a kontrolním výpočtu bylo v jedné transakci doplněno 17 termínů
+a obnoveno již existující, dosud neobsazené Barre 30. 9. v 8:00. Celý veřejný
+horizont 29. 9.–28. 10. nyní obsahuje 53 termínů: 10 Barre, 8 Balance Flow
+a 35 dříve vypsaných ostatních lekcí. Auditní request ID je
+`open-barre-flow-2026-09-25`. Ze studiového oznámení byla odebrána neaktuální
+zmínka o odkladu Barre a Balance Flow. Veřejné API ověřilo všech 53 termínů,
+časy a lektorky nových lekcí, žádnou sobotu, otevřený provoz a rezervovatelné
+bližší termíny. Vzdálenější termíny se zpřístupní podle standardního
+30denního rezervačního okna. Ani tento zápis automaticky nevytváří další
+termíny za 28. 10.; navazující rozvrh vyžaduje samostatné vypsání.
+
 ## Připojené úložiště a zálohy (CD-046, 2026-09-05)
 
 Runtime API používá `http://storage.home.cz:8333`, region `us-east-1`,

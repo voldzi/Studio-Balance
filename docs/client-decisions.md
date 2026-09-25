@@ -210,3 +210,13 @@ Nahrazuje CD-052 pouze v pondělních časech: TRX je 17:00–18:00 a Balance Fl
 sobota zůstávají podle tabulky výše. Power Yoga je v pátek i v neděli. Barre
 a Balance Flow zůstávají dočasně bez možnosti rezervace podle dřívějšího
 provozního pokynu; přítomnost v grafickém rozvrhu není pokyn k jejich otevření.
+
+## CD-054 — Otevření Barre a Balance Flow (25. 9. 2026)
+
+Zadavatel výslovně potvrdil, že finální grafický rozvrh zahrnuje také Barre
+a Balance Flow. Tím ruší jejich dočasné pozastavení z CD-052 a CD-053.
+Barre se vede jako jediný typ podle CD-050: v úterý 17:00–18:00 s Nicolou
+Lojškovou a ve středu 8:00–9:00 s Kačou Adamovskou. Balance Flow je v pondělí
+18:10–19:10 a ve čtvrtek 17:00–18:00 s Nicolou Lojškovou. Termíny se doplní
+do stejného 30denního horizontu od 29. 9. jako ostatní lekce a veřejná
+informace o pozdějším spuštění těchto dvou typů se odstraní.
