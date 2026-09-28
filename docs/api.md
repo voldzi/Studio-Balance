@@ -224,6 +224,9 @@ rezervace nemění. Přístup vyžaduje admin roli, MFA a zápis do auditu.
 `GET /api/v1/admin/bookings?sessionId=<uuid>` vrací jmenný přehled jediného
 termínu pro evidenci docházky. Admin web jej čte až po výběru termínu a
 odpověď se nikdy veřejně necacheuje.
+Počet u termínu zahrnuje rezervované klienty i již označenou účast a neúčast;
+storna jsou oddělená. Celková metrika aktivních rezervací nadále počítá jen
+stav `reserved`.
 
 ### Vytvoření rezervace
 

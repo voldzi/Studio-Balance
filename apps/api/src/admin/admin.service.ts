@@ -60,7 +60,7 @@ export class AdminService {
     const [sessions, bookings, clients, metrics, classPopularity, weeklyAttendance] = await Promise.all([
       this.database.query<DashboardSessionRow>(`
         SELECT s.id, s.start_at, s.status, s.capacity, ct.name AS class_name, i.display_name AS instructor_name,
-          count(b.id) FILTER (WHERE b.status = 'reserved')::int AS booking_count
+          count(b.id) FILTER (WHERE b.status IN ('reserved','attended','no_show'))::int AS booking_count
         FROM class_sessions s
         JOIN class_types ct ON ct.id = s.class_type_id
         JOIN instructors i ON i.id = s.instructor_id
@@ -245,7 +245,7 @@ export class AdminService {
   async listSessions(from: Date, to: Date) {
     const result = await this.database.query<AdminSessionRow>(`
       SELECT s.*, ct.name AS class_name, i.display_name AS instructor_name,
-        count(b.id) FILTER (WHERE b.status='reserved')::int AS booking_count
+        count(b.id) FILTER (WHERE b.status IN ('reserved','attended','no_show'))::int AS booking_count
       FROM class_sessions s JOIN class_types ct ON ct.id=s.class_type_id JOIN instructors i ON i.id=s.instructor_id
       LEFT JOIN bookings b ON b.session_id=s.id WHERE s.start_at >= $1 AND s.start_at < $2
       GROUP BY s.id, ct.name, i.display_name ORDER BY s.start_at
