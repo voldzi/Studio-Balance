@@ -31,4 +31,5 @@ scp "$archive" "$remote_host:$artifact"
 ssh "$remote_host" tar -xf "$artifact" -C "$release_dir"
 ssh "$remote_host" \
   "STUDIO_BALANCE_PRODUCTION_ENV_FILE=$remote_root/.env.production" \
+  "STUDIO_BALANCE_PREBUILT_IMAGES=${STUDIO_BALANCE_PREBUILT_IMAGES:-0}" \
   "$release_dir/infra/scripts/deploy-production.sh" "$version"

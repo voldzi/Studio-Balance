@@ -99,8 +99,22 @@ rollback_previous() {
   fi
 }
 
-"${compose[@]}" build --pull
-if ! "${compose[@]}" up -d; then
+if [[ "${STUDIO_BALANCE_PREBUILT_IMAGES:-0}" == "1" ]]; then
+  up_args=(--no-build)
+  for image in api web worker; do
+    image_ref="studiobalance/$image:$version"
+    architecture="$(docker image inspect --format '{{.Architecture}}' "$image_ref" 2>/dev/null || true)"
+    if [[ "$architecture" != "amd64" ]]; then
+      echo "Prebuilt image $image_ref is missing or has the wrong architecture." >&2
+      exit 1
+    fi
+  done
+  echo "Using prebuilt, versioned production images."
+else
+  up_args=()
+  "${compose[@]}" build --pull
+fi
+if ! "${compose[@]}" up -d "${up_args[@]}"; then
   rollback_previous || true
   exit 1
 fi

@@ -203,8 +203,12 @@ curl --fail --head http://docker.home.cz:3281/
 
 Nasazení odmítne nepřítomný nebo příliš otevřený runtime soubor (vyžaduje
 `0600`), nízkou diskovou/RAM rezervu a neúspěšný health check. Obrazy sestavuje
-sériově, aby nezvyšovalo tlak na omezený swap hostitele. Kandidát se nejprve
-sestaví, po spuštění musí API readiness vrátit přesně požadovanou Git revizi a
+sériově, aby nezvyšovalo tlak na omezený swap hostitele. Při předem sestavených
+obrazech pro `linux/amd64` lze použít `STUDIO_BALANCE_PREBUILT_IMAGES=1
+pnpm deploy:production -- <git-sha>`; skript před spuštěním ověří, že všechny
+tři verzované obrazy na hostiteli existují a mají správnou architekturu.
+Paměťový a diskový limit, kontrola prostředí, health check i rollback platí
+stejně. Po spuštění musí API readiness vrátit přesně požadovanou Git revizi a
 web musí odpovědět 200. Deployment i rollback používají společný zámek proti
 souběhu. Pokud kandidát nenaběhne, postup ověří dostupnost všech tří předchozích
 image (API, web, worker), obnoví je a znovu čeká na readiness přesné předchozí
