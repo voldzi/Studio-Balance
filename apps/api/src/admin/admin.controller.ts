@@ -26,6 +26,10 @@ const scheduleBatchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cancel"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000) }).strict(),
   z.object({ action: z.literal("move"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000), sourceWeekday: z.number().int().min(1).max(7), targetWeekday: z.number().int().min(1).max(7), targetTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/) }).strict()
 ]);
+const classPriceSchema = z.object({
+  classTypeId: uuid, priceCents: z.number().int().min(0).max(1_000_000),
+  updateBookedPrices: z.boolean(), reason: z.string().trim().min(3).max(1000)
+}).strict();
 
 @Controller("api/v1/admin")
 @UseGuards(AdminRoleGuard)
@@ -50,6 +54,12 @@ export class AdminController {
   @Patch("weekly-rules/:id") updateWeeklyRule(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     const data = parse(z.object({ active: z.boolean() }).strict(), body);
     return this.admin.updateWeeklyRule(parseId(id), data.active, context(request));
+  }
+  @Post("prices/preview") previewClassPrice(@Body() body: unknown) {
+    return this.admin.previewClassPrice(parse(classPriceSchema, body));
+  }
+  @Post("prices/apply") applyClassPrice(@Req() request: AdminRequest, @Body() body: unknown) {
+    return this.admin.applyClassPrice(parse(classPriceSchema.extend({ previewToken: z.string().regex(/^[a-f0-9]{64}$/) }), body), context(request));
   }
   @Post("sessions") createSession(@Req() request: AdminRequest, @Body() body: unknown) { return this.admin.createSession(parse(sessionSchema.omit({ changeReason: true }), body), context(request)); }
   @Patch("sessions/:id") updateSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) { return this.admin.updateSession(parseId(id), parse(sessionSchema.required({ changeReason: true }), body), context(request)); }

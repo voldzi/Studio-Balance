@@ -288,6 +288,10 @@ zůstává jmenovitě auditovaný.
 Výjimečná změna ceny aktivní budoucí rezervace Barre podle ADR 0015
 uchová audit předchozí i nové ceny a klientské oznámení; bez schválení
 konkrétního případu se cenové snapshoty po rezervaci nemění.
+Podle ADR 0016 může administrátor s MFA takový konkrétní případ výslovně
+schválit až po náhledu dopadu. Výchozí volba snapshoty zachová. Server váže
+potvrzení na aktuální množinu rezervací, zapisuje starou i novou cenu a odmítá
+zásah do rezervace s aktivním nebo uhrazeným storno poplatkem.
 
 Aktuální audit npm knihoven a jeho omezení popisuje [dependency-audit.md](dependency-audit.md). CI po pinned instalaci spouští `pnpm audit --audit-level=high`; vysoké a kritické nálezy blokují kontrolu.
 

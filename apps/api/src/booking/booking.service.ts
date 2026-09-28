@@ -123,7 +123,7 @@ export class BookingService {
       items: result.rows.map((row) =>
         bookingResponse(
           { ...row, id: row.booking_id, status: row.booking_status },
-          mapSession({ ...row, status: row.session_status }, now),
+          mapSession({ ...row, status: row.session_status, price_cents: row.price_snapshot_cents }, now),
           row.fee_amount_cents
         )
       )
@@ -182,7 +182,7 @@ export class BookingService {
 
       const response = bookingResponse(
         { ...row, id: row.booking_id, status },
-        mapSession({ ...row, status: row.session_status }, new Date()),
+        mapSession({ ...row, status: row.session_status, price_cents: row.price_snapshot_cents }, new Date()),
         fee
       );
       await storeIdempotency(client, profile.id, input.idempotencyKey, requestHash, row.booking_id, response);

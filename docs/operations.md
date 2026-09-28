@@ -726,6 +726,13 @@ změní jejich stav nebo cenu rezervací.
 Zrušené a historické rezervace se neupravují. Přesné datum zahájení Barre
 dosud nebylo potvrzeno; cenová migrace termíny neposouvá ani neruší.
 
+Další změny cen typů lekcí provádí správce v administraci v Rozvrhu. Před
+uložením musí zkontrolovat náhled dopadu; po souběžné nové rezervaci nebo změně
+termínu je nutné jej obnovit. Výchozí volba ponechá potvrzeným rezervacím
+původní cenu. Pokud správce výslovně mění i jejich cenu, zkontroluje audit
+`booking.price_corrected` a zprávy v účtu. Splatný či uhrazený storno poplatek
+blokuje celý zásah. Samotné nasazení této funkce nic nepřepočítává.
+
 Administrátorská volba zapamatování zařízení zůstává výchozím stavem
 vypnutá. Při opakovaném dotazu na MFA zkontrolovat, zda byla na soukromém
 zařízení zaškrtnutá, zda nejde o soukromé okno či smazané cookies a zda

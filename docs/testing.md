@@ -320,3 +320,8 @@ a atomické odmítnutí změny při již splatném poplatku. Admin vidí jména 
 termínu; klientský web tyto údaje nikdy nevrací. Ověřit admin MFA, 401/403,
 `private, no-store` a mobilní šířku 360 px. Druhá jmenovitá admin relace
 se ověří až při pozdějším výslovném zřízení dalšího účtu.
+
+Správa cen celé lekce musí ověřit náhled a zastaralý token, souběh s vytvořením
+rezervace, změnu pravidel a budoucích termínů, zachování historických dat,
+výchozí zachování snapshotu, výslovnou změnu rezervace s auditem a oznámením,
+odmítnutí splatného poplatku a klientské zobrazení původní ceny rezervace.

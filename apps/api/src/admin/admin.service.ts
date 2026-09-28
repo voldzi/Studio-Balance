@@ -1,4 +1,5 @@
 import { instructorPortraitSql, type StudioImage } from "../media/studio-image.js";
+import { createHash } from "node:crypto";
 import { requireStudioAsset } from "../media/require-studio-asset.js";
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import type { PoolClient } from "pg";
@@ -31,6 +32,11 @@ export type AdminClassTypeInput = {
 export type AdminInstructorInput = { active: boolean; bio: string; displayName: string; sortOrder: number; portraitAssetId?: string | null | undefined; classes?: { classTypeId: string; scheduleNote: string }[] | undefined };
 export type AdminSessionInput = { arrivalLeadMinutes: number; capacity: number; changeReason?: string; classTypeId: string; durationMinutes: number; equipment: string; instructorId: string; locationAddress: string; locationName: string; priceCents: number; startAt: string; suitability: string };
 export type AdminScheduleBatchInput = { action: "cancel" | "move"; classTypeId: string; from: string; reason: string; sourceWeekday?: number; targetTime?: string; targetWeekday?: number; to: string };
+export type AdminClassPriceInput = { classTypeId: string; priceCents: number; updateBookedPrices: boolean; reason: string };
+type PriceRow = { id: string; price_cents: number };
+type PriceSessionRow = PriceRow & { status: string };
+type PriceBookingRow = { id: string; price_snapshot_cents: number; blocked_fee: boolean; user_id: string };
+type PricePlan = { className: string; rules: PriceRow[]; sessions: PriceSessionRow[]; bookings: PriceBookingRow[]; token: string };
 type DashboardSessionRow = { booking_count: number; capacity: number; class_name: string; id: string; instructor_name: string; start_at: Date; status: string };
 type ClassTypeRow = { active: boolean; arrival_lead_minutes: number; audience: string; benefits: string; default_equipment: string; description: string; difficulty: number; duration_minutes: number; hero_image_alt: string; hero_image_path: string; id: string; name: string; practical_notice: string; seo_description: string; seo_title: string; slug: string; sort_order: number; suitable_for_beginners: boolean; tagline: string; what_to_bring: string };
 type InstructorRow = { active: boolean; bio: string; display_name: string; id: string; sort_order: number; portrait_asset_id: string | null; portrait: StudioImage | null; classes: { classTypeId: string; scheduleNote: string }[] };
@@ -285,6 +291,74 @@ export class AdminService {
     });
   }
 
+  private async classPricePlan(client: PoolClient, data: AdminClassPriceInput): Promise<PricePlan> {
+    const type = await client.query<{ name: string }>("SELECT name FROM class_types WHERE id=$1", [data.classTypeId]);
+    if (!type.rows[0]) throw notFound("Lekce nebyla nalezena.");
+    const rules = (await client.query<PriceRow>("SELECT id,price_cents FROM weekly_schedule_rules WHERE class_type_id=$1 ORDER BY id", [data.classTypeId])).rows;
+    const sessions = (await client.query<PriceSessionRow>(`SELECT id,price_cents,status FROM class_sessions
+      WHERE class_type_id=$1 AND start_at>now() AND status IN ('scheduled','cancelled') ORDER BY id`, [data.classTypeId])).rows;
+    const bookings = (await client.query<PriceBookingRow>(`SELECT booking.id,booking.user_id,booking.price_snapshot_cents,
+      EXISTS (SELECT 1 FROM cancellation_fees fee WHERE fee.booking_id=booking.id AND fee.status IN ('due','settled')) AS blocked_fee
+      FROM bookings booking JOIN class_sessions session ON session.id=booking.session_id
+      WHERE session.class_type_id=$1 AND session.start_at>now() AND session.status='scheduled'
+        AND booking.status='reserved' ORDER BY booking.id`, [data.classTypeId])).rows;
+    const token = createHash("sha256").update(JSON.stringify({
+      classTypeId: data.classTypeId, priceCents: data.priceCents, updateBookedPrices: data.updateBookedPrices,
+      rules: rules.map((row) => [row.id, row.price_cents]),
+      sessions: sessions.map((row) => [row.id, row.price_cents, row.status]),
+      bookings: bookings.map((row) => [row.id, row.price_snapshot_cents, row.blocked_fee])
+    })).digest("hex");
+    return { className: type.rows[0].name, rules, sessions, bookings, token };
+  }
+
+  async previewClassPrice(data: AdminClassPriceInput) {
+    return this.database.transaction(async (client) => {
+      await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+      const plan = await this.classPricePlan(client, data);
+      return pricePlanSummary(plan, data);
+    });
+  }
+
+  async applyClassPrice(data: AdminClassPriceInput & { previewToken: string }, context: MutationContext) {
+    return this.database.transaction(async (client) => {
+      // Booking creation locks a session row; the worker locks sessions before rules.
+      // This order serializes both paths with the complete price change.
+      await client.query("LOCK TABLE class_sessions, weekly_schedule_rules, bookings, cancellation_fees IN SHARE ROW EXCLUSIVE MODE");
+      const plan = await this.classPricePlan(client, data);
+      if (plan.token !== data.previewToken) throw conflict("Rozvrh nebo rezervace se mezitím změnily. Zkontrolujte dopad změny ceny znovu.");
+      const summary = pricePlanSummary(plan, data);
+      if (data.updateBookedPrices && summary.blockedBookings) throw conflict("Některá rezervace má aktivní nebo uhrazený storno poplatek. Její cenu nelze hromadně změnit.");
+
+      for (const row of plan.rules.filter((item) => item.price_cents !== data.priceCents)) {
+        await client.query("UPDATE weekly_schedule_rules SET price_cents=$2,updated_at=now() WHERE id=$1", [row.id, data.priceCents]);
+        await auditWithClient(client, context, "weekly_schedule_rule.price_changed", "weekly_schedule_rule", row.id,
+          { oldPriceCents: row.price_cents, newPriceCents: data.priceCents, reason: data.reason });
+      }
+      for (const row of plan.sessions.filter((item) => item.price_cents !== data.priceCents)) {
+        await client.query("UPDATE class_sessions SET price_cents=$2,updated_at=now() WHERE id=$1", [row.id, data.priceCents]);
+        await auditWithClient(client, context, "session.price_changed", "session", row.id,
+          { oldPriceCents: row.price_cents, newPriceCents: data.priceCents, reason: data.reason });
+      }
+      if (data.updateBookedPrices) {
+        for (const row of plan.bookings.filter((item) => item.price_snapshot_cents !== data.priceCents)) {
+          await client.query("UPDATE bookings SET price_snapshot_cents=$2,updated_at=now() WHERE id=$1", [row.id, data.priceCents]);
+          await client.query(`UPDATE booking_idempotency SET response_body=jsonb_set(response_body,'{session,price}',
+            jsonb_build_object('amount',$2::text,'currency','CZK'),true) WHERE booking_id=$1`,
+          [row.id, (data.priceCents / 100).toFixed(2)]);
+          await client.query(`INSERT INTO account_notifications (user_id,booking_id,kind,title,body)
+            VALUES ($1,$2,'session_changed',$3,$4)`,
+          [row.user_id, row.id, `Změna ceny lekce ${plan.className}`,
+            `Cena vaší rezervace byla upravena z ${(row.price_snapshot_cents / 100).toFixed(2)} Kč na ${(data.priceCents / 100).toFixed(2)} Kč. ${data.reason}`]);
+          await auditWithClient(client, context, "booking.price_corrected", "booking", row.id,
+            { oldPriceCents: row.price_snapshot_cents, newPriceCents: data.priceCents, reason: data.reason });
+        }
+      }
+      await auditWithClient(client, context, "class_type.price_changed", "class_type", data.classTypeId,
+        { ...summary, priceCents: data.priceCents, updateBookedPrices: data.updateBookedPrices, reason: data.reason });
+      return summary;
+    });
+  }
+
   async createSession(data: AdminSessionInput, context: MutationContext) {
     const startAt = new Date(data.startAt);
     const endAt = new Date(startAt.getTime() + data.durationMinutes * 60_000);
@@ -509,6 +583,17 @@ export class AdminService {
 }
 
 function mapAdminSession(row: AdminSessionRow) { return { id: row.id, classTypeId: row.class_type_id, className: row.class_name, instructorId: row.instructor_id, instructorName: row.instructor_name, startAt: row.start_at.toISOString(), endAt: row.end_at.toISOString(), arrivalLeadMinutes: row.arrival_lead_minutes, locationName: row.location_name, locationAddress: row.location_address, priceCents: row.price_cents, capacity: row.capacity, bookingCount: row.booking_count, status: row.status, equipment: row.equipment, suitability: row.suitability, changeNotice: row.change_notice }; }
+function pricePlanSummary(plan: PricePlan, data: AdminClassPriceInput) {
+  return {
+    className: plan.className,
+    weeklyRulesChanged: plan.rules.filter((row) => row.price_cents !== data.priceCents).length,
+    sessionsChanged: plan.sessions.filter((row) => row.price_cents !== data.priceCents).length,
+    activeBookings: plan.bookings.length,
+    bookedPricesChanged: data.updateBookedPrices ? plan.bookings.filter((row) => row.price_snapshot_cents !== data.priceCents).length : 0,
+    blockedBookings: data.updateBookedPrices ? plan.bookings.filter((row) => row.price_snapshot_cents !== data.priceCents && row.blocked_fee).length : 0,
+    previewToken: plan.token
+  };
+}
 function mapAdminClassType(row: ClassTypeRow) { return { id: row.id, slug: row.slug, name: row.name, tagline: row.tagline, description: row.description, durationMinutes: row.duration_minutes, arrivalLeadMinutes: row.arrival_lead_minutes, active: row.active, sortOrder: row.sort_order, difficulty: row.difficulty, benefits: row.benefits, audience: row.audience, suitableForBeginners: row.suitable_for_beginners, defaultEquipment: row.default_equipment, whatToBring: row.what_to_bring, practicalNotice: row.practical_notice, heroImagePath: row.hero_image_path, heroImageAlt: row.hero_image_alt, seoTitle: row.seo_title, seoDescription: row.seo_description }; }
 async function auditWithClient(client: PoolClient, context: MutationContext, action: string, entityType: string, entityId: string, metadata: object = {}) { await client.query("INSERT INTO application_audit (actor_type,actor_id,action,entity_type,entity_id,request_id,metadata) VALUES ('admin',$1,$2,$3,$4,$5,$6)", [context.session.subject, action, entityType, entityId, context.requestId, metadata]); }
 function notFound(message: string) { return new HttpException({ code: "RESOURCE_NOT_FOUND", message }, HttpStatus.NOT_FOUND); }

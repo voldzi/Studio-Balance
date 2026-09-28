@@ -221,6 +221,15 @@ rozvrhu včetně instruktora, ceny, stavu a standardního předstihu rezervace.
 `PATCH /api/v1/admin/weekly-rules/{id}` s tělem `{ "active": false|true }`
 pozastaví nebo obnoví pouze další vytváření termínů; existující termíny a
 rezervace nemění. Přístup vyžaduje admin roli, MFA a zápis do auditu.
+`POST /api/v1/admin/prices/preview` pro typ lekce, cenu, důvod a výslovnou
+volbu `updateBookedPrices` vrátí počty dotčených pravidel, budoucích termínů
+a aktivních rezervací spolu s `previewToken`. `POST /api/v1/admin/prices/apply`
+vyžaduje stejná data i token a odmítne zastaralý náhled s `409`. Uloží novou
+cenu pravidel a budoucích termínů atomicky; cenu aktivních budoucích
+rezervací upraví jen při výslovné volbě. Rezervace s již splatným nebo
+uhrazeným poplatkem změnu zablokují. Minulé a zrušené rezervace se nemění.
+Klientský přehled existující rezervace používá její cenový snapshot, nikoli
+novou cenu termínu.
 `GET /api/v1/admin/bookings?sessionId=<uuid>` vrací jmenný přehled jediného
 termínu pro evidenci docházky. Admin web jej čte až po výběru termínu a
 odpověď se nikdy veřejně necacheuje.

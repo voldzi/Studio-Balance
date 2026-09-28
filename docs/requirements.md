@@ -186,6 +186,13 @@ pozastavit vybraný typ lekce nebo přesunout jeho týdenní řadu na jiný den 
 čas. Před uložením potvrzuje dopad; server zachová rezervace při přesunu,
 zruší je bez poplatku při pozastavení, ověří kolize a vše zapíše do auditu.
 
+Správa ceny celé lekce nejprve ukáže dopad, pak atomicky nastaví cenu všech
+pravidelných časů a budoucích termínů typu. Existující potvrzené rezervace
+zachová, pokud administrátor výslovně nezvolí a znovu nepotvrdí jejich změnu.
+Změna snapshotu je omezena na aktivní budoucí rezervace bez splatného či
+uhrazeného storno poplatku, každá dostane audit a klientské oznámení. Náhled
+zastaralý vlivem souběžné rezervace nebo změny rozvrhu nelze použít k uložení.
+
 Administrátor musí bez nasazení nové verze upravit běžný text, fotografie,
 kontakty, ceník, FAQ, recenze, novinky, instruktory, typy lekcí a termíny.
 Administrace navíc spravuje proměny klientek jako koncept/publikovaný obsah,

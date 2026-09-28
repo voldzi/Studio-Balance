@@ -163,3 +163,10 @@ termín. Opakovaná chyba nebo horizont pod 30 dní vyžaduje zásah. Aktivace a
 pozastavení pravidla se audituje jako `weekly_schedule_rule.updated` s admin
 subjektem; cenu Barre dokládá `session.price_changed`. Logy nesmí obsahovat
 jmenný seznam klientů ani jejich kontakty.
+
+Hromadná změna ceny zapisuje `class_type.price_changed` se souhrnnými počty,
+`weekly_schedule_rule.price_changed` a `session.price_changed` s původní a
+novou cenou. Jen při výslovné změně potvrzené rezervace vzniká
+`booking.price_corrected` a zpráva v účtu. Události obsahují admin subjekt a
+request ID, nikdy e-mail ani jméno klienta. Odmítnutý zastaralý náhled je
+provozní konflikt, nikoli částečně provedená změna.

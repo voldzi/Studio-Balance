@@ -62,6 +62,13 @@ nejbližší termíny a umožní návrat k celkovému seznamu. Pravidelný plán
 vysvětluje rozdíl mezi vypnutím vytváření dalších termínů a zrušením těch už
 vypsaných; ovládání musí fungovat i na mobilu.
 
+V sekci Rozvrh má samostatná akce „Změnit cenu celé lekce“ výběr typu, cenu
+v Kč a povinný důvod. První krok pouze ukáže počet budoucích termínů a
+aktivních rezervací. Volba změnit i ceny již potvrzených rezervací je výchozím
+stavem vypnutá, vysvětluje dopad na budoucí storno poplatek a vyžaduje druhé
+potvrzení. Chyba při souběžné změně nabídne nový náhled; rozpracovaná volba
+nesmí cenu změnit. Zpráva o změně rezervace se objeví v klientském účtu.
+
 ## Informační architektura
 
 ### Veřejný web

@@ -268,3 +268,15 @@ je nové ověření nutné.
 Přesné datum zahájení Barre zadavatelka dosud neoznámila. Cena se přednastaví
 bez odhadu tohoto data; případná změna zveřejněných termínů bude samostatné
 rozhodnutí.
+
+## CD-058 — Samostatná správa cen provozovatelkou (28. 9. 2026)
+
+Zadavatel požádal o možnost nastavovat cenu celé lekce v administraci bez
+vývojáře. Nová cena po kontrole dopadu upraví pravidelný plán i všechny budoucí
+vypsané termíny daného typu. Potvrzené rezervace standardně zachovají cenu
+platnou při přihlášení. Jejich budoucí aktivní snapshot lze změnit pouze
+samostatnou výslovnou volbou s náhledem počtu dotčených klientek, potvrzením,
+auditem a oznámením v účtu. Tato konkrétní administrační volba naplňuje
+požadavek ADR 0015 na nové rozhodnutí o každé zpětné změně. Neprovádí se
+automaticky u tří existujících rezervací Balance Flow. Do odpovědi
+provozovatelky se nemění ani dostupnost nových rezervací Barre.

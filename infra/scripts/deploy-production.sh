@@ -82,7 +82,7 @@ rollback_previous() {
       fi
     done
     export APP_VERSION="$previous_version"
-    if ! "${compose[@]}" up -d --no-build --remove-orphans; then
+    if ! "${compose[@]}" up -d --no-build; then
       echo "Automatic rollback could not start the previous revision." >&2
       return 1
     fi
@@ -100,7 +100,7 @@ rollback_previous() {
 }
 
 "${compose[@]}" build --pull
-if ! "${compose[@]}" up -d --remove-orphans; then
+if ! "${compose[@]}" up -d; then
   rollback_previous || true
   exit 1
 fi

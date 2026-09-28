@@ -615,6 +615,40 @@ export interface paths {
         patch: operations["adminUpdateWeeklyRule"];
         trace?: never;
     };
+    "/api/v1/admin/prices/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview a class-wide future price change */
+        post: operations["adminPreviewClassPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/prices/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a previewed class-wide price change atomically */
+        post: operations["adminApplyClassPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sessions/batch": {
         parameters: {
             query?: never;
@@ -1448,6 +1482,31 @@ export interface components {
             active: boolean;
             /** Format: date */
             generateFrom: string;
+        };
+        AdminClassPriceInput: {
+            /** Format: uuid */
+            classTypeId: string;
+            priceCents: number;
+            /** @description False by default in the UI; existing booked prices stay unchanged unless explicitly selected. */
+            updateBookedPrices: boolean;
+            reason: string;
+        };
+        AdminClassPriceApplyInput: {
+            /** Format: uuid */
+            classTypeId: string;
+            priceCents: number;
+            updateBookedPrices: boolean;
+            reason: string;
+            previewToken: string;
+        };
+        AdminClassPricePreview: {
+            className: string;
+            weeklyRulesChanged: number;
+            sessionsChanged: number;
+            activeBookings: number;
+            bookedPricesChanged: number;
+            blockedBookings: number;
+            previewToken: string;
         };
         AdminReasonRequest: {
             reason: string;
@@ -2591,6 +2650,63 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+        };
+    };
+    adminPreviewClassPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminClassPriceInput"];
+            };
+        };
+        responses: {
+            /** @description Current impact and a token binding the reviewed price plan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminClassPricePreview"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    adminApplyClassPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminClassPriceApplyInput"];
+            };
+        };
+        responses: {
+            /** @description Future weekly rules and sessions changed; booked prices only when explicitly selected. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminClassPricePreview"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
     adminChangeScheduleBatch: {
