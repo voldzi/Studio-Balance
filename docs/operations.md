@@ -713,3 +713,20 @@ zrušených termínů. Druhý běh generátoru nesmí nic zdvojit. Správce v
 Pravidelném týdenním plánu vypne další generování konkrétního času; už vypsané
 termíny případně ruší přes Hromadnou změnu rozvrhu. Při pozastavení workeru
 se horizont zkracuje a je třeba zasáhnout dříve, než bude kratší než 30 dní.
+
+Migrace `0023_confirmed_autumn_prices.sql` mění podle CD-057 aktivní
+rezervace budoucího Barre na 270 Kč včetně cenového snapshotu a zároveň
+nastavuje budoucí Balance Flow na 160 Kč. Před vydáním ověřit počet
+dotčených rezervací a případné aktivní/uhrazené storno poplatky; při jejich
+výskytu migrace odmítne celý zápis. Po vydání ověřit cenu termínů i
+rezervací, záznam `booking.price_corrected` a klientské oznámení.
+Zrušené a historické rezervace se neupravují. Přesné datum zahájení Barre
+dosud nebylo potvrzeno; cenová migrace termíny neposouvá ani neruší.
+
+Administrátorská volba zapamatování zařízení zůstává výchozím stavem
+vypnutá. Při opakovaném dotazu na MFA zkontrolovat, zda byla na soukromém
+zařízení zaškrtnutá, zda nejde o soukromé okno či smazané cookies a zda
+uživatel neprovedl odhlášení. Produkční realm má 30denní idle a 90denní
+maximum; tvrzení „kód pouze jednou za tři měsíce“ není bezpodmínečná
+garance. Pokud problém trvá i se zaškrtnutou volbou, korelovat čas pokusu
+s `admin_oidc_login_failed` a Keycloak událostmi bez výpisu tokenů.

@@ -111,7 +111,10 @@ nesmí znovu vytvořit. Správce může pozastavit další generování pravidel
 času, ale už vypsané termíny zůstávají beze změny. Admin přehled konkrétního
 termínu ukazuje aktivní rezervace a jejich počet, kontakt pro kontrolu docházky
 a odděleně zrušené rezervace. Veřejný rozvrh jména ani počty neukazuje.
-Budoucí Barre stojí 270 Kč, dřívější rezervace zachovávají svůj cenový snapshot.
+Budoucí Barre stojí 270 Kč; podle CD-057 se na 270 Kč jednorázově upraví i
+aktivní rezervace budoucího Barre se záznamem změny v auditu a klientském
+účtu. Nové rezervace Balance Flow stojí 160 Kč; již potvrzené rezervace této
+lekce zachovávají svůj cenový snapshot.
 
 ## Storno, docházka a poplatek
 

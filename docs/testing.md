@@ -311,7 +311,12 @@ měsíců a opakovaný i souběžný běh nevytvoří duplicity. Zrušený a ru�
 termín blokuje opětovné vytvoření; pozastavené pravidlo negeneruje, zatímco
 existující termíny nemění. Při kolizi instruktora/místa se transakce vrátí.
 Místní čas Barre 8:00 zůstane stejný před i po změně času; pátek a neděle
-obsahují Power Yogu, sobota nic. Budoucí Barre stojí 270 Kč, starší rezervace
-si uchová 250 Kč snapshot. Admin vidí jména a počet po otevření konkrétního
+obsahují Power Yogu, sobota nic. Budoucí Barre stojí 270 Kč; podle CD-057
+se aktivní rezervace budoucího Barre jednorázově upraví také na 270 Kč,
+zatímco historické rezervace zůstanou beze změny. Nové termíny Balance Flow
+stojí 160 Kč a existující rezervace zachovají původní snapshot. Test
+`autumn-prices.integration.test.ts` ověří obě varianty, audit, oznámení
+a atomické odmítnutí změny při již splatném poplatku. Admin vidí jména a počet po otevření konkrétního
 termínu; klientský web tyto údaje nikdy nevrací. Ověřit admin MFA, 401/403,
-`private, no-store`, mobilní šířku 360 px a obě jmenovité admin relace.
+`private, no-store` a mobilní šířku 360 px. Druhá jmenovitá admin relace
+se ověří až při pozdějším výslovném zřízení dalšího účtu.

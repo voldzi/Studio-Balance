@@ -243,3 +243,26 @@ případný storno poplatek. Honza má mít svůj vlastní jmenovitý účet se 
 rolí `admin` jako Nicola, nikoli její heslo nebo přístup přes její telefon.
 Povinné administrátorské MFA platí i pro něj a nastaví si je na svém zařízení.
 Zřízení účtu vyžaduje jeho e-mail a bezpečné předání počátečního přístupu.
+
+## CD-057 — Upřesnění cen a přístupu (28. 9. 2026)
+
+Zadavatelka výslovně požádala, aby se cena 270 Kč promítla i do již
+potvrzených rezervací budoucího Barre. Toto v jediném vymezeném případě
+nahrazuje pravidlo o zachování původního cenového snapshotu z CD-056:
+identifikátor a stav rezervace zůstane, nový snapshot bude 270 Kč pro platbu
+i případný pozdější storno poplatek. Změna se zaznamená do auditu a klient
+ji uvidí ve svém účtu. Historické a zrušené rezervace se nemění.
+
+Balance Flow (lekce s balanční deskou) stojí pro nové rezervace budoucích
+termínů 160 Kč. Potvrzené rezervace Balance Flow si ponechají původní
+snapshot, protože u nich zadavatelka zpětnou změnu ceny nepožadovala.
+
+Zřízení Honzova účtu zadavatel odložil; tato část CD-056 se nyní neprovádí.
+Nicolina zkušenost s opakovaným MFA se prověří samostatně. Devadesát dní je
+maximální doba zapamatované relace, nikoli bezpodmínečný interval mezi kódy:
+volbu je nutné zaškrtnout, po 30 dnech neaktivity, odhlášení nebo revokaci
+je nové ověření nutné.
+
+Přesné datum zahájení Barre zadavatelka dosud neoznámila. Cena se přednastaví
+bez odhadu tohoto data; případná změna zveřejněných termínů bude samostatné
+rozhodnutí.

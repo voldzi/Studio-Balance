@@ -278,11 +278,16 @@ Veřejný rozvrh neobsahuje jména ani interní obsazenost. Správce zapisuje
 docházku s auditní stopou a u neúčasti vidí před potvrzením cenový snapshot,
 z něhož vznikne právě jeden poplatek.
 
-Honza dostane vlastní účet s rolí `admin`, vlastní heslo a vlastní TOTP.
+Zřízení Honzova účtu je podle CD-057 odloženo. Pokud se později obnoví,
+dostane vlastní účet s rolí `admin`, vlastní heslo a vlastní TOTP.
 Sdílení hesla Nicoly nebo vypnutí MFA se nepovoluje. Při zřízení se role
 ověří v realmu `studio-balance`, počáteční heslo je dočasné a při prvním
 přihlášení se nastaví nové heslo i TOTP. Přístup k osobním údajům rezervací
 zůstává jmenovitě auditovaný.
+
+Výjimečná změna ceny aktivní budoucí rezervace Barre podle ADR 0015
+uchová audit předchozí i nové ceny a klientské oznámení; bez schválení
+konkrétního případu se cenové snapshoty po rezervaci nemění.
 
 Aktuální audit npm knihoven a jeho omezení popisuje [dependency-audit.md](dependency-audit.md). CI po pinned instalaci spouští `pnpm audit --audit-level=high`; vysoké a kritické nálezy blokují kontrolu.
 
