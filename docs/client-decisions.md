@@ -255,7 +255,9 @@ ji uvidí ve svém účtu. Historické a zrušené rezervace se nemění.
 
 Balance Flow (lekce s balanční deskou) stojí pro nové rezervace budoucích
 termínů 160 Kč. Potvrzené rezervace Balance Flow si ponechají původní
-snapshot, protože u nich zadavatelka zpětnou změnu ceny nepožadovala.
+snapshot, protože u nich zadavatelka zpětnou změnu ceny nepožadovala. Zrušené
+budoucí termíny zůstávají zrušené, ale jejich cena v rozvrhu se sjednotí na
+160 Kč, protože jsou stále veřejně vidět.
 
 Zřízení Honzova účtu zadavatel odložil; tato část CD-056 se nyní neprovádí.
 Nicolina zkušenost s opakovaným MFA se prověří samostatně. Devadesát dní je

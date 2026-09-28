@@ -720,6 +720,9 @@ nastavuje budoucí Balance Flow na 160 Kč. Před vydáním ověřit počet
 dotčených rezervací a případné aktivní/uhrazené storno poplatky; při jejich
 výskytu migrace odmítne celý zápis. Po vydání ověřit cenu termínů i
 rezervací, záznam `booking.price_corrected` a klientské oznámení.
+Následná migrace `0024_cancelled_balance_flow_display_price.sql` sjednotí
+zobrazenou cenu zrušených budoucích termínů Balance Flow na 160 Kč, aniž
+změní jejich stav nebo cenu rezervací.
 Zrušené a historické rezervace se neupravují. Přesné datum zahájení Barre
 dosud nebylo potvrzeno; cenová migrace termíny neposouvá ani neruší.
 

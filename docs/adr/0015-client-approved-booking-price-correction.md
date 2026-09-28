@@ -23,6 +23,8 @@ existoval splatný nebo uhrazený storno poplatek, migrace se celá zastaví.
 Historické a zrušené rezervace se nemění.
 
 Balance Flow bude pro budoucí termíny a další generování za 160 Kč.
+Stejná zobrazovaná cena se nastaví i u budoucích zrušených termínů, které
+zůstávají ve veřejném přehledu viditelné; jejich zrušený stav se nemění.
 Již potvrzené rezervace Balance Flow ponechají původní cenový snapshot.
 Obecné pravidlo neměnnosti snapshotů zůstává v platnosti mimo tento
 výslovně vymezený zásah.

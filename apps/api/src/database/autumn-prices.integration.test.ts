@@ -58,9 +58,12 @@ describe.skipIf(!databaseUrl)("confirmed autumn price correction (local PostgreS
     const barre = await makeBooking("barre", true, 25000);
     const oldBarre = await makeBooking("barre", false, 25000, "attended");
     const balance = await makeBooking("balance-flow", true, 20000);
+    const cancelledBalance = await makeBooking("balance-flow", true, 20000, "cancelled_by_studio");
+    await client.query("UPDATE class_sessions SET status='cancelled' WHERE id=$1", [cancelledBalance.sessionId]);
 
     await client.query("BEGIN");
     await client.query(await readFile(new URL("0023_confirmed_autumn_prices.sql", migrations), "utf8"));
+    await client.query(await readFile(new URL("0024_cancelled_balance_flow_display_price.sql", migrations), "utf8"));
     await client.query("COMMIT");
 
     const prices = await client.query<{ id: string; price_snapshot_cents: number }>(
@@ -71,6 +74,8 @@ describe.skipIf(!databaseUrl)("confirmed autumn price correction (local PostgreS
       [barre.bookingId]: 27000, [oldBarre.bookingId]: 25000, [balance.bookingId]: 20000
     });
     expect((await client.query<{ price_cents: number }>("SELECT price_cents FROM class_sessions WHERE id=$1", [balance.sessionId])).rows[0]?.price_cents).toBe(16000);
+    expect((await client.query<{ price_cents: number; status: string }>("SELECT price_cents,status FROM class_sessions WHERE id=$1", [cancelledBalance.sessionId])).rows[0]).toMatchObject({ price_cents: 16000, status: "cancelled" });
+    expect((await client.query<{ price_snapshot_cents: number }>("SELECT price_snapshot_cents FROM bookings WHERE id=$1", [cancelledBalance.bookingId])).rows[0]?.price_snapshot_cents).toBe(20000);
     expect((await client.query<{ price_cents: number }>(`SELECT rule.price_cents FROM weekly_schedule_rules AS rule
       JOIN class_types AS type ON type.id=rule.class_type_id WHERE type.slug='balance-flow'`)).rows.every((row) => row.price_cents === 16000)).toBe(true);
     expect((await client.query<{ count: number }>("SELECT count(*)::int AS count FROM account_notifications WHERE booking_id=$1", [barre.bookingId])).rows[0]?.count).toBe(1);
