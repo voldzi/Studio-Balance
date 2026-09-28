@@ -404,6 +404,36 @@
       "get": { "summary": "List sessions including operational fields", "operationId": "adminListSessions", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } }, { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } }], "responses": { "200": { "description": "Admin schedule.", "content": { "application/json": { "schema": { "type": "object", "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminSession" } } } } } } } } },
       "post": { "summary": "Create a one-off session", "operationId": "adminCreateSession", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminSessionInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" } } }
     },
+    "/api/v1/admin/weekly-rules": {
+      "get": {
+        "summary": "List the confirmed weekly rules used to generate dated sessions",
+        "operationId": "adminListWeeklyRules",
+        "tags": ["Administration"],
+        "security": [{ "adminSession": [] }],
+        "responses": {
+          "200": { "description": "Weekly schedule rules.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminWeeklyRule" } } } } } } },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/admin/weekly-rules/{id}": {
+      "patch": {
+        "summary": "Pause or resume generation of one weekly slot without changing published sessions",
+        "operationId": "adminUpdateWeeklyRule",
+        "tags": ["Administration"],
+        "security": [{ "adminSession": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ResourceId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["active"], "properties": { "active": { "type": "boolean" } } } } } },
+        "responses": {
+          "200": { "description": "Generation rule updated.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["id", "active"], "properties": { "id": { "type": "string", "format": "uuid" }, "active": { "type": "boolean" } } } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "401": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/api/v1/admin/sessions/batch": {
       "post": { "summary": "Cancel or move matching future sessions in a weekly schedule", "operationId": "adminChangeScheduleBatch", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminScheduleBatchInput" } } } }, "responses": { "200": { "description": "Number of changed sessions and notified bookings.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminScheduleBatchResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "409": { "$ref": "#/components/responses/Error" } } }
     },
@@ -749,6 +779,7 @@
       "AdminScheduleBatchInput": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["action","classTypeId","from","to","reason"], "properties": { "action": { "const": "cancel" }, "classTypeId": { "type": "string", "format": "uuid" }, "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" }, "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } }, { "type": "object", "additionalProperties": false, "required": ["action","classTypeId","from","to","reason","sourceWeekday","targetWeekday","targetTime"], "properties": { "action": { "const": "move" }, "classTypeId": { "type": "string", "format": "uuid" }, "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" }, "reason": { "type": "string", "minLength": 3, "maxLength": 1000 }, "sourceWeekday": { "type": "integer", "minimum": 1, "maximum": 7 }, "targetWeekday": { "type": "integer", "minimum": 1, "maximum": 7 }, "targetTime": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" } } }] },
       "AdminScheduleBatchResponse": { "type": "object", "additionalProperties": false, "required": ["affectedSessions","affectedBookings"], "properties": { "affectedSessions": { "type": "integer", "minimum": 0 }, "affectedBookings": { "type": "integer", "minimum": 0 } } },
       "AdminSession": { "type": "object", "additionalProperties": true, "required": ["id","classTypeId","className","instructorId","instructorName","startAt","endAt","capacity","bookingCount","status"], "properties": { "id": { "type": "string", "format": "uuid" }, "classTypeId": { "type": "string", "format": "uuid" }, "className": { "type": "string" }, "instructorId": { "type": "string", "format": "uuid" }, "instructorName": { "type": "string" }, "startAt": { "type": "string", "format": "date-time" }, "endAt": { "type": "string", "format": "date-time" }, "capacity": { "type": "integer" }, "bookingCount": { "type": "integer" }, "status": { "type": "string", "enum": ["scheduled","cancelled","completed"] } } },
+      "AdminWeeklyRule": { "type": "object", "additionalProperties": false, "required": ["id","className","instructorName","weekday","localStartTime","durationMinutes","priceCents","capacity","bookingLeadDays","active","generateFrom"], "properties": { "id": { "type": "string", "format": "uuid" }, "className": { "type": "string" }, "instructorName": { "type": "string" }, "weekday": { "type": "integer", "minimum": 1, "maximum": 7 }, "localStartTime": { "type": "string", "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" }, "durationMinutes": { "type": "integer" }, "priceCents": { "type": "integer" }, "capacity": { "type": "integer" }, "bookingLeadDays": { "type": "integer" }, "active": { "type": "boolean" }, "generateFrom": { "type": "string", "format": "date" } } },
       "AdminReasonRequest": { "type": "object", "additionalProperties": false, "required": ["reason"], "properties": { "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } },
       "AdminAttendanceRequest": { "type": "object", "additionalProperties": false, "required": ["status","reason"], "properties": { "status": { "type": "string", "enum": ["attended","no_show"] }, "reason": { "type": "string", "minLength": 3, "maxLength": 1000 } } }
     },

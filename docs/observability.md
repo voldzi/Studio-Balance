@@ -155,3 +155,11 @@ externí doručování upozornění tímto krokem nevzniká.
 
 
 Studio opening changes produce studio.opening.requested audit entries with admin subject and request ID. Pending registrationSynced=false is visible in admin and retried; never log identity tokens or credentials.
+
+Worker pravidelného rozvrhu zapisuje `weekly_schedule_generated` s počtem
+vytvořených a přeskočených termínů, nebo `weekly_schedule_failed` s důvodem.
+Provozní kontrola sleduje čas posledního úspěšného běhu a nejpozdější budoucí
+termín. Opakovaná chyba nebo horizont pod 30 dní vyžaduje zásah. Aktivace a
+pozastavení pravidla se audituje jako `weekly_schedule_rule.updated` s admin
+subjektem; cenu Barre dokládá `session.price_changed`. Logy nesmí obsahovat
+jmenný seznam klientů ani jejich kontakty.

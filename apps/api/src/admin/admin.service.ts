@@ -39,7 +39,7 @@ type EditableSessionRow = { arrival_lead_minutes: number; booking_closes_at: Dat
 type BatchSessionRow = EditableSessionRow & { id: string; class_name: string; class_slug: string; class_tagline: string; instructor_name: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
 type AdminBookingRow = { class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
-type AttendanceRow = { id: string; price_snapshot_cents: number; status: string; user_id: string };
+type AttendanceRow = { id: string; price_snapshot_cents: number; session_start_at: Date; session_status: string; status: string; user_id: string };
 type DashboardMetricsRow = {
   attended_90_days: string;
   attended_this_month: string;
@@ -253,6 +253,38 @@ export class AdminService {
     return { items: result.rows.map(mapAdminSession) };
   }
 
+  async listWeeklyRules() {
+    const result = await this.database.query<{
+      id: string; class_name: string; instructor_name: string; weekday: number;
+      local_start_time: string; duration_minutes: number; price_cents: number;
+      capacity: number; booking_lead_days: number; active: boolean; generate_from: string;
+    }>(`SELECT rule.id,type.name AS class_name,instructor.display_name AS instructor_name,
+      rule.weekday,rule.local_start_time::text,rule.duration_minutes,rule.price_cents,
+      rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text
+      FROM weekly_schedule_rules rule
+      JOIN class_types type ON type.id=rule.class_type_id
+      JOIN instructors instructor ON instructor.id=rule.instructor_id
+      ORDER BY rule.weekday,rule.local_start_time`);
+    return { items: result.rows.map((row) => ({
+      id: row.id, className: row.class_name, instructorName: row.instructor_name,
+      weekday: row.weekday, localStartTime: row.local_start_time.slice(0, 5),
+      durationMinutes: row.duration_minutes, priceCents: row.price_cents,
+      capacity: row.capacity, bookingLeadDays: row.booking_lead_days,
+      active: row.active, generateFrom: row.generate_from
+    })) };
+  }
+
+  async updateWeeklyRule(id: string, active: boolean, context: MutationContext) {
+    return this.database.transaction(async (client) => {
+      const result = await client.query<{ active: boolean }>(
+        "UPDATE weekly_schedule_rules SET active=$2,updated_at=now() WHERE id=$1 RETURNING active", [id, active]
+      );
+      if (!result.rows[0]) throw notFound("Pravidlo rozvrhu nebylo nalezeno.");
+      await auditWithClient(client, context, "weekly_schedule_rule.updated", "weekly_schedule_rule", id, { active });
+      return { id, active };
+    });
+  }
+
   async createSession(data: AdminSessionInput, context: MutationContext) {
     const startAt = new Date(data.startAt);
     const endAt = new Date(startAt.getTime() + data.durationMinutes * 60_000);
@@ -450,9 +482,19 @@ export class AdminService {
 
   async attendance(id: string, status: "attended" | "no_show", reason: string, context: MutationContext) {
     return this.database.transaction(async (client) => {
-      const current = await client.query<AttendanceRow>("SELECT id,user_id,status,price_snapshot_cents FROM bookings WHERE id=$1 FOR UPDATE", [id]);
+      const current = await client.query<AttendanceRow>(`SELECT booking.id,booking.user_id,booking.status,
+        booking.price_snapshot_cents,session.start_at AS session_start_at,session.status AS session_status
+        FROM bookings booking JOIN class_sessions session ON session.id=booking.session_id
+        WHERE booking.id=$1 FOR UPDATE OF booking`, [id]);
       const row = current.rows[0];
       if (!row) throw notFound("Rezervace nebyla nalezena.");
+      if (row.session_status !== "scheduled" || !["reserved", "attended", "no_show"].includes(row.status)) {
+        throw conflict("Docházku lze upravit jen u platné rezervace nezrušené lekce.");
+      }
+      if (status === "no_show" && row.session_start_at > new Date()) {
+        throw conflict("Neúčast lze zaznamenat až po začátku lekce.");
+      }
+      if (row.status === status) return { id, status };
       await client.query("UPDATE bookings SET status=$2,updated_at=now() WHERE id=$1", [id, status]);
       if (status === "no_show") await client.query("INSERT INTO cancellation_fees (booking_id,user_id,amount_cents) VALUES ($1,$2,$3) ON CONFLICT (booking_id) DO UPDATE SET status='due',amount_cents=excluded.amount_cents,settlement_method=NULL,settled_at=NULL,updated_at=now()", [id, row.user_id, row.price_snapshot_cents]);
       if (status === "attended") await client.query("UPDATE cancellation_fees SET status='cancelled',updated_at=now() WHERE booking_id=$1 AND status='due'", [id]);

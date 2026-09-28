@@ -46,6 +46,11 @@ export class AdminController {
     if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start || end.getTime() - start.getTime() > 366 * 86_400_000) throw validation();
     return this.admin.listSessions(start, end);
   }
+  @Get("weekly-rules") weeklyRules() { return this.admin.listWeeklyRules(); }
+  @Patch("weekly-rules/:id") updateWeeklyRule(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
+    const data = parse(z.object({ active: z.boolean() }).strict(), body);
+    return this.admin.updateWeeklyRule(parseId(id), data.active, context(request));
+  }
   @Post("sessions") createSession(@Req() request: AdminRequest, @Body() body: unknown) { return this.admin.createSession(parse(sessionSchema.omit({ changeReason: true }), body), context(request)); }
   @Patch("sessions/:id") updateSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) { return this.admin.updateSession(parseId(id), parse(sessionSchema.required({ changeReason: true }), body), context(request)); }
   @Post("sessions/:id/cancel") cancelSession(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {

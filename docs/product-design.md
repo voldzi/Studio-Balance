@@ -54,6 +54,14 @@ sbírat osobní údaje bez účelu.
 | správa termínu | admin rozvrh | vytvoření/změna/zrušení s auditní stopou | potvrzení dopadu před hromadnou notifikací |
 | evidence docházky | admin termín | attended/no_show, případně právě jeden fee | oprava jen s důvodem a auditem |
 
+Admin rozvrh u každého termínu nabízí „Přihlášení (počet)“. Otevřený termín
+ukáže jména, kontakt, stav a počet aktivních rezervací; storna jsou odděleně.
+Akce „Účast“ je přímá, „Neúčast“ vyžaduje vysvětlení poplatku, důvod a
+potvrzení. Rezervace jako samostatná položka v administraci nejprve ukážou
+nejbližší termíny a umožní návrat k celkovému seznamu. Pravidelný plán
+vysvětluje rozdíl mezi vypnutím vytváření dalších termínů a zrušením těch už
+vypsaných; ovládání musí fungovat i na mobilu.
+
 ## Informační architektura
 
 ### Veřejný web

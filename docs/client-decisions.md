@@ -220,3 +220,26 @@ Lojškovou a ve středu 8:00–9:00 s Kačou Adamovskou. Balance Flow je v pond�
 18:10–19:10 a ve čtvrtek 17:00–18:00 s Nicolou Lojškovou. Termíny se doplní
 do stejného 30denního horizontu od 29. 9. jako ostatní lekce a veřejná
 informace o pozdějším spuštění těchto dvou typů se odstraní.
+
+## CD-055 — Přehled účastníků a průběžné termíny (28. 9. 2026)
+
+Administrátorka otevře konkrétní termín v rozvrhu a uvidí jmenný seznam
+aktivních rezervací a jejich počet. U proběhlé lekce může přímo z přehledu
+potvrdit účast nebo s výslovným potvrzením a důvodem zaznamenat neúčast.
+Klienti tento přehled nikdy neuvidí. Finální týdenní rozvrh z CD-053/054
+automaticky vytváří konkrétní termíny vždy do tří kalendářních měsíců dopředu;
+rezervace se nadále standardně otevírají 30 dní před lekcí, dokud zadavatelka
+výslovně nerozhodne jinak. Původní zveřejněný horizont, jednotlivá zrušení,
+stávající rezervace a ceny v rezervacích se zachovají. Správce může vypnout
+nebo zapnout vytváření dalších termínů jednotlivého pravidelného času;
+existující termíny mění zvlášť. Toto doplňuje CD-052/054 o trvalý provozní
+postup pro další horizont.
+
+## CD-056 — Cena Barre a samostatný přístup Honzy (28. 9. 2026)
+
+Cena obou pravidelných časů jednotného Barre je pro budoucí termíny 270 Kč.
+Již uzavřené rezervace si ponechají původní cenový snapshot pro platbu a
+případný storno poplatek. Honza má mít svůj vlastní jmenovitý účet se stejnou
+rolí `admin` jako Nicola, nikoli její heslo nebo přístup přes její telefon.
+Povinné administrátorské MFA platí i pro něj a nastaví si je na svém zařízení.
+Zřízení účtu vyžaduje jeho e-mail a bezpečné předání počátečního přístupu.

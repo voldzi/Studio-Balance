@@ -270,6 +270,20 @@ v neveřejném adresáři 0700 na jiném hostiteli a obsahují soubory 0600.
 
 ADR 0013: API-only dedicated studio-balance-operations service account, realm-management/manage-realm within this realm only. No master credentials in runtime. Registration disabled at identity provider; booking gated transactionally. Admin role, MFA, server session and mutation origin protections apply.
 
+## Docházka a další administrátor (CD-055/056)
+
+Jmenný seznam rezervovaných klientů a jejich kontakt se čtou pouze přes
+administrátorské API s rolí a prokázaným MFA; odpověď má `private, no-store`.
+Veřejný rozvrh neobsahuje jména ani interní obsazenost. Správce zapisuje
+docházku s auditní stopou a u neúčasti vidí před potvrzením cenový snapshot,
+z něhož vznikne právě jeden poplatek.
+
+Honza dostane vlastní účet s rolí `admin`, vlastní heslo a vlastní TOTP.
+Sdílení hesla Nicoly nebo vypnutí MFA se nepovoluje. Při zřízení se role
+ověří v realmu `studio-balance`, počáteční heslo je dočasné a při prvním
+přihlášení se nastaví nové heslo i TOTP. Přístup k osobním údajům rezervací
+zůstává jmenovitě auditovaný.
+
 Aktuální audit npm knihoven a jeho omezení popisuje [dependency-audit.md](dependency-audit.md). CI po pinned instalaci spouští `pnpm audit --audit-level=high`; vysoké a kritické nálezy blokují kontrolu.
 
 Workspace navíc striktně odmítá balíčky vydané před méně než 24 hodinami.

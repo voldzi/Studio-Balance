@@ -305,3 +305,13 @@ akceptační průchod; samotný storage test jej nenahrazuje.
 
 
 CD-047/048 checks: closed/open booking gate, concurrent close versus booking, successful idempotent replay while closed, admin authorization and invalid body, Keycloak sync success/failure/recovery, no-store status. Existing DST, 24-hour cancellation and fee checks remain required. Mobile install guide opens on first click after menu closes, traps focus, closes with Escape and returns focus to Menu.
+
+CD-055/056 checks: generátor vytvoří jen chybějící termíny do tří kalendářních
+měsíců a opakovaný i souběžný běh nevytvoří duplicity. Zrušený a ručně vložený
+termín blokuje opětovné vytvoření; pozastavené pravidlo negeneruje, zatímco
+existující termíny nemění. Při kolizi instruktora/místa se transakce vrátí.
+Místní čas Barre 8:00 zůstane stejný před i po změně času; pátek a neděle
+obsahují Power Yogu, sobota nic. Budoucí Barre stojí 270 Kč, starší rezervace
+si uchová 250 Kč snapshot. Admin vidí jména a počet po otevření konkrétního
+termínu; klientský web tyto údaje nikdy nevrací. Ověřit admin MFA, 401/403,
+`private, no-store`, mobilní šířku 360 px a obě jmenovité admin relace.

@@ -1,7 +1,7 @@
-export function workerLog(message: string, requestId = "system"): string {
+export function workerLog(message: string, requestId = "system", level: "info" | "error" = "info"): string {
   return JSON.stringify({
     timestamp: new Date().toISOString(),
-    level: "info",
+    level,
     service: "studio-balance-worker",
     message,
     requestId,

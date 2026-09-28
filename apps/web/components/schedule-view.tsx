@@ -12,14 +12,18 @@ export function ScheduleView() {
   const studio = useStudioStatus();
   const [sessions, setSessions] = useState<PublicSession[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>();
+  const [selectedMonth, setSelectedMonth] = useState<string>();
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 
   const load = useCallback(async () => {
     setState("loading");
     try {
-      const response = await apiRequest<{ items: PublicSession[] }>("/api/v1/sessions");
+      const from = new Date(Date.now() - 86_400_000);
+      const to = new Date(from.getTime() + 93 * 86_400_000);
+      const response = await apiRequest<{ items: PublicSession[] }>(`/api/v1/sessions?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`);
       setSessions(response.items);
       setSelectedDay((current) => current ?? response.items[0]?.startAt.slice(0, 10));
+      setSelectedMonth((current) => current ?? response.items[0]?.startAt.slice(0, 7));
       setState("ready");
     } catch {
       setState("error");
@@ -28,7 +32,8 @@ export function ScheduleView() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const days = useMemo(() => Array.from(new Set(sessions.map((session) => session.startAt.slice(0, 10)))), [sessions]);
+  const months = useMemo(() => Array.from(new Set(sessions.map((session) => session.startAt.slice(0, 7)))), [sessions]);
+  const days = useMemo(() => Array.from(new Set(sessions.filter((session) => session.startAt.slice(0, 7) === selectedMonth).map((session) => session.startAt.slice(0, 10)))), [sessions, selectedMonth]);
   const visible = sessions.filter((session) => session.startAt.slice(0, 10) === selectedDay);
 
   if (state === "loading") return <p className="schedule-message" role="status">Načítáme aktuální rozvrh…</p>;
@@ -45,9 +50,12 @@ export function ScheduleView() {
   return (
     <div className="schedule-panel">
       {studio.announcement && <p className="schedule-message" role="status">{studio.announcement}</p>}
+      <div className="schedule-months" aria-label="Vyberte měsíc">
+        {months.map((month) => <button aria-pressed={month === selectedMonth} className={month === selectedMonth ? "active" : ""} key={month} onClick={() => { setSelectedMonth(month); setSelectedDay(sessions.find((session) => session.startAt.startsWith(month))?.startAt.slice(0, 10)); }} type="button">{new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague", month: "long", year: "numeric" }).format(new Date(`${month}-15T12:00:00Z`))}</button>)}
+      </div>
       <div className="day-tabs" role="tablist" aria-label="Vyberte den">
         {days.map((day) => {
-          const date = new Date(`${day}T12:00:00+02:00`);
+          const date = new Date(`${day}T12:00:00Z`);
           return (
             <button
               aria-selected={selectedDay === day}
@@ -57,8 +65,8 @@ export function ScheduleView() {
               role="tab"
               type="button"
             >
-              <span>{new Intl.DateTimeFormat("cs-CZ", { weekday: "short" }).format(date)}</span>
-              <strong>{new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" }).format(date)}</strong>
+              <span>{new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague", weekday: "short" }).format(date)}</span>
+              <strong>{new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague", day: "numeric", month: "numeric" }).format(date)}</strong>
             </button>
           );
         })}

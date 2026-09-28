@@ -104,6 +104,15 @@ Administrátor může obě hodnoty přepsat na konkrétním termínu. Po začát
 může rezervaci změnit nebo zrušit už jen administrátor. Neuhrazený storno
 poplatek rezervaci neblokuje.
 
+Potvrzený týdenní plán z CD-053/054 vytváří konkrétní termíny průběžně do tří
+kalendářních měsíců dopředu. Worker chrání opakované spuštění proti duplicitám,
+kontroluje kolize a respektuje místní čas `Europe/Prague`. Zrušený termín se
+nesmí znovu vytvořit. Správce může pozastavit další generování pravidelného
+času, ale už vypsané termíny zůstávají beze změny. Admin přehled konkrétního
+termínu ukazuje aktivní rezervace a jejich počet, kontakt pro kontrolu docházky
+a odděleně zrušené rezervace. Veřejný rozvrh jména ani počty neukazuje.
+Budoucí Barre stojí 270 Kč, dřívější rezervace zachovávají svůj cenový snapshot.
+
 ## Storno, docházka a poplatek
 
 ```text

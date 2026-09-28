@@ -88,7 +88,11 @@ services:
     environment:
       APP_ENV: production
       APP_VERSION: ${APP_VERSION:?application version is required}
+      DATABASE_URL: ${DATABASE_URL:?production application URL is required}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "process.kill(1, 0)"]
       interval: 30s

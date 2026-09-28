@@ -256,8 +256,12 @@ footer .social-links a:hover { border-color: #f7eee5; color: #fff; }
 .page-heading > p:last-child { color: var(--color-text-secondary); font-size: 1.08rem; }
 .schedule-shell { min-height: calc(100vh - 6.5rem); padding-bottom: clamp(4rem, 8vw, 7rem); }
 .schedule-panel { overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg-light); box-shadow: var(--shadow-soft); }
-.day-tabs { padding: var(--space-4) var(--space-5); display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); border-bottom: 1px solid var(--color-border); background: #f4ede6; }
+.schedule-months { padding: var(--space-3) var(--space-5); display: flex; gap: var(--space-2); overflow-x: auto; }
+.schedule-months button { min-height: 2.75rem; padding: .5rem .8rem; flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; cursor: pointer; text-transform: capitalize; }
+.schedule-months button.active { border-color: var(--color-accent); background: var(--color-accent); color: #fff; }
+.day-tabs { padding: var(--space-4) var(--space-5); display: flex; gap: var(--space-2); overflow-x: auto; border-bottom: 1px solid var(--color-border); background: #f4ede6; }
 .day-tab { min-height: 4.5rem; padding: var(--space-2); border: 1px solid transparent; border-radius: 0.4rem; background: transparent; cursor: pointer; }
+.day-tab { flex: 0 0 5rem; }
 .day-tab span, .day-tab strong { display: block; }
 .day-tab span { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .day-tab strong { margin-top: 0.25rem; font-family: var(--font-display); font-size: 1rem; }
@@ -531,6 +535,22 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
 .admin-table-wrap th, .admin-table-wrap td { padding: .85rem .7rem; border-top: 1px solid var(--color-border); text-align: left; vertical-align: top; }
 .admin-table-wrap th { color: var(--color-text-secondary); font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; }
 .admin-row-actions { display: flex; gap: var(--space-2); }
+.admin-roster-choices { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+.admin-roster-choices button { min-height: 3.5rem; padding: var(--space-3); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; text-align: left; cursor: pointer; }
+.admin-roster-choices button:hover, .admin-roster-choices button:focus-visible { border-color: var(--color-accent); }
+.admin-roster-choices button span { color: var(--color-text-secondary); }
+.admin-roster-summary { margin-bottom: var(--space-4); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-3); }
+.admin-roster-summary button, .admin-text-button { min-height: 2.75rem; padding: .45rem .7rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; cursor: pointer; }
+.admin-attendee-list { margin: 0; padding: 0; list-style: none; }
+.admin-attendee-list li { padding: var(--space-4) 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); border-top: 1px solid var(--color-border); }
+.admin-attendee-list li > div:first-child { display: grid; gap: .25rem; }
+.admin-attendee-list li > div:first-child span, .admin-attendee-list li > span { color: var(--color-text-secondary); font-size: .82rem; }
+.admin-roster-cancelled { margin-top: var(--space-5); }
+.admin-roster-cancelled summary { cursor: pointer; }
+.admin-weekly-rules { margin: var(--space-4) 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-4); list-style: none; }
+.admin-weekly-rules li { padding: var(--space-3) 0; display: grid; gap: .25rem; border-top: 1px solid var(--color-border); }
+.admin-weekly-rules li span { color: var(--color-text-secondary); font-size: .82rem; }
+.admin-weekly-rules li button { justify-self: start; margin-top: .35rem; min-height: 2.75rem; }
 .admin-form-note { margin: 0; color: var(--color-text-secondary); font-size: .78rem; }
 .admin-guide { padding: .85rem 1rem; border: 1px solid #dcc4b0; border-radius: var(--radius-sm); background: #fffaf6; color: var(--color-text-secondary); font-size: .9rem; line-height: 1.5; }
 .admin-guide summary { cursor: pointer; color: var(--color-text-primary); font-weight: 800; }
@@ -627,7 +647,7 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
   .lesson-image-wrap { min-height: 0; }
   .flow-banner { min-height: 30rem; }
   footer { grid-template-columns: 1fr; }
-  .day-tabs { padding: var(--space-3); grid-template-columns: repeat(4, 1fr); overflow-x: auto; }
+  .day-tabs { padding: var(--space-3); }
   .day-tab { min-height: 3.8rem; }
   .session-list { padding: 0 var(--space-4); }
   .session-row { padding: var(--space-5) 0; grid-template-columns: 4.8rem 1fr auto; align-items: start; }
@@ -690,6 +710,10 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
   .admin-stats, .admin-form-grid, .admin-two-columns, .admin-upload-grid, .admin-analytics-grid { grid-template-columns: 1fr; }
   .admin-session-row { grid-template-columns: 1fr auto; }
   .admin-session-row time, .admin-session-row div { grid-column: 1; }
+  .admin-roster-choices button { display: grid; }
+  .admin-attendee-list li { align-items: flex-start; }
+  .admin-attendee-list li > div:first-child { flex-basis: 100%; }
+  .admin-weekly-rules { grid-template-columns: 1fr; }
   .reviews-section { padding-inline: 0; overflow: hidden; }
   .reviews-grid { grid-template-columns: 1fr; }
   .reviews-section-homepage .reviews-grid { margin-inline: calc(var(--space-4) * -1); padding-inline: var(--space-4); display: flex; gap: var(--space-4); overflow-x: auto; scroll-padding-inline: var(--space-4); scroll-snap-type: x mandatory; }

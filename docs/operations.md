@@ -695,3 +695,21 @@ Dockerfile používá digestem připnutý Node.js obraz, během sestavení aktua
 Alpine balíčky a z runtime vrstev odstraňuje npm a Corepack. Při změně digestu
 se znovu sestaví a zkontrolují všechny tři cíle: web, API a worker.
 Stejný gate běží v CI pomocí Trivy; vysoké a kritické nálezy blokují vydání.
+
+## Průběžné vypisování rozvrhu (ADR 0014)
+
+Worker používá stejnou produkční `DATABASE_URL` jako API; nejde o nový secret.
+Po migracích načte pravidla `weekly_schedule_rules`, při startu a každých šest
+hodin doplní konkrétní termíny do tří kalendářních měsíců. Zápis používá
+databázový zámek, unikátní identitu pravidlo + místní datum a audit
+`session.created`. Při kolizi nebo nedostupné DB worker vypíše
+`weekly_schedule_failed` a v produkci skončí s nenulovým kódem; Compose jej
+restartuje. Log úspěchu obsahuje `weekly_schedule_generated` a počty nových a
+přeskočených termínů bez osobních údajů.
+
+Po nasazení ověřit počty a krajní datum v admin rozvrhu, oba časy Barre za
+270 Kč, páteční i nedělní Power Yogu, nulovou sobotu a zachování dříve
+zrušených termínů. Druhý běh generátoru nesmí nic zdvojit. Správce v
+Pravidelném týdenním plánu vypne další generování konkrétního času; už vypsané
+termíny případně ruší přes Hromadnou změnu rozvrhu. Při pozastavení workeru
+se horizont zkracuje a je třeba zasáhnout dříve, než bude kratší než 30 dní.

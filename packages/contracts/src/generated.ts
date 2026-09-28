@@ -581,6 +581,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/weekly-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the confirmed weekly rules used to generate dated sessions */
+        get: operations["adminListWeeklyRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/weekly-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Pause or resume generation of one weekly slot without changing published sessions */
+        patch: operations["adminUpdateWeeklyRule"];
+        trace?: never;
+    };
     "/api/v1/admin/sessions/batch": {
         parameters: {
             query?: never;
@@ -1399,6 +1433,21 @@ export interface components {
             status: "scheduled" | "cancelled" | "completed";
         } & {
             [key: string]: unknown;
+        };
+        AdminWeeklyRule: {
+            /** Format: uuid */
+            id: string;
+            className: string;
+            instructorName: string;
+            weekday: number;
+            localStartTime: string;
+            durationMinutes: number;
+            priceCents: number;
+            capacity: number;
+            bookingLeadDays: number;
+            active: boolean;
+            /** Format: date */
+            generateFrom: string;
         };
         AdminReasonRequest: {
             reason: string;
@@ -2482,6 +2531,66 @@ export interface operations {
                 };
             };
             400: components["responses"]["Error"];
+        };
+    };
+    adminListWeeklyRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Weekly schedule rules. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AdminWeeklyRule"][];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    adminUpdateWeeklyRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    active: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Generation rule updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        active: boolean;
+                    };
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
         };
     };
     adminChangeScheduleBatch: {

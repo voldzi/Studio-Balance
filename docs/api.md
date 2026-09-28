@@ -216,6 +216,15 @@ naplánované termíny, nebo přesune termíny z jednoho dne týdne na jiný den
 poplatku při pozastavení a při přesunu zachová rezervaci, storno okno a odešle
 provozní informaci.
 
+`GET /api/v1/admin/weekly-rules` vrací dvanáct pravidelných časů finálního
+rozvrhu včetně instruktora, ceny, stavu a standardního předstihu rezervace.
+`PATCH /api/v1/admin/weekly-rules/{id}` s tělem `{ "active": false|true }`
+pozastaví nebo obnoví pouze další vytváření termínů; existující termíny a
+rezervace nemění. Přístup vyžaduje admin roli, MFA a zápis do auditu.
+`GET /api/v1/admin/bookings?sessionId=<uuid>` vrací jmenný přehled jediného
+termínu pro evidenci docházky. Admin web jej čte až po výběru termínu a
+odpověď se nikdy veřejně necacheuje.
+
 ### Vytvoření rezervace
 
 Request nese `sessionId`, `termsVersion` a důkaz požadovaného potvrzení. Server

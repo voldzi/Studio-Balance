@@ -18,10 +18,11 @@ const config: RuntimeConfig = { apiPort: 3001, databaseUrl: "postgresql://unused
 describe("admin authorization", () => {
   let app: NestFastifyApplication | undefined;
   const updateSession = vi.fn(async (id: string) => ({ id }));
+  const updateWeeklyRule = vi.fn(async (id: string, active: boolean) => ({ id, active }));
   afterEach(async () => { await app?.close(); });
 
   async function createApplication() {
-    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession } }] }).compile();
+    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateWeeklyRule } }] }).compile();
     const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false });
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
@@ -75,5 +76,19 @@ describe("admin authorization", () => {
     const response = await current.inject({ method: "PATCH", url: "/api/v1/admin/sessions/71ff7570-dabb-488b-bb6e-43e36ddc602e", headers, payload: { ...payload, changeReason: "Ranní Barre nově začíná v 8:00." } });
     expect(response.statusCode).toBe(200);
     expect(updateSession).toHaveBeenCalledWith("71ff7570-dabb-488b-bb6e-43e36ddc602e", { ...payload, changeReason: "Ranní Barre nově začíná v 8:00." }, expect.any(Object));
+  });
+
+  it("allows only an MFA-proven administrator to pause future weekly generation", async () => {
+    const id = "71ff7570-dabb-488b-bb6e-43e36ddc602e";
+    const current = await createApplication();
+    const url = `/api/v1/admin/weekly-rules/${id}`;
+    const payload = { active: false };
+    expect((await current.inject({ method: "PATCH", url, headers: { cookie: await cookie(["client"]) }, payload })).statusCode).toBe(403);
+    expect((await current.inject({ method: "PATCH", url, headers: { cookie: await cookie(["admin"], "sb_session", false) }, payload })).statusCode).toBe(403);
+    expect((await current.inject({ method: "PATCH", url, headers: { cookie: await cookie(["admin"]) }, payload: { active: "false" } })).statusCode).toBe(400);
+    const response = await current.inject({ method: "PATCH", url, headers: { cookie: await cookie(["admin"]) }, payload });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id, active: false });
+    expect(updateWeeklyRule).toHaveBeenCalledWith(id, false, expect.any(Object));
   });
 });
