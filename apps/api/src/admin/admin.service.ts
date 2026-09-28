@@ -33,6 +33,9 @@ export type AdminInstructorInput = { active: boolean; bio: string; displayName: 
 export type AdminSessionInput = { arrivalLeadMinutes: number; capacity: number; changeReason?: string; classTypeId: string; durationMinutes: number; equipment: string; instructorId: string; locationAddress: string; locationName: string; priceCents: number; startAt: string; suitability: string };
 export type AdminScheduleBatchInput = { action: "cancel" | "move"; classTypeId: string; from: string; reason: string; sourceWeekday?: number; targetTime?: string; targetWeekday?: number; to: string };
 export type AdminClassPriceInput = { classTypeId: string; priceCents: number; updateBookedPrices: boolean; reason: string };
+export type AdminWeeklyRuleEditInput = { weekday: number; localStartTime: string; instructorId: string; capacity: number; bookingLeadDays: number; reason: string };
+type WeeklyRuleEditRow = { id: string; class_type_id: string; class_name: string; instructor_id: string; weekday: number; local_start_time: string; duration_minutes: number; location_name: string; location_address: string; capacity: number; booking_lead_days: number; active: boolean; generate_from: string };
+type WeeklyEditSessionRow = BatchSessionRow & { local_date: string; active_bookings: number; booking_ids: string[]; weekly_rule_id: string | null; weekly_occurrence_date: string | null };
 type PriceRow = { id: string; price_cents: number };
 type PriceSessionRow = PriceRow & { status: string };
 type PriceBookingRow = { id: string; price_snapshot_cents: number; blocked_fee: boolean; user_id: string };
@@ -261,10 +264,10 @@ export class AdminService {
 
   async listWeeklyRules() {
     const result = await this.database.query<{
-      id: string; class_name: string; instructor_name: string; weekday: number;
+      id: string; class_type_id: string; instructor_id: string; class_name: string; instructor_name: string; weekday: number;
       local_start_time: string; duration_minutes: number; price_cents: number;
       capacity: number; booking_lead_days: number; active: boolean; generate_from: string;
-    }>(`SELECT rule.id,type.name AS class_name,instructor.display_name AS instructor_name,
+    }>(`SELECT rule.id,rule.class_type_id,rule.instructor_id,type.name AS class_name,instructor.display_name AS instructor_name,
       rule.weekday,rule.local_start_time::text,rule.duration_minutes,rule.price_cents,
       rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text
       FROM weekly_schedule_rules rule
@@ -272,7 +275,7 @@ export class AdminService {
       JOIN instructors instructor ON instructor.id=rule.instructor_id
       ORDER BY rule.weekday,rule.local_start_time`);
     return { items: result.rows.map((row) => ({
-      id: row.id, className: row.class_name, instructorName: row.instructor_name,
+      id: row.id, classTypeId: row.class_type_id, instructorId: row.instructor_id, className: row.class_name, instructorName: row.instructor_name,
       weekday: row.weekday, localStartTime: row.local_start_time.slice(0, 5),
       durationMinutes: row.duration_minutes, priceCents: row.price_cents,
       capacity: row.capacity, bookingLeadDays: row.booking_lead_days,
@@ -288,6 +291,170 @@ export class AdminService {
       if (!result.rows[0]) throw notFound("Pravidlo rozvrhu nebylo nalezeno.");
       await auditWithClient(client, context, "weekly_schedule_rule.updated", "weekly_schedule_rule", id, { active });
       return { id, active };
+    });
+  }
+
+  private async weeklyRuleEditPlan(client: PoolClient, id: string, data: AdminWeeklyRuleEditInput) {
+    const rule = (await client.query<WeeklyRuleEditRow>(`SELECT rule.id,rule.class_type_id,type.name AS class_name,rule.instructor_id,
+      rule.weekday,rule.local_start_time::text,rule.duration_minutes,rule.location_name,rule.location_address,
+      rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text
+      FROM weekly_schedule_rules rule JOIN class_types type ON type.id=rule.class_type_id WHERE rule.id=$1`, [id])).rows[0];
+    if (!rule) throw notFound("Pravidelná lekce nebyla nalezena.");
+    const instructor = (await client.query<{ display_name: string }>("SELECT display_name FROM instructors WHERE id=$1 AND active=true", [data.instructorId])).rows[0];
+    if (!instructor) throw new HttpException({ code: "VALIDATION_ERROR", message: "Vyberte aktivního instruktora." }, HttpStatus.BAD_REQUEST);
+    const duplicate = await client.query("SELECT id FROM weekly_schedule_rules WHERE id<>$1 AND class_type_id=$2 AND weekday=$3", [id, rule.class_type_id, data.weekday]);
+    if (duplicate.rowCount) throw conflict("Tato lekce už má pravidelný termín ve zvolený den.");
+    const ruleCollision = await client.query(`SELECT id FROM weekly_schedule_rules WHERE id<>$1 AND active=true
+      AND weekday=$2 AND (instructor_id=$3 OR (location_name=$4 AND location_address=$5))
+      AND extract(epoch FROM ($6::time-time '00:00'))/60
+        < extract(epoch FROM (local_start_time-time '00:00'))/60 + duration_minutes
+      AND extract(epoch FROM (local_start_time-time '00:00'))/60
+        < extract(epoch FROM ($6::time-time '00:00'))/60 + $7
+      LIMIT 1`, [id,data.weekday,data.instructorId,rule.location_name,rule.location_address,data.localStartTime,rule.duration_minutes]);
+    if (ruleCollision.rowCount) throw conflict("Nový pravidelný čas koliduje s jinou lekcí nebo instruktorem.");
+    const sessions = (await client.query<WeeklyEditSessionRow>(`SELECT s.id,s.class_type_id,s.instructor_id,s.start_at,s.end_at,s.arrival_lead_minutes,
+      s.location_name,s.location_address,s.price_cents,s.capacity,s.booking_opens_at,s.booking_closes_at,
+      s.free_cancellation_until,s.equipment,s.suitability,s.weekly_rule_id,s.weekly_occurrence_date::text,
+      (s.start_at AT TIME ZONE 'Europe/Prague')::date::text AS local_date,
+      count(b.id) FILTER (WHERE b.status='reserved')::int AS active_bookings,
+      coalesce(array_agg(b.id ORDER BY b.id) FILTER (WHERE b.status='reserved'), ARRAY[]::uuid[]) AS booking_ids,
+      ct.name AS class_name,ct.slug AS class_slug,ct.tagline AS class_tagline,i.display_name AS instructor_name
+      FROM class_sessions s JOIN class_types ct ON ct.id=s.class_type_id JOIN instructors i ON i.id=s.instructor_id
+      LEFT JOIN bookings b ON b.session_id=s.id
+      WHERE s.status='scheduled' AND s.start_at>now() AND s.class_type_id=$2
+        AND (s.weekly_rule_id=$1 OR s.weekly_rule_id IS NULL)
+          AND extract(isodow FROM s.start_at AT TIME ZONE 'Europe/Prague')=$3
+          AND (s.start_at AT TIME ZONE 'Europe/Prague')::time=$4::time
+      GROUP BY s.id,ct.id,i.id ORDER BY s.start_at,s.id`, [id, rule.class_type_id, rule.weekday, rule.local_start_time])).rows;
+    const exceptions = (await client.query<{ id: string; start_at: Date }>(`SELECT id,start_at FROM class_sessions
+      WHERE weekly_rule_id=$1 AND status='scheduled' AND start_at>now()
+      AND (class_type_id<>$4 OR extract(isodow FROM start_at AT TIME ZONE 'Europe/Prague')<>$2
+        OR (start_at AT TIME ZONE 'Europe/Prague')::time<>$3::time)
+      ORDER BY id`, [id, rule.weekday, rule.local_start_time, rule.class_type_id])).rows;
+    const previewToken = createHash("sha256").update(JSON.stringify({
+      rule: [rule.id,rule.class_type_id,rule.instructor_id,rule.weekday,rule.local_start_time,rule.duration_minutes,
+        rule.location_name,rule.location_address,rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from],
+      input: [data.weekday,data.localStartTime,data.instructorId,data.capacity,data.bookingLeadDays,data.reason],
+      sessions: sessions.map((s) => [s.id,s.start_at,s.end_at,s.instructor_id,s.capacity,s.booking_opens_at,s.booking_ids,s.weekly_rule_id,s.weekly_occurrence_date]),
+      exceptions: exceptions.map((s) => [s.id,s.start_at])
+    })).digest("hex");
+    return { rule, instructor, sessions, exceptionSessions: exceptions.length, previewToken };
+  }
+
+  async previewWeeklyRuleEdit(id: string, data: AdminWeeklyRuleEditInput) {
+    return this.database.transaction(async (client) => {
+      await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+      const plan = await this.weeklyRuleEditPlan(client, id, data);
+      return {
+        className: plan.rule.class_name, futureSessions: plan.sessions.length,
+        bookedSessions: plan.sessions.filter((s) => s.active_bookings > 0).length,
+        activeBookings: plan.sessions.reduce((sum, s) => sum + s.active_bookings, 0),
+        manualSessions: plan.sessions.filter((s) => !s.weekly_rule_id).length,
+        exceptionSessions: plan.exceptionSessions,
+        previewToken: plan.previewToken
+      };
+    });
+  }
+
+  async applyWeeklyRuleEdit(id: string, data: AdminWeeklyRuleEditInput & { previewToken: string }, context: MutationContext) {
+    return this.database.transaction(async (client) => {
+      // Booking creation, weekly generation and price changes all lock these tables.
+      await client.query("LOCK TABLE class_sessions, weekly_schedule_rules, bookings, cancellation_fees IN SHARE ROW EXCLUSIVE MODE");
+      const plan = await this.weeklyRuleEditPlan(client, id, data);
+      if (plan.previewToken !== data.previewToken) throw conflict("Rozvrh nebo rezervace se změnily. Zkontrolujte dopad úpravy znovu.");
+      const moving = plan.rule.weekday !== data.weekday || plan.rule.local_start_time.slice(0, 5) !== data.localStartTime;
+      const changes: { session: WeeklyEditSessionRow; startAt: Date; endAt: Date; date: string }[] = [];
+      for (const session of plan.sessions) {
+        if (session.active_bookings > data.capacity) throw conflict("Kapacita je nižší než počet potvrzených rezervací některého termínu.");
+        const date = shiftLocalDate(session.local_date, data.weekday - plan.rule.weekday);
+        const startAt = (await client.query<{ start_at: Date }>(
+          "SELECT (($1::date + $2::time) AT TIME ZONE 'Europe/Prague') AS start_at",
+          [date, data.localStartTime]
+        )).rows[0]?.start_at;
+        if (!startAt || startAt <= new Date()) throw conflict("Nový čas některého budoucího termínu by už byl v minulosti. Zvolte pozdější den nebo upravte nejbližší termín samostatně.");
+        const endAt = new Date(startAt.getTime() + session.end_at.getTime() - session.start_at.getTime());
+        changes.push({ session, startAt, endAt, date });
+      }
+      const ids = changes.map(({ session }) => session.id);
+      for (const change of changes) {
+        const { session, startAt, endAt, date } = change;
+        const conflictSession = await client.query(`SELECT id FROM class_sessions WHERE status='scheduled'
+          AND id<>ALL($1::uuid[]) AND start_at<$3 AND end_at>$2
+          AND (instructor_id=$4 OR (location_name=$5 AND location_address=$6)) LIMIT 1`,
+          [ids, startAt, endAt, data.instructorId, session.location_name, session.location_address]);
+        if (conflictSession.rowCount) throw conflict("Nový rozvrh koliduje s jinou lekcí nebo instruktorem.");
+        if (changes.some((other) => other !== change && startAt < other.endAt && endAt > other.startAt)) {
+          throw conflict("Dva upravované termíny by se překrývaly.");
+        }
+        if (moving) {
+          const sameClass = await client.query(`SELECT id FROM class_sessions WHERE class_type_id=$1
+            AND (start_at AT TIME ZONE 'Europe/Prague')::date=$2::date AND id<>ALL($3::uuid[]) LIMIT 1`,
+            [plan.rule.class_type_id, date, ids]);
+          if (sameClass.rowCount) throw conflict("V cílovém dni už je termín této lekce, včetně případného zrušeného termínu.");
+        }
+      }
+      for (const { session, startAt, endAt, date } of changes) {
+        const changedForClients = session.start_at.getTime() !== startAt.getTime() || session.instructor_id !== data.instructorId;
+        const cutoff = new Date(startAt.getTime() - 24 * 60 * 60_000);
+        const freeCancellationUntil = changedForClients && session.active_bookings
+          ? new Date(Math.min(startAt.getTime(), Math.max(session.free_cancellation_until?.getTime() ?? 0,
+            session.start_at.getTime() - 24 * 60 * 60_000, cutoff.getTime())))
+          : session.free_cancellation_until;
+        await client.query(`UPDATE class_sessions SET instructor_id=$2,start_at=$3,end_at=$4,capacity=$5,
+          booking_opens_at=$3::timestamptz-make_interval(days=>$6),booking_closes_at=$3::timestamptz-interval '30 minutes',
+          free_cancellation_until=$7,weekly_occurrence_date=CASE WHEN weekly_rule_id IS NULL THEN NULL ELSE $8::date END,
+          change_notice=CASE WHEN $9::boolean THEN $10 ELSE change_notice END,updated_at=now() WHERE id=$1`,
+          [session.id,data.instructorId,startAt,endAt,data.capacity,data.bookingLeadDays,freeCancellationUntil,date,changedForClients,data.reason]);
+        if (changedForClients && session.active_bookings) {
+          await client.query("UPDATE bookings SET cancellation_cutoff_at=$2,updated_at=now() WHERE session_id=$1 AND status='reserved'", [session.id, cutoff]);
+          await client.query(`INSERT INTO account_notifications (user_id,booking_id,kind,title,body)
+            SELECT user_id,id,'session_changed',$2,$3 FROM bookings WHERE session_id=$1 AND status='reserved'`,
+            [session.id,`Změna lekce ${plan.rule.class_name}`,data.reason]);
+          await client.query(`UPDATE notification_outbox SET status='cancelled',updated_at=now()
+            WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1 AND status='reserved')
+            AND kind='lesson_reminder' AND status IN ('pending','failed')`, [session.id]);
+          await client.query(`INSERT INTO notification_outbox (user_id,booking_id,kind,channel,scheduled_at,payload)
+            SELECT user_id,id,'session_changed','email',now(),jsonb_build_object('className',$2::text,'subject',$3::text,
+              'oldStartAt',$4::timestamptz,'startAt',$5::timestamptz,'arrivalAt',$5::timestamptz-make_interval(mins=>$6),
+              'freeCancellationUntil',$7::timestamptz,'timezone','Europe/Prague')
+            FROM bookings WHERE session_id=$1 AND status='reserved'`,
+            [session.id,plan.rule.class_name,`Změna lekce ${plan.rule.class_name}`,session.start_at,startAt,session.arrival_lead_minutes,freeCancellationUntil]);
+          await client.query(`INSERT INTO notification_outbox (user_id,booking_id,kind,channel,scheduled_at,payload)
+            SELECT booking.user_id,booking.id,'lesson_reminder','email',$2::timestamptz-reminder.lead_time,
+              jsonb_build_object('className',$3::text,'startAt',$2::timestamptz,'subject',reminder.subject,'timezone','Europe/Prague')
+            FROM bookings booking CROSS JOIN (VALUES (interval '24 hours','Zítra vás čeká lekce'),
+              (interval '2 hours','Dnes vás čeká lekce'),(interval '30 minutes','Za chvíli začínáme')) reminder(lead_time,subject)
+            WHERE booking.session_id=$1 AND booking.status='reserved' AND $2::timestamptz-reminder.lead_time>now()
+            ON CONFLICT (booking_id,kind,scheduled_at) DO UPDATE SET payload=excluded.payload,status='pending',updated_at=now()
+            WHERE notification_outbox.status IN ('pending','failed','cancelled')`,
+            [session.id,startAt,plan.rule.class_name]);
+          await client.query(`UPDATE booking_idempotency replay SET response_body=replay.response_body || jsonb_build_object(
+            'cancellationCutoffAt',booking.cancellation_cutoff_at,
+            'session',(replay.response_body->'session') || jsonb_build_object(
+              'startAt',$2::timestamptz,'endAt',$3::timestamptz,
+              'arrivalAt',$2::timestamptz-make_interval(mins=>$4),'changeNotice',$5::text,
+              'instructor',(replay.response_body->'session'->'instructor') || jsonb_build_object(
+                'id',$6::text,'displayName',$7::text)))
+            FROM bookings booking WHERE replay.booking_id=booking.id AND booking.session_id=$1 AND booking.status='reserved'`,
+            [session.id,startAt,endAt,session.arrival_lead_minutes,data.reason,data.instructorId,plan.instructor.display_name]);
+        }
+        await auditWithClient(client, context, "session.updated", "session", session.id, {
+          reason: data.reason, weeklyRuleId: id, oldStartAt: session.start_at, startAt,
+          oldInstructorId: session.instructor_id, instructorId: data.instructorId,
+          oldCapacity: session.capacity, capacity: data.capacity, activeBookings: session.active_bookings
+        });
+      }
+      await client.query(`UPDATE weekly_schedule_rules SET weekday=$2,local_start_time=$3,instructor_id=$4,
+        capacity=$5,booking_lead_days=$6,updated_at=now() WHERE id=$1`,
+        [id,data.weekday,data.localStartTime,data.instructorId,data.capacity,data.bookingLeadDays]);
+      await auditWithClient(client, context, "weekly_schedule_rule.updated", "weekly_schedule_rule", id, {
+        reason: data.reason, from: { weekday: plan.rule.weekday, localStartTime: plan.rule.local_start_time,
+          instructorId: plan.rule.instructor_id, capacity: plan.rule.capacity, bookingLeadDays: plan.rule.booking_lead_days },
+        to: { weekday: data.weekday, localStartTime: data.localStartTime,
+          instructorId: data.instructorId, capacity: data.capacity, bookingLeadDays: data.bookingLeadDays },
+        futureSessions: changes.length, activeBookings: plan.sessions.reduce((sum, s) => sum + s.active_bookings, 0)
+      });
+      return { id, futureSessions: changes.length, activeBookings: plan.sessions.reduce((sum, s) => sum + s.active_bookings, 0) };
     });
   }
 
@@ -583,6 +750,9 @@ export class AdminService {
 }
 
 function mapAdminSession(row: AdminSessionRow) { return { id: row.id, classTypeId: row.class_type_id, className: row.class_name, instructorId: row.instructor_id, instructorName: row.instructor_name, startAt: row.start_at.toISOString(), endAt: row.end_at.toISOString(), arrivalLeadMinutes: row.arrival_lead_minutes, locationName: row.location_name, locationAddress: row.location_address, priceCents: row.price_cents, capacity: row.capacity, bookingCount: row.booking_count, status: row.status, equipment: row.equipment, suitability: row.suitability, changeNotice: row.change_notice }; }
+function shiftLocalDate(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+}
 function pricePlanSummary(plan: PricePlan, data: AdminClassPriceInput) {
   return {
     className: plan.className,

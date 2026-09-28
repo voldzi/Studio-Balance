@@ -221,6 +221,15 @@ rozvrhu včetně instruktora, ceny, stavu a standardního předstihu rezervace.
 `PATCH /api/v1/admin/weekly-rules/{id}` s tělem `{ "active": false|true }`
 pozastaví nebo obnoví pouze další vytváření termínů; existující termíny a
 rezervace nemění. Přístup vyžaduje admin roli, MFA a zápis do auditu.
+`POST /api/v1/admin/weekly-rules/{id}/preview` přijímá nový den, místní čas,
+instruktora, kapacitu, předstih rezervací a důvod. Vrací počet budoucích
+odpovídajících termínů a rezervací a token náhledu.
+`POST /api/v1/admin/weekly-rules/{id}/apply` vyžaduje stejná data a token.
+Atomicky mění pravidlo i dosud vypsané budoucí termíny v původní den a čas,
+včetně ručně vložených. Výjimky s individuálně změněným časem zůstávají.
+Rezervace se zachovají; při změně času nebo instruktora se přepočítá storno
+hranice a připomínky a pošle oznámení. Při zastaralém náhledu, kolizi nebo
+kapacitě menší než počet přihlášených vrací `409`.
 `POST /api/v1/admin/prices/preview` pro typ lekce, cenu, důvod a výslovnou
 volbu `updateBookedPrices` vrátí počty dotčených pravidel, budoucích termínů
 a aktivních rezervací spolu s `previewToken`. `POST /api/v1/admin/prices/apply`

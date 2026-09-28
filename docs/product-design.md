@@ -69,6 +69,14 @@ stavem vypnutá, vysvětluje dopad na budoucí storno poplatek a vyžaduje druh�
 potvrzení. Chyba při souběžné změně nabídne nový náhled; rozpracovaná volba
 nesmí cenu změnit. Zpráva o změně rezervace se objeví v klientském účtu.
 
+U každého pravidelného času nabízí administrace „Upravit pravidelnou lekci“.
+Správce vyplní den, začátek, instruktora, kapacitu, předstih rezervací a
+důvod. Náhled ukáže počet dotčených budoucích termínů a rezervací; až
+samostatné potvrzení změnu uloží. Při kolizi, pokusu snížit kapacitu pod
+počet přihlášených nebo mezitím změněném stavu server změnu odmítne a
+formulář nabídne nový náhled. Individuálně změněné termíny se nepřepisují;
+vysvětlení této výjimky je viditelné přímo u ovládání.
+
 ## Informační architektura
 
 ### Veřejný web

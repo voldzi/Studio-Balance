@@ -281,3 +281,9 @@ Stránka O studiu obsahuje spravovanou sekci Náš tým s dodanou skupinovou fot
 
 
 CD-047: studio starts closed; one audited admin control opens registration and booking after identity synchronization. Existing bookings are preserved.
+
+CD-060: správce může po náhledu dopadu a potvrzení upravit den, místní čas,
+instruktora, kapacitu a předstih rezervací každého pravidelného času.
+Odpovídající budoucí termíny se aktualizují atomicky; potvrzené rezervace
+zachovají identitu a cenový snapshot. Kolize, přeplnění a zastaralý náhled
+změnu zablokují, změna času či instruktora odešle provozní oznámení.

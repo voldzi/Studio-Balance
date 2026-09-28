@@ -325,3 +325,9 @@ Správa cen celé lekce musí ověřit náhled a zastaralý token, souběh s vyt
 rezervace, změnu pravidel a budoucích termínů, zachování historických dat,
 výchozí zachování snapshotu, výslovnou změnu rezervace s auditem a oznámením,
 odmítnutí splatného poplatku a klientské zobrazení původní ceny rezervace.
+
+Úprava pravidelného času musí ověřit admin MFA a validaci, náhled a zastaralý
+token, změnu dne/času přes Europe/Prague a DST, zachování ID a ceny rezervace,
+oznámení, aktualizaci storno hranice a připomínek, propojení s generátorem,
+odmítnutí kapacity pod počet přihlášených, duplicit a kolizí. Minulé a
+individuálně změněné termíny zůstanou nedotčené.

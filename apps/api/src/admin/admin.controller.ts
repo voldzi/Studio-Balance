@@ -24,11 +24,19 @@ const sessionSchema = z.object({
 }).strict();
 const scheduleBatchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("cancel"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000) }).strict(),
-  z.object({ action: z.literal("move"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000), sourceWeekday: z.number().int().min(1).max(7), targetWeekday: z.number().int().min(1).max(7), targetTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/) }).strict()
+  z.object({ action: z.literal("move"), classTypeId: uuid, from: z.iso.datetime({ offset: true }), to: z.iso.datetime({ offset: true }), reason: z.string().trim().min(3).max(1000), sourceWeekday: z.number().int().min(1).max(7), targetWeekday: z.number().int().min(1).max(7), targetTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/) }).strict()
 ]);
 const classPriceSchema = z.object({
   classTypeId: uuid, priceCents: z.number().int().min(0).max(1_000_000),
   updateBookedPrices: z.boolean(), reason: z.string().trim().min(3).max(1000)
+}).strict();
+const weeklyRuleEditSchema = z.object({
+  weekday: z.number().int().min(1).max(7),
+  localStartTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
+  instructorId: uuid,
+  capacity: z.number().int().min(1).max(500),
+  bookingLeadDays: z.number().int().min(1).max(93),
+  reason: z.string().trim().min(3).max(1000)
 }).strict();
 
 @Controller("api/v1/admin")
@@ -54,6 +62,12 @@ export class AdminController {
   @Patch("weekly-rules/:id") updateWeeklyRule(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     const data = parse(z.object({ active: z.boolean() }).strict(), body);
     return this.admin.updateWeeklyRule(parseId(id), data.active, context(request));
+  }
+  @Post("weekly-rules/:id/preview") previewWeeklyRuleEdit(@Param("id") id: string, @Body() body: unknown) {
+    return this.admin.previewWeeklyRuleEdit(parseId(id), parse(weeklyRuleEditSchema, body));
+  }
+  @Post("weekly-rules/:id/apply") applyWeeklyRuleEdit(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
+    return this.admin.applyWeeklyRuleEdit(parseId(id), parse(weeklyRuleEditSchema.extend({ previewToken: z.string().regex(/^[a-f0-9]{64}$/) }), body), context(request));
   }
   @Post("prices/preview") previewClassPrice(@Body() body: unknown) {
     return this.admin.previewClassPrice(parse(classPriceSchema, body));

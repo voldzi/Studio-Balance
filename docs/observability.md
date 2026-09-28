@@ -170,3 +170,10 @@ novou cenou. Jen při výslovné změně potvrzené rezervace vzniká
 `booking.price_corrected` a zpráva v účtu. Události obsahují admin subjekt a
 request ID, nikdy e-mail ani jméno klienta. Odmítnutý zastaralý náhled je
 provozní konflikt, nikoli částečně provedená změna.
+
+Změna pravidelného času zapisuje `weekly_schedule_rule.updated` s původními
+a novými parametry a `session.updated` pro každý upravený budoucí termín.
+Metadata obsahují počty rezervací, nikoli jména. Při změně času nebo lektora
+se sleduje doručení `session_changed` z outboxu; samotný zápis do outboxu
+není potvrzení doručení. Konflikt nebo zastaralý náhled nesmí zanechat
+částečně upravený rozvrh.

@@ -291,3 +291,14 @@ zaznamená do auditu a klientka dostane zprávu v účtu. Zrušené a minulé
 rezervace se nemění. Kapacita Balance Flow je 10 a Barre 8 pro oba pravidelné
 časy i budoucí termíny. Přesné datum zahájení stále není určeno; toto
 rozhodnutí samo nezapíná ani neruší žádný termín či nové rezervace.
+
+## CD-060 — Samostatná správa pravidelného rozvrhu (28. 9. 2026)
+
+Zadavatel žádá, aby provozovatelka mohla v administraci bez vývojáře měnit
+den, začátek, instruktora, kapacitu a počet dní předstihu rezervací každého
+pravidelného času. Po náhledu dopadu a potvrzení se změní pravidlo i dosud
+vypsané budoucí termíny odpovídající jeho dosavadnímu dni a času, včetně
+dříve ručně vypsaných. Individuálně změněné termíny jsou výjimky a správce
+je může upravit samostatně. Rezervace se při přesunu zachovají, klienti
+dostanou oznámení, snížení kapacity pod počet přihlášených nebo kolize se
+odmítne. Cena celé lekce se spravuje oddělenou akcí podle CD-058.

@@ -615,6 +615,40 @@ export interface paths {
         patch: operations["adminUpdateWeeklyRule"];
         trace?: never;
     };
+    "/api/v1/admin/weekly-rules/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview a weekly rule and future matching session change */
+        post: operations["adminPreviewWeeklyRuleEdit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/weekly-rules/{id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a previewed weekly rule edit atomically */
+        post: operations["adminApplyWeeklyRuleEdit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/prices/preview": {
         parameters: {
             query?: never;
@@ -1471,6 +1505,10 @@ export interface components {
         AdminWeeklyRule: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            classTypeId: string;
+            /** Format: uuid */
+            instructorId: string;
             className: string;
             instructorName: string;
             weekday: number;
@@ -1482,6 +1520,40 @@ export interface components {
             active: boolean;
             /** Format: date */
             generateFrom: string;
+        };
+        AdminWeeklyRuleEditInput: {
+            weekday: number;
+            localStartTime: string;
+            /** Format: uuid */
+            instructorId: string;
+            capacity: number;
+            bookingLeadDays: number;
+            reason: string;
+        };
+        AdminWeeklyRuleEditApplyInput: {
+            weekday: number;
+            localStartTime: string;
+            /** Format: uuid */
+            instructorId: string;
+            capacity: number;
+            bookingLeadDays: number;
+            reason: string;
+            previewToken: string;
+        };
+        AdminWeeklyRuleEditPreview: {
+            className: string;
+            futureSessions: number;
+            bookedSessions: number;
+            activeBookings: number;
+            manualSessions: number;
+            exceptionSessions: number;
+            previewToken: string;
+        };
+        AdminWeeklyRuleEditResult: {
+            /** Format: uuid */
+            id: string;
+            futureSessions: number;
+            activeBookings: number;
         };
         AdminClassPriceInput: {
             /** Format: uuid */
@@ -2650,6 +2722,68 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+        };
+    };
+    adminPreviewWeeklyRuleEdit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminWeeklyRuleEditInput"];
+            };
+        };
+        responses: {
+            /** @description Impact and a token binding the reviewed plan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWeeklyRuleEditPreview"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminApplyWeeklyRuleEdit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminWeeklyRuleEditApplyInput"];
+            };
+        };
+        responses: {
+            /** @description Weekly rule and matching future sessions updated. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWeeklyRuleEditResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
     adminPreviewClassPrice: {

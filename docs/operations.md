@@ -733,6 +733,14 @@ původní cenu. Pokud správce výslovně mění i jejich cenu, zkontroluje audi
 `booking.price_corrected` a zprávy v účtu. Splatný či uhrazený storno poplatek
 blokuje celý zásah. Samotné nasazení této funkce nic nepřepočítává.
 
+Pravidelný den, čas, instruktora, kapacitu a předstih rezervací správce mění
+akcí „Upravit pravidelnou lekci“. Náhled ukazuje počty termínů a rezervací.
+Uložení pod databázovým zámkem mění jen odpovídající budoucí termíny;
+jednotlivě změněné výjimky zůstávají. Při změně času nebo instruktora se
+ověří zprávy klientům, připomínky a audit `weekly_schedule_rule.updated`.
+Po změně dne se ověří nový den v admin rozvrhu i po dalším běhu workeru;
+kolize nebo přeplnění vracejí chybu bez dílčího zápisu.
+
 Jednorázová migrace `0025_balance_flow_bookings_and_barre_capacity.sql` podle
 CD-059 sníží cenu aktivních budoucích rezervací Balance Flow na 160 Kč bez
 jejich zrušení a nastaví kapacitu obou pravidelných časů Barre i budoucích
