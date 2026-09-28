@@ -733,6 +733,15 @@ původní cenu. Pokud správce výslovně mění i jejich cenu, zkontroluje audi
 `booking.price_corrected` a zprávy v účtu. Splatný či uhrazený storno poplatek
 blokuje celý zásah. Samotné nasazení této funkce nic nepřepočítává.
 
+Jednorázová migrace `0025_balance_flow_bookings_and_barre_capacity.sql` podle
+CD-059 sníží cenu aktivních budoucích rezervací Balance Flow na 160 Kč bez
+jejich zrušení a nastaví kapacitu obou pravidelných časů Barre i budoucích
+termínů na 8. Před spuštěním ověřit počet dotčených rezervací, existenci
+storno poplatků a maximální obsazení Barre; migrace se při kolizi celá vrátí.
+Po spuštění ověřit ceny rezervací, kapacity pravidel i termínů, audit a
+klientská oznámení. Migrační skript lze spustit před obrazem nové verze pouze
+se záznamem názvu a přesného checksumu v `schema_migrations` v téže transakci.
+
 Administrátorská volba zapamatování zařízení zůstává výchozím stavem
 vypnutá. Při opakovaném dotazu na MFA zkontrolovat, zda byla na soukromém
 zařízení zaškrtnutá, zda nejde o soukromé okno či smazané cookies a zda

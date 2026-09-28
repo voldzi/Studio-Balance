@@ -95,4 +95,26 @@ describe.skipIf(!databaseUrl)("confirmed autumn price correction (local PostgreS
     expect((await client.query<{ price_snapshot_cents: number }>("SELECT price_snapshot_cents FROM bookings WHERE id=$1", [barre.bookingId])).rows[0]?.price_snapshot_cents).toBe(25000);
     expect((await client.query<{ count: number }>("SELECT count(*)::int AS count FROM account_notifications WHERE booking_id=$1", [barre.bookingId])).rows[0]?.count).toBe(0);
   });
+
+  it("keeps future Balance Flow places at 160 CZK and reduces Barre to eight without duplicate notices", async () => {
+    const balance = await makeBooking("balance-flow", true, 20000);
+    const barre = await makeBooking("barre", true, 27000);
+    await client.query("UPDATE weekly_schedule_rules SET capacity=12 WHERE class_type_id=(SELECT id FROM class_types WHERE slug='barre')");
+
+    await client.query("BEGIN");
+    for (const file of ["0023_confirmed_autumn_prices.sql", "0024_cancelled_balance_flow_display_price.sql", "0025_balance_flow_bookings_and_barre_capacity.sql"]) {
+      await client.query(await readFile(new URL(file, migrations), "utf8"));
+    }
+    await client.query("COMMIT");
+
+    expect((await client.query<{ status: string; price_snapshot_cents: number }>("SELECT status,price_snapshot_cents FROM bookings WHERE id=$1", [balance.bookingId])).rows[0]).toMatchObject({ status: "reserved", price_snapshot_cents: 16000 });
+    expect((await client.query<{ capacity: number }>("SELECT capacity FROM class_sessions WHERE id=$1", [barre.sessionId])).rows[0]?.capacity).toBe(8);
+    expect((await client.query<{ capacity: number }>(`SELECT capacity FROM weekly_schedule_rules WHERE class_type_id=(SELECT id FROM class_types WHERE slug='barre')`)).rows.every((row) => row.capacity === 8)).toBe(true);
+
+    await client.query("BEGIN");
+    await client.query(await readFile(new URL("0025_balance_flow_bookings_and_barre_capacity.sql", migrations), "utf8"));
+    await client.query("COMMIT");
+    expect((await client.query<{ count: number }>("SELECT count(*)::int AS count FROM account_notifications WHERE booking_id=$1", [balance.bookingId])).rows[0]?.count).toBe(1);
+    expect((await client.query<{ count: number }>("SELECT count(*)::int AS count FROM application_audit WHERE entity_id=$1 AND action='booking.price_corrected'", [balance.bookingId])).rows[0]?.count).toBe(1);
+  });
 });

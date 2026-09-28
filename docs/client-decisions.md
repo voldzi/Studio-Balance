@@ -280,3 +280,14 @@ auditem a oznámením v účtu. Tato konkrétní administrační volba naplňuje
 požadavek ADR 0015 na nové rozhodnutí o každé zpětné změně. Neprovádí se
 automaticky u tří existujících rezervací Balance Flow. Do odpovědi
 provozovatelky se nemění ani dostupnost nových rezervací Barre.
+
+## CD-059 — Cena potvrzených Balance Flow a kapacity (28. 9. 2026)
+
+Zadavatelka potvrdila cenu Balance Flow 160 Kč i pro již potvrzené budoucí
+rezervace. Jejich zrušení připustila, ale není potřebné: tři aktivní rezervace
+jsou na termíny 19., 22. a 26. října, tedy po uvedené polovině října.
+Zachovají si místo a termín; cenový snapshot se sníží na 160 Kč, změna se
+zaznamená do auditu a klientka dostane zprávu v účtu. Zrušené a minulé
+rezervace se nemění. Kapacita Balance Flow je 10 a Barre 8 pro oba pravidelné
+časy i budoucí termíny. Přesné datum zahájení stále není určeno; toto
+rozhodnutí samo nezapíná ani neruší žádný termín či nové rezervace.
