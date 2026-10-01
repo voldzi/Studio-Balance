@@ -341,3 +341,7 @@ rezervací, konec období, storno bez fee, explicitní přecenění a ochranu fe
 zachování individuálních výjimek a odmítnutí kapacity pod přihlášené.
 UI smoke: otevření editace, nový týden a návrat z docházky, výběr více lekcí,
 náhled změny, mobil 360px, klávesnice a návrat konceptu po přihlášení/reloadu.
+
+Obnova identity: podepsaný testovací token musí použít interní token/JWKS
+cestu při zachování veřejného issueru a audience. Token s cizím issuerem
+se odmítne. Revokace používá tutéž interní cestu.

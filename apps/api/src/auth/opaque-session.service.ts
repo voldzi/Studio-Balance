@@ -191,7 +191,7 @@ export class OpaqueSessionService {
       ? { id: this.config.value.oidc.adminClientId, secret: this.config.value.oidc.adminClientSecret }
       : { id: this.config.value.oidc.webClientId, secret: this.config.value.oidc.webClientSecret };
     try {
-      const response = await fetch(`${this.config.value.oidc.issuer}/protocol/openid-connect/token`, {
+      const response = await fetch(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/token`, {
         method: "POST",
         headers: {
           authorization: `Basic ${Buffer.from(`${client.id}:${client.secret}`).toString("base64")}`,
@@ -204,7 +204,7 @@ export class OpaqueSessionService {
       if (!response.ok) return undefined;
       const body = (await response.json()) as { id_token?: unknown; refresh_token?: unknown };
       if (typeof body.id_token !== "string") return undefined;
-      const claims = await jwtVerify(body.id_token, createRemoteJWKSet(new URL(`${this.config.value.oidc.issuer}/protocol/openid-connect/certs`)), {
+      const claims = await jwtVerify(body.id_token, createRemoteJWKSet(new URL(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/certs`)), {
         algorithms: ["RS256", "ES256"],
         issuer: this.config.value.oidc.issuer,
         audience: client.id
@@ -222,7 +222,7 @@ export class OpaqueSessionService {
       ? { id: this.config.value.oidc.adminClientId, secret: this.config.value.oidc.adminClientSecret }
       : { id: this.config.value.oidc.webClientId, secret: this.config.value.oidc.webClientSecret };
     try {
-      await fetch(`${this.config.value.oidc.issuer}/protocol/openid-connect/revoke`, {
+      await fetch(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/revoke`, {
         method: "POST",
         headers: {
           authorization: `Basic ${Buffer.from(`${client.id}:${client.secret}`).toString("base64")}`,

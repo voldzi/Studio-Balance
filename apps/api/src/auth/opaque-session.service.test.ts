@@ -1,3 +1,5 @@
+import { createServer } from "node:http";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { describe, expect, it, vi } from "vitest";
 
 import type { RuntimeConfig } from "../config/runtime-config.js";
@@ -79,5 +81,42 @@ describe("OpaqueSessionService", () => {
 
     await expect(service.create({ kind: "admin", refreshToken: "refresh-token-secret-value", session: { ...identity, roles: ["admin"] } })).rejects.toThrow("MFA assurance");
     expect(database.query).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("identity backchannel", () => {
+  it("refreshes using the internal token and JWKS endpoints but rejects a different token issuer", async () => {
+    const { privateKey, publicKey } = await generateKeyPair("RS256");
+    const jwk = { ...await exportJWK(publicKey), kid: "test-key", alg: "RS256", use: "sig" };
+    const issuer = "https://login.studio-balance.test/realms/studio-balance";
+    let tokenIssuer = issuer;
+    const paths: string[] = [];
+    const server = createServer(async (request, response) => {
+      paths.push(request.url!);
+      response.setHeader("content-type", "application/json");
+      if (request.url?.endsWith("/certs")) { response.end(JSON.stringify({ keys: [jwk] })); return; }
+      if (request.url?.endsWith("/revoke")) { response.end("{}"); return; }
+      const token = await new SignJWT({ email: identity.email, realm_access: { roles: ["admin"] } })
+        .setProtectedHeader({ alg: "RS256", kid: "test-key" }).setIssuer(tokenIssuer)
+        .setAudience("admin").setSubject(identity.subject).setIssuedAt().setExpirationTime("5m").sign(privateKey);
+      response.end(JSON.stringify({ id_token: token, refresh_token: "rotated-test-token" }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Test server unavailable");
+    const service = new OpaqueSessionService({} as never, { value: { ...config, oidc: { ...config.oidc, issuer,
+      backchannelIssuer: `http://127.0.0.1:${address.port}/realms/studio-balance` } } } as never);
+    const internal = service as unknown as { refresh: (token: string, kind: "admin") => Promise<{subject: string} | undefined>;
+      revokeAtIdentityProvider: (token: string, kind: "admin") => Promise<void> };
+    try {
+      expect((await internal.refresh("test-refresh", "admin"))?.subject).toBe(identity.subject);
+      expect(paths).toContain("/realms/studio-balance/protocol/openid-connect/token");
+      expect(paths).toContain("/realms/studio-balance/protocol/openid-connect/certs");
+      tokenIssuer = "https://wrong-issuer.test/realms/studio-balance";
+      expect(await internal.refresh("test-refresh", "admin")).toBeUndefined();
+      await internal.revokeAtIdentityProvider("test-refresh", "admin");
+      expect(paths).toContain("/realms/studio-balance/protocol/openid-connect/revoke");
+    } finally { server.closeAllConnections(); await new Promise<void>((resolve) => server.close(() => resolve())); }
   });
 });

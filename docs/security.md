@@ -319,3 +319,7 @@ včetně cen a ochrany poplatků. Kontrola a zápis jsou transakční. Uzavřen�
 rezervací je vynuceno při rezervaci pod zámkem termínu, ne pouze v UI.
 Koncepty formulářů neobsahují tokeny, hesla, MFA ani seznamy účastníků;
 jsou odděleny účtem v sessionStorage a odstraní se při odhlášení/uložení.
+
+Serverová obnova MFA relace používá důvěryhodnou interní cestu Keycloak
+pro token a JWKS, ale stále vyžaduje podpis, správný veřejný issuer a
+audience. Interní cesta neobchází MFA a nemění délku zapamatování zařízení.
