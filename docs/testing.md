@@ -331,3 +331,13 @@ token, změnu dne/času přes Europe/Prague a DST, zachování ID a ceny rezerva
 oznámení, aktualizaci storno hranice a připomínek, propojení s generátorem,
 odmítnutí kapacity pod počet přihlášených, duplicit a kolizí. Minulé a
 individuálně změněné termíny zůstanou nedotčené.
+
+## Admin účinnost rozvrhu (ADR 0018)
+
+Lokální PostgreSQL testy ověřují navazující verze, původní pravidlo,
+nezměněné rezervace při kapacitě, souběžně změněný náhled, náhradu typu
+s bezplatným oknem, explicitní obnovu bez oživení rezervací, uzavření nových
+rezervací, konec období, storno bez fee, explicitní přecenění a ochranu fee,
+zachování individuálních výjimek a odmítnutí kapacity pod přihlášené.
+UI smoke: otevření editace, nový týden a návrat z docházky, výběr více lekcí,
+náhled změny, mobil 360px, klávesnice a návrat konceptu po přihlášení/reloadu.

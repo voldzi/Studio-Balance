@@ -761,3 +761,11 @@ uživatel neprovedl odhlášení. Produkční realm má 30denní idle a 90denní
 maximum; tvrzení „kód pouze jednou za tři měsíce“ není bezpodmínečná
 garance. Pokud problém trvá i se zaškrtnutou volbou, korelovat čas pokusu
 s `admin_oidc_login_failed` a Keycloak událostmi bez výpisu tokenů.
+
+## Verze pravidelného rozvrhu
+
+Migrace 0026 zavádí ukončení a návaznost pravidel a dostupnost rezervací;
+0027 přidává schválený katalog Body Sculpt. Provozní změna termínů probíhá
+auditovaným náhledem a potvrzením v administraci, nikoli katalogovou migrací.
+Worker musí být ve stejné nebo novější verzi než API se změnami dle ADR 0018.
+Rollback starého workeru po vytvoření verzí vyžaduje jeho zastavení.

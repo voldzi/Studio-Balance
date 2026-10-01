@@ -391,3 +391,20 @@ admin oprávnění a pravidla publikace se nemění. Textové recenze S3 nepotř
 
 
 GET /api/v1/studio-status returns open and announcement, no-store. GET/PUT /api/v1/admin/studio-status requires admin; PUT {open:boolean} records desired state and synchronizes registration. `PUT /api/v1/admin/studio-status/announcement` accepts `{announcement:string|null}` and publishes a visible note on the site and schedule without changing registration. Admin response includes requestedOpen and registrationSynced. Pending sync blocks booking. POST bookings returns 409 STUDIO_CLOSED when closed; successful idempotent replay remains available.
+
+## Změny rozvrhu s datem účinnosti (ADR 0018)
+
+- `POST /api/v1/admin/schedule-changes/preview` a `/apply`: `ruleIds`, místní
+  `from`, volitelné včetně `through`, `operation` edit/close/cancel/open,
+  volitelné hodnoty typu, instruktora, kapacity, ceny, délky a předstihu.
+  Den a čas lze měnit pouze pro jeden vybraný týdenní čas. `reopenCancelled`
+  a `updateBookedPrices` jsou výslovné boolean volby. Povinný `reason` a při
+  apply 64znakový `previewToken`. Odpověď obsahuje konkrétní termíny a výjimky,
+  původní/nový čas, kapacitu, cenu a počty dostupné pouze správci.
+- `PATCH /api/v1/admin/sessions/{id}/capacity`: `{capacity}` mění pouze
+  budoucí aktivní termín, bez provozního e-mailu. Kapacita pod rezervace je 409.
+- Close vrací veřejnou dostupnost closed a blokuje nové rezervace na serveru;
+  idempotentní návrat již úspěšné rezervace zůstává dostupný. Cancel ruší
+  aktivní rezervace bez poplatku. Open nikdy neobnoví zrušené rezervace.
+- Všechny cesty vyžadují admin MFA. Chyby mají ErrorResponse a requestId.
+  Starší editace weekly-rules odmítne verzovanou řadu a odkáže na nový postup.

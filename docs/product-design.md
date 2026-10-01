@@ -460,3 +460,24 @@ předvyplní typ lekce, instruktora, místní čas, délku, cenu, kapacitu, mís
 praktické údaje. U změny je povinný srozumitelný důvod pro klientky; pokud má
 termín aktivní rezervace, rozhraní před uložením výslovně ukáže jejich počet a
 dopad oznámení. Nový termín nabízí pouze aktivní typy lekcí a instruktory.
+
+## Každodenní správa lekcí (CD-061)
+
+Rozvrh ukazuje vybraných sedm místních dní s posunem o týden, filtrem lekce
+a stavu. Přihlášení vrátí správce do stejného filtrovaného rozvrhu. Upravit
+otevře, posune a zaměří formulář; kapacita má menší přímou editaci s datem
+a aktuálním počtem přihlášených. U pravidelného času správce zvolí co změnit,
+rozsah (daný čas / všechny časy vybraných lekcí) a datum od/do. Náhrada může
+vytvořit nový typ lekce pouze jménem a popisem; detaily se doplní později.
+
+Náhled ukazuje původní/nové hodnoty a konkrétní termíny, rezervace, výjimky
+i zrušené termíny, které zůstanou zrušené. Pozastavení nových rezervací
+zachová lekci; zrušení lekce ruší rezervace bez poplatku a vyžaduje potvrzení.
+Obnovení starých zrušených termínů je explicitní. Cena potvrzených rezervací
+vyžaduje další souhlas. Pokročilé starší nástroje nejsou hlavním postupem.
+
+Rozepsané novinky a formuláře pravidelné změny se uchovají v sessionStorage
+po dobu nejvýše osmi hodin, jen pro danou kartu a správce. Náhled se nikdy
+neobnoví bez ověření serverem. Uložení nebo odhlášení koncept odstraní;
+vypnuté úložiště prohlížeče neblokuje práci. Oznámení v rozvrhu (všem) se
+spravuje v Přehledu; Novinky se zobrazí přihlášeným klientům.

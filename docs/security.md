@@ -310,3 +310,12 @@ vysoký nebo kritický nález sestavení zablokuje. Externí CI akce jsou připn
 na přesný commit.
 Celý bezpečnostní gate se spouští denně. Dependabot sleduje npm, Docker a
 GitHub Actions jednou týdně.
+
+## Ochrana hromadných změn
+
+Nové schedule-changes i rychlá kapacita podléhají AdminRoleGuard a MFA.
+Hash náhledu zahrnuje vybrané řady, vstup, dotčené termíny a aktivní rezervace
+včetně cen a ochrany poplatků. Kontrola a zápis jsou transakční. Uzavření
+rezervací je vynuceno při rezervaci pod zámkem termínu, ne pouze v UI.
+Koncepty formulářů neobsahují tokeny, hesla, MFA ani seznamy účastníků;
+jsou odděleny účtem v sessionStorage a odstraní se při odhlášení/uložení.

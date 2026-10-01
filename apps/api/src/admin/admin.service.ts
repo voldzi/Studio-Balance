@@ -1,3 +1,4 @@
+import { scheduleChange, type ScheduleChangeInput } from "./schedule-change.js";
 import { instructorPortraitSql, type StudioImage } from "../media/studio-image.js";
 import { createHash } from "node:crypto";
 import { requireStudioAsset } from "../media/require-studio-asset.js";
@@ -7,7 +8,7 @@ import type { PoolClient } from "pg";
 import type { StudioSession } from "../auth/session.js";
 import { DatabaseService } from "../database/database.service.js";
 
-type MutationContext = { requestId: string; session: StudioSession };
+export type MutationContext = { requestId: string; session: StudioSession };
 export type AdminClassTypeInput = {
   active: boolean;
   arrivalLeadMinutes: number;
@@ -43,7 +44,7 @@ type PricePlan = { className: string; rules: PriceRow[]; sessions: PriceSessionR
 type DashboardSessionRow = { booking_count: number; capacity: number; class_name: string; id: string; instructor_name: string; start_at: Date; status: string };
 type ClassTypeRow = { active: boolean; arrival_lead_minutes: number; audience: string; benefits: string; default_equipment: string; description: string; difficulty: number; duration_minutes: number; hero_image_alt: string; hero_image_path: string; id: string; name: string; practical_notice: string; seo_description: string; seo_title: string; slug: string; sort_order: number; suitable_for_beginners: boolean; tagline: string; what_to_bring: string };
 type InstructorRow = { active: boolean; bio: string; display_name: string; id: string; sort_order: number; portrait_asset_id: string | null; portrait: StudioImage | null; classes: { classTypeId: string; scheduleNote: string }[] };
-type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; capacity: number; change_notice: string | null; class_name: string; class_type_id: string; end_at: Date; equipment: string; id: string; instructor_id: string; instructor_name: string; location_address: string; location_name: string; price_cents: number; start_at: Date; status: string; suitability: string };
+type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; capacity: number; change_notice: string | null; booking_paused: boolean; class_name: string; class_type_id: string; end_at: Date; equipment: string; id: string; instructor_id: string; instructor_name: string; location_address: string; location_name: string; price_cents: number; start_at: Date; status: string; suitability: string };
 type EditableSessionRow = { arrival_lead_minutes: number; booking_closes_at: Date; booking_opens_at: Date; capacity: number; class_type_id: string; end_at: Date; equipment: string; free_cancellation_until: Date | null; instructor_id: string; location_address: string; location_name: string; price_cents: number; start_at: Date; suitability: string };
 type BatchSessionRow = EditableSessionRow & { id: string; class_name: string; class_slug: string; class_tagline: string; instructor_name: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
@@ -266,20 +267,21 @@ export class AdminService {
     const result = await this.database.query<{
       id: string; class_type_id: string; instructor_id: string; class_name: string; instructor_name: string; weekday: number;
       local_start_time: string; duration_minutes: number; price_cents: number;
-      capacity: number; booking_lead_days: number; active: boolean; generate_from: string;
+      capacity: number; booking_lead_days: number; active: boolean; generate_from: string; generate_until: string | null; booking_paused: boolean; session_cancelled: boolean;
     }>(`SELECT rule.id,rule.class_type_id,rule.instructor_id,type.name AS class_name,instructor.display_name AS instructor_name,
       rule.weekday,rule.local_start_time::text,rule.duration_minutes,rule.price_cents,
-      rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text
+      rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text,rule.generate_until::text,rule.booking_paused,rule.session_cancelled
       FROM weekly_schedule_rules rule
       JOIN class_types type ON type.id=rule.class_type_id
       JOIN instructors instructor ON instructor.id=rule.instructor_id
-      ORDER BY rule.weekday,rule.local_start_time`);
+      WHERE rule.generate_until IS NULL OR rule.generate_until >= (now() AT TIME ZONE 'Europe/Prague')::date
+      ORDER BY rule.weekday,rule.local_start_time,rule.generate_from`);
     return { items: result.rows.map((row) => ({
       id: row.id, classTypeId: row.class_type_id, instructorId: row.instructor_id, className: row.class_name, instructorName: row.instructor_name,
       weekday: row.weekday, localStartTime: row.local_start_time.slice(0, 5),
       durationMinutes: row.duration_minutes, priceCents: row.price_cents,
       capacity: row.capacity, bookingLeadDays: row.booking_lead_days,
-      active: row.active, generateFrom: row.generate_from
+      active: row.active, generateFrom: row.generate_from, generateUntil: row.generate_until, bookingPaused: row.booking_paused, sessionCancelled: row.session_cancelled
     })) };
   }
 
@@ -297,9 +299,11 @@ export class AdminService {
   private async weeklyRuleEditPlan(client: PoolClient, id: string, data: AdminWeeklyRuleEditInput) {
     const rule = (await client.query<WeeklyRuleEditRow>(`SELECT rule.id,rule.class_type_id,type.name AS class_name,rule.instructor_id,
       rule.weekday,rule.local_start_time::text,rule.duration_minutes,rule.location_name,rule.location_address,
-      rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text
+      rule.capacity,rule.booking_lead_days,rule.active,rule.generate_from::text,rule.generate_until::text,rule.booking_paused,rule.session_cancelled
       FROM weekly_schedule_rules rule JOIN class_types type ON type.id=rule.class_type_id WHERE rule.id=$1`, [id])).rows[0];
     if (!rule) throw notFound("Pravidelná lekce nebyla nalezena.");
+    const versioned = (await client.query("SELECT id FROM weekly_schedule_rules WHERE id=$1 AND (predecessor_id IS NOT NULL OR generate_until IS NOT NULL)",[id])).rowCount;
+    if(versioned) throw conflict("Tato řada má datum účinnosti. Použijte úpravu pravidelné lekce s náhledem období.");
     const instructor = (await client.query<{ display_name: string }>("SELECT display_name FROM instructors WHERE id=$1 AND active=true", [data.instructorId])).rows[0];
     if (!instructor) throw new HttpException({ code: "VALIDATION_ERROR", message: "Vyberte aktivního instruktora." }, HttpStatus.BAD_REQUEST);
     const duplicate = await client.query("SELECT id FROM weekly_schedule_rules WHERE id<>$1 AND class_type_id=$2 AND weekday=$3", [id, rule.class_type_id, data.weekday]);
@@ -461,7 +465,7 @@ export class AdminService {
   private async classPricePlan(client: PoolClient, data: AdminClassPriceInput): Promise<PricePlan> {
     const type = await client.query<{ name: string }>("SELECT name FROM class_types WHERE id=$1", [data.classTypeId]);
     if (!type.rows[0]) throw notFound("Lekce nebyla nalezena.");
-    const rules = (await client.query<PriceRow>("SELECT id,price_cents FROM weekly_schedule_rules WHERE class_type_id=$1 ORDER BY id", [data.classTypeId])).rows;
+    const rules = (await client.query<PriceRow>("SELECT id,price_cents FROM weekly_schedule_rules WHERE class_type_id=$1 AND (generate_until IS NULL OR generate_until >= (now() AT TIME ZONE 'Europe/Prague')::date) ORDER BY id", [data.classTypeId])).rows;
     const sessions = (await client.query<PriceSessionRow>(`SELECT id,price_cents,status FROM class_sessions
       WHERE class_type_id=$1 AND start_at>now() AND status IN ('scheduled','cancelled') ORDER BY id`, [data.classTypeId])).rows;
     const bookings = (await client.query<PriceBookingRow>(`SELECT booking.id,booking.user_id,booking.price_snapshot_cents,
@@ -537,8 +541,40 @@ export class AdminService {
     return { id: result.rows[0]!.id };
   }
 
+  async previewScheduleChange(data: ScheduleChangeInput) {
+    return this.database.transaction(async (client) => {
+      await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
+      return scheduleChange(client, data, undefined, this);
+    });
+  }
+
+  async applyScheduleChange(data: ScheduleChangeInput & { previewToken: string }, context: MutationContext) {
+    return this.database.transaction(async (client) => {
+      await client.query("LOCK TABLE class_sessions, weekly_schedule_rules, bookings, cancellation_fees IN SHARE ROW EXCLUSIVE MODE");
+      return scheduleChange(client, data, context, this);
+    });
+  }
+
+  async updateSessionCapacity(id: string, capacity: number, context: MutationContext) {
+    return this.database.transaction(async (client) => {
+      const row = (await client.query<{ capacity: number }>("SELECT capacity FROM class_sessions WHERE id=$1 AND status='scheduled' AND start_at>now() FOR UPDATE", [id])).rows[0];
+      if (!row) throw notFound("Budoucí aktivní termín nebyl nalezen.");
+      const active = Number((await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [id])).rows[0]?.count ?? 0);
+      if (capacity < active) throw conflict(`Na termínu je ${active} přihlášených. Kapacita nemůže být nižší.`);
+      await client.query("UPDATE class_sessions SET capacity=$2,updated_at=now() WHERE id=$1", [id,capacity]);
+      await auditWithClient(client, context, "session.capacity_changed", "session", id, { oldCapacity: row.capacity, capacity, activeBookings: active });
+      return { id };
+    });
+  }
+
   async updateSession(id: string, data: AdminSessionInput, context: MutationContext) {
     return this.database.transaction(async (client) => {
+      await client.query("LOCK TABLE class_sessions, weekly_schedule_rules, bookings, cancellation_fees IN SHARE ROW EXCLUSIVE MODE");
+      return this.updateSessionWithClient(client,id,data,context);
+    });
+  }
+
+  async updateSessionWithClient(client: PoolClient, id: string, data: AdminSessionInput, context: MutationContext) {
       const changeReason = data.changeReason ?? "Termín lekce byl upraven.";
       const current = await client.query<EditableSessionRow>(`SELECT class_type_id,instructor_id,start_at,end_at,
         arrival_lead_minutes,location_name,location_address,price_cents,capacity,booking_opens_at,booking_closes_at,
@@ -564,8 +600,11 @@ export class AdminService {
       const startChanged = previous.start_at.getTime() !== startAt.getTime();
       const oldCancellationCutoff = new Date(previous.start_at.getTime() - 24 * 60 * 60_000);
       const nextCancellationCutoff = new Date(startAt.getTime() - 24 * 60 * 60_000);
-      const freeCancellationUntil = startChanged && activeBookings
-        ? new Date(Math.min(startAt.getTime(), Math.max(previous.free_cancellation_until?.getTime() ?? 0, oldCancellationCutoff.getTime(), nextCancellationCutoff.getTime())))
+      const changedForClients = startChanged || previous.class_type_id !== data.classTypeId
+        || previous.instructor_id !== data.instructorId || previous.end_at.getTime() !== endAt.getTime()
+        || previous.location_name !== data.locationName || previous.location_address !== data.locationAddress;
+      const freeCancellationUntil = changedForClients && activeBookings
+        ? new Date(Math.min(startAt.getTime(), Math.max(previous.free_cancellation_until?.getTime() ?? 0, oldCancellationCutoff.getTime(), nextCancellationCutoff.getTime(), Date.now() + 24 * 60 * 60_000)))
         : previous.free_cancellation_until;
       const bookingOpenLead = previous.start_at.getTime() - previous.booking_opens_at.getTime();
       const bookingCloseLead = previous.start_at.getTime() - previous.booking_closes_at.getTime();
@@ -577,7 +616,7 @@ export class AdminService {
         data.locationAddress, data.priceCents, data.capacity, new Date(startAt.getTime() - bookingOpenLead),
         new Date(startAt.getTime() - bookingCloseLead), freeCancellationUntil, data.equipment, data.suitability, changeReason]);
 
-      if (activeBookings) {
+      if (activeBookings && changedForClients) {
         if (startChanged) await client.query("UPDATE bookings SET cancellation_cutoff_at=$2,updated_at=now() WHERE session_id=$1 AND status='reserved'", [id, nextCancellationCutoff]);
         await client.query(`INSERT INTO account_notifications (user_id,booking_id,kind,title,body)
           SELECT user_id,id,'session_changed',$2,$3 FROM bookings WHERE session_id=$1 AND status='reserved'`,
@@ -612,20 +651,11 @@ export class AdminService {
         oldInstructorId: previous.instructor_id, instructorId: data.instructorId
       });
       return { id };
-    });
   }
 
   async cancelSession(id: string, reason: string, context: MutationContext) {
     return this.database.transaction(async (client) => {
-      const session = await client.query("SELECT id FROM class_sessions WHERE id=$1 FOR UPDATE", [id]);
-      if (!session.rowCount) throw notFound("Termín nebyl nalezen.");
-      await client.query("UPDATE class_sessions SET status='cancelled', change_notice=$2, updated_at=now() WHERE id=$1", [id, reason]);
-      await client.query("UPDATE bookings SET status='cancelled_by_studio', cancelled_at=now(), updated_at=now() WHERE session_id=$1 AND status='reserved'", [id]);
-      await client.query("UPDATE cancellation_fees SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='due'", [id]);
-      await client.query(`INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
-        SELECT user_id,id,'session_cancelled','Lekce byla zrušena',$2 FROM bookings WHERE session_id=$1 AND status='cancelled_by_studio'`, [id, reason]);
-      await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='pending'", [id]);
-      await auditWithClient(client, context, "session.cancelled", "session", id, { reason });
+      await this.cancelSessionWithClient(client, id, reason, context);
       return { id, status: "cancelled" };
     });
   }
@@ -668,15 +698,18 @@ export class AdminService {
     });
   }
 
-  private async cancelSessionWithClient(client: PoolClient, id: string, reason: string, context: MutationContext) {
-    const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [id]);
+  async cancelSessionWithClient(client: PoolClient, id: string, reason: string, context: MutationContext) {
+    const session = await client.query("SELECT id FROM class_sessions WHERE id=$1 FOR UPDATE", [id]);
+    if (!session.rowCount) throw notFound("Termín nebyl nalezen.");
     await client.query("UPDATE class_sessions SET status='cancelled', change_notice=$2, updated_at=now() WHERE id=$1", [id, reason]);
-    await client.query("UPDATE bookings SET status='cancelled_by_studio', cancelled_at=now(), updated_at=now() WHERE session_id=$1 AND status='reserved'", [id]);
+    const changed = await client.query<{id:string}>("UPDATE bookings SET status='cancelled_by_studio', cancelled_at=now(), updated_at=now() WHERE session_id=$1 AND status='reserved' RETURNING id", [id]);
+    const bookingIds = changed.rows.map((row) => row.id);
     await client.query("UPDATE cancellation_fees SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='due'", [id]);
-    await client.query(`INSERT INTO account_notifications (user_id, booking_id, kind, title, body) SELECT user_id,id,'session_cancelled','Lekce byla zrušena',$2 FROM bookings WHERE session_id=$1 AND status='cancelled_by_studio'`, [id, reason]);
-    await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status='pending'", [id]);
-    await auditWithClient(client, context, "session.cancelled", "session", id, { reason });
-    return Number(active.rows[0]?.count ?? 0);
+    await client.query(`INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
+      SELECT user_id,id,'session_cancelled','Lekce byla zrušena',$2 FROM bookings WHERE id=ANY($1::uuid[])`, [bookingIds, reason]);
+    await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id IN (SELECT id FROM bookings WHERE session_id=$1) AND status IN ('pending','failed')", [id]);
+    await auditWithClient(client, context, "session.cancelled", "session", id, { reason, affectedBookings: bookingIds.length });
+    return bookingIds.length;
   }
 
   private async moveSessionWithClient(client: PoolClient, session: BatchSessionRow, startAt: Date, reason: string, context: MutationContext) {
@@ -749,7 +782,7 @@ export class AdminService {
   }
 }
 
-function mapAdminSession(row: AdminSessionRow) { return { id: row.id, classTypeId: row.class_type_id, className: row.class_name, instructorId: row.instructor_id, instructorName: row.instructor_name, startAt: row.start_at.toISOString(), endAt: row.end_at.toISOString(), arrivalLeadMinutes: row.arrival_lead_minutes, locationName: row.location_name, locationAddress: row.location_address, priceCents: row.price_cents, capacity: row.capacity, bookingCount: row.booking_count, status: row.status, equipment: row.equipment, suitability: row.suitability, changeNotice: row.change_notice }; }
+function mapAdminSession(row: AdminSessionRow) { return { id: row.id, classTypeId: row.class_type_id, className: row.class_name, instructorId: row.instructor_id, instructorName: row.instructor_name, startAt: row.start_at.toISOString(), endAt: row.end_at.toISOString(), arrivalLeadMinutes: row.arrival_lead_minutes, locationName: row.location_name, locationAddress: row.location_address, priceCents: row.price_cents, capacity: row.capacity, bookingCount: row.booking_count, status: row.status, equipment: row.equipment, suitability: row.suitability, changeNotice: row.change_notice, bookingPaused: row.booking_paused }; }
 function shiftLocalDate(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 }

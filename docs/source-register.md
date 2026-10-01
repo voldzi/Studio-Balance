@@ -183,3 +183,7 @@ zdrojový web popisuje jako „Klidné masážní studio Železná Lady“. Zada
 schválil zařazení partnerské sekce podle CD-051. Generovaný ilustrační obraz z
 návrhu se v produkci nepoužívá. SHA-256 lokální kopie je
 `553bcd84e37d5b9fa15dba2b7f7c2eb9708b5191f8881bc5e6fad4e2b140b767`.
+
+- 2026-10-01: `WhatsApp Image 2026-10-01 at 19.23.29.jpeg`, opravený
+  schválený plakát Body Sculpt; produkční kopie
+  `apps/web/public/images/studio-balance/lessons/body-sculpt.jpeg`, CD-061.

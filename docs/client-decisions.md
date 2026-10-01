@@ -302,3 +302,18 @@ dříve ručně vypsaných. Individuálně změněné termíny jsou výjimky a s
 je může upravit samostatně. Rezervace se při přesunu zachovají, klienti
 dostanou oznámení, snížení kapacity pod počet přihlášených nebo kolize se
 odmítne. Cena celé lekce se spravuje oddělenou akcí podle CD-058.
+
+## CD-061 — Pohodlná správa a Body Sculpt (1. 10. 2026)
+
+Zadavatel schválil realizaci správy pravidelných lekcí podle data, konkrétního
+týdenního času nebo více vybraných lekcí. Rozsah a dopad na rezervace musí být
+viditelné před potvrzením. Pozastavení nových rezervací je odlišné od zrušení
+lekce. Obnovení zrušeného termínu nikdy neobnoví zrušené rezervace.
+
+Nicola potvrdila kapacitu všech budoucích kruhových tréninků 14. Historická
+účast se nepřepisuje a kapacita nesmí klesnout pod počet potvrzených rezervací.
+Od 8. 10. 2026 čtvrteční 17:00–18:00 nahrazuje Balance Flow lekce **Body Sculpt**,
+vede Nicola Lojšková, cena 160 Kč, kapacita 14. Pondělní Balance Flow zůstává.
+Nový dodaný plakát `WhatsApp Image 2026-10-01 at 19.23.29.jpeg` je podkladem
+k této lekci; název Body Sculp je překonaný. Dosavadní aktivní rezervace se
+zachovají s oznámením a bezplatným oknem pro odmítnutí podstatné změny.

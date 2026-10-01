@@ -17,6 +17,9 @@ const config: RuntimeConfig = { apiPort: 3001, databaseUrl: "postgresql://unused
 
 describe("admin authorization", () => {
   let app: NestFastifyApplication | undefined;
+  const previewScheduleChange = vi.fn(async () => ({ previewToken: "c".repeat(64), terms: [], exceptions: [], slots: [], rulesChanged: 1, sessionsChanged: 0, activeBookings: 0, cancelledSessionsKept: 0 }));
+  const applyScheduleChange = vi.fn(async () => ({ rulesChanged: 1, sessionsChanged: 0 }));
+  const updateSessionCapacity = vi.fn(async (id: string) => ({id}));
   const updateSession = vi.fn(async (id: string) => ({ id }));
   const updateWeeklyRule = vi.fn(async (id: string, active: boolean) => ({ id, active }));
   const previewClassPrice = vi.fn(async () => ({ className: "Barre", weeklyRulesChanged: 2, sessionsChanged: 3, activeBookings: 1, bookedPricesChanged: 0, blockedBookings: 0, previewToken: "a".repeat(64) }));
@@ -27,7 +30,7 @@ describe("admin authorization", () => {
   afterEach(async () => { await app?.close(); });
 
   async function createApplication() {
-    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateWeeklyRule, previewWeeklyRuleEdit, applyWeeklyRuleEdit, changeScheduleBatch, previewClassPrice, applyClassPrice } }] }).compile();
+    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateSessionCapacity, previewScheduleChange, applyScheduleChange, updateWeeklyRule, previewWeeklyRuleEdit, applyWeeklyRuleEdit, changeScheduleBatch, previewClassPrice, applyClassPrice } }] }).compile();
     const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false });
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
@@ -134,4 +137,17 @@ describe("admin authorization", () => {
     expect(response.statusCode).toBe(201);
     expect(changeScheduleBatch).toHaveBeenCalledWith(payload, expect.any(Object));
   });
+  it("guards date-scoped changes with MFA and validates scope and confirmation",async()=>{
+    const current=await createApplication();const payload={ruleIds:["71ff7570-dabb-488b-bb6e-43e36ddc602e"],from:"2026-10-08",operation:"edit",capacity:14,reopenCancelled:false,updateBookedPrices:false,reason:"Nová kapacita kruhových tréninků."};
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/preview",payload})).statusCode).toBe(401);
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/preview",headers:{cookie:await cookie(["admin"],"sb_admin_session",false)},payload})).statusCode).toBe(403);
+    const headers={cookie:await cookie(["admin"])};
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/preview",headers,payload:{...payload,from:"2026-02-30"}})).statusCode).toBe(400);
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/preview",headers,payload:{...payload,capacity:0}})).statusCode).toBe(400);
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/preview",headers,payload})).statusCode).toBe(201);
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/apply",headers,payload})).statusCode).toBe(400);
+    expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/apply",headers,payload:{...payload,previewToken:"c".repeat(64)}})).statusCode).toBe(201);
+    expect((await current.inject({method:"PATCH",url:"/api/v1/admin/sessions/71ff7570-dabb-488b-bb6e-43e36ddc602e/capacity",headers,payload:{capacity:14}})).statusCode).toBe(200);
+  });
+
 });

@@ -615,6 +615,57 @@ export interface paths {
         patch: operations["adminUpdateWeeklyRule"];
         trace?: never;
     };
+    "/api/v1/admin/schedule-changes/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview a date-scoped schedule change for selected weekly times */
+        post: operations["adminPreviewScheduleChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/schedule-changes/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a reviewed date-scoped schedule change atomically */
+        post: operations["adminApplyScheduleChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sessions/{id}/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change only a future session capacity without client notifications */
+        patch: operations["adminUpdateSessionCapacity"];
+        trace?: never;
+    };
     "/api/v1/admin/weekly-rules/{id}/preview": {
         parameters: {
             query?: never;
@@ -1499,6 +1550,7 @@ export interface components {
             bookingCount: number;
             /** @enum {string} */
             status: "scheduled" | "cancelled" | "completed";
+            bookingPaused?: boolean;
         } & {
             [key: string]: unknown;
         };
@@ -1520,6 +1572,106 @@ export interface components {
             active: boolean;
             /** Format: date */
             generateFrom: string;
+            /** Format: date */
+            generateUntil?: string | null;
+            bookingPaused?: boolean;
+            sessionCancelled?: boolean;
+        };
+        AdminScheduleChangeInput: {
+            ruleIds: string[];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            through?: string;
+            /** @enum {string} */
+            operation: "edit" | "close" | "cancel" | "open";
+            /** Format: uuid */
+            classTypeId?: string;
+            /** Format: uuid */
+            instructorId?: string;
+            weekday?: number;
+            localStartTime?: string;
+            durationMinutes?: number;
+            capacity?: number;
+            priceCents?: number;
+            bookingLeadDays?: number;
+            reopenCancelled: boolean;
+            updateBookedPrices: boolean;
+            reason: string;
+        };
+        AdminScheduleChangeApplyInput: {
+            ruleIds: string[];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            through?: string;
+            /** @enum {string} */
+            operation: "edit" | "close" | "cancel" | "open";
+            /** Format: uuid */
+            classTypeId?: string;
+            /** Format: uuid */
+            instructorId?: string;
+            weekday?: number;
+            localStartTime?: string;
+            durationMinutes?: number;
+            capacity?: number;
+            priceCents?: number;
+            bookingLeadDays?: number;
+            reopenCancelled: boolean;
+            updateBookedPrices: boolean;
+            reason: string;
+            previewToken: string;
+        };
+        AdminScheduleChangePreview: {
+            rulesChanged: number;
+            sessionsChanged: number;
+            activeBookings: number;
+            cancelledSessionsKept: number;
+            previewToken: string;
+            terms: {
+                /** Format: uuid */
+                id: string;
+                /** Format: date-time */
+                startAt: string;
+                /** Format: date-time */
+                newStartAt: string;
+                status: string;
+                bookings: number;
+                before: string;
+                after: string;
+                capacity: number;
+                priceCents: number;
+                changed: boolean;
+            }[];
+            exceptions: {
+                /** Format: uuid */
+                id: string;
+                /** Format: date-time */
+                startAt: string;
+            }[];
+            slots: {
+                /** Format: date */
+                from: string;
+                /** Format: date */
+                through: string | null;
+                before: {
+                    name: string;
+                    weekday: number;
+                    time: string;
+                    capacity: number;
+                    priceCents: number;
+                };
+                after: {
+                    name: string;
+                    weekday: number;
+                    time: string;
+                    capacity: number;
+                    priceCents: number;
+                };
+            }[];
+        };
+        AdminSessionCapacityInput: {
+            capacity: number;
         };
         AdminWeeklyRuleEditInput: {
             weekday: number;
@@ -2722,6 +2874,93 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+        };
+    };
+    adminPreviewScheduleChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminScheduleChangeInput"];
+            };
+        };
+        responses: {
+            /** @description Reviewed impact; apply preserves historical and cancelled bookings. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScheduleChangePreview"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminApplyScheduleChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminScheduleChangeApplyInput"];
+            };
+        };
+        responses: {
+            /** @description Reviewed impact; apply preserves historical and cancelled bookings. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScheduleChangePreview"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    adminUpdateSessionCapacity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSessionCapacityInput"];
+            };
+        };
+        responses: {
+            /** @description Audited capacity change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMutationResponse"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
     adminPreviewWeeklyRuleEdit: {

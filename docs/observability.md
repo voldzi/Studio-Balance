@@ -177,3 +177,11 @@ Metadata obsahují počty rezervací, nikoli jména. Při změně času nebo lek
 se sleduje doručení `session_changed` z outboxu; samotný zápis do outboxu
 není potvrzení doručení. Konflikt nebo zastaralý náhled nesmí zanechat
 částečně upravený rozvrh.
+
+## Audit změn rozvrhu
+
+`weekly_schedule_rule.versioned` zaznamená předchůdce, datum od/do, vybrané
+hodnoty, termíny a zachované výjimky. `session.capacity_changed` zaznamená
+původní/novou kapacitu a počet rezervací; `booking.price_changed` explicitní
+přecenění. requestId a admin subject navazují na existující audit.
+Při konfliktním náhledu nevznikne částečný audit ani rozpracovaná verze.

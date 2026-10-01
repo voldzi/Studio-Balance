@@ -189,3 +189,14 @@ soubory mají názvy podle SHA-256. Obnovu skutečných dat provádět s
 kontrolou databázových vazeb, nepřepisovat současné fotografie automaticky.
 Denní a hodinový záznam je v crontabu provozního účtu mezi značkami
 `BEGIN/END STUDIO BALANCE MEDIA BACKUP`. Ostatní cron úlohy se nemění.
+
+## Správa běžné změny lekcí
+
+1. Rozvrh → pravidelný čas → Upravit pravidelnou lekci.
+2. Vybrat změnu a rozsah; pro všechny kruháče vybrat všechny časy Kruhového
+   tréninku. Pro čtvrteční náhradu nechat pouze čtvrtek 17:00.
+3. Vyplnit datum od, případně do, hodnoty a vysvětlení. Zkontrolovat dopad.
+4. Prověřit konkrétní termíny, výjimky a rezervace; potvrdit.
+5. Pro jednotlivou kapacitu použít Změnit kapacitu přímo u termínu.
+6. Při souběhu znovu načíst náhled. Nepřepisovat databázi ani nesnižovat
+   kapacitu pod potvrzené klienty. Obnova termínu neobnoví zrušené klienty.

@@ -16,6 +16,9 @@ type Rule = {
   equipment: string;
   suitability: string;
   generate_from: string;
+  generate_until: string | null;
+  booking_paused: boolean;
+  session_cancelled: boolean;
 };
 
 export function localDates(from: string, through: string): { date: string; weekday: number }[] {
@@ -48,7 +51,7 @@ export async function generateWeeklySchedule(pool: Pool): Promise<{ created: num
     const rules = await client.query<Rule>(`SELECT rule.id,rule.class_type_id,rule.instructor_id,rule.weekday,
       rule.local_start_time::text,rule.duration_minutes,rule.arrival_lead_minutes,
       rule.location_name,rule.location_address,rule.price_cents,rule.capacity,
-      rule.booking_lead_days,rule.equipment,rule.suitability,rule.generate_from::text
+      rule.booking_lead_days,rule.equipment,rule.suitability,rule.generate_from::text,rule.generate_until::text,rule.booking_paused,rule.session_cancelled
       FROM weekly_schedule_rules rule
       JOIN class_types type ON type.id=rule.class_type_id AND type.active=true
       JOIN instructors instructor ON instructor.id=rule.instructor_id AND instructor.active=true
@@ -57,33 +60,34 @@ export async function generateWeeklySchedule(pool: Pool): Promise<{ created: num
     let skipped = 0;
     for (const { date, weekday } of localDates(firstDate, lastDate)) {
       for (const rule of rules.rows) {
-        if (rule.weekday !== weekday || date < rule.generate_from) continue;
+        if (rule.weekday !== weekday || date < rule.generate_from || (rule.generate_until && date > rule.generate_until)) continue;
         if (await existsForOccurrence(client, rule, date)) { skipped++; continue; }
         const time = await client.query<{ start_at: Date }>(
           "SELECT (($1::date + $2::time) AT TIME ZONE 'Europe/Prague') AS start_at",
           [date, rule.local_start_time]
         );
         const startAt = time.rows[0]?.start_at;
+        if (startAt && startAt <= new Date()) { skipped++; continue; }
         if (!startAt) throw new Error(`Unable to calculate the session start for ${date}.`);
         const collision = await client.query<{ id: string }>(`SELECT id FROM class_sessions
           WHERE status='scheduled' AND start_at < $2::timestamptz + make_interval(mins => $3)
             AND end_at > $2 AND (instructor_id=$1 OR (location_name=$4 AND location_address=$5))
           LIMIT 1`, [rule.instructor_id, startAt, rule.duration_minutes, rule.location_name, rule.location_address]);
-        if (collision.rowCount) throw new Error(`Weekly session conflicts with another lesson on ${date} at ${rule.local_start_time}.`);
+        if (collision.rowCount && !rule.session_cancelled) throw new Error(`Weekly session conflicts with another lesson on ${date} at ${rule.local_start_time}.`);
         const inserted = await client.query<{ id: string }>(`INSERT INTO class_sessions (
           class_type_id,instructor_id,start_at,end_at,arrival_lead_minutes,location_name,
           location_address,price_cents,capacity,booking_opens_at,booking_closes_at,
-          equipment,suitability,weekly_rule_id,weekly_occurrence_date
+          equipment,suitability,weekly_rule_id,weekly_occurrence_date,booking_paused,status
         ) VALUES (
           $1,$2,$3,$3::timestamptz + make_interval(mins => $4),$5,$6,$7,$8,$9,
           $3::timestamptz - make_interval(days => $10),$3::timestamptz - interval '30 minutes',
-          $11,$12,$13,$14
+          $11,$12,$13,$14,$15,$16
         ) ON CONFLICT (weekly_rule_id,weekly_occurrence_date) WHERE weekly_rule_id IS NOT NULL
           DO NOTHING RETURNING id`, [
           rule.class_type_id,rule.instructor_id,startAt,rule.duration_minutes,
           rule.arrival_lead_minutes,rule.location_name,rule.location_address,
           rule.price_cents,rule.capacity,rule.booking_lead_days,rule.equipment,
-          rule.suitability,rule.id,date
+          rule.suitability,rule.id,date,rule.booking_paused,rule.session_cancelled ? "cancelled" : "scheduled"
         ]);
         if (!inserted.rows[0]) { skipped++; continue; }
         await client.query(`INSERT INTO application_audit

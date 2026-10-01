@@ -66,6 +66,7 @@ export class BookingService {
       await requireOpenStudio(client);
       const row = await lockedSession(client, input.sessionId);
       if (!row) throw domainError("RESOURCE_NOT_FOUND", "Termín nebyl nalezen.", HttpStatus.NOT_FOUND);
+      if (row.booking_paused) throw domainError("BOOKING_STATE_CONFLICT", "Rezervace na tuto lekci jsou dočasně pozastavené.", HttpStatus.CONFLICT);
       const activeBookings = await activeBookingCount(client, row.id);
       const availability = sessionAvailability({
         activeBookings,
@@ -241,7 +242,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
       s.location_address,
       s.price_cents,
       s.capacity,
-      s.status AS session_status,
+      s.status AS session_status, s.booking_paused,
       s.booking_opens_at,
       s.booking_closes_at,
       s.equipment,
@@ -271,7 +272,7 @@ async function lockedSession(client: PoolClient, id: string): Promise<LockedSess
   const result = await client.query<LockedSessionRow>(`
     SELECT
       s.id, s.start_at, s.end_at, s.arrival_lead_minutes, s.location_name, s.location_address,
-      s.price_cents, s.capacity, s.status, s.booking_opens_at, s.booking_closes_at,
+      s.price_cents, s.capacity, s.status, s.booking_paused, s.booking_opens_at, s.booking_closes_at,
       s.free_cancellation_until, s.equipment, s.suitability, s.change_notice,
       ct.name AS class_name, ct.slug AS class_slug, ct.tagline AS class_tagline, ct.what_to_bring,
       i.id AS instructor_id, i.display_name AS instructor_name,

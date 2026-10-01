@@ -1,7 +1,9 @@
 import "reflect-metadata";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
-import { Client } from "pg";
+import { Client, type Pool } from "pg";
+import { generateWeeklySchedule } from "../../../worker/src/weekly-schedule.js";
+import { ScheduleService } from "../schedule/schedule.service.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AdminService } from "../admin/admin.service.js";
 import type { StudioSession } from "../auth/session.js";
@@ -176,4 +178,118 @@ describe.skipIf(!databaseUrl)("admin recurring lesson edit (local PostgreSQL)", 
     await expect(admin.previewWeeklyRuleEdit(ruleId, { ...input(), localStartTime: "16:00" }))
       .rejects.toThrow("pravidelný čas koliduje");
   });
+  function change(overrides: Record<string, unknown> = {}) {
+    return { ruleIds:[ruleId],from:localDate,operation:"edit" as const,
+      capacity:7,reopenCancelled:false,updateBookedPrices:false,reason:"Změna kapacity pravidelné lekce.",...overrides };
+  }
+
+  it("versions an effective capacity change without rewriting the old rule or notifying clients", async () => {
+    const data=change();const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    const original=(await client.query("SELECT capacity,generate_until::text FROM weekly_schedule_rules WHERE id=$1",[ruleId])).rows[0];
+    expect(original.capacity).toBe(8);expect(original.generate_until<localDate).toBe(true);
+    const updated=(await client.query("SELECT capacity,weekly_rule_id FROM class_sessions WHERE id=$1",[sessionId])).rows[0];
+    expect(updated.capacity).toBe(7);expect(updated.weekly_rule_id).not.toBe(ruleId);
+    expect((await client.query("SELECT count(*)::int AS n FROM notification_outbox WHERE booking_id=$1",[bookingId])).rows[0].n).toBe(0);
+    expect((await client.query("SELECT status,price_snapshot_cents FROM bookings WHERE id=$1",[bookingId])).rows[0]).toMatchObject({status:"reserved",price_snapshot_cents:27000});
+  });
+
+  it("binds capacity and price preview to concurrent reservations and rolls back all rule versions", async () => {
+    const data=change();const preview=await admin.previewScheduleChange(data);
+    await client.query("UPDATE bookings SET price_snapshot_cents=25000 WHERE id=$1",[bookingId]);
+    await expect(admin.applyScheduleChange({...data,previewToken:preview.previewToken},context)).rejects.toThrow("Zkontrolujte dopad");
+    expect((await client.query("SELECT count(*)::int AS n FROM weekly_schedule_rules WHERE predecessor_id=$1",[ruleId])).rows[0].n).toBe(0);
+    expect((await client.query("SELECT capacity FROM class_sessions WHERE id=$1",[sessionId])).rows[0].capacity).toBe(8);
+  });
+
+  it("replaces the selected slot, preserves reservations and provides a fee-free refusal window", async () => {
+    const body=(await client.query("SELECT id FROM class_types WHERE slug='body-sculpt'")).rows[0].id as string;
+    const data=change({classTypeId:body,priceCents:16000});
+    const preview=await admin.previewScheduleChange(data);await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    const row=(await client.query("SELECT class_type_id,price_cents,free_cancellation_until FROM class_sessions WHERE id=$1",[sessionId])).rows[0];
+    expect(row.class_type_id).toBe(body);expect(row.price_cents).toBe(16000);expect(row.free_cancellation_until.getTime()).toBeGreaterThan(Date.now()+23*3600000);
+    expect((await client.query("SELECT status,price_snapshot_cents FROM bookings WHERE id=$1",[bookingId])).rows[0]).toMatchObject({status:"reserved",price_snapshot_cents:27000});
+    expect((await client.query("SELECT count(*)::int AS n FROM account_notifications WHERE booking_id=$1",[bookingId])).rows[0].n).toBe(1);
+    expect((await client.query("SELECT class_type_id FROM weekly_schedule_rules WHERE weekday=2 AND class_type_id=(SELECT id FROM class_types WHERE slug='barre')")).rowCount).toBe(1);
+  });
+
+  it("opens a cancelled term only explicitly and never resurrects its cancelled booking", async () => {
+    await client.query("UPDATE class_sessions SET status='cancelled' WHERE id=$1",[sessionId]);
+    await client.query("UPDATE bookings SET status='cancelled_by_studio' WHERE id=$1",[bookingId]);
+    const kept=await admin.previewScheduleChange(change());expect(kept.cancelledSessionsKept).toBe(1);
+    const data=change({operation:"open",reopenCancelled:true});const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    expect((await client.query("SELECT status,booking_paused FROM class_sessions WHERE id=$1",[sessionId])).rows[0]).toMatchObject({status:"scheduled",booking_paused:false});
+    expect((await client.query("SELECT status FROM bookings WHERE id=$1",[bookingId])).rows[0].status).toBe("cancelled_by_studio");
+  });
+
+  it("closes new reservations while retaining attendance and restores the original plan after a bounded period", async () => {
+    const data=change({operation:"close",through:localDate});const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    expect((await client.query("SELECT status,booking_paused FROM class_sessions WHERE id=$1",[sessionId])).rows[0]).toMatchObject({status:"scheduled",booking_paused:true});
+    expect((await client.query("SELECT status FROM bookings WHERE id=$1",[bookingId])).rows[0].status).toBe("reserved");
+    const versions=(await client.query("SELECT booking_paused,generate_from::text,generate_until::text FROM weekly_schedule_rules WHERE predecessor_id=$1 ORDER BY generate_from",[ruleId])).rows;
+    expect(versions).toHaveLength(2);expect(versions[0].booking_paused).toBe(true);expect(versions[1].booking_paused).toBe(false);
+    expect(versions[1].generate_from>localDate).toBe(true);
+  });
+
+  it("cancels sessions and bookings without fees, even when capacity would be lower than attendance", async () => {
+    const data=change({operation:"cancel"});const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    expect((await client.query("SELECT status FROM class_sessions WHERE id=$1",[sessionId])).rows[0].status).toBe("cancelled");
+    expect((await client.query("SELECT status FROM bookings WHERE id=$1",[bookingId])).rows[0].status).toBe("cancelled_by_studio");
+    expect((await client.query("SELECT count(*)::int AS n FROM cancellation_fees WHERE booking_id=$1",[bookingId])).rows[0].n).toBe(0);
+    await admin.cancelSession(sessionId,"Opakované zrušení",context);
+    expect((await client.query("SELECT count(*)::int AS n FROM account_notifications WHERE booking_id=$1 AND kind='session_cancelled'",[bookingId])).rows[0].n).toBe(1);
+  });
+
+  it("reprices confirmed reservations only by explicit choice and refuses protected fee snapshots", async () => {
+    const data=change({priceCents:16000,updateBookedPrices:true});const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    expect((await client.query("SELECT price_snapshot_cents FROM bookings WHERE id=$1",[bookingId])).rows[0].price_snapshot_cents).toBe(16000);
+    const nextRule=(await client.query("SELECT weekly_rule_id FROM class_sessions WHERE id=$1",[sessionId])).rows[0].weekly_rule_id as string;
+    await client.query("INSERT INTO cancellation_fees (booking_id,user_id,amount_cents) SELECT id,user_id,16000 FROM bookings WHERE id=$1",[bookingId]);
+    await expect(admin.previewScheduleChange({...data,ruleIds:[nextRule],priceCents:18000})).rejects.toThrow("poplatkem");
+  });
+
+  it("leaves individually moved exceptions unchanged and exposes their exact dates", async () => {
+    await client.query("UPDATE class_sessions SET start_at=start_at+interval '1 hour',end_at=end_at+interval '1 hour' WHERE id=$1",[sessionId]);
+    const data=change();const preview=await admin.previewScheduleChange(data);
+    expect(preview.exceptions.some((t)=>t.id===sessionId)).toBe(true);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    expect((await client.query("SELECT capacity FROM class_sessions WHERE id=$1",[sessionId])).rows[0].capacity).toBe(8);
+  });
+
+  it("supports the fast single-term capacity action and rejects overbooking", async () => {
+    await admin.updateSessionCapacity(sessionId,2,context);
+    expect((await client.query("SELECT capacity FROM class_sessions WHERE id=$1",[sessionId])).rows[0].capacity).toBe(2);
+    const user=(await client.query("INSERT INTO user_profiles (oidc_subject,email) VALUES ($1,'capacity2@example.test') RETURNING id",[randomUUID()])).rows[0].id;
+    await client.query("INSERT INTO bookings (user_id,session_id,status,source,price_snapshot_cents,terms_version,cancellation_cutoff_at) SELECT $1,$2,'reserved','web',27000,'test',start_at-interval '24 hours' FROM class_sessions WHERE id=$2",[user,sessionId]);
+    await expect(admin.updateSessionCapacity(sessionId,1,context)).rejects.toThrow("2 přihlášených");
+    expect((await client.query("SELECT capacity FROM class_sessions WHERE id=$1",[sessionId])).rows[0].capacity).toBe(2);
+  });
+
+  it("keeps weekly generation idempotent across effective versions and Prague daylight saving", async () => {
+    const today=(await client.query("SELECT (now() AT TIME ZONE 'Europe/Prague')::date::text AS today")).rows[0].today as string;
+    const data=change({from:today,localStartTime:"09:00"});const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    const pool={connect:async()=>({query:client.query.bind(client),release:()=>undefined})} as unknown as Pool;
+    await generateWeeklySchedule(pool);
+    const again=await generateWeeklySchedule(pool);expect(again.created).toBe(0);
+    const terms=(await client.query(`SELECT to_char(start_at AT TIME ZONE 'Europe/Prague','HH24:MI') AS local_time,
+      extract(hour FROM start_at AT TIME ZONE 'UTC')::int AS utc_hour FROM class_sessions
+      WHERE weekly_rule_id IN(SELECT id FROM weekly_schedule_rules WHERE predecessor_id=$1)
+      AND (start_at AT TIME ZONE 'Europe/Prague')::date IN ('2026-10-21','2026-10-28') ORDER BY start_at`,[ruleId])).rows;
+    if(today <= "2026-10-21")expect(terms).toEqual([{local_time:"09:00",utc_hour:7},{local_time:"09:00",utc_hour:8}]);
+    expect((await client.query("SELECT capacity FROM weekly_schedule_rules WHERE id=$1",[ruleId])).rows[0].capacity).toBe(8);
+  });
+
+  it("returns closed publicly for a paused session without exposing capacity", async () => {
+    const data=change({operation:"close"});const preview=await admin.previewScheduleChange(data);
+    await admin.applyScheduleChange({...data,previewToken:preview.previewToken},context);
+    const schedule=new ScheduleService({query:client.query.bind(client)} as unknown as DatabaseService);
+    const term=await schedule.getSession(sessionId);expect(term?.availability).toBe("closed");
+    expect(term).not.toHaveProperty("capacity");expect(term).not.toHaveProperty("activeBookings");
+  });
+
 });

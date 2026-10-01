@@ -39,6 +39,16 @@ const weeklyRuleEditSchema = z.object({
   reason: z.string().trim().min(3).max(1000)
 }).strict();
 
+const scheduleChangeSchema = z.object({
+  ruleIds: z.array(uuid).min(1).max(50), from: z.iso.date(), through: z.iso.date().optional(),
+  operation: z.enum(["edit", "close", "cancel", "open"]),
+  classTypeId: uuid.optional(), instructorId: uuid.optional(), weekday: z.number().int().min(1).max(7).optional(),
+  localStartTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+  durationMinutes: z.number().int().min(15).max(240).optional(), capacity: z.number().int().min(1).max(500).optional(),
+  priceCents: z.number().int().min(0).max(1_000_000).optional(), bookingLeadDays: z.number().int().min(1).max(93).optional(),
+  reopenCancelled: z.boolean(), updateBookedPrices: z.boolean(), reason: z.string().trim().min(3).max(1000)
+}).strict();
+
 @Controller("api/v1/admin")
 @UseGuards(AdminRoleGuard)
 export class AdminController {
@@ -57,6 +67,16 @@ export class AdminController {
     const end = to ? new Date(to) : new Date(Date.now() + 93 * 86_400_000);
     if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start || end.getTime() - start.getTime() > 366 * 86_400_000) throw validation();
     return this.admin.listSessions(start, end);
+  }
+  @Post("schedule-changes/preview") previewScheduleChange(@Body() body: unknown) {
+    return this.admin.previewScheduleChange(parse(scheduleChangeSchema, body));
+  }
+  @Post("schedule-changes/apply") applyScheduleChange(@Req() request: AdminRequest, @Body() body: unknown) {
+    return this.admin.applyScheduleChange(parse(scheduleChangeSchema.extend({ previewToken: z.string().regex(/^[a-f0-9]{64}$/) }), body), context(request));
+  }
+  @Patch("sessions/:id/capacity") updateSessionCapacity(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
+    const data = parse(z.object({ capacity: z.number().int().min(1).max(500) }).strict(), body);
+    return this.admin.updateSessionCapacity(parseId(id),data.capacity,context(request));
   }
   @Get("weekly-rules") weeklyRules() { return this.admin.listWeeklyRules(); }
   @Patch("weekly-rules/:id") updateWeeklyRule(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {

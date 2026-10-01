@@ -35,6 +35,10 @@ describe.skipIf(!databaseUrl)("studio portraits and the Wednesday migration (loc
       await client.query(await readFile(new URL(file, directory), "utf8"));
     }
     await client.query(await readFile(new URL("0018_studio_opening.sql", directory), "utf8"));
+    // Current services need the later schema, without replaying later catalogue/data changes.
+    const weeklyDdl = (await readFile(new URL("0021_weekly_schedule_generation.sql", directory), "utf8")).split("-- The confirmed, manually published opening horizon")[0]!;
+    await client.query(weeklyDdl);
+    await client.query(await readFile(new URL("0026_effective_schedule_rules.sql", directory), "utf8"));
     await client.query("UPDATE studio_operation SET requested_open=true, registration_synced=true");
     const date = new Date(Date.UTC(new Date().getUTCFullYear() + 2, 2, 23));
     while (date.getUTCDay() !== 4) date.setUTCDate(date.getUTCDate() + 1);

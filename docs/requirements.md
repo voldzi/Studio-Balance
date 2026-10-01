@@ -287,3 +287,10 @@ instruktora, kapacitu a předstih rezervací každého pravidelného času.
 Odpovídající budoucí termíny se aktualizují atomicky; potvrzené rezervace
 zachovají identitu a cenový snapshot. Kolize, přeplnění a zastaralý náhled
 změnu zablokují, změna času či instruktora odešle provozní oznámení.
+
+## Správa rozvrhu s účinností
+
+CD-061 / ADR 0018: správce upraví kapacitu jednoho termínu nebo vybrané
+pravidelné časy od místního data; náhrada typu, cena, pozastavení a obnovení
+musí zahrnout vypsané termíny i generátor. Historie a zrušené rezervace se
+neobnovují. Datum ukončení je včetně; další den vrací původní plán.
