@@ -110,3 +110,26 @@ Use this private artifact path while the optional public GitHub push is blocked.
 Only the isolated analytics branch is included; unrelated original-workspace edits
 remain excluded. Owner review is still required before either enabled or
 privacyNoticeApproved is switched on.
+
+### Production receipt — 2026-10-04
+
+Deployed application revision: `9946f7e` from clean local Git archive via the normal
+private SSH artifact release. Previous baseline: `8cbd727`. Production readiness
+reports version 9946f7e; API/web/worker all healthy. No GitHub push or DMZ change.
+Both `enabled:false` and `privacyNoticeApproved:false` remain compiled into the release.
+Public tracker GET now returns the final runtime; SHA-384 matches the pinned SRI.
+An initial transient 404 was observed before the final successful verification.
+
+Browser acceptance: homepage content/lesson list loaded, public schedule navigation
+worked and the authenticated client account loaded. No analytics script exists in
+DOM, the draft privacy section is absent and captured page-navigation requests show
+zero `/analytics/` requests (capture complete, not truncated). Admin entry rendered
+the login screen; authenticated admin operations were not retested and no credentials
+or production bookings were entered. This is disabled-integration acceptance, not
+activation, new analytics ingestion or revised admin identity acceptance.
+
+Local gates passed: all 59 web tests (33 analytics guard/contract tests), lint,
+web typecheck, repo/theme/OpenAPI validation and web production build. Common shared
+receiver tests remain the responsibility/evidence of the central VCode deployment.
+CS/EN draft matches the central owner-review revision. Publication and activation
+remain pending explicit approval; no measured production visits were created.
