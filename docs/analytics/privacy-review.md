@@ -36,3 +36,10 @@ zapíná koordinátor až po ověření zveřejněného doplňku. Dokud není po
 nejde o potvrzení fungujícího end-to-end sběru.
 Česky: https://studio-balance.cz/#public-analytics-privacy-title
 English: https://studio-balance.cz/#public-analytics-privacy-en (rozbalit English).
+
+## Schválená náhrada v2 (kandidát, dosud nenasazeno)
+
+Konkrétní společný odstavec z VCode 6dc4dd3 schválil vlastník v a56b160.
+Aktuální kandidát používá expanded-metrics-review.md; nahrazuje pouze druhý
+odstavec obou jazyků. Výše uvedený text je zachován jako v1 fallback. Produkce
+zůstává na v1, dokud koordinátor nepřidělí nasazovací slot a neproběhne ověření.

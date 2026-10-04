@@ -22,3 +22,18 @@ for flag in enabled privacyNoticeApproved; do
     echo "Deployment refused: approved analytics flag ${flag} is disabled." >&2; exit 1;
   }
 done
+
+# Preserve specifically approved v2 in the release candidate, with retained v1 fallback.
+for flag in enabled privacyNoticeApproved; do
+  git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q "${flag}: true" || {
+    echo "Deployment refused: approved v2 flag ${flag} is disabled." >&2; exit 1;
+  }
+done
+
+for path in apps/web/lib/public-analytics-notice-v2.ts apps/web/lib/public-analytics-v2.test.ts apps/web/components/public-analytics-link.tsx docs/analytics/expanded-metrics-review.md; do
+  git -C "$root" cat-file -e "$version:$path" || { echo "Deployment refused: approved v2 file missing $path." >&2; exit 1; }
+done
+for path in apps/web/components/social-links.tsx apps/web/components/massage-partner-section.tsx; do
+  git -C "$root" show "$version:$path" | rg -q 'analyticsEvent="outbound-click"' || { echo "Deployment refused: explicit outbound handler missing $path." >&2; exit 1; }
+done
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'sha384-4mn0sN5UeFuzSjaXlbulwbJz7N38PPOovouC9Xp3OHD0r94YKgx8B2RAk/nK6mg0' || { echo "Deployment refused: approved v2 integrity changed." >&2; exit 1; }

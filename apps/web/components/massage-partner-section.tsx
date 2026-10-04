@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { PublicAnalyticsLink } from "./public-analytics-link";
 
 const MASSAGE_SITE_URL = "https://masaze.zeleznalady.cz/";
 
@@ -21,13 +22,14 @@ export function MassagePartnerSection() {
           Pro uvolnění zad, šíje a unavených svalů doporučujeme Masáže Jiřina ve
           Vrbně pod Pradědem.
         </p>
-        <a
+        <PublicAnalyticsLink
+          analyticsEvent="outbound-click"
           aria-label="Poznat Masáže Jiřina – otevře web masaze.zeleznalady.cz"
           className="button massage-partner-button"
           href={MASSAGE_SITE_URL}
         >
           Poznat Masáže Jiřina
-        </a>
+        </PublicAnalyticsLink>
         <span className="massage-partner-domain" aria-hidden="true">
           masaze.zeleznalady.cz
         </span>

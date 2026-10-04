@@ -191,14 +191,18 @@ upstream checks, Nginx validation, backup, TLS, or rollback behavior.
 
 ## Shared public analytics
 
-This application uses the shared VCode analytics contract `vcode-public-v1`;
+This application retains shared VCode `vcode-public-v1` as fallback and has an
+owner-approved `vcode-public-v2` release candidate (a56b160, content 6dc4dd3).
 The owner approved the ef5cbf7 CS/EN supplement and activation on 2026-10-04
 (VCode approval record 0527093). Preserve enabled=true and privacyNoticeApproved=true
 in ordinary releases; emergency suspension must be explicit and documented.
 Preserve its bridge in the root layout, exact public path configuration and release
 check. Use the shared versioned tracker and same-origin collector; secrets and
 internal endpoints remain server-side. Never collect accounts, forms, bookings,
-content IDs, location, health data or communication. No clicks in phase one.
+content IDs, location, health data or communication. Only the explicit Masáže, Instagram and Facebook outbound-click handlers are
+approved in v2. No automatic click capture, contact-click or app-store-click.
+Preserve captureSources=true, exact SRI and both v2 approval/activation gates
+after migration; production deployment is coordinated separately.
 Respect DNT/GPC, omit cookies/credentials, discard offline visits and prohibit
 session replay. Suppress collection when either application session cookie exists.
 Changes to scope require privacy review. Layout, navigation, CSP and deployment

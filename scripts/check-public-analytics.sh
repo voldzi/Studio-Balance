@@ -6,3 +6,5 @@ pnpm --filter @studiobalance/web exec vitest run lib/public-analytics.test.ts
 rg -q 'PublicAnalytics eligible=\{analyticsEligible\}' apps/web/app/layout.tsx
 rg -q '!cookieStore.has\(identityCookies.session\) && !cookieStore.has\(adminIdentityCookies.session\)' apps/web/app/layout.tsx
 rg -q 'autoClick: false, captureTitle: false, captureReferrer: false, credentials: "omit", offline: "discard"' apps/web/lib/public-analytics.ts
+
+bash scripts/check-public-analytics-v2-preparation.sh

@@ -200,3 +200,26 @@ represent those tests as physical-device DNT/GPC acceptance.
 No synthetic visits/payloads were inserted into the real website statistics.
 Final central registry enablement and real ingestion proof await the coordinator's
 announcement. No GitHub push or shared DMZ changes were made.
+
+### Approved v2 candidate handoff — 2026-10-04
+
+See expanded-metrics-integration.md and expanded-metrics-review.md. Verified owner
+approval a56b160 for exact 6dc4dd3 paragraph. Prepared selector picks v2; production
+v1 is unchanged until coordinator grants the deployment slot. Flags enabled=true,
+privacyNoticeApproved=true, captureSources=true; allowedEvents=[outbound-click].
+Exact original eight public paths, private session suppression and SRI preserved.
+
+91 web tests, lint, typecheck, skeleton validation and local Next production build
+passed. Local browser rendered both languages, expandable English and existing
+three selected link types. At 360px document width and scrollWidth both equal 360;
+no analytics script loads from localhost (exact production-origin guard). Local
+content/API-dependent sections show their existing unavailable state because no
+local API was started; no production data or credentials were used. No production
+events, central build, registry or edge mutations were performed.
+
+Public GET /analytics/v2/tracker.js verified byte-exact approved SHA384. Collector
+POST not exercised against the real website. Tests use a synthetic UUID and mock
+runtime. Intended release: guarded pnpm deploy:production -- <clean-candidate-sha>
+from the production-based analytics branch, only after coordinator slot. No public
+GitHub push. Central registry and final isolated ingestion acceptance are coordinated
+by VCode; no claim of live v2 until deployment and acceptance complete.

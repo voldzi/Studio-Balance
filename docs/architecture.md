@@ -332,3 +332,13 @@ and preserve enabled=true / privacyNoticeApproved=true in normal releases.
 Scope and all private-session, DNT/GPC and offline protections in ADR 0021 remain.
 Central registry activation and final ingestion verification follow public notice
 acceptance; never treat a frontend deployment as proof of received statistics.
+
+## Approved v2 analytics candidate (2026-10-04)
+
+ADR 0022 supersedes the earlier no-click/no-source scope only for the specifically
+reviewed v2 replacement (VCode 6dc4dd3, owner approval a56b160). Exact eight public
+paths and privacy/session exclusions remain. Only explicit outbound-click on the
+Masáže recommendation and Instagram/Facebook links; no destination/content fields.
+The local candidate selects v2, captureSources=true. The approved paragraph is
+selected with the runtime version; retained v1 text is fallback only. Production
+changes wait for the coordinator slot; local tests are not ingestion proof.
