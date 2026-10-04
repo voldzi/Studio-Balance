@@ -277,3 +277,13 @@ stopped. No central VCode registry or DMZ/edge changes and no GitHub push were m
 Application deployment and local/private browser acceptance are complete.
 Final central registry enablement and isolated ingestion acceptance remain with
 VCode; this receipt does not claim that live production events were ingested.
+
+
+Subsequent VCode coordinator confirmation in thread
+01a0ce37-c8c0-7212-9e29-71ed20a85297: the central migration for
+studio-balance.cz completed with exit 0, and VCode confirmed the published
+replacement and central v2 activation with captureSources=true and
+allowedEvents=[outbound-click]. The server build/deploy slot has been released;
+VCode is proceeding with its dashboard and other product releases. Central
+activation is confirmed by VCode; Studio Balance's own acceptance above remains
+isolated and does not claim separately observed real-user ingestion.
