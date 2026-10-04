@@ -331,3 +331,11 @@ administrátorovi; kontakt zůstává vlastníka. Backend vyžaduje explicitní
 souhlas s odpovědností, ukládá čas souhlasu, verzi podmínek a audit bez jména
 v metadatech. Oprávnění storna se ověřuje pro každé ID zvlášť. Jméno není
 spolehlivý identifikátor pro kontrolu duplicit mezi různými účty.
+
+## Shared public analytics preparation (2026-10-04)
+
+ADR 0021 and `analytics/integration.md` define the default-off public pageview bridge
+and release checks. `analytics/privacy-review.md` contains unpublished CS/EN owner
+review drafts. No identified, private, reservation, form or click collection; no new
+analytics service or database. Activation and end-to-end shared collector validation
+remain pending and must not be represented as completed.

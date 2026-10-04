@@ -148,3 +148,5 @@ API kontrakt, testy, bezpečnostní pravidla a provozní dokumentaci.
 Studio opening: administration → Přehled → Otevření studia. Registration and
 booking start closed; the control synchronizes the dedicated Keycloak realm.
 See [ADR 0013](docs/adr/0013-studio-opening-control.md).
+
+Shared public analytics preparation and activation gates: [integration](docs/analytics/integration.md), [CS/EN privacy review](docs/analytics/privacy-review.md). Collection remains disabled.

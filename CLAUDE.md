@@ -189,6 +189,20 @@ upstream checks, Nginx validation, backup, TLS, or rollback behavior.
 - Avoid provider-specific architecture until the corresponding decision is
   accepted.
 
+## Shared public analytics
+
+This application uses the shared VCode analytics contract `vcode-public-v1`;
+preparation is disabled until the Studio Balance owner approves the privacy notice.
+Preserve its bridge in the root layout, exact public path configuration and release
+check. Use the shared versioned tracker and same-origin collector; secrets and
+internal endpoints remain server-side. Never collect accounts, forms, bookings,
+content IDs, location, health data or communication. No clicks in phase one.
+Respect DNT/GPC, omit cookies/credentials, discard offline visits and prohibit
+session replay. Suppress collection when either application session cookie exists.
+Changes to scope require privacy review. Layout, navigation, CSP and deployment
+changes require analytics checks; private routes must send no events. See
+`docs/analytics/integration.md` and `docs/analytics/privacy-review.md`.
+
 ## Compact Instructions
 
 - Preserve the task goal, touched files, decisions, commands run, validation

@@ -294,3 +294,11 @@ CD-061 / ADR 0018: správce upraví kapacitu jednoho termínu nebo vybrané
 pravidelné časy od místního data; náhrada typu, cena, pozastavení a obnovení
 musí zahrnout vypsané termíny i generátor. Historie a zrušené rezervace se
 neobnovují. Datum ukončení je včetně; další den vrací původní plán.
+
+## Shared public analytics preparation (2026-10-04)
+
+ADR 0021 and `analytics/integration.md` define the default-off public pageview bridge
+and release checks. `analytics/privacy-review.md` contains unpublished CS/EN owner
+review drafts. No identified, private, reservation, form or click collection; no new
+analytics service or database. Activation and end-to-end shared collector validation
+remain pending and must not be represented as completed.

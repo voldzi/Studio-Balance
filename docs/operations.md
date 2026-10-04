@@ -785,3 +785,11 @@ opravu vpřed: starší web neumí správně označit účastníky, přestože s
 každý řádek do kapacity. Při nutném rollbacku nejprve pozastavte nové rezervace,
 neupravujte ani nemažte účastnická data. E-mailový outbox není důkazem doručení;
 provozní informace jsou v účtu vlastníka.
+
+## Shared public analytics preparation (2026-10-04)
+
+ADR 0021 and `analytics/integration.md` define the default-off public pageview bridge
+and release checks. `analytics/privacy-review.md` contains unpublished CS/EN owner
+review drafts. No identified, private, reservation, form or click collection; no new
+analytics service or database. Activation and end-to-end shared collector validation
+remain pending and must not be represented as completed.

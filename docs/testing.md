@@ -355,3 +355,11 @@ včetně DST, dvě samostatné ceny/poplatky vlastníka, neúčast a zrušení s
 a odmítnutí cizího ID. HTTP kontrakt ověřuje přihlášení a validaci.
 UI ověřuje mobilní formulář, cenu dvou míst, explicitní souhlasy, stav chyby,
 úspěch dvojice a správné jméno ve stornu/admin docházce.
+
+## Shared public analytics preparation (2026-10-04)
+
+ADR 0021 and `analytics/integration.md` define the default-off public pageview bridge
+and release checks. `analytics/privacy-review.md` contains unpublished CS/EN owner
+review drafts. No identified, private, reservation, form or click collection; no new
+analytics service or database. Activation and end-to-end shared collector validation
+remain pending and must not be represented as completed.

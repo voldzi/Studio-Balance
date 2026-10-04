@@ -29,7 +29,8 @@
     "typecheck": "pnpm generate:contracts && pnpm -r --if-present typecheck",
     "validate:keycloak-theme": "bash scripts/validate-keycloak-theme.sh",
     "validate:openapi": "python3 -m json.tool openapi/openapi.json >/dev/null",
-    "validate:repo": "bash scripts/validate-skeleton.sh && pnpm validate:keycloak-theme && pnpm validate:openapi"
+    "validate:analytics": "bash scripts/check-public-analytics.sh",
+    "validate:repo": "pnpm validate:analytics && bash scripts/validate-skeleton.sh && pnpm validate:keycloak-theme && pnpm validate:openapi"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "16.3.4",

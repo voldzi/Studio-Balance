@@ -192,3 +192,11 @@ Každé místo má vlastní `booking.created` audit s participantKind, verzí po
 a příznakem přijetí odpovědnosti; jméno doprovodu není potřeba logovat.
 Idempotentní replay nepřidává další audity ani oznámení. Sledujte SESSION_FULL,
 BOOKING_ALREADY_EXISTS a IDEMPOTENCY_KEY_REUSED podle requestId bez osobních údajů.
+
+## Shared public analytics preparation (2026-10-04)
+
+ADR 0021 and `analytics/integration.md` define the default-off public pageview bridge
+and release checks. `analytics/privacy-review.md` contains unpublished CS/EN owner
+review drafts. No identified, private, reservation, form or click collection; no new
+analytics service or database. Activation and end-to-end shared collector validation
+remain pending and must not be represented as completed.

@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
+
+import { PublicAnalyticsNotice } from "../components/public-analytics-notice";
+import { PublicAnalytics } from "../components/public-analytics";
+import { adminIdentityCookies, identityCookies } from "../lib/identity";
 
 import { StudioStatusProvider } from "../components/studio-status";
 import { PwaRegister } from "../components/pwa-register";
@@ -42,10 +47,12 @@ export const viewport: Viewport = {
   themeColor: "#B56E4F"
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const cookieStore = await cookies();
+  const analyticsEligible = !cookieStore.has(identityCookies.session) && !cookieStore.has(adminIdentityCookies.session);
   return (
     <html lang="cs">
-      <body><StudioStatusProvider><PwaRegister />{children}</StudioStatusProvider></body>
+      <body><StudioStatusProvider><PwaRegister /><PublicAnalytics eligible={analyticsEligible} />{children}{analyticsEligible && <PublicAnalyticsNotice />}</StudioStatusProvider></body>
     </html>
   );
 }
