@@ -179,7 +179,7 @@ export function AccountDashboard() {
         <div className="modal-backdrop" role="presentation">
           <section aria-labelledby="cancel-title" aria-modal="true" className="cancel-dialog" role="dialog">
             <p className="eyebrow">Storno rezervace</p>
-            <h2 id="cancel-title">Opravdu zrušit {selected.booking.session.classType.name}?</h2>
+            <h2 id="cancel-title">Opravdu zrušit {selected.booking.session.classType.name}?</h2><p><strong>{participantLabel(selected.booking)}</strong>. Zruší se pouze toto místo, ostatní rezervace zůstávají.</p>
             {selected.preview.mode === "late"
               ? <p>Při pozdním zrušení vznikne poplatek {formatPrice(selected.preview.fee!)}. Uhradíte ho ve studiu, nikoli online.</p>
               : <p>Rezervaci rušíte včas. Místo se uvolní bez storno poplatku.</p>}
@@ -202,7 +202,7 @@ function HomeView({ busy, classType, firstName, navigate, nextBooking, openCance
       {nextBooking ? <div className="next-lesson-layout">
         {classType?.heroImage && <div className="next-lesson-image"><Image alt={classType.heroImage.alt} fill priority sizes="(max-width: 760px) 48vw, 32rem" src={classType.heroImage.src} /></div>}
         <div className="next-lesson-copy">
-          <h3>{nextBooking.session.classType.name}</h3>
+          <h3>{nextBooking.session.classType.name}</h3><p>{participantLabel(nextBooking)}</p>
           <p><PiCalendarBlank aria-hidden="true" />{formatStudioDate(nextBooking.session.startAt, { weekday: "long", day: "numeric", month: "numeric", year: "numeric" })}</p>
           <p><PiClock aria-hidden="true" />{lessonTime(nextBooking)}</p>
           <p><PiUser aria-hidden="true" />{nextBooking.session.instructor.displayName}</p>
@@ -236,8 +236,8 @@ function ReservationsView({ busy, history, openCancellation, period, setPeriod, 
 
 function BookingRow({ booking, busy, onCancel }: { booking: Booking; busy: boolean; onCancel?: ((booking: Booking) => Promise<void>) | undefined }) {
   return <article className="client-booking-row">
-    <div><strong>{booking.session.classType.name}</strong><span>{formatStudioDate(booking.session.startAt, { weekday: "long", day: "numeric", month: "numeric" })} · {lessonTime(booking)}</span><span>{booking.session.instructor.displayName}</span>{booking.fee && <span>Poplatek {formatPrice(booking.fee)} ve studiu</span>}</div>
-    {onCancel ? <button disabled={busy} onClick={() => void onCancel(booking)} type="button">Zrušit</button> : <span className="booking-status-text">{bookingLabels[booking.status]}</span>}
+    <div><strong>{booking.session.classType.name}</strong><span>{participantLabel(booking)}</span><span>{formatStudioDate(booking.session.startAt, { weekday: "long", day: "numeric", month: "numeric" })} · {lessonTime(booking)}</span><span>{booking.session.instructor.displayName}</span>{booking.fee && <span>Poplatek {formatPrice(booking.fee)} ve studiu</span>}</div>
+    {onCancel ? <button aria-label={`Zrušit rezervaci · ${participantLabel(booking)} · ${booking.session.classType.name}`} disabled={busy} onClick={() => void onCancel(booking)} type="button">Zrušit</button> : <span className="booking-status-text">{bookingLabels[booking.status]}</span>}
   </article>;
 }
 
@@ -279,4 +279,8 @@ function lessonTime(booking: Booking) {
   const start = formatStudioDate(booking.session.startAt, { hour: "2-digit", minute: "2-digit" });
   const end = formatStudioDate(booking.session.endAt, { hour: "2-digit", minute: "2-digit" });
   return `${start}–${end}`;
+}
+
+function participantLabel(booking: Booking): string {
+  return booking.participant?.kind === "companion" ? `Doprovod: ${booking.participant.name}` : "Pro vás";
 }

@@ -323,3 +323,11 @@ jsou odděleny účtem v sessionStorage a odstraní se při odhlášení/uložen
 Serverová obnova MFA relace používá důvěryhodnou interní cestu Keycloak
 pro token a JWKS, ale stále vyžaduje podpis, správný veřejný issuer a
 audience. Interní cesta neobchází MFA a nemění délku zapamatování zařízení.
+
+### Doprovod a odpovědnost
+
+Doprovod není nový účet. Jméno se zobrazí pouze vlastníkovi a oprávněnému
+administrátorovi; kontakt zůstává vlastníka. Backend vyžaduje explicitní
+souhlas s odpovědností, ukládá čas souhlasu, verzi podmínek a audit bez jména
+v metadatech. Oprávnění storna se ověřuje pro každé ID zvlášť. Jméno není
+spolehlivý identifikátor pro kontrolu duplicit mezi různými účty.

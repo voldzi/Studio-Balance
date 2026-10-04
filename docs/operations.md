@@ -775,3 +775,13 @@ Obnova a odhlášení aplikačních relací v API používají stejně jako web
 issuer a audience se nadále ověřují; veřejná DMZ ochrana se nevypíná.
 Po nasazení ověřit úspěšnou obnovu existující MFA relace starší než 15 minut
 a zachování původního `mfa_verified` i absolutní expirace. Viz ADR 0019.
+
+### Nasazení doprovodu
+
+Migrace 0028 doplní účastníka a čas přijetí odpovědnosti; staré rezervace zůstanou
+vlastní místa. Nasazení nemění ceny, kapacity ani již potvrzené rezervace.
+Podmínky jsou verze 2026-10-04. Po vytvoření rezervací doprovodu preferujte
+opravu vpřed: starší web neumí správně označit účastníky, přestože stále počítá
+každý řádek do kapacity. Při nutném rollbacku nejprve pozastavte nové rezervace,
+neupravujte ani nemažte účastnická data. E-mailový outbox není důkazem doručení;
+provozní informace jsou v účtu vlastníka.

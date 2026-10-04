@@ -48,7 +48,7 @@ type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; ca
 type EditableSessionRow = { arrival_lead_minutes: number; booking_closes_at: Date; booking_opens_at: Date; capacity: number; class_type_id: string; end_at: Date; equipment: string; free_cancellation_until: Date | null; instructor_id: string; location_address: string; location_name: string; price_cents: number; start_at: Date; suitability: string };
 type BatchSessionRow = EditableSessionRow & { id: string; class_name: string; class_slug: string; class_tagline: string; instructor_name: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
-type AdminBookingRow = { class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
+type AdminBookingRow = { participant_kind: "self" | "companion"; participant_name: string | null; class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
 type AttendanceRow = { id: string; price_snapshot_cents: number; session_start_at: Date; session_status: string; status: string; user_id: string };
 type DashboardMetricsRow = {
   attended_90_days: string;
@@ -747,11 +747,11 @@ export class AdminService {
   }
 
   async listBookings(sessionId?: string) {
-    const result = await this.database.query<AdminBookingRow>(`SELECT b.id,b.status,b.source,b.created_at,b.price_snapshot_cents,
+    const result = await this.database.query<AdminBookingRow>(`SELECT b.id,b.status,b.source,b.created_at,b.price_snapshot_cents,b.participant_kind,b.participant_name,
       u.id AS user_id,u.email,u.first_name,u.last_name,u.phone,s.id AS session_id,s.start_at,ct.name AS class_name
       FROM bookings b JOIN user_profiles u ON u.id=b.user_id JOIN class_sessions s ON s.id=b.session_id
       JOIN class_types ct ON ct.id=s.class_type_id WHERE $1::uuid IS NULL OR s.id=$1 ORDER BY s.start_at DESC,b.created_at`, [sessionId ?? null]);
-    return { items: result.rows.map((row) => ({ id: row.id, status: row.status, source: row.source, createdAt: row.created_at.toISOString(), priceCents: row.price_snapshot_cents, user: { id: row.user_id, email: row.email, firstName: row.first_name, lastName: row.last_name, phone: row.phone }, session: { id: row.session_id, startAt: row.start_at.toISOString(), className: row.class_name } })) };
+    return { items: result.rows.map((row) => ({ id: row.id, status: row.status, source: row.source, createdAt: row.created_at.toISOString(), priceCents: row.price_snapshot_cents, participant: { kind: row.participant_kind, name: row.participant_name }, user: { id: row.user_id, email: row.email, firstName: row.first_name, lastName: row.last_name, phone: row.phone }, session: { id: row.session_id, startAt: row.start_at.toISOString(), className: row.class_name } })) };
   }
 
   async attendance(id: string, status: "attended" | "no_show", reason: string, context: MutationContext) {

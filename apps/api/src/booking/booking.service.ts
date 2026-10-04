@@ -12,12 +12,14 @@ import type { StudioSession } from "../auth/session.js";
 import { DatabaseService } from "../database/database.service.js";
 import { mapSession, money, type PublicSession, type SessionRow } from "../schedule/schedule.service.js";
 
-export const CURRENT_TERMS_VERSION = "2026-08-04";
+export const CURRENT_TERMS_VERSION = "2026-10-04";
 
 type BookingStatus = "reserved" | "cancelled_on_time" | "cancelled_late" | "attended" | "no_show" | "cancelled_by_studio";
 
 type LockedSessionRow = Omit<SessionRow, "active_bookings"> & { free_cancellation_until: Date | null };
 type BookingRecord = {
+  participant_kind: "self" | "companion";
+  participant_name: string | null;
   cancellation_cutoff_at: Date;
   created_at: Date;
   id: string;
@@ -32,6 +34,8 @@ type BookingListRow = Omit<SessionRow, "status"> & Omit<BookingRecord, "status" 
 };
 
 export type BookingResponse = {
+  participant: { kind: "self" | "companion"; name: string | null };
+  companionBooking?: BookingResponse;
   cancellationCutoffAt: string;
   createdAt: string;
   fee: ReturnType<typeof money> | null;
@@ -52,11 +56,19 @@ export class BookingService {
     requestId: string;
     session: StudioSession;
     sessionId: string;
+    companionName?: string | undefined;
+    companionResponsibilityAccepted?: true | undefined;
     termsAccepted: true;
     termsVersion: typeof CURRENT_TERMS_VERSION;
   }): Promise<BookingResponse> {
+    const companionName = input.companionName?.trim();
+    if ((companionName !== undefined && (Array.from(companionName).length < 2 || companionName.length > 200 || /[\u0000-\u001f\u007f]/u.test(companionName) || input.companionResponsibilityAccepted !== true))
+      || (companionName === undefined && input.companionResponsibilityAccepted !== undefined)) {
+      throw domainError("VALIDATION_ERROR", "Vyplňte jméno doprovodu a potvrďte odpovědnost za obě místa.", HttpStatus.BAD_REQUEST);
+    }
+    const seatCount = companionName === undefined ? 1 : 2;
     const profile = await this.requireBookableProfile(input.session);
-    const requestHash = hash({ operation: "create", sessionId: input.sessionId, termsVersion: input.termsVersion });
+    const requestHash = hash({ operation: "create", sessionId: input.sessionId, termsVersion: input.termsVersion, ...(companionName === undefined ? {} : { companionName, companionResponsibilityAccepted: true }) });
 
     return this.database.transaction(async (client) => {
       await lockProfile(client, profile.id);
@@ -81,6 +93,8 @@ export class BookingService {
       if (availability === "full") throw domainError("SESSION_FULL", "Omlouváme se, lekce se právě obsadila.", HttpStatus.CONFLICT);
       if (availability !== "bookable") throw domainError("BOOKING_CLOSED", "Rezervace tohoto termínu není otevřená.", HttpStatus.GONE);
 
+      if (activeBookings + seatCount > row.capacity) throw domainError("SESSION_FULL", "Na lekci už není místo pro vás i doprovod. Zvolte rezervaci pouze pro sebe nebo jiný termín.", HttpStatus.CONFLICT);
+
       const duplicate = await client.query("SELECT 1 FROM bookings WHERE user_id = $1 AND session_id = $2 AND status = 'reserved'", [profile.id, row.id]);
       if (duplicate.rowCount) throw domainError("BOOKING_ALREADY_EXISTS", "Tuto lekci už máte rezervovanou.", HttpStatus.CONFLICT);
 
@@ -90,27 +104,31 @@ export class BookingService {
         WHERE id = $1
       `, [profile.id, CURRENT_TERMS_VERSION]);
 
-      const inserted = await client.query<BookingRecord>(`
-        INSERT INTO bookings (
-          user_id, session_id, source, price_snapshot_cents, terms_version, cancellation_cutoff_at
-        )
-        VALUES ($1, $2, 'web', $3, $4, $5::timestamptz - interval '24 hours')
-        RETURNING id, status, price_snapshot_cents, cancellation_cutoff_at, created_at
-      `, [profile.id, row.id, row.price_cents, CURRENT_TERMS_VERSION, row.start_at]);
-      const booking = inserted.rows[0]!;
-      const response = bookingResponse(booking, mapSession({ ...row, active_bookings: String(activeBookings + 1) }, new Date()), null);
-
-      await client.query(`
-        INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
-        VALUES ($1, $2, 'booking_confirmed', 'Rezervace je potvrzená', $3)
-      `, [profile.id, booking.id, `${row.class_name} · ${row.start_at.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })}`]);
-      await scheduleEmailNotifications(client, {
-        bookingId: booking.id,
-        className: row.class_name,
-        startAt: row.start_at,
-        userId: profile.id
-      });
-      await audit(client, input.requestId, profile.oidc_subject, "booking.created", "booking", booking.id);
+      const participants = [{ kind: "self" as const, name: null as string | null },
+        ...(companionName === undefined ? [] : [{ kind: "companion" as const, name: companionName }])];
+      const responses: BookingResponse[] = [];
+      for (const participant of participants) {
+        const inserted = await client.query<BookingRecord>(`
+          INSERT INTO bookings (user_id, session_id, source, price_snapshot_cents, terms_version,
+            cancellation_cutoff_at, participant_kind, participant_name, companion_responsibility_accepted_at)
+          VALUES ($1, $2, 'web', $3, $4, $5::timestamptz - interval '24 hours', $6, $7,
+            CASE WHEN $6 = 'companion' THEN now() ELSE NULL END)
+          RETURNING id, status, price_snapshot_cents, cancellation_cutoff_at, created_at, participant_kind, participant_name
+        `, [profile.id, row.id, row.price_cents, CURRENT_TERMS_VERSION, row.start_at, participant.kind, participant.name]);
+        const booking = inserted.rows[0]!;
+        responses.push(bookingResponse(booking, mapSession({ ...row, active_bookings: String(activeBookings + seatCount) }, new Date()), null));
+        const participantLabel = participant.kind === "self" ? "Pro vás" : `Doprovod: ${participant.name}`;
+        await client.query(`
+          INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
+          VALUES ($1, $2, 'booking_confirmed', 'Rezervace je potvrzená', $3)
+        `, [profile.id, booking.id, `${participantLabel} · ${row.class_name} · ${row.start_at.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })}`]);
+        await scheduleEmailNotifications(client, { bookingId: booking.id, className: row.class_name,
+          startAt: row.start_at, userId: profile.id, participant: participantLabel });
+        await audit(client, input.requestId, profile.oidc_subject, "booking.created", "booking", booking.id,
+          { participantKind: participant.kind, companionResponsibilityAccepted: participant.kind === "companion", termsVersion: CURRENT_TERMS_VERSION });
+      }
+      const response = { ...responses[0]!, ...(responses[1] ? { companionBooking: responses[1] } : {}) };
+      const booking = responses[0]!;
       await storeIdempotency(client, profile.id, input.idempotencyKey, requestHash, booking.id, response);
       return response;
     });
@@ -177,7 +195,7 @@ export class BookingService {
       await client.query(`
         INSERT INTO account_notifications (user_id, booking_id, kind, title, body)
         VALUES ($1, $2, 'booking_cancelled', 'Rezervace byla zrušena', $3)
-      `, [profile.id, row.booking_id, fee === null ? "Místo bylo uvolněno bez storno poplatku." : "Storno poplatek uhradíte ve studiu."]);
+      `, [profile.id, row.booking_id, `${row.participant_kind === "companion" ? `Doprovod: ${row.participant_name}` : "Pro vás"} · ${fee === null ? "Místo bylo uvolněno bez storno poplatku." : "Storno poplatek uhradíte ve studiu."}`]);
       await client.query("UPDATE notification_outbox SET status='cancelled', updated_at=now() WHERE booking_id=$1 AND status='pending'", [row.booking_id]);
       await audit(client, input.requestId, profile.oidc_subject, "booking.cancelled", "booking", row.booking_id, { mode: preview.mode });
 
@@ -202,6 +220,7 @@ export class BookingService {
 
 function bookingResponse(booking: BookingRecord, session: PublicSession, feeCents: number | null): BookingResponse {
   return {
+    participant: { kind: booking.participant_kind, name: booking.participant_name },
     id: booking.id,
     status: booking.status,
     createdAt: booking.created_at.toISOString(),
@@ -231,6 +250,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
     SELECT
       b.id AS booking_id,
       b.status AS booking_status,
+      b.participant_kind, b.participant_name,
       b.price_snapshot_cents,
       b.cancellation_cutoff_at,
       b.created_at,
@@ -303,7 +323,7 @@ async function readIdempotency(client: PoolClient, userId: string, key: string, 
   // Responses stored before portraits were introduced still satisfy the
   // current contract when an old booking request is replayed.
   const response = row.response_body;
-  return { ...response, session: { ...response.session, instructor: {
+  return { ...response, participant: response.participant ?? { kind: "self", name: null }, session: { ...response.session, instructor: {
     ...response.session.instructor, portrait: response.session.instructor.portrait ?? null
   } } };
 }
@@ -312,13 +332,13 @@ async function storeIdempotency(client: PoolClient, userId: string, key: string,
   await client.query("INSERT INTO booking_idempotency (user_id, idempotency_key, request_hash, booking_id, response_body) VALUES ($1, $2, $3, $4, $5)", [userId, key, requestHash, bookingId, response]);
 }
 
-async function scheduleEmailNotifications(client: PoolClient, input: { bookingId: string; className: string; startAt: Date; userId: string }): Promise<void> {
+async function scheduleEmailNotifications(client: PoolClient, input: { bookingId: string; className: string; startAt: Date; userId: string; participant: string }): Promise<void> {
   const reminders = [
     { kind: "booking_confirmation", scheduledAt: new Date(), subject: "Rezervace je potvrzená" },
     { kind: "lesson_reminder", scheduledAt: new Date(input.startAt.getTime() - 24 * 60 * 60_000), subject: "Zítra vás čeká lekce" },
     { kind: "lesson_reminder", scheduledAt: new Date(input.startAt.getTime() - 2 * 60 * 60_000), subject: "Dnes vás čeká lekce" },
     { kind: "lesson_reminder", scheduledAt: new Date(input.startAt.getTime() - 30 * 60_000), subject: "Za chvíli začínáme" }
-  ].filter((item) => item.scheduledAt.getTime() >= Date.now());
+  ].filter((item) => item.kind === "booking_confirmation" || item.scheduledAt.getTime() >= Date.now());
 
   for (const item of reminders) {
     await client.query(`
@@ -326,6 +346,7 @@ async function scheduleEmailNotifications(client: PoolClient, input: { bookingId
       VALUES ($1, $2, $3, 'email', $4, $5)
       ON CONFLICT (booking_id, kind, scheduled_at) DO NOTHING
     `, [input.userId, input.bookingId, item.kind, item.scheduledAt, {
+      participant: input.participant,
       className: input.className,
       startAt: input.startAt.toISOString(),
       subject: item.subject,

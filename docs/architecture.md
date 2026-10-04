@@ -77,7 +77,9 @@ preferovat modulární monolit + worker před distribuovanými mikroslužbami.
 1. Autentizovaný klient odešle `sessionId`, verzi podmínek a idempotency key.
 2. API ověří identitu, vstup, otevřené okno a stav termínu.
 3. Jedna DB transakce zamkne nebo atomicky podmíní kapacitu, zkontroluje
-   aktivní duplicitu a vloží rezervaci.
+   aktivní duplicitu a vloží jedno vlastní místo nebo atomicky dvě místa
+   (vlastní a jeden pojmenovaný doprovod podle CD-062). Každá řádka spotřebuje
+   jedno místo kapacity a má samostatné storno/docházku/poplatek.
 4. Rezervace uloží cutoff, cenu a podmínky jako snapshot.
 5. Ve stejné transakční hranici vznikne outbox událost.
 6. Worker idempotentně odešle potvrzení a naplánuje remindery.

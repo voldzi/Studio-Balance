@@ -489,7 +489,58 @@
       "get": { "summary": "List client profiles", "operationId": "adminListUsers", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "search", "in": "query", "schema": { "type": "string", "maxLength": 200 } }], "responses": { "200": { "description": "Clients.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
     },
     "/api/v1/admin/bookings": {
-      "get": { "summary": "List bookings for operations", "operationId": "adminListBookings", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "sessionId", "in": "query", "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Bookings.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
+      "get": {
+        "summary": "List bookings for operations",
+        "operationId": "adminListBookings",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminBooking"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     },
     "/api/v1/admin/bookings/{id}/attendance": {
       "post": { "summary": "Record attendance or no-show", "operationId": "adminRecordAttendance", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminAttendanceRequest" } } } }, "responses": { "200": { "description": "Attendance recorded." }, "400": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
@@ -734,24 +785,234 @@
       "CreateBookingRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["sessionId", "termsVersion", "termsAccepted"],
+        "required": [
+          "sessionId",
+          "termsVersion",
+          "termsAccepted"
+        ],
         "properties": {
-          "sessionId": { "type": "string", "format": "uuid" },
-          "termsVersion": { "type": "string", "const": "2026-08-04" },
-          "termsAccepted": { "type": "boolean", "const": true }
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "termsVersion": {
+            "type": "string",
+            "const": "2026-10-04"
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "const": true
+          },
+          "companionName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$",
+            "description": "Trimmed companion full name; at most one companion."
+          },
+          "companionResponsibilityAccepted": {
+            "type": "boolean",
+            "const": true,
+            "description": "Explicit acceptance of owner responsibility for both seat fees."
+          }
+        },
+        "dependentRequired": {
+          "companionName": [
+            "companionResponsibilityAccepted"
+          ],
+          "companionResponsibilityAccepted": [
+            "companionName"
+          ]
+        }
+      },
+      "AdminBooking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "source",
+          "createdAt",
+          "priceCents",
+          "participant",
+          "user",
+          "session"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "reserved",
+              "cancelled_on_time",
+              "cancelled_late",
+              "attended",
+              "no_show",
+              "cancelled_by_studio"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "web",
+              "admin"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "priceCents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "participant": {
+            "$ref": "#/components/schemas/BookingParticipant"
+          },
+          "user": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "email",
+              "firstName",
+              "lastName",
+              "phone"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "email": {
+                "type": "string"
+              },
+              "firstName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lastName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "session": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "className",
+              "startAt"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "className": {
+                "type": "string"
+              },
+              "startAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "BookingParticipant": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "name"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "self",
+              "companion"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       },
       "Booking": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "status", "createdAt", "cancellationCutoffAt", "fee", "session"],
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "cancellationCutoffAt",
+          "fee",
+          "session",
+          "participant"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "status": { "type": "string", "enum": ["reserved", "cancelled_on_time", "cancelled_late", "attended", "no_show", "cancelled_by_studio"] },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "cancellationCutoffAt": { "type": "string", "format": "date-time" },
-          "fee": { "oneOf": [{ "$ref": "#/components/schemas/Money" }, { "type": "null" }] },
-          "session": { "$ref": "#/components/schemas/PublicSession" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "reserved",
+              "cancelled_on_time",
+              "cancelled_late",
+              "attended",
+              "no_show",
+              "cancelled_by_studio"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancellationCutoffAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fee": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "session": {
+            "$ref": "#/components/schemas/PublicSession"
+          },
+          "participant": {
+            "$ref": "#/components/schemas/BookingParticipant"
+          },
+          "companionBooking": {
+            "$ref": "#/components/schemas/Booking",
+            "description": "Only returned by atomic creation of two seats. Each seat has independent cancellation and attendance."
+          }
         }
       },
       "CancellationPreview": {

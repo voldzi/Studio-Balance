@@ -88,7 +88,7 @@ Datum narození a nouzový kontakt se v první verzi nesbírají.
 | --- | --- | --- |
 | BKG-001 | P0 | před potvrzením se znovu ověří stav termínu, časové okno a kapacita |
 | BKG-002 | P0 | transakce zabrání překročení kapacity při souběžných požadavcích |
-| BKG-003 | P0 | jeden klient nemůže mít dvě aktivní rezervace téhož termínu |
+| BKG-003 | P0 | jeden klient může mít nejvýše vlastní aktivní místo a jedno místo doprovodu téhož termínu (CD-062); obě místa vznikají atomicky a mají samostatnou cenu, storno a docházku |
 | BKG-004 | P0 | opakované odeslání nebo dvojklik je idempotentní |
 | BKG-005 | P0 | rezervace ukládá zdroj `web` nebo `admin` a snapshot podmínek |
 | BKG-006 | P0 | potvrzení obsahuje lekci, datum, čas, vypočtený příchod, místo, platbu ve studiu a storno pravidlo |

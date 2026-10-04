@@ -45,7 +45,7 @@ sbírat osobní údaje bez účelu.
 
 | Cesta | Vstup | Úspěch | Selhání / fallback |
 | --- | --- | --- | --- |
-| první rezervace | homepage, detail lekce, rozvrh | účet + právě jedna potvrzená rezervace | zachovat vybraný termín a vysvětlit chybu |
+| první rezervace | homepage, detail lekce, rozvrh | účet + jedna potvrzená rezervace nebo dvě samostatná místa pro klienta a jeden doprovod (CD-062) | zachovat vybraný termín a vysvětlit chybu |
 | rychlá rezervace klienta | klientský účet nebo rozvrh | potvrzení bez platebního kroku | při souběhu nabídnout návrat na jiné termíny |
 | kontrola nejbližší lekce | responzivní klientský účet | čas, příchod, místo, instruktor a navigace | při výpadku srozumitelná chyba a bezpečný retry |
 | včasné storno | detail rezervace | zrušeno bez poplatku a místo uvolněno | bezpečný retry bez dvojí změny |
@@ -481,3 +481,14 @@ po dobu nejvýše osmi hodin, jen pro danou kartu a správce. Náhled se nikdy
 neobnoví bez ověření serverem. Uložení nebo odhlášení koncept odstraní;
 vypnuté úložiště prohlížeče neblokuje práci. Oznámení v rozvrhu (všem) se
 spravuje v Přehledu; Novinky se zobrazí přihlášeným klientům.
+
+## Rezervace doprovodu (CD-062)
+
+Výchozí je jedno místo. Volba „Rezervovat pro sebe a jeden doprovod“ zobrazí
+jméno a příjmení doprovodu, celkovou cenu a zvláštní nepotvrzený souhlas
+s odpovědností za obě místa. Změna jména tento souhlas vynuluje.
+Klient nevidí kapacitu ani zbývající místa. Nedostatek míst nevytvoří poloviční
+rezervaci. Úspěch výslovně potvrzuje obě místa a jméno doprovodu.
+Účet označuje každou řádku „Pro vás“ nebo „Doprovod: jméno“; storno potvrzení
+říká, že ruší pouze toto místo. Admin má samostatné účastníky s kontaktem
+vlastníka a může každému zaznamenat účast/neúčast.

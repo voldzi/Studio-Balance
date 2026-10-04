@@ -345,3 +345,13 @@ náhled změny, mobil 360px, klávesnice a návrat konceptu po přihlášení/re
 Obnova identity: podepsaný testovací token musí použít interní token/JWKS
 cestu při zachování veřejného issueru a audience. Token s cizím issuerem
 se odmítne. Revokace používá tutéž interní cestu.
+
+### Doprovod (CD-062)
+
+Testovat skutečné transakce v izolované lokální PostgreSQL: atomickou dvojici,
+souběžný boj o poslední místa, idempotentní replay i změnu payloadu, limit
+jednoho doprovodu, neplatný souhlas/jméno, samostatné storno v přesné 24h hranici
+včetně DST, dvě samostatné ceny/poplatky vlastníka, neúčast a zrušení studiem,
+a odmítnutí cizího ID. HTTP kontrakt ověřuje přihlášení a validaci.
+UI ověřuje mobilní formulář, cenu dvou míst, explicitní souhlasy, stav chyby,
+úspěch dvojice a správné jméno ve stornu/admin docházce.

@@ -185,3 +185,10 @@ hodnoty, termíny a zachované výjimky. `session.capacity_changed` zaznamená
 původní/novou kapacitu a počet rezervací; `booking.price_changed` explicitní
 přecenění. requestId a admin subject navazují na existující audit.
 Při konfliktním náhledu nevznikne částečný audit ani rozpracovaná verze.
+
+### Účastníci rezervace
+
+Každé místo má vlastní `booking.created` audit s participantKind, verzí podmínek
+a příznakem přijetí odpovědnosti; jméno doprovodu není potřeba logovat.
+Idempotentní replay nepřidává další audity ani oznámení. Sledujte SESSION_FULL,
+BOOKING_ALREADY_EXISTS a IDEMPOTENCY_KEY_REUSED podle requestId bez osobních údajů.

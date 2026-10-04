@@ -7,8 +7,10 @@ import { BookingService, CURRENT_TERMS_VERSION } from "./booking.service.js";
 const createSchema = z.object({
   sessionId: z.string().uuid(),
   termsVersion: z.literal(CURRENT_TERMS_VERSION),
+  companionName: z.string().trim().min(2).max(200).regex(/^[^\u0000-\u001f\u007f]+$/u).optional(),
+  companionResponsibilityAccepted: z.literal(true).optional(),
   termsAccepted: z.literal(true)
-}).strict();
+}).strict().refine((input) => (input.companionName !== undefined) === (input.companionResponsibilityAccepted === true));
 const cancelSchema = z.object({ lateCancellationConfirmed: z.boolean() }).strict();
 const idSchema = z.string().uuid();
 

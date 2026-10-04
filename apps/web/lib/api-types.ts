@@ -85,6 +85,8 @@ export type NewsItem = {
 };
 
 export type Booking = {
+  participant?: { kind: "self" | "companion"; name: string | null };
+  companionBooking?: Booking;
   cancellationCutoffAt: string;
   createdAt: string;
   fee: Money | null;

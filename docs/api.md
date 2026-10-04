@@ -408,3 +408,18 @@ GET /api/v1/studio-status returns open and announcement, no-store. GET/PUT /api/
   aktivní rezervace bez poplatku. Open nikdy neobnoví zrušené rezervace.
 - Všechny cesty vyžadují admin MFA. Chyby mají ErrorResponse a requestId.
   Starší editace weekly-rules odmítne verzovanou řadu a odkáže na nový postup.
+
+### Rezervace pro sebe a jeden doprovod (CD-062)
+
+`POST /api/v1/bookings` zachovává původní povinná pole a verzi podmínek
+`2026-10-04`. Volitelná dvojice `companionName` (trimované 2–200 znaků bez
+řídicích znaků) a `companionResponsibilityAccepted: true` rezervuje dvě místa
+atomicky. Jedno pole bez druhého je 400. Žádné množství ani další doprovody
+se nepřijímají. Uzamčení termínu i vlastníka brání přečerpání a duplicitám.
+Cena je vždy serverový snapshot za jedno místo.
+Odpověď je vlastní `Booking` s `participant: {kind, name}` a při dvojici
+navíc `companionBooking` se samostatným ID. Seznam účtu/adminu obsahuje dvě
+samostatné řádky; storno a docházka adresují vždy jedno ID. Opakování stejného
+idempotency klíče vrátí stejnou dvojici, jiný doprovod se stejným klíčem je 409.
+Admin `GET /api/v1/admin/bookings` doplňuje `participant`, kontakt `user`
+zůstává vlastník. Jméno doprovodu se nikdy nevrací ve veřejném rozvrhu.

@@ -1242,9 +1242,48 @@ export interface components {
             /** Format: uuid */
             sessionId: string;
             /** @constant */
-            termsVersion: "2026-08-04";
+            termsVersion: "2026-10-04";
             /** @constant */
             termsAccepted: true;
+            /** @description Trimmed companion full name; at most one companion. */
+            companionName?: string;
+            /**
+             * @description Explicit acceptance of owner responsibility for both seat fees.
+             * @constant
+             */
+            companionResponsibilityAccepted?: true;
+        };
+        AdminBooking: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "reserved" | "cancelled_on_time" | "cancelled_late" | "attended" | "no_show" | "cancelled_by_studio";
+            /** @enum {string} */
+            source: "web" | "admin";
+            /** Format: date-time */
+            createdAt: string;
+            priceCents: number;
+            participant: components["schemas"]["BookingParticipant"];
+            user: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                firstName: string | null;
+                lastName: string | null;
+                phone: string | null;
+            };
+            session: {
+                /** Format: uuid */
+                id: string;
+                className: string;
+                /** Format: date-time */
+                startAt: string;
+            };
+        };
+        BookingParticipant: {
+            /** @enum {string} */
+            kind: "self" | "companion";
+            name: string | null;
         };
         Booking: {
             /** Format: uuid */
@@ -1257,6 +1296,9 @@ export interface components {
             cancellationCutoffAt: string;
             fee: components["schemas"]["Money"] | null;
             session: components["schemas"]["PublicSession"];
+            participant: components["schemas"]["BookingParticipant"];
+            /** @description Only returned by atomic creation of two seats. Each seat has independent cancellation and attendance. */
+            companionBooking?: components["schemas"]["Booking"];
         };
         CancellationPreview: {
             /** @enum {string} */
@@ -3498,7 +3540,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: unknown;
+                        items: components["schemas"]["AdminBooking"][];
                     };
                 };
             };

@@ -48,7 +48,7 @@ describe.skipIf(!url)("studio opening transactions in local PostgreSQL", () => {
       SELECT ct.id,i.id,now()+interval '3 days',now()+interval '3 days 1 hour',10,'Studio','Test',16000,10,now()-interval '1 day',now()+interval '2 days'
       FROM class_types ct CROSS JOIN instructors i LIMIT 1 RETURNING id`);
     const service = new BookingService(database,accounts);
-    const input = { session, sessionId: row.rows[0].id as string, idempotencyKey: randomUUID(), requestId: "opening-test", termsVersion: "2026-08-04" as const, termsAccepted: true as const };
+    const input = { session, sessionId: row.rows[0].id as string, idempotencyKey: randomUUID(), requestId: "opening-test", termsVersion: "2026-10-04" as const, termsAccepted: true as const };
     await expect(service.create(input)).rejects.toMatchObject({ response: { code: "STUDIO_CLOSED" } });
     await pool.query("UPDATE studio_operation SET requested_open=true, registration_synced=true");
     const created = await service.create(input);

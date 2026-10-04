@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { ApiError, apiRequest, formatPrice, formatStudioDate, type Booking, type Profile, type PublicSession } from "../lib/api-types";
 
 import { useStudioStatus } from "./studio-status";
 
-const termsVersion = "2026-08-04";
+const termsVersion = "2026-10-04";
 
 export function BookingFlow({ sessionId }: { sessionId: string }) {
   const studio = useStudioStatus();
@@ -17,6 +17,10 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [message, setMessage] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [withCompanion, setWithCompanion] = useState(false);
+  const [companionName, setCompanionName] = useState("");
+  const [companionResponsibilityAccepted, setCompanionResponsibilityAccepted] = useState(false);
+  const reservationAttempt = useRef<{ body: string; key: string } | null>(null);
 
   useEffect(() => {
     void Promise.all([
@@ -57,13 +61,20 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
       setMessage("Před první rezervací potvrďte prosím storno podmínky.");
       return;
     }
+    if (withCompanion && (companionName.trim().length < 2 || !companionResponsibilityAccepted)) {
+      setMessage("Doplňte jméno a příjmení doprovodu a potvrďte odpovědnost za obě místa.");
+      return;
+    }
+    const body = JSON.stringify({ sessionId: session.id, termsVersion, termsAccepted: true,
+      ...(withCompanion ? { companionName: companionName.trim(), companionResponsibilityAccepted: true } : {}) });
+    if (reservationAttempt.current?.body !== body) reservationAttempt.current = { body, key: crypto.randomUUID() };
     setBusy(true);
     setMessage(undefined);
     try {
       const created = await apiRequest<Booking>("/api/v1/bookings", {
         method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ sessionId: session.id, termsVersion, termsAccepted: true })
+        headers: { "Idempotency-Key": reservationAttempt.current.key },
+        body
       });
       setBooking(created);
     } catch (error) {
@@ -81,10 +92,11 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
     return (
       <section className="booking-success" aria-labelledby="booking-success-title">
         <p className="eyebrow">Hotovo</p>
-        <h1 id="booking-success-title">Vaše místo je rezervované.</h1>
+        <h1 id="booking-success-title">{booking.companionBooking ? "Obě místa jsou rezervovaná." : "Vaše místo je rezervované."}</h1>
         <p className="detail-lead">{booking.session.classType.name}</p>
         <p>{formatStudioDate(booking.session.startAt, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
-        <p>Přijďte prosím v {formatStudioDate(booking.session.arrivalAt, { hour: "2-digit", minute: "2-digit" })}. Platba {formatPrice(booking.session.price)} proběhne až ve studiu.</p>
+        <p>Přijďte prosím v {formatStudioDate(booking.session.arrivalAt, { hour: "2-digit", minute: "2-digit" })}. Platba {formatPrice({ ...booking.session.price, amount: (Number(booking.session.price.amount) * (booking.companionBooking ? 2 : 1)).toFixed(2) })} {booking.companionBooking ? "za obě místa " : ""}proběhne až ve studiu.</p>
+        {booking.companionBooking && <p>Doprovod: <strong>{booking.companionBooking.participant?.name}</strong>. Každé místo můžete v účtu zrušit zvlášť. Informace přicházejí na váš účet; doprovod o lekci informujte vy.</p>}
         <div className="actions">
           <Link className="button" href="/muj-ucet">Moje rezervace</Link>
           <Link className="text-link" href="/rozvrh">Zpět na rozvrh</Link>
@@ -119,17 +131,28 @@ export function BookingFlow({ sessionId }: { sessionId: string }) {
           </form>
         ) : (
           <>
+            <h2>Pro koho rezervujete?</h2>
+            <label className="check-label">
+              <input checked={withCompanion} disabled={busy} onChange={(event) => { setWithCompanion(event.target.checked); setCompanionResponsibilityAccepted(false); }} type="checkbox" />
+              <span>Rezervovat pro sebe a jeden doprovod</span>
+            </label>
+            {withCompanion && <div>
+              <label>Jméno a příjmení doprovodu<input autoComplete="off" disabled={busy} value={companionName} onChange={(event) => { setCompanionName(event.target.value); setCompanionResponsibilityAccepted(false); }} minLength={2} maxLength={200} required /></label>
+              <p>Doprovod nepotřebuje účet. Zkontrolujte spolu, že nemá vlastní rezervaci na stejnou lekci.</p>
+              <p><strong>Celkem {formatPrice({ ...session.price, amount: (Number(session.price.amount) * 2).toFixed(2) })} za obě místa</strong>, platba ve studiu.</p>
+              <label className="check-label"><input checked={companionResponsibilityAccepted} disabled={busy} onChange={(event) => setCompanionResponsibilityAccepted(event.target.checked)} type="checkbox" /><span>Souhlasím, že za své místo i místo doprovodu odpovídám já. Za každé pozdě zrušené místo nebo neúčast uhradím ve studiu poplatek {formatPrice(session.price)}. Doprovod seznámím s podmínkami.</span></label>
+            </div>}
             <h2>Storno a platba</h2>
             <p>Rezervaci můžete bez poplatku zrušit nejpozději 24 hodin před začátkem. Při pozdějším zrušení vzniká poplatek {formatPrice(session.price)}.</p>
             <p>Nic neplatíte online. Lekci i případný storno poplatek hradíte pouze ve studiu.</p>
             {profile.termsVersion !== termsVersion && (
               <label className="check-label">
-                <input checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} type="checkbox" />
-                <span>Rozumím storno podmínkám a souhlasím s jejich verzí z 4. 8. 2026.</span>
+                <input checked={termsAccepted} disabled={busy} onChange={(event) => setTermsAccepted(event.target.checked)} type="checkbox" />
+                <span>Rozumím storno podmínkám a souhlasím s jejich verzí z 4. 10. 2026. Každé místo se ruší samostatně; při neúčasti vzniká poplatek ve výši ceny místa.</span>
               </label>
             )}
-            <button className="button full-button" disabled={busy || !termsAccepted || session.availability !== "bookable"} onClick={() => void reserve()} type="button">
-              {busy ? "Ověřujeme místo…" : "Potvrdit rezervaci"}
+            <button className="button full-button" disabled={busy || !termsAccepted || (withCompanion && (!companionResponsibilityAccepted || companionName.trim().length < 2)) || session.availability !== "bookable"} onClick={() => void reserve()} type="button">
+              {busy ? "Ověřujeme místa…" : withCompanion ? "Potvrdit rezervaci pro oba" : "Potvrdit rezervaci"}
             </button>
           </>
         )}

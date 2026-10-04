@@ -317,3 +317,17 @@ vede Nicola Lojšková, cena 160 Kč, kapacita 14. Pondělní Balance Flow zůst
 Nový dodaný plakát `WhatsApp Image 2026-10-01 at 19.23.29.jpeg` je podkladem
 k této lekci; název Body Sculp je překonaný. Dosavadní aktivní rezervace se
 zachovají s oznámením a bezplatným oknem pro odmítnutí podstatné změny.
+
+## CD-062 — Rezervovat pro sebe a jeden doprovod (4. 10. 2026)
+
+Nikol schválila rezervaci klienta pro sebe a nejvýše jeden doprovod bez
+samostatného účtu. Jméno doprovodu je povinné. Obě místa vzniknou atomicky,
+každé spotřebuje jedno místo kapacity a má vlastní cenový snapshot, docházku
+a samostatné storno. V administraci jsou dvě řádky účastníků a kontakt vlastníka.
+Klient výslovně přijímá odpovědnost za oba poplatky; každé pozdní storno nebo
+neúčast je ve výši ceny daného místa. Platba probíhá pouze ve studiu.
+Oznámení dostává vlastník a doprovod informuje sám. Toto mění původní omezení
+jedné rezervace na účet a termín: povoleno je nejvýše vlastní místo a jeden
+doprovod, nikoli neomezené rezervování. Kontrola duplicit mezi různými účty podle
+jména není zaručena; klient má ověřit, že doprovod nemá vlastní rezervaci.
+Existující rezervace a historické poplatky se nemění.
