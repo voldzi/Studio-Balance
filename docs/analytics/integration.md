@@ -133,3 +133,22 @@ web typecheck, repo/theme/OpenAPI validation and web production build. Common sh
 receiver tests remain the responsibility/evidence of the central VCode deployment.
 CS/EN draft matches the central owner-review revision. Publication and activation
 remain pending explicit approval; no measured production visits were created.
+
+### Canonical development adoption — 2026-10-04
+
+The analytics source, public configuration, CS/EN draft, AGENTS/CLAUDE rules and
+release tests have been adopted into the canonical development directory
+`/Users/voldzi/Developer/18 2026/StudioBalance`. Existing uncommitted admin changes,
+client decisions, document edits and moved source assets were preserved. Only
+analytics changes were staged; existing operations/product-design edits remain
+outside the analytics commit.
+
+`scripts/deploy-production-remote.sh` now runs the analytics checks and
+`scripts/check-analytics-release.sh` before creating or sending a release artifact.
+The latter requires accepted production baseline 9946f7e in the candidate ancestry,
+required integration/configuration/draft files and the root-layout bridge. A candidate
+from the canonical directory's older historical branch must first incorporate the
+accepted production history; it cannot silently overwrite current production or
+remove analytics. The production-based analytics branch has the same guard.
+Emergency rollback remains a separate authorized operation. This local adoption does
+not activate analytics, publish the draft, push GitHub or replace production 9946f7e.

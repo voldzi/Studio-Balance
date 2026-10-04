@@ -19,6 +19,9 @@ if ! git -C "$root" diff --quiet || ! git -C "$root" diff --cached --quiet; then
   exit 1
 fi
 
+bash "$root/scripts/check-analytics-release.sh" "$version"
+bash "$root/scripts/check-public-analytics.sh"
+
 remote_root="/home/voldzi/deployments/studio-balance"
 release_dir="$remote_root/releases/$version"
 artifact="$remote_root/artifacts/$version.tar"
