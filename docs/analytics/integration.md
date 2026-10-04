@@ -1,6 +1,6 @@
 # Studio Balance shared analytics integration
 
-Status 2026-10-04: prepared, disabled, registered; not deployed or collecting.
+Status 2026-10-04: prepared, disabled, registered; deployment validation recorded below.
 Repository: git@github.com:voldzi/Studio-Balance.git. Baseline production revision
 8cbd727: Docker web/API/worker on docker.home.cz, public origin
 https://studio-balance.cz through the Studio Balance Nginx virtualhost on dmz.home.cz.
@@ -81,7 +81,8 @@ set referrerPolicy no-referrer; the initial missing fetch policy was corrected
 centrally before activation. Explicit allowedEvents:[] is required. No shared file
 was changed here. Unknown/failed runtime and version/integrity mismatch fail closed.
 The exact production origin is required; localhost, preview and other domains cannot
-create production pageviews. Production edge/header acceptance remains pending.
+create production pageviews. Central VCode reports isolated production edge/header acceptance complete; this
+repository does not repeat ingestion tests against the real site statistics.
 
 PublicAnalyticsNotice is prepared in the root layout but returns nothing while
 privacyNoticeApproved is false. Czech text matches the owner-review draft; English
@@ -89,3 +90,23 @@ is supplied in privacy-review.md because the application currently has a Czech U
 No draft text has been published. Keep both notice approval and enabled gates off
 until review, pairing and collector acceptance complete. Existing PWA sw.js caches
 only explicit static assets; analytics paths and POST requests are not cached/queued.
+
+## Disabled deployment preparation — 2026-10-04
+
+Central operations installed `include /etc/nginx/vcode-analytics/studio-balance.cz.conf;`
+in the active HTTPS virtualhost. Never copy that private include or its token into
+Git. This change does not edit DMZ. The centrally reported isolated acceptance covers
+proxy ingestion/storage, private paths, foreign origins, arbitrary properties and
+spoofed forwarding headers without changing real counts. Central VCode also reports
+daily backups, isolated restore acceptance and a five-minute integration monitor.
+These shared-service results are central evidence, not independently recreated here.
+
+The normal `scripts/deploy-production-remote.sh` creates a local clean-commit Git
+archive, sends it only to the authorized docker.home.cz production deployment
+directory over SSH and builds versioned images there. It does not push to GitHub or
+fetch source from GitHub. This approved artifact path preserves the 8cbd727 production
+baseline and automatic rollback, resource preflight and readiness/version checks.
+Use this private artifact path while the optional public GitHub push is blocked.
+Only the isolated analytics branch is included; unrelated original-workspace edits
+remain excluded. Owner review is still required before either enabled or
+privacyNoticeApproved is switched on.

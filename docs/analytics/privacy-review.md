@@ -1,47 +1,33 @@
-# Privacy notice — owner review draft, not published
+# Studio Balance — společný návrh ke schválení, nezveřejněno
 
-Scope: anonymous general public pageviews only; no clicks. Approve the complete
-Czech and English text below before collection or publication. This draft does not
-establish a legal basis or replace review of the shared receiver and retention. Owner
-review must confirm controller/contact identity, purpose/legal basis, processing of
-network addresses by the receiver, data access and applicable visitor rights against
-the site's existing privacy notice; unresolved facts must not be presented as verified.
+Vlastní úvod + přesné společné znění z VCode:
+`docs/analytics-public-webs-privacy-review.md`, revize 2026-10-04,
+SHA-256 `99e02868a7d45a9e65eb6022335045c83ba06b8adc66108900e90c191f386069`.
+Měření i veřejný doplněk zůstávají vypnuté do konkrétního schválení této revize.
+UI obsahuje české znění a rozbalitelné anglické znění téhož doplňku.
+Přihlášené návštěvy Studio Balance jsou navíc technicky vyřazené z měření.
 
-## Čeština — navržený doplněk
+## Český doplněk
 
-Na obecných veřejných stránkách Studia Balance používáme vlastní statistiku
-návštěvnosti, abychom lépe rozuměli využití webu. Evidujeme pouze otevření předem
-vybraných veřejných stránek. Nepoužíváme analytické cookies, nesledujeme kliknutí
-ani nenahráváme obrazovku. Do statistik neposíláme obsah formulářů, rezervace,
-účet, e-mail, jméno, polohu, zdravotní údaje, parametry adresy ani odkaz předchozí
-stránky. Přihlášené návštěvy a soukromé části aplikace neměříme. Respektujeme
-nastavení Do Not Track a Global Privacy Control; při jejich zapnutí se měření
-neodesílá. Návštěvy bez připojení neukládáme pro pozdější odeslání.
+Na vybraných obecných veřejných stránkách Studia Balance měříme návštěvnost, abychom lépe rozuměli využití webu. Účty, konkrétní termíny, rezervace a soukromé části aplikace tímto měřením nesledujeme.
 
-Statistiky zpracovává společná služba v naší infrastruktuře. Při přijetí požadavku
-server technicky obdrží síťovou adresu zařízení; ta se nepřipojuje k vašemu účtu.
-Statistické záznamy uchováváme nejvýše 180 dní a přístup mají pouze oprávněné
-osoby. Odhad návštěvnosti nepředstavuje přesný počet konkrétních lidí.
+Měření používá společnou službu VCode/Umami v naší infrastruktuře bez analytických cookies a bez záznamu obrazovky. Zaznamenává pouze otevření předem vybraných veřejných stránek. Nesledujeme kliknutí, neodesíláme obsah formulářů, údaje o účtu, rezervace, polohu, zprávy, zdravotní údaje, odpovědi ani herní postup. Nepředáváme parametry adres, fragmenty, názvy stránek ani odkazující stránku a nespojujeme statistiky s vaším účtem.
 
-## English — proposed addition
+Při přijetí požadavku služba dočasně zpracuje síťovou adresu zařízení a údaje prohlížeče pro denně obměňované technické označení návštěv. IP adresu neukládá v čitelné podobě do analytické databáze. Odhad návštěvníků není přesným počtem konkrétních lidí. Statistiky nejsou veřejné a přístup k nim mají jen oprávnění správci. Analytické záznamy včetně jejich záloh uchováváme nejvýše 180 dní.
 
-We use our own traffic statistics on general public Studio Balance pages to
-understand how the website is used. We record only views of selected public pages.
-We do not use analytics cookies, track clicks or record screens. We do not send form
-contents, bookings, accounts, email addresses, names, location, health information,
-URL parameters or the previous page's referrer to analytics. Signed-in visits and
-private application areas are not measured. We respect Do Not Track and Global
-Privacy Control; when enabled, no analytics are sent. Offline visits are not stored
-for later submission.
+Respektujeme Do Not Track a Global Privacy Control: při jejich zapnutí návštěvu neodešleme. Události bez připojení zahazujeme a neukládáme k pozdějšímu odeslání. Toto měření je oddělené od případných dosavadních produktových či herních statistik a nepředává do společné služby jejich údaje.
 
-Statistics are processed by a shared service within our infrastructure. When a
-request arrives, the server technically receives the device's network address; it
-is not linked to your account. Statistical records are retained for no more than
-180 days and are accessible only to authorized people. Traffic estimates do not
-represent an exact count of identifiable individuals.
+## English addition
 
-## Approval record
+We measure visits to selected general public Studio Balance pages to understand how the website is used. Accounts, individual sessions, bookings and private application areas are excluded.
 
-Pending. The public websiteId has been provisioned by VCode, but no collection
-start date or public privacy publication has been approved in this repository. Record the approved text revision and decision before
-activation; later scope expansion requires another review.
+Measurement uses the shared VCode/Umami service within our infrastructure without analytics cookies or screen recording. It records only views of selected public pages. We do not track clicks or send form contents, account information, bookings, location, messages, health data, answers or game progress. URL parameters, fragments, page titles and referring pages are not sent, and statistics are not linked to your account.
+
+When a request arrives, the service temporarily processes the device's network address and browser information to derive a daily changing technical visit identifier. IP addresses are not stored in readable form in the analytics database. Estimated visitors are not an exact count of individuals. Statistics are private and available only to authorized administrators. Analytics records, including their backups, are retained for no more than 180 days.
+
+We respect Do Not Track and Global Privacy Control: when enabled, no visit is sent. Offline events are discarded rather than stored for later transmission. This measurement is separate from any existing product or game statistics and does not forward their data to the shared service.
+
+## Stav schválení
+
+Čeká na společné owner review ve VCode. Registrace websiteId a technická příprava
+nejsou souhlas se sběrem ani publikací. Datum zahájení není stanoveno.
