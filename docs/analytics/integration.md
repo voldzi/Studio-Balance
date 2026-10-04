@@ -223,3 +223,57 @@ runtime. Intended release: guarded pnpm deploy:production -- <clean-candidate-sh
 from the production-based analytics branch, only after coordinator slot. No public
 GitHub push. Central registry and final isolated ingestion acceptance are coordinated
 by VCode; no claim of live v2 until deployment and acceptance complete.
+
+
+### Approved v2 production deployment receipt — 2026-10-04
+
+Production candidate 68fa497 was deployed through the standard guarded release
+in the Studio Balance slot granted by the VCode coordinator. API /ready reports
+version 68fa497 and status ok; web, API and worker containers all use the matching
+68fa497 image tags and are healthy. Migration completed successfully. Local
+acceptance documentation commits do not change the deployed revision.
+
+Effective application plan: vcode-public-v2, enabled=true,
+privacyNoticeApproved=true, captureSources=true, allowedEvents=[outbound-click].
+Only the Masaze Jirina partner CTA and the Instagram/Facebook public anchors are
+instrumented. Original eight public paths and server-side private-session
+suppression remain unchanged. Contact/app-store events are not allowed here.
+The shared pinned runtime is loaded from /analytics/v2/tracker.js, SRI
+sha384-4mn0sN5UeFuzSjaXlbulwbJz7N38PPOovouC9Xp3OHD0r94YKgx8B2RAk/nK6mg0.
+
+Anonymous public HTML was fetched without JavaScript and matched all four exact
+approved paragraphs in each language (VCode 6dc4dd3, owner approval a56b160).
+Public Czech notice: https://studio-balance.cz/#public-analytics-privacy-title
+Public English notice: https://studio-balance.cz/#public-analytics-privacy-en
+English is expandable. The supplement is intentionally excluded from sessions
+bearing either application cookie.
+
+The actual TypeScript adapter was compiled into an ephemeral localhost harness
+and exercised in the in-app browser with the exact pinned VCode runtime. Fetch
+was replaced only within the isolated harness with an in-memory sink using a
+synthetic UUID; no events reached production. Nine browser checks passed:
+pageview deduplication/explicit outbound event, source reduced to google without
+raw referrer or query, omitted credentials/referrer, rejected unapproved events
+and private/parameterized paths, DNT, GPC, offline discard, ineligible-session
+suppression, and no offline replay. Screenshot evidence:
+/tmp/studio-balance-v2-browser-test.png. This is browser-harness evidence, not a
+physical-device test or evidence of central production ingestion.
+
+Production browser verification used a temporary tab with both v1/v2 collector
+URLs blocked. Admin login loaded zero analytics scripts and made zero analytics
+requests (complete network capture). The existing signed-in browser was also
+excluded on the public home page: zero scripts/requests and no anonymous notice;
+public content loaded successfully. User cookies and original tabs were not
+changed. The temporary tab, block rules and localhost test server were cleaned up.
+91 web tests, lint/typecheck/local build and release gates passed for this
+candidate; documentation skeleton validation passed after this receipt.
+
+Initial attempts were refused before swapping production because disk free space
+was below 20 GiB. Only old unused regenerable Docker build cache was pruned;
+images, containers, volumes, production data and rollback images were untouched.
+The successful attempt passed the standard disk/memory guard. No AKB service was
+stopped. No central VCode registry or DMZ/edge changes and no GitHub push were made.
+
+Application deployment and local/private browser acceptance are complete.
+Final central registry enablement and isolated ingestion acceptance remain with
+VCode; this receipt does not claim that live production events were ingested.
