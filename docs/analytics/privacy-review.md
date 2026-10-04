@@ -1,10 +1,11 @@
-# Studio Balance — společný návrh ke schválení, nezveřejněno
+# Studio Balance — schválený doplněk soukromí
 
 Vlastní úvod + přesné společné znění z VCode:
 `docs/analytics-public-webs-privacy-review.md`, revize VCode `ef5cbf7`, 2026-10-04,
 SHA-256 `2f25b51e33ea7b99c26f664d01bf2f605b4c2491f09352b59b4025da76c541e4`.
-Měření i veřejný doplněk zůstávají vypnuté do konkrétního schválení této revize.
-UI návrh obsahuje české znění a rozbalitelné anglické znění téhož doplňku.
+Vlastník schválil tento přesný obsah i aktivaci odpovědí „Souhlasím“ ve VCode
+dne 4. 10. 2026; záznam souhlasu je v commitu VCode 0527093.
+Veřejný doplněk obsahuje české znění a rozbalitelné anglické znění téhož doplňku.
 Přihlášené návštěvy Studio Balance jsou navíc technicky vyřazené z měření.
 
 ## Český doplněk
@@ -29,6 +30,9 @@ We respect Do Not Track and Global Privacy Control: when enabled, no visit is se
 
 ## Stav schválení
 
-Čeká na jediné společné owner review ve VCode. Registrace websiteId a technická
-příprava nejsou souhlas se sběrem ani publikací. Datum zahájení není stanoveno.
-Při aktivaci použít přesně tuto aktuální revizi, nikoli předchozí skrytý návrh.
+Schváleno 4. 10. 2026 v hlavním chatu VCode (0527093), obsah ef5cbf7.
+Frontend přepínače enabled=true a privacyNoticeApproved=true. Centrální registr
+zapíná koordinátor až po ověření zveřejněného doplňku. Dokud není potvrzen příjem,
+nejde o potvrzení fungujícího end-to-end sběru.
+Česky: https://studio-balance.cz/#public-analytics-privacy-title
+English: https://studio-balance.cz/#public-analytics-privacy-en (rozbalit English).

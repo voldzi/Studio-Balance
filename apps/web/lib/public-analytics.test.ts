@@ -3,9 +3,9 @@ import { allowedPublicAnalyticsPath, createPublicAnalyticsBridge, configurePubli
 
 const anonymous = { eligible: true, online: true, doNotTrack: null, globalPrivacyControl: false };
 describe("public analytics privacy boundary", () => {
-  it("ships disabled with owner review pending", () => {
-    expect(publicAnalyticsConfig.enabled).toBe(false);
-    expect(publicAnalyticsConfig.privacyNoticeApproved).toBe(false);
+  it("preserves the owner-approved activation and publication", () => {
+    expect(publicAnalyticsConfig.enabled).toBe(true);
+    expect(publicAnalyticsConfig.privacyNoticeApproved).toBe(true);
     expect(publicAnalyticsConfig.allowedOrigin).toBe("https://studio-balance.cz");
     expect(publicAnalyticsConfig.runtimePath).toBe("/analytics/v1/tracker.js");
     expect(publicAnalyticsConfig.collectorPath).toBe("/analytics/v1/events");

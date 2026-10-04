@@ -168,3 +168,14 @@ now use that exact current source and recorded SHA-256. Production 905b19e retai
 the preceding hidden draft; neither version is published. At later approved
 activation, release the ef5cbf7-aligned draft, not the earlier proposal. No new
 approval was requested; the single central owner review remains pending.
+
+### Approved activation — 2026-10-04
+
+Owner approval was verified directly in the VCode thread: “Souhlasím”, recorded
+in VCode 0527093, exact CS/EN source ef5cbf7. This supersedes the pending statuses
+above. Frontend enabled=true, privacyNoticeApproved=true. Public text URLs are
+https://studio-balance.cz/#public-analytics-privacy-title and
+https://studio-balance.cz/#public-analytics-privacy-en (expand English).
+The unchanged eight public paths, DNT/GPC/offline/session exclusions remain.
+Ordinary release guard checks both flags in the actual candidate. Central registry
+activation and final ingestion verification are separate coordinator steps.

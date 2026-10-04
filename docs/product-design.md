@@ -500,3 +500,12 @@ and release checks. `analytics/privacy-review.md` contains unpublished CS/EN own
 review drafts. No identified, private, reservation, form or click collection; no new
 analytics service or database. Activation and end-to-end shared collector validation
 remain pending and must not be represented as completed.
+
+## Approved shared analytics activation (2026-10-04)
+
+Supersedes the earlier default-off preparation: the owner approved the exact
+CS/EN notice ef5cbf7 in VCode (approval record 0527093). Publish that supplement
+and preserve enabled=true / privacyNoticeApproved=true in normal releases.
+Scope and all private-session, DNT/GPC and offline protections in ADR 0021 remain.
+Central registry activation and final ingestion verification follow public notice
+acceptance; never treat a frontend deployment as proof of received statistics.

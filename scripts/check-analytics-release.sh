@@ -15,3 +15,10 @@ if ! git -C "$root" show "$version:apps/web/app/layout.tsx" | rg -q 'PublicAnaly
   echo "Deployment refused: analytics root-layout bridge missing." >&2
   exit 1
 fi
+
+# Preserve the approved activation in the actual release candidate, not only HEAD.
+for flag in enabled privacyNoticeApproved; do
+  git -C "$root" show "$version:apps/web/lib/public-analytics.ts" | rg -q "${flag}: true" || {
+    echo "Deployment refused: approved analytics flag ${flag} is disabled." >&2; exit 1;
+  }
+done

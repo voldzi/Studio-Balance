@@ -192,7 +192,9 @@ upstream checks, Nginx validation, backup, TLS, or rollback behavior.
 ## Shared public analytics
 
 This application uses the shared VCode analytics contract `vcode-public-v1`;
-preparation is disabled until the Studio Balance owner approves the privacy notice.
+The owner approved the ef5cbf7 CS/EN supplement and activation on 2026-10-04
+(VCode approval record 0527093). Preserve enabled=true and privacyNoticeApproved=true
+in ordinary releases; emergency suspension must be explicit and documented.
 Preserve its bridge in the root layout, exact public path configuration and release
 check. Use the shared versioned tracker and same-origin collector; secrets and
 internal endpoints remain server-side. Never collect accounts, forms, bookings,

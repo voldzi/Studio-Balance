@@ -1,7 +1,7 @@
 // Reviewed configuration only; runtime/collector are owned by VCode.
 export const publicAnalyticsConfig = {
-  enabled: false,
-  privacyNoticeApproved: false,
+  enabled: true,
+  privacyNoticeApproved: true,
   allowedOrigin: "https://studio-balance.cz",
   websiteId: "7d3e49ff-bbc0-4e56-8ecc-4a9d1965fd62" as string | null,
   runtimeVersion: "vcode-public-v1",
