@@ -179,3 +179,24 @@ https://studio-balance.cz/#public-analytics-privacy-en (expand English).
 The unchanged eight public paths, DNT/GPC/offline/session exclusions remain.
 Ordinary release guard checks both flags in the actual candidate. Central registry
 activation and final ingestion verification are separate coordinator steps.
+
+### Activation deployment acceptance — 2026-10-04
+
+Deployed SHA 37793c6; images studiobalance/web:37793c6, api:37793c6 and
+worker:37793c6. All three healthy; /ready reports 37793c6 at 10:58:32 UTC.
+Both frontend gates are true. Anonymous public HTML was parsed and all four CS
+and all four EN paragraphs matched the exact owner-approved ef5cbf7 source.
+The public anchors are documented above; English is expandable.
+
+59 web tests, lint, typecheck, skeleton validation and release checks passed.
+Browser admin login: no analytics script and zero analytics network requests
+(complete capture). The existing signed-in browser is conservatively excluded
+on public pages, so it does not render the anonymous-only supplement. Offline
+navigation in that signed-in browser sent zero analytics requests; online mode
+was restored. DNT/GPC suppression passed automated tests; browser simulation
+was unavailable because addScriptToEvaluateOnNewDocument is unsupported. Do not
+represent those tests as physical-device DNT/GPC acceptance.
+
+No synthetic visits/payloads were inserted into the real website statistics.
+Final central registry enablement and real ingestion proof await the coordinator's
+announcement. No GitHub push or shared DMZ changes were made.
