@@ -152,3 +152,19 @@ accepted production history; it cannot silently overwrite current production or
 remove analytics. The production-based analytics branch has the same guard.
 Emergency rollback remains a separate authorized operation. This local adoption does
 not activate analytics, publish the draft, push GitHub or replace production 9946f7e.
+
+### Completion and pending review refresh — 2026-10-04
+
+Production deployment completed as `905b19e`, replacing 9946f7e via the guarded
+private artifact procedure. API/web/worker are healthy and readiness reports the
+correct version. Release guard and all 33 analytics tests passed before transfer.
+Browser reload captured zero analytics requests, no analytics script in DOM and
+no published privacy draft. No GitHub push or DMZ modification was performed.
+
+Central VCode then refined the pending review to revision ef5cbf7, clarifying general
+browser/OS/device categories and exclusion of full headers and inferred location.
+The unpublished local UI draft and CS/EN review file in both development directories
+now use that exact current source and recorded SHA-256. Production 905b19e retains
+the preceding hidden draft; neither version is published. At later approved
+activation, release the ef5cbf7-aligned draft, not the earlier proposal. No new
+approval was requested; the single central owner review remains pending.
