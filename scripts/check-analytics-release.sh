@@ -36,4 +36,9 @@ done
 for path in apps/web/components/social-links.tsx apps/web/components/massage-partner-section.tsx; do
   git -C "$root" show "$version:$path" | rg -q 'analyticsEvent="outbound-click"' || { echo "Deployment refused: explicit outbound handler missing $path." >&2; exit 1; }
 done
-git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'sha384-4mn0sN5UeFuzSjaXlbulwbJz7N38PPOovouC9Xp3OHD0r94YKgx8B2RAk/nK6mg0' || { echo "Deployment refused: approved v2 integrity changed." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5' || { echo "Deployment refused: approved v2 integrity changed." >&2; exit 1; }
+
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'runtimePath: "/vcode-analytics-tiktok.js"' || { echo "Deployment refused: approved TikTok runtime path missing." >&2; exit 1; }
+asset_sri="$(git -C "$root" show "$version:apps/web/public/vcode-analytics-tiktok.js" | openssl dgst -sha384 -binary | openssl base64 -A)"
+[[ "sha384-$asset_sri" == "sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5" ]] || { echo "Deployment refused: shared TikTok runtime bytes changed." >&2; exit 1; }
+git -C "$root" cat-file -e "$version:apps/web/lib/public-analytics-runtime.test.ts" || { echo "Deployment refused: shared runtime privacy tests missing." >&2; exit 1; }

@@ -43,3 +43,18 @@ Konkrétní společný odstavec z VCode 6dc4dd3 schválil vlastník v a56b160.
 Aktuální kandidát používá expanded-metrics-review.md; nahrazuje pouze druhý
 odstavec obou jazyků. Výše uvedený text je zachován jako v1 fallback. Produkce
 zůstává na v1, dokud koordinátor nepřidělí nasazovací slot a neproběhne ověření.
+
+
+## Approved TikTok source runtime — 2026-10-05
+
+ADR 0023 records the verified owner approval to recognize only the TikTok service
+label. Serve byte-exact VCode public-v2-tiktok.js as /vcode-analytics-tiktok.js,
+SRI sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5.
+This narrow exception supersedes the earlier no-copy runtime rule. The existing
+v2 endpoint, website ID, gates, exact paths/events, anonymous-session boundary,
+DNT/GPC, offline discard and published CS/EN notice are unchanged. Raw URLs,
+profiles and videos are never sent; lookalike domains are not TikTok. Release
+checks validate committed asset bytes and actual runtime privacy tests. Browser
+acceptance uses an isolated memory sink or blocked collector. VCode alone updates
+the central registry after verified deployment. Deployment evidence is recorded
+in docs/analytics/integration.md.

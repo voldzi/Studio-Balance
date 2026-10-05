@@ -203,6 +203,9 @@ content IDs, location, health data or communication. Only the explicit Masáže,
 approved in v2. No automatic click capture, contact-click or app-store-click.
 Preserve captureSources=true, exact SRI and both v2 approval/activation gates
 after migration; production deployment is coordinated separately.
+The owner-approved TikTok addition uses the byte-exact pinned shared static
+asset /vcode-analytics-tiktok.js under ADR 0023; no local runtime fork or edge
+change. Preserve its reviewed SRI and committed-asset release check.
 Respect DNT/GPC, omit cookies/credentials, discard offline visits and prohibit
 session replay. Suppress collection when either application session cookie exists.
 Changes to scope require privacy review. Layout, navigation, CSP and deployment

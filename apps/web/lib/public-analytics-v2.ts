@@ -1,14 +1,14 @@
 import { analyticsPermitted, allowedPublicAnalyticsPath, createPublicAnalyticsBridge, publicAnalyticsConfig, type AnalyticsEnvironment } from "./public-analytics";
 
 // Owner approved exact VCode 6dc4dd3 replacement and activation (a56b160).
-// Local release candidate only; production deployment waits for coordinator slot.
+// TikTok source addition approved by the owner on 2026-10-05; see ADR 0023.
 export const publicAnalyticsV2Config = {
   enabled: true as boolean,
   privacyNoticeApproved: true as boolean,
   runtimeVersion: "vcode-public-v2",
-  runtimePath: "/analytics/v2/tracker.js",
+  runtimePath: "/vcode-analytics-tiktok.js",
   collectorPath: "/analytics/v2/events",
-  runtimeIntegrity: "sha384-4mn0sN5UeFuzSjaXlbulwbJz7N38PPOovouC9Xp3OHD0r94YKgx8B2RAk/nK6mg0",
+  runtimeIntegrity: "sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5",
   captureSources: true,
   allowedEvents: ["outbound-click"]
 } as const;
