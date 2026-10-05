@@ -287,3 +287,51 @@ allowedEvents=[outbound-click]. The server build/deploy slot has been released;
 VCode is proceeding with its dashboard and other product releases. Central
 activation is confirmed by VCode; Studio Balance's own acceptance above remains
 isolated and does not claim separately observed real-user ingestion.
+
+
+### TikTok runtime deployment receipt — 2026-10-05
+
+Owner approval was verified directly in the VCode coordination thread (question
+about TikTok recognition, explanation of service-only source without profile or
+video data, and owner reply “ano doplň”). ADR 0023 records the narrow byte-exact
+static runtime exception. Guarded release aa32034 was deployed successfully.
+API /ready returned status ok and version aa32034; web, API and worker all run
+studiobalance/{web,api,worker}:aa32034 and became healthy. Migration exited 0.
+Image identities:
+- web: sha256:619f0209df4a52505e873c255461158a5cf971b51518eeec956c93bed49e953e
+- API: sha256:04d9f34df0bdc989f0b9973a43f20f0c9c9366731b95ee4c6250b0765632e506
+- worker: sha256:2c6118fb043c9a069f50bddd89734040b619c485189152d57faa32230ca89d75
+
+Public GET https://studio-balance.cz/vcode-analytics-tiktok.js returned 200,
+application/javascript; charset=UTF-8, 2024 bytes, exact approved shared bytes.
+SRI: sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5.
+Public GET of /analytics/v2/tracker.js retained its original SHA384 exactly.
+Anonymous HTML retained all four exact approved CS paragraphs and all four EN
+paragraphs. Only GETs were used for HTTP acceptance; no collector POST was sent.
+
+Lint, monorepo typecheck, 108 web tests, Next production build, analytics gates,
+skeleton, Keycloak-theme and OpenAPI validation passed. Tests exercise the real
+static runtime with the real adapter and a memory sink, including TikTok and
+subdomains, rejected lookalike/private sources, private routes, unapproved events,
+DNT/GPC, offline/no replay, session ineligibility, payload/credential restrictions
+and pinned asset SHA384. The release guard passed aa32034 and rejected obsolete
+68fa497 as an ordinary release missing the newly approved integrity.
+
+Fourteen isolated in-app browser checks passed using a synthetic website UUID,
+actual compiled adapter and the exact shared runtime, with fetch replaced only
+inside the localhost harness by an in-memory sink. Evidence screenshot:
+/tmp/studio-balance-tiktok-browser.png. This does not represent a physical phone
+test or real production source ingestion. Production temporary-tab collector
+URLs were blocked before public navigation. Admin login and the existing private
+browser session on the public home each loaded zero analytics scripts and sent
+zero analytics requests, with complete untruncated network capture. User cookies
+and original tabs were unchanged; temporary tab, blocking and test server removed.
+
+Contract remains vcode-public-v2; enabled=true, privacyNoticeApproved=true,
+captureSources=true, allowedEvents=[outbound-click], same website ID, same eight
+public paths and /analytics/v2/events. No Nginx edge or central registry change,
+no production test visits and no public GitHub push were performed. Unrelated
+local admin/docs/source-asset work remains intact. The build/deploy is complete;
+VCode can update the central private trackerPath/SRI registry from this receipt.
+No separate claim of real-user ingestion is made. Documentation-only commits
+following aa32034 do not change the deployed source/image.
