@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const productionPublicAppUrl = "https://studio-balance.cz";
 
-const defaultDescription = "Studio Balance v Bruntále nabízí TRX, Barre, Jumping, Balance Flow, kruhový trénink a Power Yoga. Prohlédněte si rozvrh a rezervujte lekci.";
+const defaultDescription = "Studio Balance v Bruntále nabízí TRX, Barre, Jumping, Balance Flow, kruhový trénink a Latino Ladies. Prohlédněte si rozvrh a rezervujte lekci.";
 const defaultImagePath = "/images/studio-balance/studio-hero.jpg";
 
 export function publicAppUrl(): string {

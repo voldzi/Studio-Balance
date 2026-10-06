@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   applicationName: "Studio Balance",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Studio Balance" },
-  description: "Studio Balance v Bruntále – lekce TRX, Barre, Jumping, Balance Flow, kruhový trénink a Power Yoga.",
+  description: "Studio Balance v Bruntále – lekce TRX, Barre, Jumping, Balance Flow, kruhový trénink a Latino Ladies.",
   manifest: "/manifest.webmanifest",
   metadataBase: new URL(publicAppUrl()),
   openGraph: {
