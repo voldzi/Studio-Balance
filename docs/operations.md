@@ -827,3 +827,22 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+## Latino Ladies replacement — 2026-10-06
+
+CD-064 was applied using the existing audited administrative services. The two
+Power Yoga rules become Latino Ladies from 2026-10-16: Friday 17:30–18:30 and
+Sunday 18:00–19:00, Xavier Tihelka, capacity 12, price 200 CZK. All 24 affected
+created sessions were verified at capacity 12 and price 20000 cents. No active
+bookings were affected, so no client notifications were generated. All seven
+historical/existing Yoga booking records retained their status and price; the
+9 October booking and earlier sessions remain unchanged.
+
+The existing Latino Ladies profile was reused and supplied poster/portrait
+uploaded to dedicated media storage. Request receipt:
+`c55b1b1d-2bb6-4142-80b9-e51e08be413a`. Public API omits numeric capacities.
+Public uploaded lesson images are already normalized WebP and are displayed
+directly; Next image optimization cannot resolve their API proxy internally.
+This applies to catalog, detail and account favorites. Static bundled images
+retain optimization. Production acceptance includes rendered images and both
+first dates (16 and 18 October), in addition to service health.

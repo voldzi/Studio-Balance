@@ -152,7 +152,7 @@
       "get": { "summary": "List approved client transformations", "operationId": "listTransformations", "tags": ["Content"], "security": [], "parameters": [{ "name": "featured", "in": "query", "schema": { "type": "boolean", "default": false } }], "responses": { "200": { "description": "Published transformations with confirmed consent.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transformation" } } } } } } }, "400": { "$ref": "#/components/responses/Error" } } }
     },
     "/api/v1/media/{id}": {
-      "get": { "summary": "Read an image used by published content or an active instructor", "operationId": "getPublicMedia", "tags": ["Content"], "security": [], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "responses": { "200": { "description": "Published WebP image.", "content": { "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "404": { "$ref": "#/components/responses/Error" }, "503": { "$ref": "#/components/responses/Error" } } }
+      "get": { "summary": "Read an image referenced by published content, an active instructor, or an active class type", "operationId": "getPublicMedia", "tags": ["Content"], "security": [], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "responses": { "200": { "description": "Published WebP image.", "content": { "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "404": { "$ref": "#/components/responses/Error" }, "503": { "$ref": "#/components/responses/Error" } } }
     },
     "/api/v1/sessions": {
       "get": {

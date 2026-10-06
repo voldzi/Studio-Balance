@@ -401,3 +401,7 @@ in docs/analytics/integration.md.
 Lesson replacement checks reject missing/same-type targets including restored
 drafts and mixed selections. Public lesson media denies unreferenced assets
 before storage access and exposes only exact active catalogue references.
+
+Uploaded lesson-image acceptance: check the public catalog, lesson detail and
+account favorites load `/api/v1/media/{id}` directly, without routing through
+Next image optimization. Confirm both poster and instructor portrait decode.
