@@ -342,3 +342,7 @@ bezplatného odmítnutí. Historie a termíny před účinností zůstávají.
 Dodané portrét a plakát jsou schválené pro profil nové lekce.
 Administrace při náhradě vyžaduje jiný typ lekce a nově vytvořený typ vybere
 automaticky; vysvětlení samo o sobě není změnou typu.
+
+## CD-065 — Okamžité stažení Power Yogy z nabídky (2026-10-06)
+
+Zadavatelka požaduje odstranit Power Yogu z veřejné nabídky i z pátku a neděle již nyní. Profil bude neaktivní a nové rezervace nepůjdou vytvořit ani přes starý odkaz. Latino Ladies a její účinnost od 16. října zůstávají podle CD-064. Historie rezervací zůstává; vyřízení jedné rezervace 9. října čeká na rozhodnutí provozovatele.

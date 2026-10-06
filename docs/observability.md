@@ -234,3 +234,5 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+Archivace typu a pozastavení rozvrhu používají existující administrativní audit class_type.updated a weekly_schedule_rule.versioned. Přímé požadavky na rezervaci neaktivního typu vracejí RESOURCE_NOT_FOUND se standardním requestId.

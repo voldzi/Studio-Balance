@@ -156,7 +156,7 @@
     },
     "/api/v1/sessions": {
       "get": {
-        "summary": "List public class sessions",
+        "summary": "List public class sessions (pouze aktivní typy lekcí)",
         "operationId": "listSessions",
         "tags": ["Schedule"],
         "security": [],
@@ -187,7 +187,7 @@
     },
     "/api/v1/sessions/{sessionId}": {
       "get": {
-        "summary": "Read a public class session",
+        "summary": "Read a public class session (pouze aktivní typy lekcí)",
         "operationId": "getSession",
         "tags": ["Schedule"],
         "security": [],

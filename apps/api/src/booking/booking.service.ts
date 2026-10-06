@@ -300,7 +300,7 @@ async function lockedSession(client: PoolClient, id: string): Promise<LockedSess
     FROM class_sessions s
     JOIN class_types ct ON ct.id = s.class_type_id
     JOIN instructors i ON i.id = s.instructor_id
-    WHERE s.id = $1
+    WHERE s.id = $1 AND ct.active = true
     FOR UPDATE OF s
   `, [id]);
   return result.rows[0];

@@ -4,6 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { Client, Pool, type PoolClient } from "pg";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountService } from "../account/account.service.js";
+import { ScheduleService } from "../schedule/schedule.service.js";
 import { AdminService } from "../admin/admin.service.js";
 import type { StudioSession } from "../auth/session.js";
 import type { DatabaseService } from "../database/database.service.js";
@@ -18,6 +19,7 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
   let schema: string;
   let bookings: BookingService;
   let admin: AdminService;
+  let schedule: ScheduleService;
   let owner: StudioSession;
   let other: StudioSession;
   let sessionId: string;
@@ -48,6 +50,7 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
     } as unknown as DatabaseService;
     bookings = new BookingService(database, new AccountService(database));
     admin = new AdminService(database);
+    schedule = new ScheduleService(database);
     owner = { subject: randomUUID(), email: "owner@example.test", emailVerified: true, roles: ["client"], mfaVerified: false };
     other = { ...owner, subject: randomUUID(), email: "other@example.test" };
     for (const user of [owner, other]) await client.query(`INSERT INTO user_profiles
@@ -78,6 +81,20 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
   function cancel(bookingId: string, lateCancellationConfirmed = false, session = owner) {
     return bookings.cancel({ bookingId, lateCancellationConfirmed, session, requestId: randomUUID(), idempotencyKey: randomUUID() });
   }
+
+  it("hides inactive lessons and rejects new bookings while preserving existing bookings", async () => {
+    const receipt = await bookings.create(input());
+    const type = (await client.query<{ id: string; slug: string }>("SELECT ct.id,ct.slug FROM class_types ct JOIN class_sessions s ON s.class_type_id=ct.id WHERE s.id=$1", [sessionId])).rows[0]!;
+    expect(await schedule.getSession(sessionId)).toBeDefined();
+    await client.query("UPDATE class_types SET active=false WHERE id=$1", [type.id]);
+    expect((await schedule.listClassTypes()).items.some((item) => item.id === type.id)).toBe(false);
+    expect(await schedule.getClassType(type.slug)).toBeUndefined();
+    expect((await schedule.listSessions(new Date(), new Date(startAt.getTime()+86400_000))).items.some((item) => item.id===sessionId)).toBe(false);
+    expect(await schedule.getSession(sessionId)).toBeUndefined();
+    await expect(bookings.create(input(other))).rejects.toMatchObject({ response: { code: "RESOURCE_NOT_FOUND" } });
+    expect(await count()).toBe(2);
+    expect((await bookings.listMine(owner)).items.map((item) => item.id)).toContain(receipt.id);
+  });
 
   it("creates two priced seats, named roster participants and explicit consent", async () => {
     const receipt = await bookings.create(input());

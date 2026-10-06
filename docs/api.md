@@ -427,3 +427,5 @@ zůstává vlastník. Jméno doprovodu se nikdy nevrací ve veřejném rozvrhu.
 Veřejné `GET /api/v1/media/{id}` zpřístupňuje také obrazový asset přímo
 přiřazený jako `heroImagePath` aktivního typu lekce. Nepřiřazené assety zůstávají
 neveřejné; skrytí typu odstraní tuto publikační vazbu.
+
+Neaktivní typy lekcí nejsou ve veřejném rozvrhu ani veřejném detailu termínu. Nová rezervace jejich termínu vrací RESOURCE_NOT_FOUND. Existující rezervace zůstávají dostupné v účtu a administraci.

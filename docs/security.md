@@ -378,3 +378,5 @@ Obrázek typu lekce v S3 je veřejný pouze při přesné vazbě
 `hero_image_path = '/api/v1/media/' || asset.id` u aktivního typu; žádný prefix
 ani volný soubor není důvodem ke zpřístupnění. Portrait vyžaduje aktivního
 instruktora jako dosud.
+
+Nová rezervace kontroluje aktivní typ lekce na backendu; skrytí katalogu samo není autorizační hranicí. Neaktivní typ zachovává oprávněnému klientovi přístup k jeho existujícím rezervacím.

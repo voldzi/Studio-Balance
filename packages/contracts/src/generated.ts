@@ -294,7 +294,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read an image used by published content or an active instructor */
+        /** Read an image referenced by published content, an active instructor, or an active class type */
         get: operations["getPublicMedia"];
         put?: never;
         post?: never;
@@ -311,7 +311,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List public class sessions */
+        /** List public class sessions (pouze aktivní typy lekcí) */
         get: operations["listSessions"];
         put?: never;
         post?: never;
@@ -328,7 +328,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read a public class session */
+        /** Read a public class session (pouze aktivní typy lekcí) */
         get: operations["getSession"];
         put?: never;
         post?: never;

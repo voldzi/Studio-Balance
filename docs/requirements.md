@@ -341,3 +341,5 @@ CD-064: Latino Ladies replaces both Power Yoga slots from 2026-10-16, with
 Xavier Tihelka, capacity 12 and new booking price 200 CZK. Existing reservation
 prices and earlier sessions are preserved. Lesson replacement must select a
 different type explicitly; newly created profiles are selected automatically.
+
+Neaktivní typ lekce je skrytý v katalogu, rozvrhu i veřejném detailu termínu a nelze na něj vytvořit novou rezervaci. Archivace typu nemaže rezervace ani jejich historii.

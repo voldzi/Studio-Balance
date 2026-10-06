@@ -541,3 +541,5 @@ Výběr náhrady začíná prázdnou volbou a nenabízí původní typ vybranýc
 Krátký postup vysvětluje vytvoření profilu, datum účinnosti a kontrolu dopadu.
 Nově vytvořený profil se automaticky vybere, potvrzení náhrady však zůstává
 samostatnou akcí. Obnovený koncept se stejným typem se odmítne s vysvětlením.
+
+Neaktivní typy lekcí se nezobrazují v katalogu ani veřejném rozvrhu; starý veřejný detail vrací stav nenalezeno. Historie vlastních rezervací je zachována.

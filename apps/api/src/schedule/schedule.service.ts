@@ -149,7 +149,7 @@ export class ScheduleService {
 
   async listSessions(from: Date, to: Date): Promise<{ items: PublicSession[]; timezone: "Europe/Prague" }> {
     const result = await this.database.query<SessionRow>(`${sessionSelect}
-      WHERE s.start_at >= $1 AND s.start_at < $2
+      WHERE ct.active = true AND s.start_at >= $1 AND s.start_at < $2
       GROUP BY s.id, ct.id, i.id
       ORDER BY s.start_at
     `, [from, to]);
@@ -159,7 +159,7 @@ export class ScheduleService {
 
   async getSession(id: string): Promise<PublicSession | undefined> {
     const result = await this.database.query<SessionRow>(`${sessionSelect}
-      WHERE s.id = $1
+      WHERE s.id = $1 AND ct.active = true
       GROUP BY s.id, ct.id, i.id
     `, [id]);
     return result.rows[0] ? mapSession(result.rows[0], new Date()) : undefined;
