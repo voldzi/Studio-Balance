@@ -848,3 +848,5 @@ retain optimization. Production acceptance includes rendered images and both
 first dates (16 and 18 October), in addition to service health.
 
 CD-065: Power Yoga je okamžitě stažena z veřejné nabídky. Zbývající termíny 9. a 11. října mají pozastavené rezervace; profil je neaktivní. Vyřízení jedné rezervace 9. října vyžaduje rozhodnutí provozovatele, bez automatického přesunu či storna.
+
+Veřejný katalog a rozvrh včetně detailů vrací Cache-Control: no-store, aby CDN po změně lekce neuchovávala starou nabídku. Kontrola hlavičky je v schedule.controller.test.ts. Při již existující CDN cache je nutné ověřit obnovu veřejné odpovědi.

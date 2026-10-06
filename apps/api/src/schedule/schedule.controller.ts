@@ -1,4 +1,4 @@
-import { Controller, Get, HttpException, HttpStatus, Inject, Param, Query } from "@nestjs/common";
+import { Controller, Get, Header, HttpException, HttpStatus, Inject, Param, Query } from "@nestjs/common";
 import { z } from "zod";
 
 import { ScheduleService } from "./schedule.service.js";
@@ -11,11 +11,13 @@ export class ScheduleController {
   constructor(@Inject(ScheduleService) private readonly schedule: ScheduleService) {}
 
   @Get("class-types")
+  @Header("Cache-Control", "no-store")
   listClassTypes() {
     return this.schedule.listClassTypes();
   }
 
   @Get("class-types/:slug")
+  @Header("Cache-Control", "no-store")
   async getClassType(@Param("slug") slugValue: string) {
     if (!slug.safeParse(slugValue).success) {
       throw new HttpException({ code: "RESOURCE_NOT_FOUND", message: "Lekce nebyla nalezena." }, HttpStatus.NOT_FOUND);
@@ -26,6 +28,7 @@ export class ScheduleController {
   }
 
   @Get("sessions")
+  @Header("Cache-Control", "no-store")
   listSessions(@Query("from") fromValue?: string, @Query("to") toValue?: string) {
     const now = new Date();
     const from = fromValue ? new Date(fromValue) : new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -37,6 +40,7 @@ export class ScheduleController {
   }
 
   @Get("sessions/:sessionId")
+  @Header("Cache-Control", "no-store")
   async getSession(@Param("sessionId") sessionId: string) {
     if (!uuid.safeParse(sessionId).success) {
       throw new HttpException({ code: "RESOURCE_NOT_FOUND", message: "Termín nebyl nalezen." }, HttpStatus.NOT_FOUND);

@@ -429,3 +429,5 @@ přiřazený jako `heroImagePath` aktivního typu lekce. Nepřiřazené assety z
 neveřejné; skrytí typu odstraní tuto publikační vazbu.
 
 Neaktivní typy lekcí nejsou ve veřejném rozvrhu ani veřejném detailu termínu. Nová rezervace jejich termínu vrací RESOURCE_NOT_FOUND. Existující rezervace zůstávají dostupné v účtu a administraci.
+
+Veřejný katalog a rozvrh včetně detailů vrací Cache-Control: no-store, aby CDN po změně lekce neuchovávala starou nabídku. Kontrola hlavičky je v schedule.controller.test.ts. Při již existující CDN cache je nutné ověřit obnovu veřejné odpovědi.

@@ -311,7 +311,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List public class sessions (pouze aktivní typy lekcí) */
+        /** List public class sessions (pouze aktivní typy lekcí; bez cache) */
         get: operations["listSessions"];
         put?: never;
         post?: never;
@@ -328,7 +328,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read a public class session (pouze aktivní typy lekcí) */
+        /** Read a public class session (pouze aktivní typy lekcí; bez cache) */
         get: operations["getSession"];
         put?: never;
         post?: never;
