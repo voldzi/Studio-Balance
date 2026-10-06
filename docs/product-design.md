@@ -534,3 +534,10 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+### Náhrada pravidelné lekce
+
+Výběr náhrady začíná prázdnou volbou a nenabízí původní typ vybraných řad.
+Krátký postup vysvětluje vytvoření profilu, datum účinnosti a kontrolu dopadu.
+Nově vytvořený profil se automaticky vybere, potvrzení náhrady však zůstává
+samostatnou akcí. Obnovený koncept se stejným typem se odmítne s vysvětlením.

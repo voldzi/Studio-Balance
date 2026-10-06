@@ -331,3 +331,14 @@ jedné rezervace na účet a termín: povoleno je nejvýše vlastní místo a je
 doprovod, nikoli neomezené rezervování. Kontrola duplicit mezi různými účty podle
 jména není zaručena; klient má ověřit, že doprovod nemá vlastní rezervaci.
 Existující rezervace a historické poplatky se nemění.
+
+## CD-064 — Latino Ladies místo Power Yogy (2026-10-06)
+
+Od 2026-10-16 nahradí Latino Ladies páteční Power Yogu 17:30–18:30
+ a nedělní 18:00–19:00 (první neděle 2026-10-18). Xavier Tihelka,
+kapacita 12, nové rezervace 200 Kč. Stávající rezervace a jejich původní
+cenové snapshoty zůstanou, dotčení klienti dostanou oznámení s možností
+bezplatného odmítnutí. Historie a termíny před účinností zůstávají.
+Dodané portrét a plakát jsou schválené pro profil nové lekce.
+Administrace při náhradě vyžaduje jiný typ lekce a nově vytvořený typ vybere
+automaticky; vysvětlení samo o sobě není změnou typu.

@@ -26,6 +26,9 @@ type Preview = {
 const days = ["", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"];
 export const studioToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
+export const isReplacementValid = (replacementId: string, rules: Pick<ScheduleRule, "classTypeId">[]) =>
+  Boolean(replacementId) && rules.length > 0 && rules.every((r)=>r.classTypeId !== replacementId);
+
 export function ScheduleChangeEditor({rule,rules,classTypes,instructors,busy,onApplied}: {
   rule: ScheduleRule; rules: ScheduleRule[]; classTypes: ClassOption[]; instructors: Instructor[]; busy: boolean; onApplied: () => Promise<void>;
 }) {
@@ -37,10 +40,12 @@ export function ScheduleChangeEditor({rule,rules,classTypes,instructors,busy,onA
   const [message,setMessage] = useState("");
   const [expired,setExpired] = useState(false);
   const [newType,setNewType] = useState(false);
+  const [replacementId,setReplacementId] = useState("");
   const [createdType,setCreatedType] = useState<ClassOption | null>(null);
   const draft = useAdminDraft(`schedule-${rule.id}`, (values) => {
     if (values.action) setAction(values.action);
     if (values.scope) setScope(values.scope);
+    if (values.classTypeId) setReplacementId(values.classTypeId);
     const selected = Object.entries(values).filter(([name,value])=>name.startsWith("class:")&&value==="on").map(([name])=>name.slice(6));
     if(selected.length) setSelectedClasses(selected);
     setPreview(null);
@@ -59,14 +64,19 @@ export function ScheduleChangeEditor({rule,rules,classTypes,instructors,busy,onA
         defaultEquipment:"Pomůcky jsou připravené ve studiu.",whatToBring:"Sportovní oblečení, pohodlnou obuv a pití.",
         practicalNotice:"",heroImagePath:"",heroImageAlt:"",seoTitle:name,seoDescription:description.slice(0,320)
       })});
-      setCreatedType({id:result.id,name,active:true});setNewType(false);setPreview(null);
+      setCreatedType({id:result.id,name,active:true});setReplacementId(result.id);setNewType(false);setPreview(null);
       setMessage(`Lekce ${name} je připravená. Nyní zkontrolujte náhradu termínů a potvrďte ji.`);
     } catch(e) { setMessage(e instanceof Error ? e.message : "Novou lekci se nepodařilo vytvořit."); }
     finally { setWorking(false); }
   }
 
   async function review(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();const f=new FormData(event.currentTarget);setWorking(true);setMessage("");setPreview(null);
+    event.preventDefault();const f=new FormData(event.currentTarget);setMessage("");setPreview(null);
+    if (action === "replace" && !isReplacementValid(replacementId,chosenRules)) {
+      setMessage("Vyberte jiný druh lekce. Text vysvětlení sám lekci nenahradí.");
+      return;
+    }
+    setWorking(true);
     const from = String(f.get("from")); const through = String(f.get("through") ?? "");
     const input: Input = {ruleIds:chosenRules.map((r)=>r.id),from,...(through?{through}:{}),
       operation: ["close","cancel","open"].includes(action) ? action as Input["operation"] : "edit",
@@ -105,7 +115,8 @@ export function ScheduleChangeEditor({rule,rules,classTypes,instructors,busy,onA
       <label>Platí od<input name="from" type="date" min={studioToday()} defaultValue={studioToday()} required/></label>
       <label>Platí do (volitelné)<input name="through" type="date" min={studioToday()}/><small>Bez konce platí změna dále. Po konci se obnoví dosavadní pravidelný plán.</small></label>
       <p className="admin-form-note admin-form-wide">Vybráno: {chosenRules.map((r)=>`${r.className} – ${days[r.weekday]} ${r.localStartTime}`).join("; ") || "Vyberte alespoň jednu lekci."}</p>
-      {action==="replace" && <label className="admin-form-wide">Nová lekce<select name="classTypeId" required defaultValue={createdType?.id??rule.classTypeId} key={createdType?.id??"types"}>{availableTypes.filter((t)=>t.active).map((t)=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button type="button" onClick={()=>setNewType(!newType)}>+ Přidat nový druh lekce</button></label>}
+      {action==="replace" && <p className="admin-form-note admin-form-wide">1. Vyberte náhradní lekci, nebo ji vytvořte tlačítkem níže. 2. Nastavte datum, kapacitu a cenu. 3. Zkontrolujte dopad a potvrďte změnu. Nově vytvořená lekce se vybere automaticky. Pro náhradu v pátek i v neděli zvolte všechny pravidelné časy.</p>}
+      {action==="replace" && <label className="admin-form-wide">Nová lekce<select name="classTypeId" required value={replacementId} onChange={(e)=>setReplacementId(e.target.value)}><option value="">Vyberte náhradní lekci</option>{availableTypes.filter((t)=>t.active && !chosenRules.some((r)=>r.classTypeId===t.id)).map((t)=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button type="button" onClick={()=>setNewType(!newType)}>+ Přidat nový druh lekce</button></label>}
       {["edit","replace"].includes(action) && <>
         {scope==="slot" && <><label>Den<select name="weekday" defaultValue={rule.weekday}>{days.slice(1).map((day,i)=><option key={day} value={i+1}>{day}</option>)}</select></label><label>Začátek<input name="localStartTime" defaultValue={rule.localStartTime} type="time" required/></label></>}
         <label>Instruktor<select name="instructorId" defaultValue={rule.instructorId}>{instructors.filter((i)=>i.active).map((i)=><option key={i.id} value={i.id}>{i.displayName}</option>)}</select></label>

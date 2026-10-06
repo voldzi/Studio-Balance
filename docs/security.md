@@ -373,3 +373,8 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+Obrázek typu lekce v S3 je veřejný pouze při přesné vazbě
+`hero_image_path = '/api/v1/media/' || asset.id` u aktivního typu; žádný prefix
+ani volný soubor není důvodem ke zpřístupnění. Portrait vyžaduje aktivního
+instruktora jako dosud.

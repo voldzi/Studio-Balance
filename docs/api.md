@@ -423,3 +423,7 @@ samostatné řádky; storno a docházka adresují vždy jedno ID. Opakování st
 idempotency klíče vrátí stejnou dvojici, jiný doprovod se stejným klíčem je 409.
 Admin `GET /api/v1/admin/bookings` doplňuje `participant`, kontakt `user`
 zůstává vlastník. Jméno doprovodu se nikdy nevrací ve veřejném rozvrhu.
+
+Veřejné `GET /api/v1/media/{id}` zpřístupňuje také obrazový asset přímo
+přiřazený jako `heroImagePath` aktivního typu lekce. Nepřiřazené assety zůstávají
+neveřejné; skrytí typu odstraní tuto publikační vazbu.

@@ -336,3 +336,8 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+CD-064: Latino Ladies replaces both Power Yoga slots from 2026-10-16, with
+Xavier Tihelka, capacity 12 and new booking price 200 CZK. Existing reservation
+prices and earlier sessions are preserved. Lesson replacement must select a
+different type explicitly; newly created profiles are selected automatically.

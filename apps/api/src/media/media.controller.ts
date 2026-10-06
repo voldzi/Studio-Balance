@@ -72,6 +72,8 @@ export class MediaController {
         SELECT 1 FROM instructors i WHERE i.active=true AND i.portrait_asset_id=ma.id
       ) OR EXISTS (
         SELECT 1 FROM studio_team t WHERE t.published=true AND t.photo_asset_id=ma.id
+      ) OR EXISTS (
+        SELECT 1 FROM class_types c WHERE c.active=true AND c.hero_image_path='/api/v1/media/' || ma.id::text
       ))
     `, [id]);
     const asset = result.rows[0];

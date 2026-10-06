@@ -397,3 +397,7 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+Lesson replacement checks reject missing/same-type targets including restored
+drafts and mixed selections. Public lesson media denies unreferenced assets
+before storage access and exposes only exact active catalogue references.
