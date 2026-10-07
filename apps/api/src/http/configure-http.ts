@@ -23,6 +23,13 @@ export function configureHttp(app: NestFastifyApplication, config: RuntimeConfig
   const fastify = app.getHttpAdapter().getInstance();
   fastify.addHook("onRequest", (request, reply, done) => {
     void reply.header("x-request-id", request.id);
+    const path = request.url.split("?", 1)[0] ?? "";
+    const route = request.routeOptions.url ?? path;
+    const privatePath = /^\/api\/(?:internal(?:\/|$)|v1\/(?:admin|me|bookings)(?:\/|$))/;
+    if (privatePath.test(route) || privatePath.test(path)) {
+      void reply.header("Cache-Control", "private, no-store");
+      void reply.header("Vary", "Cookie");
+    }
     done();
   });
   fastify.addHook("onResponse", (request, reply, done) => {

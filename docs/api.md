@@ -246,6 +246,34 @@ Počet u termínu zahrnuje rezervované klienty i již označenou účast a neú
 storna jsou oddělená. Celková metrika aktivních rezervací nadále počítá jen
 stav `reserved`.
 
+### Stránkování rezervací
+
+`GET /api/v1/me/bookings` a `GET /api/v1/admin/bookings` vracejí
+`{ items, nextCursor }`. `limit` je 1–100 (výchozí 50), `nextCursor` je null
+po poslední stránce; jinak jej klient předá jako `cursor` při zachování filtrů.
+Žádná rezervace není potichu vynechána. Seznamy mají tlačítko „Načíst další
+rezervace“ a chyba načtení další stránky ponechá již načtené položky.
+
+Klientský `period=upcoming` řadí budoucí rezervovaná místa od nejbližšího;
+`history` obsahuje ostatní rezervace, `all` (výchozí) všechny. History a all
+řadí od nejnovější lekce. Domovská karta načítá upcoming samostatně, takže
+starší historie nezakryje nejbližší lekci. Shodné časy se řadí také podle ID
+rezervace; cursor zachovává plnou mikrosekundovou přesnost PostgreSQL. Cursor zachová časovou hranici mezi upcoming/history z první stránky.
+
+Oba seznamy umožňují `from` a `through` jako včetně kalendářních dat lekce v
+`Europe/Prague`, včetně dnů změny letního času. Admin může kombinovat filtr
+s `sessionId`. Neplatný limit, datum, pořadí dat nebo cursor vrací standardní
+400 `VALIDATION_ERROR`. Cursor není oprávnění: server vždy omezuje vlastní
+rezervace na ověřeného klienta a admin endpoint vyžaduje administrátora s MFA.
+
+Počet přihlášených u termínu a omezení kapacity počítají stavy `reserved`,
+`attended` a `no_show`. Dřívější potvrzení účasti neuvolní místo pro další
+rezervaci. Neúčast lze stále označit až po začátku lekce. Počet nad seznamem
+konkrétní lekce vychází z celého termínu, nikoli pouze z načtené stránky.
+Docházka a nové rezervace se koordinují zámkem termínu; hromadné úpravy mají
+shodné pořadí zámků. Změny typu lekce, termínu a instruktora jsou atomické se
+zápisem administrátorského auditu: selhání auditu vrátí zpět i změnu.
+
 ### Vytvoření rezervace
 
 Request nese `sessionId`, `termsVersion` a důkaz požadovaného potvrzení. Server
@@ -431,3 +459,20 @@ neveřejné; skrytí typu odstraní tuto publikační vazbu.
 Neaktivní typy lekcí nejsou ve veřejném rozvrhu ani veřejném detailu termínu. Nová rezervace jejich termínu vrací RESOURCE_NOT_FOUND. Existující rezervace zůstávají dostupné v účtu a administraci.
 
 Veřejný katalog a rozvrh včetně detailů vrací Cache-Control: no-store, aby CDN po změně lekce neuchovávala starou nabídku. Kontrola hlavičky je v schedule.controller.test.ts. Při již existující CDN cache je nutné ověřit obnovu veřejné odpovědi.
+
+## Bezpečnostní změny z auditu 7. 10. 2026
+
+Interní session API vyžaduje podpis v2 přes timestamp, jednorázový nonce,
+metodu, cestu a SHA256 přesného JSON těla. Ověřené nonce se uchovává po dobu
+platnosti podpisu (60 s clock-skew; nejvýše 10 000 živých záznamů na procesu).
+Bez raw body či při opakování se přístup odmítne. Web/API musí mít stejnou
+verzi protokolu; veřejný proxy namespace `/api/internal` vrací404.
+Odpovědi osobních a admin API zakazují cache a mají `Vary: Cookie`.
+Dočasná neúspěšná revalidace vrací503, bez zpřístupnění neověřených dat
+a bez neodůvodněné revokace uložené relace. Definitivní auth selhání revokuje.
+
+Nahraná veřejná média i admin náhledy mají `Cache-Control: private, no-store`.
+JPG/PNG/WebP upload musí mít správnou binární signaturu ještě před Sharp
+dekódováním. SVG a jiné formáty se odmítají; 8 MB a40MP limity zůstávají.
+Schválené statické fotografie nejsou změněné. Veřejný JSON rozvrhu lze
+komprimovat na Nginx; osobní API tuto novou kompresní cestu nepoužívá.

@@ -411,3 +411,43 @@ Regrese CD-065: deaktivace typu skryje katalog, profil, termíny a veřejný det
 Veřejný katalog a rozvrh včetně detailů vrací Cache-Control: no-store, aby CDN po změně lekce neuchovávala starou nabídku. Kontrola hlavičky je v schedule.controller.test.ts. Při již existující CDN cache je nutné ověřit obnovu veřejné odpovědi.
 
 Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).
+
+CI runs a mandatory database integration gate using only its disposable local
+PostgreSQL 18 service (`studio_balance_ci`).
+`node scripts/test-database-integration.mjs` requires an explicit
+STUDIO_TEST_DATABASE_URL, a loopback host and a dedicated studio_balance_ci/test
+database name. Missing connectivity, wrong PostgreSQL version or missing test
+files fail rather than silently skip. The fixture prepares pgcrypto once and
+runs all integration test files serially; production configuration is never
+inferred or loaded.
+
+Operational regression checks cover unhealthy/stale/mismatched container
+revisions, absence of a worker first successful generation, atomic tool
+publication preserving already-open readers, incomplete/symlinked candidates,
+wrong inherited lock inode/concurrent lock contention, and corruption or missing
+objects in an older verified backup anchor even when the latest copy is intact.
+Worker tests cover missing, malformed, expired, future and wrong-version markers.
+The existing wrong-X5-UUID guard test remains mandatory. These checks do not
+constitute production deployment or an independent disaster recovery exercise.
+
+## Regrese bezpečnosti a výkonu po auditu 7. 10. 2026
+
+- auth: přesné návratové URL, body-bound HMAC, chybějící raw body, opakovaný
+  nonce, privátní cache, výpadek token/JWKS endpointu, rotace refresh tokenu,
+  odebrané oprávnění, povinné MFA a omezení session locků;
+- skutečná lokální PostgreSQL: zaplněný termín i po docházce, souběh se zámkem
+  termínu, selhání auditu s rollbackem, stránkování se shodnými timestamps a
+  mikrosekundami, izolace vlastníka, datumové filtry přes Prague DST, přepsání
+  přísnějšího role idle transaction timeoutu aplikačním Poolem;
+- média: skutečný JPG/PNG/WebP, odstranění metadat, odmítnutí SVG, dokumentu,
+  prázdného/poškozeného/nadměrného obsahu a HTTP publikace200 -> stažení404
+  bez cache a dalšího storage read;
+- web: čerstvý nonce, přepsání podvrženého nonce, HTML CSP a frame denial,
+  veřejný interní namespace404, stránkování s loading/empty/error stavy,
+  schválená analytika se zachovanými DNT/GPC/offline/session guards;
+- publikace: Nginx komprimuje pouze veřejný rozvrh, zachovává privátní
+  analytický include a odmítá jeho chybění před změnou produkční konfigurace.
+
+`pnpm check` neprokazuje publikaci na produkci ani přijetí na skutečném
+telefonu. Závěrečný záznam musí odlišit lokální testy, build, CI/image scan,
+produkční verzi a autentizovanou browser/PWA akceptaci.

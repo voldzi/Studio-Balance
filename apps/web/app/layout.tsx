@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { PublicAnalyticsNotice } from "../components/public-analytics-notice";
 import { PublicAnalytics } from "../components/public-analytics";
@@ -49,10 +49,11 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const analyticsEligible = !cookieStore.has(identityCookies.session) && !cookieStore.has(adminIdentityCookies.session);
   return (
     <html lang="cs">
-      <body><StudioStatusProvider><PwaRegister /><PublicAnalytics eligible={analyticsEligible} />{children}{analyticsEligible && <PublicAnalyticsNotice />}</StudioStatusProvider></body>
+      <body><StudioStatusProvider><PwaRegister /><PublicAnalytics eligible={analyticsEligible} nonce={nonce} />{children}{analyticsEligible && <PublicAnalyticsNotice />}</StudioStatusProvider></body>
     </html>
   );
 }

@@ -335,3 +335,14 @@ local admin/docs/source-asset work remains intact. The build/deploy is complete;
 VCode can update the central private trackerPath/SRI registry from this receipt.
 No separate claim of real-user ingestion is made. Documentation-only commits
 following aa32034 do not change the deployed source/image.
+
+### CSP integration hardening — 2026-10-07
+
+The web proxy generates a fresh request/response nonce and passes it through
+the server layout into the approved analytics script element. Runtime bytes,
+SRI, activation flags, public path list and DNT/GPC/offline/session guards
+are unchanged. Inline Next scripts and structured data share the nonce;
+production scripts do not allow unsafe-inline or unsafe-eval. The Nginx
+installer retains the centrally managed private include in production and
+refuses activation when it is absent; no token/content is copied into Git.
+Localhost browser checks must remain ineligible and create no real visits.

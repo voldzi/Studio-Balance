@@ -10,7 +10,10 @@ export class DatabaseService implements OnModuleDestroy {
   constructor(@Inject(RuntimeConfigService) config: RuntimeConfigService) {
     this.pool = new Pool({
       connectionString: config.value.databaseUrl,
-      max: 10
+      max: 10,
+      // Explicit startup GUC overrides a shorter database/role default. OIDC
+      // revalidation may await token + JWKS (8 seconds each) while holding a lock.
+      idle_in_transaction_session_timeout: 30_000
     });
   }
 

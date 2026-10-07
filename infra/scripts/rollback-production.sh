@@ -15,18 +15,14 @@ if [[ ! -f "$env_file" || "$(stat -c '%a' "$env_file")" != "600" ]]; then
   exit 1
 fi
 
-for command in curl docker flock; do
+for command in curl docker flock python3; do
   command -v "$command" >/dev/null || { echo "$command is required." >&2; exit 1; }
 done
 
 bash /srv/studio-balance/check-production-storage.sh
 
-lock_file="$(dirname "$env_file")/.production-operation.lock"
-exec 9>"$lock_file"
-if ! flock -n 9; then
-  echo "Another Studio Balance production deploy or rollback is already running." >&2
-  exit 1
-fi
+source /srv/studio-balance/production-operation-lock.sh
+acquire_studio_operation_lock /srv/studio-balance/.production-operation.lock
 
 if [[ ! -f "$root/docker-compose.production.yml" ]]; then
   echo "Rollback release does not contain docker-compose.production.yml." >&2
@@ -45,9 +41,7 @@ compose=(docker compose --env-file "$env_file" -f "$root/docker-compose.producti
 "${compose[@]}" up -d --no-build --remove-orphans
 
 for _ in {1..30}; do
-  readiness="$(curl --fail --silent --show-error --connect-timeout 3 --max-time 5 http://127.0.0.1:4281/ready 2>/dev/null || true)"
-  if grep -Fq "\"version\":\"$version\"" <<<"$readiness" \
-    && curl --fail --silent --show-error --connect-timeout 3 --max-time 5 --head http://127.0.0.1:3281/ >/dev/null; then
+  if python3 /srv/studio-balance/verify-production-revision.py "$version"; then
     "${compose[@]}" ps
     echo "Production rolled back to $version."
     exit 0

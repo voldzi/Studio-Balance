@@ -1,7 +1,8 @@
+import { createHash, createHmac } from "node:crypto";
 import { decodeJwt } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createLoginAttempt, isMfaAdministrator, publicRedirectUrl, rememberedDeviceMaxAgeSeconds, sessionFromClaims } from "./identity";
+import { createLoginAttempt, createWebSession, isMfaAdministrator, publicRedirectUrl, rememberedDeviceMaxAgeSeconds, safeReturnTo, sessionFromClaims } from "./identity";
 
 const originalPublicAppUrl = process.env.PUBLIC_APP_URL;
 const originalIssuer = process.env.OIDC_ISSUER_URL;
@@ -30,6 +31,36 @@ describe("publicRedirectUrl", () => {
   it("uses the same public origin for the separate admin callback", () => {
     process.env.PUBLIC_APP_URL = "https://studio-balance.cz";
     expect(publicRedirectUrl("/admin", "admin").toString()).toBe("https://studio-balance.cz/admin");
+  });
+
+  it.each(["/\\attacker.example", "//attacker.example", "https://attacker.example", "/\n/attacker.example", "/\t/attacker.example", "/path\u0000"])("rejects unsafe return destination %j", (path) => {
+    process.env.PUBLIC_APP_URL = "https://studio-balance.cz";
+    expect(safeReturnTo(path)).toBe("/muj-ucet");
+    expect(publicRedirectUrl(path).toString()).toBe("https://studio-balance.cz/muj-ucet");
+  });
+
+  it("normalizes internal destinations while preserving a booking query", () => {
+    process.env.PUBLIC_APP_URL = "https://studio-balance.cz";
+    expect(safeReturnTo("/unused/../rezervace/id?view=confirm#terms")).toBe("/rezervace/id?view=confirm#terms");
+  });
+
+  it("signs the exact internal request body with a fresh nonce and a deadline", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ token: "a".repeat(43) }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const login = { refreshToken: "synthetic-refresh-token", rememberDevice: false, returnTo: "/muj-ucet", roles: ["client"] as const,
+      session: { subject: "synthetic", email: "client@example.test", emailVerified: false, mfaVerified: false, roles: ["client"] as ("client" | "admin" | "super_admin")[] } };
+    await createWebSession({ ...login, roles: [...login.roles] }, "web");
+    await createWebSession({ ...login, roles: [...login.roles] }, "web");
+    const calls = fetchMock.mock.calls as unknown as [string, RequestInit][];
+    const first = calls[0]![1];
+    const second = calls[1]![1];
+    const signed = first.headers as Record<string, string>;
+    expect(signed["x-studiobalance-internal-nonce"]).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect((second.headers as Record<string, string>)["x-studiobalance-internal-nonce"]).not.toBe(signed["x-studiobalance-internal-nonce"]);
+    const bodyHash = createHash("sha256").update(String(first.body)).digest("hex");
+    expect(signed["x-studiobalance-internal-signature"]).toBe(createHmac("sha256", process.env.SESSION_SECRET ?? "local-development-session-secret-change-before-sharing")
+      .update(`${signed["x-studiobalance-internal-timestamp"]}:${signed["x-studiobalance-internal-nonce"]}:POST:/api/internal/sessions:${bodyHash}`).digest("base64url"));
+    expect(first.signal).toBeInstanceOf(AbortSignal);
   });
 
   it("forces fresh Keycloak authentication for the protected admin client", async () => {
@@ -162,6 +193,19 @@ describe("publicRedirectUrl", () => {
     }));
 
     await expect(createLoginAttempt("/muj-ucet")).rejects.toThrow("OIDC discovery endpoint is outside the configured issuer");
+  });
+
+  it.each(["authorization_endpoint", "token_endpoint", "jwks_uri"])("rejects an external discovery %s even without a configured backchannel", async (endpoint) => {
+    process.env.OIDC_ISSUER_URL = "https://login.studio-balance.cz/realms/studio-balance";
+    delete process.env.OIDC_BACKCHANNEL_ISSUER_URL;
+    const discovery = {
+      authorization_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/auth",
+      issuer: "https://login.studio-balance.cz/realms/studio-balance",
+      jwks_uri: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/certs",
+      token_endpoint: "https://login.studio-balance.cz/realms/studio-balance/protocol/openid-connect/token"
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...discovery, [endpoint]: "https://attacker.example/collect" }) }));
+    await expect(createLoginAttempt("/muj-ucet")).rejects.toThrow("outside the configured issuer");
   });
 });
 

@@ -38,21 +38,50 @@ release archives are exported to X5 before scoped old image-tag deletion.
 
 ## Deployment and retention
 
-Every production deploy checks the mount before remote mkdir/SCP, marks its
-candidate `.deploying-<sha>`, uses X5 for transfer archives and removes the
-successful transfer file. The runtime guard repeats before Compose changes.
-Successful readiness updates verified-releases.json; current and two prior
-verified revisions are retained. An interrupted candidate marker deliberately
-blocks unsafe cleanup; operator resolves it only after checking the deployment.
+Every new production deploy checks the mount before remote mkdir/SCP and uses a
+unique `.deploy-<sha>.<random>` directory on X5. The verified staging working
+directory pins the filesystem during creation. Source, entrypoint, tools and
+storage overlay all come from the exact selected Git commit. The remote
+entrypoint takes the production operation lock before publishing tools or
+release sources, then the media lock while atomically replacing complete private
+tool files. It releases the media lock before the build; the child deployment
+inherits and verifies the production lock inode. Existing release sources are
+immutable and a differing copy is refused. Historical commits without this
+entrypoint remain available through the guarded rollback command.
+
+The runtime guard repeats before Compose changes. Successful readiness requires
+all three running healthy containers to match the selected image tags, image IDs
+and APP_VERSION, API readiness, web HTTP availability, and a successful worker
+generation since the current container startup. Only then is
+verified-releases.json updated and the successful staging directory/marker
+removed. Current and two prior verified revisions are retained. An interrupted
+candidate marker deliberately blocks unsafe cleanup; operator resolves it only
+after checking the deployment.
+
+Automatic rollback passes the previous immutable release directory to the same
+guarded rollback tool used by explicit rollback. It restores that revision's
+Compose definition together with its images, so a new candidate's worker
+healthcheck cannot be applied to an older image. A missing previous release
+source fails closed before any rollback container changes.
 
 `manage-production-storage.py` defaults to dry run. `--apply` requires approved
 retention: current + two rollback releases, all container-used images, pending
 candidate markers; media 7 daily / 4 weekly / 3 monthly + verified restore anchor.
 It acquires both production and media locks, refuses cleanup if busy, verifies
-latest media checksums, archives protected images and removes only scoped matching
+every retained media manifest/object (including the verified restore anchor) with
+streamed SHA-256 and size checks, archives protected images and removes only scoped matching
 SHA release/artifact paths and studiobalance/{api,web,worker}:<sha> tags without force.
 No user history/audit/config-history deletion. Failed/incomplete media snapshots
 are preserved for operator review.
+
+The worker readiness marker is private atomic JSON under
+`/tmp/studio-balance-worker-ready.json`, in a 4 MiB container tmpfs. It is removed
+at startup and created only after successful generation with the schedule lock.
+An absent, damaged, stale (>7 hours), future, or wrong-version marker fails the
+worker healthcheck. Lock contention retries after 10 seconds. Retained older
+rollback images are checked by their successful generation log since startup.
+Checksum checks confirm file integrity; they do not replace restore drills or
+the independently retained Proxmox backup.
 
 Completed work directories named `completed-*` older than 14 days are removed
 only under idle locks. Transfer artifacts are removed immediately after success.
@@ -123,4 +152,3 @@ Legacy /home/voldzi/deployments/studio-balance is now only a symlink to the guar
 on X5. Successful migration tools/receipts are classified as completed work and
 expire after 14 days under idle locks. Runtime web/API are unchanged application
 images; this is an operational scripts/Compose change, not a new application build.
-

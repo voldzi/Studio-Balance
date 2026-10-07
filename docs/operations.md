@@ -454,6 +454,51 @@ Změna AMR konfigurace zpětně nepovýší již existující webové relace. Po
 nasazení musí administrátor jednou projít novým interaktivním přihlášením s
 heslem a TOTP; nově vydaná relace pak může správu otevírat bez dalšího formuláře.
 
+### Odolnost přihlášení a společný release web/API
+
+Interní BFF/API session podpis v2 chrání přesné tělo, náhodné nonce, čas,
+metodu a cestu podle [bezpečnostního protokolu](security.md#interní-bffapi-protokol-a-návratové-url).
+Starý podpis není přijímán. Web a API se nasazují i vracejí společně ze stejné
+revize; smíšený release může dočasně odmítat session requesty a není provozně
+kompatibilní. API startuje s `rawBody: true`. Nginx nevystavuje `/api/internal/`
+veřejnosti; web používá soukromý `API_URL`. Změna podpisu ani cache resolverů
+nevyžaduje změnu `SESSION_SECRET` a sama existující relace neruší.
+
+Při výpadku token/JWKS endpointu nebo timeoutu zastaralá relace vrátí 503
+`IDENTITY_PROVIDER_UNAVAILABLE`, zůstane uložená a login zobrazí dočasnou
+nedostupnost místo nového hesla/OTP. Po návratu identity se ověření opakuje;
+neověřená identita ani role se mezitím nepoužijí. Pokud Keycloak otočil refresh
+token ještě před výpadkem JWKS, server uloží jen jeho šifrovanou náhradu.
+`invalid_grant`, definitivně neplatný JWT, změna subjektu nebo odebraná admin
+role vyžadují novou relaci. Výpadek neprodlužuje 90denní maximum, 30denní
+neaktivitu ani patnáctiminutový interval ověření.
+
+Identity fetch a JWKS fetch mají každý limit 8 sekund; při obnově může jeden
+request postupně čekat na oba. Aplikační pool proto nastavuje
+`idle_in_transaction_session_timeout=30000` ms jako explicitní parametr
+spojení, aby přísnější role default neukončil zámek během běžné obnovy.
+Platnost se ověří `SHOW idle_in_transaction_session_timeout` na aplikačním
+spojení, nikoli pouze na odlišném administrátorském spojení. Migrace nepřebírají
+nový plošný statement/query timeout. Pokud provozní timeout nebo proxy limit
+zkrátí tuto dobu, musí release zachovat konzistentní rotaci refresh tokenu;
+nekopírovat tokeny do logu ani ručně neobnovovat starý credential.
+
+Procesová replay cache přijme nejvýše 10 000 platně podepsaných nonce a
+časové okno ±60 sekund; nonce žije do podepsaného času +60 sekund. API používá
+jeden JWKS resolver, web má nejvýše osm resolverů. Čerstvé session se dotýkají
+aktivity nejvýše jednou za pět minut; nejvýše 50 různých zastaralých session
+se obnovuje současně a souběžné requesty stejné session sdílejí ověření.
+Současný provoz počítá s jednou API instancí. Před škálováním na více instancí
+je nutné atomické sdílené úložiště nonce; procesová cache nepřežije restart.
+
+Před předáním ověřit klientský login, admin login s povinným prvním OTP,
+opakované otevření zapamatovaného zařízení, konec/odhlášení relace, zakázaný
+externí návrat, odmítnutí opakovaného interního podpisu a privátní cache headers.
+Řízené testy timeoutu, provider 503, JWT chyb a rotace běží pouze proti
+syntetickému identity serveru. Výpadek produkčního Keycloaku se nevyvolává
+kvůli ověření aplikace. Lokální test není potvrzení 90denní fyzické-device
+akceptace.
+
 ## Health a readiness
 
 - `GET /health`: 200, pokud proces běží; nekontroluje vzdálené služby;
@@ -858,3 +903,18 @@ Deployment root is `/srv/studio-balance`; X5 UUID is
 require the storage guard and `/srv/studio-balance/storage-compose.yml`.
 No secrets or production environment variables change. Web cache is bounded
 128 MiB tmpfs; shared Docker image/build storage remains unchanged.
+
+Production delivery uses a unique X5 staging directory and the exact selected
+commit's tools. The remote entrypoint holds the operation lock before live
+publication and the media lock during atomic tool replacement. The child deploy
+verifies its inherited lock inode. New deploys require this entrypoint; retained
+older revisions remain rollback-only. Never replace these tools directly with
+SCP or manually truncate a live maintenance script.
+
+Delivery/rollback acceptance verifies API, web and worker image tags/IDs,
+APP_VERSION and health, plus a worker successful generation since startup.
+The worker uses a private 4 MiB `/tmp` tmpfs and an atomic readiness marker that
+expires after seven hours. It needs no new persisted environment setting.
+Retention validates the latest, independently verified anchor and every other
+retained media snapshot before deleting alternatives; any integrity failure
+stops cleanup.

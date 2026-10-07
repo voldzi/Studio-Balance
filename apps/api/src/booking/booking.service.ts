@@ -11,6 +11,7 @@ import { AccountService, type ProfileRow } from "../account/account.service.js";
 import type { StudioSession } from "../auth/session.js";
 import { DatabaseService } from "../database/database.service.js";
 import { mapSession, money, type PublicSession, type SessionRow } from "../schedule/schedule.service.js";
+import { bookingPage, type BookingPageQuery, type BookingPeriod } from "./booking-list-page.js";
 
 export const CURRENT_TERMS_VERSION = "2026-10-04";
 
@@ -29,6 +30,7 @@ type BookingRecord = {
 type BookingListRow = Omit<SessionRow, "status"> & Omit<BookingRecord, "status" | "id"> & {
   booking_id: string;
   booking_status: BookingStatus;
+  cursor_start_at: string;
   fee_amount_cents: number | null;
   session_status: "scheduled" | "cancelled" | "completed";
 };
@@ -71,6 +73,9 @@ export class BookingService {
     const requestHash = hash({ operation: "create", sessionId: input.sessionId, termsVersion: input.termsVersion, ...(companionName === undefined ? {} : { companionName, companionResponsibilityAccepted: true }) });
 
     return this.database.transaction(async (client) => {
+      // Enter before row locks so a batch schedule change cannot hold table
+      // locks while waiting on a row owned by this transaction.
+      await client.query("LOCK TABLE class_sessions, bookings, cancellation_fees IN ROW EXCLUSIVE MODE");
       await lockProfile(client, profile.id);
       const replay = await readIdempotency(client, profile.id, input.idempotencyKey, requestHash);
       if (replay) return replay;
@@ -95,7 +100,7 @@ export class BookingService {
 
       if (activeBookings + seatCount > row.capacity) throw domainError("SESSION_FULL", "Na lekci už není místo pro vás i doprovod. Zvolte rezervaci pouze pro sebe nebo jiný termín.", HttpStatus.CONFLICT);
 
-      const duplicate = await client.query("SELECT 1 FROM bookings WHERE user_id = $1 AND session_id = $2 AND status = 'reserved'", [profile.id, row.id]);
+      const duplicate = await client.query("SELECT 1 FROM bookings WHERE user_id = $1 AND session_id = $2 AND status IN ('reserved','attended','no_show')", [profile.id, row.id]);
       if (duplicate.rowCount) throw domainError("BOOKING_ALREADY_EXISTS", "Tuto lekci už máte rezervovanou.", HttpStatus.CONFLICT);
 
       await client.query(`
@@ -134,12 +139,24 @@ export class BookingService {
     });
   }
 
-  async listMine(session: StudioSession): Promise<{ items: BookingResponse[] }> {
+  async listMine(session: StudioSession, query: BookingPageQuery & { period?: BookingPeriod | undefined } = {}): Promise<{ items: BookingResponse[]; nextCursor: string | null }> {
     const profile = await this.accounts.ensureProfile(session);
-    const result = await this.database.query<BookingListRow>(bookingListSql("WHERE b.user_id = $1"), [profile.id]);
+    const period = query.period ?? "all";
+    const page = bookingPage(query, { actor: profile.id, period, from: query.from ?? null, through: query.through ?? null }, period === "upcoming");
+    const values: unknown[] = [profile.id];
+    const clauses = ["b.user_id = $1", ...page.predicates(values)];
+    if (period !== "all") {
+      values.push(page.asOf);
+      const upcoming = `(b.status='reserved' AND s.start_at > $${values.length}::timestamptz)`;
+      clauses.push(period === "upcoming" ? upcoming : `NOT ${upcoming}`);
+    }
+    values.push(page.limit + 1);
+    const result = await this.database.query<BookingListRow>(bookingListSql(`WHERE ${clauses.join(" AND ")}`, false,
+      `ORDER BY s.start_at ${page.direction},b.id ${page.direction} LIMIT $${values.length}`), values);
     const now = new Date();
     return {
-      items: result.rows.map((row) =>
+      nextCursor: page.nextCursor(result.rows.map((row) => ({ id: row.booking_id, cursor_start_at: row.cursor_start_at }))),
+      items: result.rows.slice(0, page.limit).map((row) =>
         bookingResponse(
           { ...row, id: row.booking_id, status: row.booking_status },
           mapSession({ ...row, status: row.session_status, price_cents: row.price_snapshot_cents }, now),
@@ -169,6 +186,9 @@ export class BookingService {
     const requestHash = hash({ operation: "cancel", bookingId: input.bookingId, confirmed: input.lateCancellationConfirmed });
 
     return this.database.transaction(async (client) => {
+      // Enter before row locks so a batch schedule change cannot hold table
+      // locks while waiting on a row owned by this transaction.
+      await client.query("LOCK TABLE class_sessions, bookings, cancellation_fees IN ROW EXCLUSIVE MODE");
       await lockProfile(client, profile.id);
       const replay = await readIdempotency(client, profile.id, input.idempotencyKey, requestHash);
       if (replay) return replay;
@@ -245,7 +265,7 @@ function assertClientCancellationAllowed(row: BookingListRow): void {
   if (new Date() >= row.start_at) throw domainError("BOOKING_STATE_CONFLICT", "Po začátku lekce může rezervaci změnit jen studio.", HttpStatus.CONFLICT);
 }
 
-function bookingListSql(where: string, includeFreeWindow = false): string {
+function bookingListSql(where: string, includeFreeWindow = false, order = "ORDER BY s.start_at DESC"): string {
   return `
     SELECT
       b.id AS booking_id,
@@ -256,6 +276,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
       b.created_at,
       s.id,
       s.start_at,
+      to_char(s.start_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_start_at,
       s.end_at,
       s.arrival_lead_minutes,
       s.location_name,
@@ -276,7 +297,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
       i.id AS instructor_id,
       i.display_name AS instructor_name,
       ${instructorPortraitSql} AS instructor_portrait,
-      (SELECT count(*)::text FROM bookings active WHERE active.session_id = s.id AND active.status = 'reserved') AS active_bookings,
+      (SELECT count(*)::text FROM bookings active WHERE active.session_id = s.id AND active.status IN ('reserved','attended','no_show')) AS active_bookings,
       cf.amount_cents AS fee_amount_cents
     FROM bookings b
     JOIN class_sessions s ON s.id = b.session_id
@@ -284,7 +305,7 @@ function bookingListSql(where: string, includeFreeWindow = false): string {
     JOIN instructors i ON i.id = s.instructor_id
     LEFT JOIN cancellation_fees cf ON cf.booking_id = b.id AND cf.status = 'due'
     ${where}
-    ORDER BY s.start_at DESC
+    ${order}
   `;
 }
 
@@ -307,7 +328,7 @@ async function lockedSession(client: PoolClient, id: string): Promise<LockedSess
 }
 
 async function activeBookingCount(client: PoolClient, sessionId: string): Promise<number> {
-  const result = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id = $1 AND status = 'reserved'", [sessionId]);
+  const result = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id = $1 AND status IN ('reserved','attended','no_show')", [sessionId]);
   return Number(result.rows[0]?.count ?? 0);
 }
 

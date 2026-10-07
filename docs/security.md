@@ -72,14 +72,72 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
   maximum 90 dní a server vynucuje 30denní neaktivitu. Před více než 15 minutami
   ověřená relace se při dalším použití obnovovacím tokenem znovu ověří u
   Keycloaku včetně aktuálních rolí; refresh může roli změnit, ale nesmí z
-  relace bez OTP vytvořit MFA-prokázanou relaci. Selhání, disabled účet nebo
-  odebraná role relaci zneplatní. Keycloak nemá vlastní checkbox „Zapamatovat si mě“, aby
+  relace bez OTP vytvořit MFA-prokázanou relaci. Definitivní odmítnutí identity
+  relaci zneplatní; dočasná nedostupnost ji zachová, ale aktuální request
+  odmítne podle pravidel níže. Keycloak nemá vlastní checkbox „Zapamatovat si mě“, aby
   uživatel viděl jedinou, srozumitelnou volbu;
 - klientské i administrátorské odhlášení zruší serverový záznam, odstraní
   šifrovaný refresh token, pokusí se o jeho revokaci u Keycloaku a smaže oba
   aplikační cookies na zařízení;
 - klientská registrace nepoužívá e-mailové ověření, dokud není bezpečně provozovaný SMTP sender; konfigurační oprava odstraní i dříve uloženou required action `VERIFY_EMAIL`, ale zachová změnu hesla a registraci TOTP; booking nadále vyžaduje platnou relaci, vyplněné jméno, příjmení a telefon a přijetí podmínek;
 - neaktivní/disabled/deleted účet nemůže vytvořit rezervaci.
+
+### Ověřování relace při výpadku identity
+
+Patnáctiminutový interval ověření účtu a rolí, absolutní limit 90 dní,
+30denní limit neaktivity a uložený důkaz OTP se výpadkem neprodlužují.
+Rozlišují se následující výsledky obnovy:
+
+- `invalid_grant`, neplatný podpis, issuer, audience, algoritmus nebo jiné
+  definitivně neplatné JWT claims relaci zruší. Totéž platí pro chybějící
+  identitu, změnu OIDC subjektu a odebranou admin roli u admin relace;
+- timeout, síťová chyba, nedostupné JWKS a neúspěšná odpověď token endpointu
+  bez `invalid_grant` vrátí HTTP 503 s kódem `IDENTITY_PROVIDER_UNAVAILABLE`.
+  Server relaci nerevokuje a nevrátí neověřenou novou identitu ani role.
+  Pokud provider už otočil refresh token před výpadkem ověření JWKS, server
+  uloží pouze nový šifrovaný refresh token pro další ověřený pokus;
+- klientský i admin login nejprve zkusí platnou neprůhlednou relaci. Pokud její
+  ověření není dostupné, zobrazí lokální chybu `unavailable`, ponechá cookie a
+  nezačne další heslový/OTP flow. Nezávisle platná MFA-prokázaná admin relace
+  může dál otevřít administraci, i když ověření jiné webové cookie selže.
+
+Každý identity HTTP request a JWKS fetch má limit 8 sekund. API používá jeden
+JWKS resolver na proces, web nejvýše osm resolverů podle issueru a endpointu;
+jejich cache a obnova klíčů používají ověřený resolver knihovny `jose`.
+Čerstvá relace se čte bez transakčního zámku a dotýká se serverového času
+aktivity nejvýše jednou za pět minut. Zastaralé ověření stejné relace sdílí
+jeden probíhající pokus; nejvýše 50 různých pokusů v procesu je přijato
+současně, další dostanou 503. Rotaci credentialu nadále serializuje DB řádkový
+zámek. Tato optimalizace nezvyšuje MFA assurance ani časové limity relace.
+
+### Interní BFF/API protokol a návratové URL
+
+Interní session endpointy jsou serverová hranice a nesmějí být publikované
+klientskému browseru. Protokol podpisu v2 používá HMAC-SHA256 ze společného
+serverového secretu nad řetězcem
+`timestamp:nonce:method:path:hex(SHA-256(rawBody))`. `timestamp` je celé číslo
+v milisekundách a `nonce` je náhodných 128 bitů v base64url. Podpis chrání
+přesné přenesené bajty těla včetně JSON whitespace, nikoli až parsovaný objekt.
+API musí mít zapnuté `rawBody`; bez raw těla požadavek odmítne. Starý podpis
+bez těla a nonce nemá kompatibilní fallback. Web i API se proto nasazují a
+vracejí společně jako jedna revize.
+
+API přijme časový rozdíl nejvýše 60 sekund a nonce zaznamená až po platném
+podpisu. Stejné živé nonce odmítne; při 10 000 živých záznamech vrátí 503 a
+žádný živý záznam nevyhodí. Záznam platí do podepsaného času + 60 sekund,
+tedy při přípustném budoucím čase nejvýše 120 sekund od přijetí. Jde o
+omezenou procesovou ochranu pro jednu API instanci, nikoli trvalý replay
+ledger; restart ji vyprázdní. Více API instancí vyžaduje společné atomické
+úložiště nonce. Izolace interních endpointů a ochrana společného secretu
+zůstávají povinné i s touto ochranou.
+
+`returnTo` a všechny aplikační redirecty přijímají pouze normalizovanou
+relativní cestu na přesném nakonfigurovaném veřejném originu. Protokolové
+relativní adresy, zpětná lomítka a řídicí/whitespace znaky se odmítnou. OIDC
+discovery musí uvádět očekávaný issuer; authorization endpoint je omezen na
+jeho veřejný origin a realm cestu, token/JWKS endpointy na schválený veřejný
+nebo interní issuer. Neznámý endpoint se nepoužije ani pro redirect, ani pro
+přenos client secretu.
 
 ## Autorizace
 
@@ -90,6 +148,11 @@ vrstvě/API na každé operaci, nejen v routeru nebo UI.
 - admin spravuje provoz a obsah v rozsahu role;
 - super admin spravuje adminy, kritická nastavení, audit a exporty;
 - interní kapacita a seznam klientů nejsou veřejné;
+- všechny úspěšné i chybové odpovědi pod `/api/v1/me`, `/api/v1/bookings`,
+  `/api/v1/admin` a `/api/internal` mají centrálně `Cache-Control: private,
+  no-store` a `Vary: Cookie`; přísnější route-specific `no-store` je přípustné.
+  To zahrnuje profil, rezervace, oblíbené lekce, administrační fee a seznamy
+  klientů. Veřejné podobně pojmenované cesty tímto pravidlem neprivatizujeme;
 - oblíbené typy lekcí jsou vázané na serverový profil aktuálně přihlášeného
   klienta; klient nikdy neposílá ani nevolí cizí `user_id`;
 - novinky jsou prostý text; veřejné API vrací pouze publikované položky po čase
@@ -151,8 +214,13 @@ scénáři.
 - S3 endpoint a administrační konzole nejsou veřejně publikované, pokud pro to
   neexistuje schválený účel; aplikace používá interní síť a nejmenší oprávnění;
 - alt text a licence/consent fotografie jsou obsahová metadata;
-- SVG se buď důsledně sanitizuje, nebo obsluhuje jen z důvěryhodného admin
-  workflow s bezpečnými response headers.
+- Binární upload přijímá jen JPG, PNG a WebP se skutečnou signaturou; SVG,
+  dokumenty a neznámá data se odmítnou před dekódováním. I povolený formát
+  musí projít dekódováním, limitem 40 megapixelů, normalizací a odstraněním metadat.
+- Nahraná média i chráněné náhledy používají `Cache-Control: private, no-store`.
+  Veřejné čtení znovu kontroluje platnou publikovanou vazbu a souhlas. Zrušení
+  souhlasu musí odstranit všechny veřejné vazby; starší stažené kopie nelze
+  na cizím zařízení zpětně vymazat.
 
 ## Auditní log
 

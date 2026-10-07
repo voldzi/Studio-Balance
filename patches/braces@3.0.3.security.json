@@ -1,0 +1,15 @@
+{
+  "advisory": "GHSA-vfj7-8cjw-p6xm",
+  "package": "braces",
+  "version": "3.0.3",
+  "maximumContainerDepth": 100,
+  "patch": "patches/braces@3.0.3.patch",
+  "patchSha256": "947b0c3ac85ec114497f86eabc65d682bf9f66cceca5bc7dfcdf87e9380ee125",
+  "files": {
+    "lib/constants.js": "c355cf54c07a89fd204eb08b747e27227e9a3522155885b45692455d9ac75f50",
+    "lib/parse.js": "778f5f77e69ea327e6fbbf34a821da197f1019428cd1d3aa6a61d7136ad40fb4",
+    "lib/compile.js": "4212dfce27b5da1f70a67c516749866eae5213ab35d9c361f33d6eecf3b4541e",
+    "lib/expand.js": "a257f51c07e8bdb6102bd312d6688283910d5f463b9b4676816c60dd4dc30ea2",
+    "lib/stringify.js": "b2bd5323cf68070d64656ccc9f2e23a9acb9b6caf2029aace87b36d4d6fda06d"
+  }
+}

@@ -27,6 +27,40 @@ def retained_backups(snapshots, latest, verified):
                 seen.add(period)
     return retained
 
+def verify_backup(backups, directory):
+    if not isinstance(directory, str) or pathlib.Path(directory).name != directory or directory.startswith('.'):
+        raise RuntimeError('Invalid backup directory')
+    snapshot = backups / directory
+    manifest_file = snapshot / 'manifest.json'
+    if snapshot.is_symlink() or not snapshot.is_dir() or manifest_file.is_symlink() or not manifest_file.is_file():
+        raise RuntimeError('Retained backup or manifest missing')
+    manifest = json.loads(manifest_file.read_text())
+    if manifest.get('bucket') != 'studio-balance-media' or not isinstance(manifest.get('objects'), list):
+        raise RuntimeError('Invalid backup manifest')
+    keys = set()
+    for entry in manifest['objects']:
+        name, digest, size = entry.get('file'), entry.get('sha256'), entry.get('size')
+        if not isinstance(name, str) or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}\.bin', name) or name != digest + '.bin':
+            raise RuntimeError('Invalid backup object path')
+        if not isinstance(size, int) or size < 0 or not isinstance(entry.get('key'), str) or entry['key'] in keys:
+            raise RuntimeError('Invalid backup object metadata')
+        keys.add(entry['key'])
+        file = snapshot / name
+        if file.is_symlink() or not file.is_file() or file.stat().st_size != size:
+            raise RuntimeError('Retained backup object missing or incomplete')
+        checksum = hashlib.sha256()
+        with file.open('rb') as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b''):
+                checksum.update(block)
+        if checksum.hexdigest() != digest:
+            raise RuntimeError('Retained backup checksum failed; refusing cleanup')
+
+def verify_retained_backups(backups, retained):
+    # Check every retained restore point, especially the independently verified
+    # anchor, before deleting any alternative. Checksums do not replace restore drills.
+    for directory in retained:
+        verify_backup(backups, directory)
+
 def run(*args):
     return subprocess.check_output(args, text=True).strip()
 
@@ -98,14 +132,8 @@ def main():
     snapshots.sort(reverse=True)
     # Evidence of verification is mandatory before removing any backup.
     verified = json.loads((backups / 'verified.json').read_text())['directory']
-    if not (backups / verified / 'manifest.json').is_file():
-        raise RuntimeError('Last verified backup missing')
     retained = retained_backups(snapshots, latest, verified)
-    newest = backups / latest
-    for entry in json.loads((newest / 'manifest.json').read_text())['objects']:
-        file = newest / entry['file']
-        if file.parent != newest or hashlib.sha256(file.read_bytes()).hexdigest() != entry['sha256']:
-            raise RuntimeError('Latest backup integrity failed; refusing cleanup')
+    verify_retained_backups(backups, retained)
     removals += [child for _, child in snapshots if child.name not in retained]
     refs = run('docker', 'image', 'ls', '--format', '{{.Repository}}:{{.Tag}}').splitlines()
     image_removals = []

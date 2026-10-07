@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { AdminRoleGuard, type AdminRequest } from "./admin-role.guard.js";
 import { AdminService } from "./admin.service.js";
+import { bookingPageSchema, parseBookingPage } from "../booking/booking-list-page.js";
 
 const uuid = z.string().uuid();
 const classTypeSchema = z.object({
@@ -107,7 +108,10 @@ export class AdminController {
     return this.admin.changeScheduleBatch(data, context(request));
   }
   @Get("users") users(@Query("search") search?: string) { return this.admin.listUsers(search); }
-  @Get("bookings") bookings(@Query("sessionId") sessionId?: string) { return this.admin.listBookings(sessionId ? parseId(sessionId) : undefined); }
+  @Get("bookings") bookings(@Query() query: unknown) {
+    const { sessionId, ...page } = parseBookingPage(bookingPageSchema.extend({ sessionId: uuid.optional() }).strict(), query);
+    return this.admin.listBookings(sessionId, page);
+  }
   @Post("bookings/:id/attendance") attendance(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     const data = parse(z.object({ status: z.enum(["attended", "no_show"]), reason: z.string().trim().min(3).max(1000) }).strict(), body);
     return this.admin.attendance(parseId(id), data.status, data.reason, context(request));

@@ -15,7 +15,7 @@ if [[ ! -f "$env_file" ]]; then
   exit 1
 fi
 
-for command in curl docker flock; do
+for command in curl docker flock python3; do
   command -v "$command" >/dev/null || { echo "$command is required." >&2; exit 1; }
 done
 
@@ -26,12 +26,8 @@ fi
 
 bash /srv/studio-balance/check-production-storage.sh
 
-lock_file="$(dirname "$env_file")/.production-operation.lock"
-exec 9>"$lock_file"
-if ! flock -n 9; then
-  echo "Another Studio Balance production deploy or rollback is already running." >&2
-  exit 1
-fi
+source /srv/studio-balance/production-operation-lock.sh
+acquire_studio_operation_lock /srv/studio-balance/.production-operation.lock
 
 for variable in DATABASE_URL DATABASE_URL_MIGRATOR PUBLIC_APP_URL OIDC_ISSUER_URL OIDC_WEB_CLIENT_ID OIDC_WEB_CLIENT_SECRET OIDC_ADMIN_CLIENT_ID OIDC_ADMIN_CLIENT_SECRET SESSION_SECRET; do
   if ! grep -q "^${variable}=" "$env_file"; then
@@ -60,12 +56,8 @@ previous_version="${previous_image##*:}"
 
 wait_for_revision() {
   local expected_version="$1"
-  local readiness=""
-
   for _ in {1..30}; do
-    if readiness="$(curl --fail --silent --show-error --connect-timeout 3 --max-time 5 http://127.0.0.1:4281/ready 2>/dev/null)" \
-      && grep -Fq "\"version\":\"$expected_version\"" <<<"$readiness" \
-      && curl --fail --silent --show-error --connect-timeout 3 --max-time 5 --head http://127.0.0.1:3281/ >/dev/null; then
+    if python3 /srv/studio-balance/verify-production-revision.py "$expected_version"; then
       return 0
     fi
     sleep 2
@@ -77,23 +69,20 @@ wait_for_revision() {
 rollback_previous() {
   if [[ "$previous_version" =~ ^[0-9a-f]{7,40}$ && "$previous_version" != "$version" ]]; then
     echo "Restoring previous production revision $previous_version..." >&2
-    for image in api web worker; do
-      if ! docker image inspect "studiobalance/$image:$previous_version" >/dev/null 2>&1; then
-        echo "Automatic rollback image studiobalance/$image:$previous_version is unavailable." >&2
-        return 1
-      fi
-    done
-    export APP_VERSION="$previous_version"
-    if ! "${compose[@]}" up -d --no-build; then
-      echo "Automatic rollback could not start the previous revision." >&2
+    local previous_root="/srv/studio-balance/releases/$previous_version"
+    if [[ ! -d "$previous_root" || -L "$previous_root" || ! -f "$previous_root/docker-compose.production.yml" || -L "$previous_root/docker-compose.production.yml" ]]; then
+      echo "Automatic rollback immutable release $previous_version is unavailable." >&2
       return 1
     fi
-    if ! wait_for_revision "$previous_version"; then
-      "${compose[@]}" ps >&2
+    # Image tags alone do not restore a release: the candidate Compose may
+    # require entrypoints or healthcheck files absent from an older image.
+    # Use the shared guarded rollback tool with that image's immutable sources.
+    if ! STUDIO_BALANCE_RELEASE_ROOT="$previous_root" \
+      STUDIO_BALANCE_PRODUCTION_ENV_FILE="$env_file" \
+      bash "$root/infra/scripts/rollback-production.sh" "$previous_version"; then
       echo "Automatic rollback did not restore a healthy previous revision." >&2
       return 1
     fi
-    "${compose[@]}" ps
     echo "Previous production revision $previous_version was restored." >&2
   else
     echo "No validated previous production revision is available for automatic rollback." >&2

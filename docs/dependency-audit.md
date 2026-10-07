@@ -1,5 +1,27 @@
 # Audit a aktualizace knihoven
 
+## Kontrola 2026-10-07
+
+Implementační revize opravuje nalezené zranitelnosti aktualizací Next.js na
+16.3.8, NestJS na 12.1.2, Fastify na 5.12.5, Sharp na 0.35.5 a souvisejících
+nepřímých závislostí. Striktní 24hodinová karanténa nových vydání zůstává.
+Instalace neměnného lockfile byla ověřena pnpm 11.26.0.
+
+Původní audit hlásil 16 nálezů (1 kritický, 9 vysokých, 6 středních).
+Konečný nefilterovaný audit hlásí jediný vysoký nález ve vývojovém
+`braces@3.0.3` (GHSA-vfj7-8cjw-p6xm). Upstream dosud nemá publikovanou
+opravenou verzi. Balík má úzce vymezený lokální patch, jehož skutečnou
+instalaci a přesné hashe kontroluje brána před 122 regresními kontrolami.
+Brána prošla s nulou nevyřešených nálezů a jednou výslovnou ověřenou
+výjimkou. Nejde o tvrzení, že registry audit vrací nulu.
+
+CI nepoužívá trvalé ignorování tohoto upozornění. Jiný balík, verze,
+produkční cesta, neaplikovaný patch či nedostupný registr kontrolou
+neprojde. Podrobnosti jsou v [záznamu patche](../patches/README.md) a
+[ověření implementace](security-performance-verification-2026-10-07.md).
+Kontejnerové obrazy a produkční přihlášení se musí ověřit při nasazení;
+výsledky níže jsou výslovně historické kontroly příslušných dat.
+
 ## Kontrola 2026-09-08
 
 Audit pokryl přímé a nepřímé npm závislosti, kompatibilitu peer dependencies,

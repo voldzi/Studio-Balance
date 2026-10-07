@@ -1,3 +1,4 @@
+import { bookingPage, type BookingPageQuery } from "../booking/booking-list-page.js";
 import { scheduleChange, type ScheduleChangeInput } from "./schedule-change.js";
 import { instructorPortraitSql, type StudioImage } from "../media/studio-image.js";
 import { createHash } from "node:crypto";
@@ -48,7 +49,7 @@ type AdminSessionRow = { arrival_lead_minutes: number; booking_count: number; ca
 type EditableSessionRow = { arrival_lead_minutes: number; booking_closes_at: Date; booking_opens_at: Date; capacity: number; class_type_id: string; end_at: Date; equipment: string; free_cancellation_until: Date | null; instructor_id: string; location_address: string; location_name: string; price_cents: number; start_at: Date; suitability: string };
 type BatchSessionRow = EditableSessionRow & { id: string; class_name: string; class_slug: string; class_tagline: string; instructor_name: string };
 type UserRow = { booking_count: number; created_at: Date; email: string; email_verified: boolean; first_name: string | null; id: string; last_name: string | null; phone: string | null };
-type AdminBookingRow = { participant_kind: "self" | "companion"; participant_name: string | null; class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
+type AdminBookingRow = { cursor_start_at: string; participant_kind: "self" | "companion"; participant_name: string | null; class_name: string; created_at: Date; email: string; first_name: string | null; id: string; last_name: string | null; phone: string | null; price_snapshot_cents: number; session_id: string; source: string; start_at: Date; status: string; user_id: string };
 type AttendanceRow = { id: string; price_snapshot_cents: number; session_start_at: Date; session_status: string; status: string; user_id: string };
 type DashboardMetricsRow = {
   attended_90_days: string;
@@ -187,25 +188,29 @@ export class AdminService {
   }
 
   async createClassType(data: AdminClassTypeInput, context: MutationContext) {
-    const result = await this.database.query<{ id: string }>(`
-      INSERT INTO class_types (slug, name, tagline, description, duration_minutes, arrival_lead_minutes, active, sort_order, difficulty, benefits, audience, suitable_for_beginners, default_equipment, what_to_bring, practical_notice, hero_image_path, hero_image_alt, seo_title, seo_description)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id
-    `, [data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder, data.difficulty, data.benefits, data.audience, data.suitableForBeginners, data.defaultEquipment, data.whatToBring, data.practicalNotice, data.heroImagePath, data.heroImageAlt, data.seoTitle, data.seoDescription]);
-    await this.audit(context, "class_type.created", "class_type", result.rows[0]!.id);
-    return { id: result.rows[0]!.id };
+    return this.database.transaction(async (client) => {
+      const result = await client.query<{ id: string }>(`
+        INSERT INTO class_types (slug, name, tagline, description, duration_minutes, arrival_lead_minutes, active, sort_order, difficulty, benefits, audience, suitable_for_beginners, default_equipment, what_to_bring, practical_notice, hero_image_path, hero_image_alt, seo_title, seo_description)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id
+      `, [data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder, data.difficulty, data.benefits, data.audience, data.suitableForBeginners, data.defaultEquipment, data.whatToBring, data.practicalNotice, data.heroImagePath, data.heroImageAlt, data.seoTitle, data.seoDescription]);
+      await auditWithClient(client, context, "class_type.created", "class_type", result.rows[0]!.id);
+      return { id: result.rows[0]!.id };
+    });
   }
 
   async updateClassType(id: string, data: AdminClassTypeInput, context: MutationContext) {
-    const result = await this.database.query(`
-      UPDATE class_types SET slug=$2, name=$3, tagline=$4, description=$5, duration_minutes=$6,
-        arrival_lead_minutes=$7, active=$8, sort_order=$9, difficulty=$10, benefits=$11, audience=$12,
-        suitable_for_beginners=$13, default_equipment=$14, what_to_bring=$15, practical_notice=$16,
-        hero_image_path=$17, hero_image_alt=$18, seo_title=$19, seo_description=$20, updated_at=now()
-      WHERE id=$1 RETURNING id
-    `, [id, data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder, data.difficulty, data.benefits, data.audience, data.suitableForBeginners, data.defaultEquipment, data.whatToBring, data.practicalNotice, data.heroImagePath, data.heroImageAlt, data.seoTitle, data.seoDescription]);
-    if (!result.rowCount) throw notFound("Typ lekce nebyl nalezen.");
-    await this.audit(context, "class_type.updated", "class_type", id);
-    return { id };
+    return this.database.transaction(async (client) => {
+      const result = await client.query(`
+        UPDATE class_types SET slug=$2, name=$3, tagline=$4, description=$5, duration_minutes=$6,
+          arrival_lead_minutes=$7, active=$8, sort_order=$9, difficulty=$10, benefits=$11, audience=$12,
+          suitable_for_beginners=$13, default_equipment=$14, what_to_bring=$15, practical_notice=$16,
+          hero_image_path=$17, hero_image_alt=$18, seo_title=$19, seo_description=$20, updated_at=now()
+        WHERE id=$1 RETURNING id
+      `, [id, data.slug, data.name, data.tagline, data.description, data.durationMinutes, data.arrivalLeadMinutes, data.active, data.sortOrder, data.difficulty, data.benefits, data.audience, data.suitableForBeginners, data.defaultEquipment, data.whatToBring, data.practicalNotice, data.heroImagePath, data.heroImageAlt, data.seoTitle, data.seoDescription]);
+      if (!result.rowCount) throw notFound("Typ lekce nebyl nalezen.");
+      await auditWithClient(client, context, "class_type.updated", "class_type", id);
+      return { id };
+    });
   }
 
   async listInstructors() {
@@ -320,7 +325,7 @@ export class AdminService {
       s.location_name,s.location_address,s.price_cents,s.capacity,s.booking_opens_at,s.booking_closes_at,
       s.free_cancellation_until,s.equipment,s.suitability,s.weekly_rule_id,s.weekly_occurrence_date::text,
       (s.start_at AT TIME ZONE 'Europe/Prague')::date::text AS local_date,
-      count(b.id) FILTER (WHERE b.status='reserved')::int AS active_bookings,
+      count(b.id) FILTER (WHERE b.status IN ('reserved','attended','no_show'))::int AS active_bookings,
       coalesce(array_agg(b.id ORDER BY b.id) FILTER (WHERE b.status='reserved'), ARRAY[]::uuid[]) AS booking_ids,
       ct.name AS class_name,ct.slug AS class_slug,ct.tagline AS class_tagline,i.display_name AS instructor_name
       FROM class_sessions s JOIN class_types ct ON ct.id=s.class_type_id JOIN instructors i ON i.id=s.instructor_id
@@ -531,14 +536,16 @@ export class AdminService {
   }
 
   async createSession(data: AdminSessionInput, context: MutationContext) {
-    const startAt = new Date(data.startAt);
-    const endAt = new Date(startAt.getTime() + data.durationMinutes * 60_000);
-    const result = await this.database.query<{ id: string }>(`
-      INSERT INTO class_sessions (class_type_id,instructor_id,start_at,end_at,arrival_lead_minutes,location_name,location_address,price_cents,capacity,booking_opens_at,booking_closes_at,equipment,suitability)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$3::timestamptz-interval '30 days',$3::timestamptz-interval '30 minutes',$10,$11) RETURNING id
-    `, [data.classTypeId, data.instructorId, startAt, endAt, data.arrivalLeadMinutes, data.locationName, data.locationAddress, data.priceCents, data.capacity, data.equipment, data.suitability]);
-    await this.audit(context, "session.created", "session", result.rows[0]!.id);
-    return { id: result.rows[0]!.id };
+    return this.database.transaction(async (client) => {
+      const startAt = new Date(data.startAt);
+      const endAt = new Date(startAt.getTime() + data.durationMinutes * 60_000);
+      const result = await client.query<{ id: string }>(`
+        INSERT INTO class_sessions (class_type_id,instructor_id,start_at,end_at,arrival_lead_minutes,location_name,location_address,price_cents,capacity,booking_opens_at,booking_closes_at,equipment,suitability)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$3::timestamptz-interval '30 days',$3::timestamptz-interval '30 minutes',$10,$11) RETURNING id
+      `, [data.classTypeId, data.instructorId, startAt, endAt, data.arrivalLeadMinutes, data.locationName, data.locationAddress, data.priceCents, data.capacity, data.equipment, data.suitability]);
+      await auditWithClient(client, context, "session.created", "session", result.rows[0]!.id);
+      return { id: result.rows[0]!.id };
+    });
   }
 
   async previewScheduleChange(data: ScheduleChangeInput) {
@@ -557,9 +564,10 @@ export class AdminService {
 
   async updateSessionCapacity(id: string, capacity: number, context: MutationContext) {
     return this.database.transaction(async (client) => {
+      await client.query("LOCK TABLE class_sessions, bookings, cancellation_fees IN ROW EXCLUSIVE MODE");
       const row = (await client.query<{ capacity: number }>("SELECT capacity FROM class_sessions WHERE id=$1 AND status='scheduled' AND start_at>now() FOR UPDATE", [id])).rows[0];
       if (!row) throw notFound("Budoucí aktivní termín nebyl nalezen.");
-      const active = Number((await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [id])).rows[0]?.count ?? 0);
+      const active = Number((await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status IN ('reserved','attended','no_show')", [id])).rows[0]?.count ?? 0);
       if (capacity < active) throw conflict(`Na termínu je ${active} přihlášených. Kapacita nemůže být nižší.`);
       await client.query("UPDATE class_sessions SET capacity=$2,updated_at=now() WHERE id=$1", [id,capacity]);
       await auditWithClient(client, context, "session.capacity_changed", "session", id, { oldCapacity: row.capacity, capacity, activeBookings: active });
@@ -581,7 +589,7 @@ export class AdminService {
         free_cancellation_until,equipment,suitability FROM class_sessions WHERE id=$1 AND status='scheduled' FOR UPDATE`, [id]);
       const previous = current.rows[0];
       if (!previous) throw notFound("Aktivní termín nebyl nalezen.");
-      const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [id]);
+      const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status IN ('reserved','attended','no_show')", [id]);
       const activeBookings = Number(active.rows[0]?.count ?? 0);
       if (activeBookings > data.capacity) throw conflict("Kapacitu nelze snížit pod počet aktivních rezervací.");
       const startAt = new Date(data.startAt);
@@ -655,6 +663,7 @@ export class AdminService {
 
   async cancelSession(id: string, reason: string, context: MutationContext) {
     return this.database.transaction(async (client) => {
+      await client.query("LOCK TABLE class_sessions, bookings, cancellation_fees IN ROW EXCLUSIVE MODE");
       await this.cancelSessionWithClient(client, id, reason, context);
       return { id, status: "cancelled" };
     });
@@ -664,6 +673,7 @@ export class AdminService {
     const from = new Date(data.from);
     const to = new Date(data.to);
     return this.database.transaction(async (client) => {
+      await client.query("LOCK TABLE class_sessions, weekly_schedule_rules, bookings, cancellation_fees IN SHARE ROW EXCLUSIVE MODE");
       const params: unknown[] = [data.classTypeId, from, to];
       let weekdaySql = "";
       if (data.action === "move") { params.push(data.sourceWeekday); weekdaySql = " AND extract(isodow FROM s.start_at AT TIME ZONE 'Europe/Prague')=$4"; }
@@ -713,7 +723,7 @@ export class AdminService {
   }
 
   private async moveSessionWithClient(client: PoolClient, session: BatchSessionRow, startAt: Date, reason: string, context: MutationContext) {
-    const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status='reserved'", [session.id]);
+    const active = await client.query<{ count: string }>("SELECT count(*)::text AS count FROM bookings WHERE session_id=$1 AND status IN ('reserved','attended','no_show')", [session.id]);
     const activeBookings = Number(active.rows[0]?.count ?? 0);
     const endAt = new Date(startAt.getTime() + (session.end_at.getTime() - session.start_at.getTime()));
     const bookingOpenLead = session.start_at.getTime() - session.booking_opens_at.getTime();
@@ -746,16 +756,29 @@ export class AdminService {
     return { items: result.rows.map((row) => ({ id: row.id, email: row.email, emailVerified: row.email_verified, firstName: row.first_name, lastName: row.last_name, phone: row.phone, bookingCount: row.booking_count, createdAt: row.created_at.toISOString() })) };
   }
 
-  async listBookings(sessionId?: string) {
+  async listBookings(sessionId?: string, query: BookingPageQuery = {}) {
+    const page = bookingPage(query, { sessionId: sessionId ?? null, from: query.from ?? null, through: query.through ?? null });
+    const values: unknown[] = [];
+    const clauses = page.predicates(values);
+    if (sessionId) { values.push(sessionId); clauses.push(`s.id=$${values.length}::uuid`); }
+    values.push(page.limit + 1);
     const result = await this.database.query<AdminBookingRow>(`SELECT b.id,b.status,b.source,b.created_at,b.price_snapshot_cents,b.participant_kind,b.participant_name,
-      u.id AS user_id,u.email,u.first_name,u.last_name,u.phone,s.id AS session_id,s.start_at,ct.name AS class_name
+      u.id AS user_id,u.email,u.first_name,u.last_name,u.phone,s.id AS session_id,s.start_at,
+      to_char(s.start_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_start_at,ct.name AS class_name
       FROM bookings b JOIN user_profiles u ON u.id=b.user_id JOIN class_sessions s ON s.id=b.session_id
-      JOIN class_types ct ON ct.id=s.class_type_id WHERE $1::uuid IS NULL OR s.id=$1 ORDER BY s.start_at DESC,b.created_at`, [sessionId ?? null]);
-    return { items: result.rows.map((row) => ({ id: row.id, status: row.status, source: row.source, createdAt: row.created_at.toISOString(), priceCents: row.price_snapshot_cents, participant: { kind: row.participant_kind, name: row.participant_name }, user: { id: row.user_id, email: row.email, firstName: row.first_name, lastName: row.last_name, phone: row.phone }, session: { id: row.session_id, startAt: row.start_at.toISOString(), className: row.class_name } })) };
+      JOIN class_types ct ON ct.id=s.class_type_id ${clauses.length ? `WHERE ${clauses.join(" AND ")}` : ""}
+      ORDER BY s.start_at DESC,b.id DESC LIMIT $${values.length}`, values);
+    return { nextCursor: page.nextCursor(result.rows), items: result.rows.slice(0,page.limit).map((row) => ({ id: row.id, status: row.status, source: row.source, createdAt: row.created_at.toISOString(), priceCents: row.price_snapshot_cents, participant: { kind: row.participant_kind, name: row.participant_name }, user: { id: row.user_id, email: row.email, firstName: row.first_name, lastName: row.last_name, phone: row.phone }, session: { id: row.session_id, startAt: row.start_at.toISOString(), className: row.class_name } })) };
   }
 
   async attendance(id: string, status: "attended" | "no_show", reason: string, context: MutationContext) {
     return this.database.transaction(async (client) => {
+      await client.query("LOCK TABLE class_sessions, bookings, cancellation_fees IN ROW EXCLUSIVE MODE");
+      // Use the same session-first lock as capacity changes and booking creation.
+      // The second booking read is authoritative after the session lock is held.
+      const target = (await client.query<{ session_id: string }>("SELECT session_id FROM bookings WHERE id=$1", [id])).rows[0];
+      if (!target) throw notFound("Rezervace nebyla nalezena.");
+      await client.query("SELECT id FROM class_sessions WHERE id=$1 FOR UPDATE", [target.session_id]);
       const current = await client.query<AttendanceRow>(`SELECT booking.id,booking.user_id,booking.status,
         booking.price_snapshot_cents,session.start_at AS session_start_at,session.status AS session_status
         FROM bookings booking JOIN class_sessions session ON session.id=booking.session_id
@@ -775,10 +798,6 @@ export class AdminService {
       await auditWithClient(client, context, "booking.attendance_changed", "booking", id, { from: row.status, to: status, reason });
       return { id, status };
     });
-  }
-
-  private audit(context: MutationContext, action: string, entityType: string, entityId: string) {
-    return this.database.query("INSERT INTO application_audit (actor_type,actor_id,action,entity_type,entity_id,request_id) VALUES ('admin',$1,$2,$3,$4,$5)", [context.session.subject, action, entityType, entityId, context.requestId]);
   }
 }
 

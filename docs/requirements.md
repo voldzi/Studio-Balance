@@ -78,7 +78,7 @@ SEO a schválenou cestu fotografie typu lekce.
 | IDN-008 | P0 | klient může vytvořit rezervaci po doplnění jména, příjmení a telefonu a po přijetí podmínek; e-mailové ověření se nevyžaduje |
 | IDN-009 | P0 | `admin` a `super_admin` musí dokončit MFA; klientská MFA není v první verzi povinná |
 | IDN-010 | P0 | profil účtu s rolí `admin` nebo `super_admin` obsahuje přímý vstup „Správa studia“; pokud jeho aktuální webová relace prokazuje OTP v podepsaném AMR, správa se otevře bez dalšího přihlášení. Samotná role bez tohoto neměnného důkazu MFA nestačí a vede na záložní oddělené ověření heslem a TOTP. Běžný klient vstup nevidí. |
-| IDN-011 | P0 | aplikace ukládá do browseru jen neprůhledný `HttpOnly` identifikátor serverové relace; bez volby „Zapamatovat toto soukromé zařízení“ je cookie pouze do zavření prohlížeče, s volbou platí nejvýše 90 dní při aktivitě aspoň jednou za 30 dní. Klientské přihlášení má volbu předem zvolenou s možností vypnutí na sdíleném zařízení; administrátorské přihlášení ji má výchozím stavem vypnutou. Server šifrovaně drží obnovovací token, nejpozději po 15 minutách revaliduje účet a role proti Keycloaku a při selhání relaci zneplatní. Důkaz MFA vzniká jen z podepsaného AMR při interaktivním přihlášení a refresh ani později přidaná role jej nesmí dodatečně povýšit. |
+| IDN-011 | P0 | aplikace ukládá do browseru jen neprůhledný `HttpOnly` identifikátor serverové relace; bez volby „Zapamatovat toto soukromé zařízení“ je cookie pouze do zavření prohlížeče, s volbou platí nejvýše 90 dní při aktivitě aspoň jednou za 30 dní. Klientské přihlášení má volbu předem zvolenou s možností vypnutí na sdíleném zařízení; administrátorské přihlášení ji má výchozím stavem vypnutou. Server šifrovaně drží obnovovací token, nejpozději po 15 minutách revaliduje účet a role proti Keycloaku a při definitivním odmítnutí tokenu, účtu nebo oprávnění relaci zneplatní. Dočasný výpadek vrátí 503 a ponechá relaci pro pozdější opětovné ověření bez přístupu k neověřeným datům. Důkaz MFA vzniká jen z podepsaného AMR při interaktivním přihlášení a refresh ani později přidaná role jej nesmí dodatečně povýšit. |
 
 Datum narození a nouzový kontakt se v první verzi nesbírají.
 
@@ -343,3 +343,13 @@ prices and earlier sessions are preserved. Lesson replacement must select a
 different type explicitly; newly created profiles are selected automatically.
 
 Neaktivní typ lekce je skrytý v katalogu, rozvrhu i veřejném detailu termínu a nelze na něj vytvořit novou rezervaci. Archivace typu nemaže rezervace ani jejich historii.
+
+## Bezpečnostní a výkonová oprava 7. 10. 2026 (ADR 0025)
+
+Rezervované, přítomné a nedorazivší místo se započítává do kapacity termínu.
+Docházka, rezervace a změny kapacity sdílejí transakční zámek; změna typu
+lekce, instruktora či nového termínu se uloží atomicky s auditní stopou.
+Výpisy rezervací používají omezené stránky s možností načíst další.
+Nadcházející rezervace zůstávají oddělené od historie a filtrů období;
+administrátorský celkový počet účastníků nevyjadřuje velikost načtené stránky.
+Bezpečnostní hlavičky nesmějí narušit PWA, přihlášení ani schválenou analytiku.

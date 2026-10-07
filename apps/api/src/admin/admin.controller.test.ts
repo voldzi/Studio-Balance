@@ -20,6 +20,7 @@ describe("admin authorization", () => {
   const previewScheduleChange = vi.fn(async () => ({ previewToken: "c".repeat(64), terms: [], exceptions: [], slots: [], rulesChanged: 1, sessionsChanged: 0, activeBookings: 0, cancelledSessionsKept: 0 }));
   const applyScheduleChange = vi.fn(async () => ({ rulesChanged: 1, sessionsChanged: 0 }));
   const updateSessionCapacity = vi.fn(async (id: string) => ({id}));
+  const listBookings = vi.fn(async () => ({ items: [], nextCursor: null }));
   const updateSession = vi.fn(async (id: string) => ({ id }));
   const updateWeeklyRule = vi.fn(async (id: string, active: boolean) => ({ id, active }));
   const previewClassPrice = vi.fn(async () => ({ className: "Barre", weeklyRulesChanged: 2, sessionsChanged: 3, activeBookings: 1, bookedPricesChanged: 0, blockedBookings: 0, previewToken: "a".repeat(64) }));
@@ -30,7 +31,7 @@ describe("admin authorization", () => {
   afterEach(async () => { await app?.close(); });
 
   async function createApplication() {
-    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateSessionCapacity, previewScheduleChange, applyScheduleChange, updateWeeklyRule, previewWeeklyRuleEdit, applyWeeklyRuleEdit, changeScheduleBatch, previewClassPrice, applyClassPrice } }] }).compile();
+    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { listBookings, dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateSessionCapacity, previewScheduleChange, applyScheduleChange, updateWeeklyRule, previewWeeklyRuleEdit, applyWeeklyRuleEdit, changeScheduleBatch, previewClassPrice, applyClassPrice } }] }).compile();
     const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false });
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
@@ -148,6 +149,27 @@ describe("admin authorization", () => {
     expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/apply",headers,payload})).statusCode).toBe(400);
     expect((await current.inject({method:"POST",url:"/api/v1/admin/schedule-changes/apply",headers,payload:{...payload,previewToken:"c".repeat(64)}})).statusCode).toBe(201);
     expect((await current.inject({method:"PATCH",url:"/api/v1/admin/sessions/71ff7570-dabb-488b-bb6e-43e36ddc602e/capacity",headers,payload:{capacity:14}})).statusCode).toBe(200);
+  });
+
+  it("protects and validates paged administrator booking lists", async () => {
+    listBookings.mockClear();
+    const current = await createApplication();
+    const url = "/api/v1/admin/bookings?limit=1";
+    expect((await current.inject({ method: "GET", url })).statusCode).toBe(401);
+    expect((await current.inject({ method: "GET", url, headers: { cookie: await cookie(["client"]) } })).statusCode).toBe(403);
+    expect((await current.inject({ method: "GET", url, headers: { cookie: await cookie(["admin"],"sb_session",false) } })).statusCode).toBe(403);
+    const headers = { cookie: await cookie(["admin"]) };
+    for (const query of ["limit=0", "limit=101", "from=2026-02-30", "from=0000-01-01", "sessionId=bad", "cursor=bad%20cursor", "period=all"]) {
+      const response = await current.inject({ method: "GET", url: `/api/v1/admin/bookings?${query}`, headers });
+      expect(response.statusCode,query).toBe(400);
+      expect(response.json()).toMatchObject({ error: { code: "VALIDATION_ERROR", requestId: expect.any(String) } });
+    }
+    expect(listBookings).not.toHaveBeenCalled();
+    const sessionId = "71ff7570-dabb-488b-bb6e-43e36ddc602e";
+    const response = await current.inject({ method: "GET", url: `/api/v1/admin/bookings?sessionId=${sessionId}&limit=100&from=2026-10-25&through=2026-10-25`, headers });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ items: [], nextCursor: null });
+    expect(listBookings).toHaveBeenCalledWith(sessionId, { limit: 100, from: "2026-10-25", through: "2026-10-25" });
   });
 
 });

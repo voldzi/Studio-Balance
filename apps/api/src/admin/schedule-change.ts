@@ -19,7 +19,7 @@ type Rule = {
 type Term = {
   id: string; class_type_id: string; instructor_id: string; start_at: Date; end_at: Date;
   local_date: string; weekday: number; local_time: string; status: string; booking_paused: boolean;
-  capacity: number; price_cents: number; weekly_rule_id: string | null; weekly_occurrence_date: string | null;
+  occupied_bookings: number; capacity: number; price_cents: number; weekly_rule_id: string | null; weekly_occurrence_date: string | null;
   arrival_lead_minutes: number; location_name: string; location_address: string; equipment: string; suitability: string;
   bookings: { id: string; userId: string; price: number; fee: boolean }[]; updated_at: Date;
 };
@@ -60,6 +60,7 @@ export async function scheduleChange(client: PoolClient, input: ScheduleChangeIn
     const candidates = (await client.query<Term>(`SELECT s.*, (s.start_at AT TIME ZONE 'Europe/Prague')::date::text AS local_date,
       extract(isodow FROM s.start_at AT TIME ZONE 'Europe/Prague')::int AS weekday,
       (s.start_at AT TIME ZONE 'Europe/Prague')::time::text AS local_time,s.weekly_occurrence_date::text,
+      (SELECT count(*)::int FROM bookings occupied WHERE occupied.session_id=s.id AND occupied.status IN ('reserved','attended','no_show')) AS occupied_bookings,
       coalesce((SELECT jsonb_agg(jsonb_build_object('id',b.id,'userId',b.user_id,'price',b.price_snapshot_cents,
         'fee',EXISTS(SELECT 1 FROM cancellation_fees f WHERE f.booking_id=b.id AND f.status IN ('due','settled'))) ORDER BY b.id)
         FROM bookings b WHERE b.session_id=s.id AND b.status='reserved'),'[]'::jsonb) AS bookings
@@ -77,7 +78,7 @@ export async function scheduleChange(client: PoolClient, input: ScheduleChangeIn
     for (const term of terms) {
       if (term.status === "cancelled" && !input.reopenCancelled) continue;
       if (input.operation === "cancel") continue;
-      if (term.bookings.length > next.capacity) throw fail(`Termín ${term.local_date} má ${term.bookings.length} přihlášených; kapacita ${next.capacity} nestačí.`);
+      if (term.occupied_bookings > next.capacity) throw fail(`Termín ${term.local_date} má ${term.occupied_bookings} přihlášených; kapacita ${next.capacity} nestačí.`);
       if (input.updateBookedPrices && term.bookings.some((b) => b.fee && b.price !== next.price_cents)) throw fail("Rezervaci s aktivním nebo uhrazeným poplatkem nelze přecenit.");
       const date = dayAfter(term.local_date, next.weekday - rule.weekday);
       if (date < from || (through && date > through)) throw fail("Přesun by překročil vybrané období. Posuňte datum účinnosti nebo upravte nejbližší termín samostatně.");
@@ -123,10 +124,10 @@ export async function scheduleChange(client: PoolClient, input: ScheduleChangeIn
     slots: plans.map((p)=>({from:p.from,through:p.through,before:{name:p.rule.class_name,weekday:p.rule.weekday,time:p.rule.local_start_time.slice(0,5),capacity:p.rule.capacity,priceCents:p.rule.price_cents},
       after:{name:p.next.class_name,weekday:p.next.weekday,time:p.next.local_start_time.slice(0,5),capacity:p.next.capacity,priceCents:p.next.price_cents}})),
     previewToken, rulesChanged: plans.length, sessionsChanged: plans.reduce((n,p) => n + (input.operation === "cancel" ? p.terms.filter((t) => t.status==='scheduled').length : p.changes.length),0),
-    activeBookings: plans.reduce((n,p) => n+p.terms.reduce((m,t) => m+t.bookings.length,0),0),
+    activeBookings: plans.reduce((n,p) => n+p.terms.reduce((m,t) => m+t.occupied_bookings,0),0),
     cancelledSessionsKept: plans.reduce((n,p) => n+p.terms.filter((t) => t.status==='cancelled' && !input.reopenCancelled).length,0),
     exceptions: plans.flatMap((p) => p.exceptions.map((t) => ({id:t.id,startAt:t.start_at.toISOString()}))),
-    terms: plans.flatMap((p) => p.terms.map((t) => ({ id:t.id,startAt:t.start_at.toISOString(),newStartAt:p.changes.find((c)=>c.term.id===t.id)?.start.toISOString() ?? t.start_at.toISOString(),status:t.status,bookings:t.bookings.length,
+    terms: plans.flatMap((p) => p.terms.map((t) => ({ id:t.id,startAt:t.start_at.toISOString(),newStartAt:p.changes.find((c)=>c.term.id===t.id)?.start.toISOString() ?? t.start_at.toISOString(),status:t.status,bookings:t.occupied_bookings,
       before:p.rule.class_name,after:p.next.class_name,capacity:p.next.capacity,priceCents:p.next.price_cents,
       changed:input.operation==='cancel' ? t.status==='scheduled' : t.status!=='cancelled' || input.reopenCancelled })))
   };

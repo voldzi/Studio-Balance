@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from "node:crypto";
 
-import { Inject, Injectable } from "@nestjs/common";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
+import { createRemoteJWKSet, errors as joseErrors, jwtVerify } from "jose";
 import type { PoolClient } from "pg";
 
 import { RuntimeConfigService } from "../config/runtime-config.js";
@@ -13,6 +13,7 @@ export type ApplicationSessionKind = "web" | "admin";
 export const SESSION_ABSOLUTE_LIFETIME_MS = 90 * 24 * 60 * 60 * 1000;
 export const SESSION_IDLE_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 export const SESSION_REVALIDATION_INTERVAL_MS = 15 * 60 * 1000;
+export const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 
 type SessionRow = {
   absolute_expires_at: Date;
@@ -22,6 +23,7 @@ type SessionRow = {
   idle_expires_at: Date;
   last_name: string | null;
   last_revalidated_at: Date;
+  last_seen_at: Date;
   mfa_verified: boolean;
   oidc_subject: string;
   refresh_token_ciphertext: string | null;
@@ -29,14 +31,23 @@ type SessionRow = {
   revoked_at: Date | null;
 };
 
+type RefreshedSession = { refreshToken?: string; session: StudioSession; subject: string };
+type RefreshUnavailable = { unavailable: true; refreshToken?: string };
+type SessionResolution = StudioSession | RefreshUnavailable | undefined;
+const sessionColumns = `oidc_subject, email, email_verified, first_name, last_name, mfa_verified, roles, refresh_token_ciphertext,
+  absolute_expires_at, idle_expires_at, last_revalidated_at, last_seen_at, revoked_at`;
+
 @Injectable()
 export class OpaqueSessionService {
   private readonly encryptionKey: Buffer;
+  private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
+  private readonly pendingRevalidations = new Map<string, Promise<StudioSession | undefined>>();
 
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(RuntimeConfigService) private readonly config: RuntimeConfigService
   ) {
+    this.jwks = createRemoteJWKSet(new URL(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/certs`), { timeoutDuration: 8_000 });
     this.encryptionKey = Buffer.from(hkdfSync(
       "sha256",
       Buffer.from(this.config.value.sessionSecret),
@@ -86,34 +97,85 @@ export class OpaqueSessionService {
 
   async resolveToken(token: string | undefined, kind: ApplicationSessionKind): Promise<StudioSession | undefined> {
     if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return undefined;
+    const tokenHash = hashToken(token);
+    let row = await this.readSession(tokenHash, kind);
+    if (!row) return undefined;
+    const now = new Date();
+    if (isCurrent(row, now)) {
+      if (now.getTime() - row.last_seen_at.getTime() < SESSION_TOUCH_INTERVAL_MS) return sessionFromRow(row);
+      const touched = await this.database.query<SessionRow>(
+        `UPDATE application_sessions
+         SET last_seen_at = $3, idle_expires_at = LEAST(absolute_expires_at, $4), updated_at = $3
+         WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL
+           AND absolute_expires_at > $3 AND idle_expires_at > $3
+           AND last_revalidated_at > $5 AND last_seen_at <= $6
+         RETURNING ${sessionColumns}`,
+        [tokenHash, kind, now, new Date(now.getTime() + SESSION_IDLE_LIFETIME_MS),
+          new Date(now.getTime() - SESSION_REVALIDATION_INTERVAL_MS), new Date(now.getTime() - SESSION_TOUCH_INTERVAL_MS)]
+      );
+      if (touched.rows[0]) return sessionFromRow(touched.rows[0]);
+      // A concurrent touch, refresh or revocation can win the conditional update.
+      row = await this.readSession(tokenHash, kind);
+      if (!row) return undefined;
+      if (isCurrent(row, new Date())) return sessionFromRow(row);
+    }
 
-    return this.database.transaction(async (client) => {
-      const row = await this.lockActiveSession(client, hashToken(token), kind);
+    const key = `${kind}:${tokenHash}`;
+    const pending = this.pendingRevalidations.get(key);
+    if (pending) return pending;
+    if (this.pendingRevalidations.size >= 50) throw identityUnavailable();
+    const revalidation = this.resolveStaleToken(tokenHash, kind);
+    this.pendingRevalidations.set(key, revalidation);
+    try {
+      return await revalidation;
+    } finally {
+      this.pendingRevalidations.delete(key);
+    }
+  }
+
+  private async resolveStaleToken(tokenHash: string, kind: ApplicationSessionKind): Promise<StudioSession | undefined> {
+    const resolved = await this.database.transaction<SessionResolution>(async (client) => {
+      const row = await this.readSession(tokenHash, kind, client);
       if (!row) return undefined;
 
       const now = new Date();
       if (row.absolute_expires_at <= now || row.idle_expires_at <= now) {
-        await this.revokeLocked(client, hashToken(token), kind);
+        await this.revokeLocked(client, tokenHash, kind);
         return undefined;
       }
+      if (isCurrent(row, now) && now.getTime() - row.last_seen_at.getTime() < SESSION_TOUCH_INTERVAL_MS) return sessionFromRow(row);
 
       let session = sessionFromRow(row);
       let refreshTokenCiphertext = row.refresh_token_ciphertext;
       let revalidatedAt = row.last_revalidated_at;
       if (now.getTime() - row.last_revalidated_at.getTime() >= SESSION_REVALIDATION_INTERVAL_MS) {
         if (!refreshTokenCiphertext) {
-          await this.revokeLocked(client, hashToken(token), kind);
+          await this.revokeLocked(client, tokenHash, kind);
           return undefined;
         }
         let refreshed: Awaited<ReturnType<OpaqueSessionService["refresh"]>>;
         try {
           refreshed = await this.refresh(this.decrypt(refreshTokenCiphertext), kind);
         } catch {
-          await this.revokeLocked(client, hashToken(token), kind);
+          // A damaged locally encrypted credential cannot be used again.
+          await this.revokeLocked(client, tokenHash, kind);
           return undefined;
         }
+        if (refreshed && "unavailable" in refreshed) {
+          if (refreshed.refreshToken) {
+            // The provider may rotate the refresh token before its JWKS becomes
+            // unavailable. Preserve that opaque credential without accepting any
+            // new identity or extending the last successful verification.
+            await client.query(
+              `UPDATE application_sessions SET refresh_token_ciphertext = $3, updated_at = $4
+               WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL`,
+              [tokenHash, kind, this.encrypt(refreshed.refreshToken), now]
+            );
+          }
+          return { unavailable: true };
+        }
         if (!refreshed || refreshed.subject !== row.oidc_subject || (kind === "admin" && !isAdministrator(refreshed.session.roles))) {
-          await this.revokeLocked(client, hashToken(token), kind);
+          await this.revokeLocked(client, tokenHash, kind);
           return undefined;
         }
         // MFA assurance belongs to the original interactive authentication.
@@ -131,10 +193,14 @@ export class OpaqueSessionService {
              refresh_token_ciphertext = $8, last_revalidated_at = $9, last_seen_at = $10,
              idle_expires_at = $11, updated_at = $10
          WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL`,
-        [hashToken(token), kind, session.email, session.emailVerified, session.firstName ?? null, session.lastName ?? null, session.roles, refreshTokenCiphertext, revalidatedAt, now, idleExpiresAt]
+        [tokenHash, kind, session.email, session.emailVerified, session.firstName ?? null, session.lastName ?? null, session.roles, refreshTokenCiphertext, revalidatedAt, now, idleExpiresAt]
       );
       return session;
     });
+    if (resolved && "unavailable" in resolved) {
+      throw identityUnavailable();
+    }
+    return resolved;
   }
 
   async revokeCookie(cookieHeader: string | undefined, kind: ApplicationSessionKind): Promise<void> {
@@ -166,15 +232,13 @@ export class OpaqueSessionService {
     }
   }
 
-  private async lockActiveSession(client: PoolClient, tokenHash: string, kind: ApplicationSessionKind): Promise<SessionRow | undefined> {
-    const result = await client.query<SessionRow>(
-      `SELECT oidc_subject, email, email_verified, first_name, last_name, mfa_verified, roles, refresh_token_ciphertext,
-              absolute_expires_at, idle_expires_at, last_revalidated_at, revoked_at
+  private async readSession(tokenHash: string, kind: ApplicationSessionKind, client?: PoolClient): Promise<SessionRow | undefined> {
+    const sql = `SELECT ${sessionColumns}
        FROM application_sessions
        WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL
-       FOR UPDATE`,
-      [tokenHash, kind]
-    );
+       ${client ? "FOR UPDATE" : ""}`;
+    const values = [tokenHash, kind];
+    const result = client ? await client.query<SessionRow>(sql, values) : await this.database.query<SessionRow>(sql, values);
     return result.rows[0];
   }
 
@@ -186,10 +250,11 @@ export class OpaqueSessionService {
     );
   }
 
-  private async refresh(refreshToken: string, kind: ApplicationSessionKind): Promise<{ refreshToken?: string; session: StudioSession; subject: string } | undefined> {
+  private async refresh(refreshToken: string, kind: ApplicationSessionKind): Promise<RefreshedSession | RefreshUnavailable | undefined> {
     const client = kind === "admin"
       ? { id: this.config.value.oidc.adminClientId, secret: this.config.value.oidc.adminClientSecret }
       : { id: this.config.value.oidc.webClientId, secret: this.config.value.oidc.webClientSecret };
+    let rotatedRefreshToken: string | undefined;
     try {
       const response = await fetch(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/token`, {
         method: "POST",
@@ -201,10 +266,14 @@ export class OpaqueSessionService {
         cache: "no-store",
         signal: AbortSignal.timeout(8_000)
       });
-      if (!response.ok) return undefined;
+      if (!response.ok) {
+        const error = await response.json().catch(() => null) as { error?: unknown } | null;
+        return error?.error === "invalid_grant" ? undefined : { unavailable: true };
+      }
       const body = (await response.json()) as { id_token?: unknown; refresh_token?: unknown };
+      rotatedRefreshToken = typeof body.refresh_token === "string" ? body.refresh_token : undefined;
       if (typeof body.id_token !== "string") return undefined;
-      const claims = await jwtVerify(body.id_token, createRemoteJWKSet(new URL(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/certs`)), {
+      const claims = await jwtVerify(body.id_token, this.jwks, {
         algorithms: ["RS256", "ES256"],
         issuer: this.config.value.oidc.issuer,
         audience: client.id
@@ -212,8 +281,11 @@ export class OpaqueSessionService {
       const session = sessionFromClaims(claims.payload);
       if (!session) return undefined;
       return { subject: session.subject, session, ...(typeof body.refresh_token === "string" ? { refreshToken: body.refresh_token } : {}) };
-    } catch {
-      return undefined;
+    } catch (error) {
+      if (error instanceof joseErrors.JWTClaimValidationFailed || error instanceof joseErrors.JWTExpired ||
+        error instanceof joseErrors.JWSSignatureVerificationFailed || error instanceof joseErrors.JWSInvalid ||
+        error instanceof joseErrors.JWTInvalid || error instanceof joseErrors.JOSEAlgNotAllowed || error instanceof joseErrors.JOSENotSupported) return undefined;
+      return { unavailable: true, ...(rotatedRefreshToken ? { refreshToken: rotatedRefreshToken } : {}) };
     }
   }
 
@@ -251,6 +323,15 @@ export class OpaqueSessionService {
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
   }
+}
+
+function isCurrent(row: SessionRow, now: Date): boolean {
+  return row.absolute_expires_at > now && row.idle_expires_at > now &&
+    now.getTime() - row.last_revalidated_at.getTime() < SESSION_REVALIDATION_INTERVAL_MS;
+}
+
+function identityUnavailable(): HttpException {
+  return new HttpException({ code: "IDENTITY_PROVIDER_UNAVAILABLE", message: "Přihlášení nyní nelze ověřit. Zkuste to za chvíli znovu." }, HttpStatus.SERVICE_UNAVAILABLE);
 }
 
 function hashToken(token: string): string {

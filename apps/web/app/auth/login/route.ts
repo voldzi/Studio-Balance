@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createLoginAttempt, identityConfig, identityCookies, isSecureCookie, publicRedirectUrl, safeReturnTo } from "../../../lib/identity";
+import { createLoginAttempt, identityConfig, identityCookies, isSecureCookie, publicRedirectUrl, readWebSession, safeReturnTo } from "../../../lib/identity";
 import { logIdentityFailure } from "../../../lib/identity-log";
 
 export const runtime = "nodejs";
@@ -10,6 +10,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const rememberDevice = request.nextUrl.searchParams.get("rememberDevice") === "1";
   let loginAttempt: Awaited<ReturnType<typeof createLoginAttempt>>;
   try {
+    const existing = await readWebSession(request.cookies.get(identityCookies.session)?.value, "web", { rejectUnavailable: true });
+    if (existing) return NextResponse.redirect(publicRedirectUrl(returnTo));
     loginAttempt = await createLoginAttempt(returnTo, "web", undefined, rememberDevice);
   } catch (error) {
     const requestId = logIdentityFailure(request, "client_login_start", error);

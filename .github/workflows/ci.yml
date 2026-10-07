@@ -14,6 +14,18 @@ permissions:
 jobs:
   repository-contract:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: studio_balance_ci
+          POSTGRES_USER: studio_ci
+          POSTGRES_PASSWORD: ci-disposable-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studio_ci -d studio_balance_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
@@ -29,9 +41,13 @@ jobs:
       - name: Install pinned dependencies
         run: pnpm install --frozen-lockfile
       - name: Audit dependencies (including development tools)
-        run: pnpm audit --audit-level=high
+        run: node scripts/audit-dependencies.mjs
       - name: Lint, typecheck, test, build and validate contracts
         run: pnpm check
+      - name: Mandatory isolated PostgreSQL integration tests
+        env:
+          STUDIO_TEST_DATABASE_URL: postgresql://studio_ci:ci-disposable-only@127.0.0.1:5432/studio_balance_ci
+        run: node scripts/test-database-integration.mjs
       - name: Validate preview Compose contract
         env:
           POSTGRES_PASSWORD: ci-preview-only

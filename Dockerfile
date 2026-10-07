@@ -14,6 +14,7 @@ COPY apps/worker/package.json apps/worker/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/domain/package.json packages/domain/package.json
 COPY packages/ui-tokens/package.json packages/ui-tokens/package.json
+COPY patches/ patches/
 RUN pnpm install --frozen-lockfile
 
 FROM dependencies AS builder

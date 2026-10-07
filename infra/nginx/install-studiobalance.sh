@@ -61,6 +61,10 @@ fi
 keycloak_upstream="docker.home.cz:8081"
 
 ((EUID == 0)) || { echo "Run this script with sudo." >&2; exit 1; }
+if [[ "$activate_production" == true && ! -f /etc/nginx/vcode-analytics/studio-balance.cz.conf ]]; then
+  echo "Production activation requires the existing private analytics include managed by central operations." >&2
+  exit 1
+fi
 for command in nginx curl getent install ln cp rm date mktemp systemctl cat grep; do
   command -v "$command" >/dev/null || { echo "Required command is missing: $command" >&2; exit 1; }
 done
@@ -114,12 +118,24 @@ if [[ "$enabled_path" != "$config_path" && -e "$enabled_path" && ! -L "$enabled_
 fi
 
 append_app_proxy() {
+  if [[ "$activate_production" == true ]]; then
+    echo '    include /etc/nginx/vcode-analytics/studio-balance.cz.conf;' >>"$temporary"
+  fi
   cat >>"$temporary" <<EOF
     access_log /var/log/nginx/studiobalance.access.log;
     error_log /var/log/nginx/studiobalance.error.log warn;
     location = /health { return 404; }
     location = /ready { return 404; }
+    location = /api/internal { return 404; }
+    location ^~ /api/internal/ { return 404; }
     location /api/ {
+        gzip off;
+        location = /api/v1/sessions {
+            gzip on;
+            gzip_types application/json;
+            gzip_min_length 1024;
+            gzip_vary on;
+        }
         proxy_pass http://$api_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;

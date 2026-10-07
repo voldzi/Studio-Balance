@@ -95,12 +95,15 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "node", "-e", "process.kill(1, 0)"]
-      interval: 30s
+      test: ["CMD", "node", "dist/healthcheck.js"]
+      interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 30s
     cpus: 0.25
     mem_limit: 128m
+    tmpfs:
+      - /tmp:size=4m,uid=1000,gid=1000,mode=0700
 
   web:
     <<: *runtime-defaults

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Headers, HttpException, HttpStatus, Inject, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Headers, HttpException, HttpStatus, Inject, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 
 import { SessionAuthGuard, type SessionRequest } from "../auth/session-auth.guard.js";
 import { BookingService, CURRENT_TERMS_VERSION } from "./booking.service.js";
+import { bookingPageSchema, parseBookingPage } from "./booking-list-page.js";
 
 const createSchema = z.object({
   sessionId: z.string().uuid(),
@@ -28,8 +29,8 @@ export class BookingController {
   }
 
   @Get("me/bookings")
-  listMine(@Req() request: SessionRequest) {
-    return this.bookings.listMine(request.studioSession!);
+  listMine(@Req() request: SessionRequest, @Query() query: unknown) {
+    return this.bookings.listMine(request.studioSession!, parseBookingPage(bookingPageSchema.extend({ period: z.enum(["all", "upcoming", "history"]).optional() }).strict(), query));
   }
 
   @Get("me/bookings/:bookingId/cancellation-preview")

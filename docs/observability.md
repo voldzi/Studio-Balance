@@ -46,6 +46,33 @@ Pravidla:
   dostupnost produkčního issueru;
 - deploy/version a readiness stav.
 
+### Rozlišení výpadku identity a neplatné relace
+
+API `request_failed` s `errorCode=IDENTITY_PROVIDER_UNAVAILABLE` a HTTP 503
+znamená dočasné odmítnutí ověření; server zachoval relaci a případnou novou
+šifrovanou refresh credential. Neznamená špatné heslo ani dokončenou revokaci.
+Web při nemožnosti zahájit/recyklovat přihlášení zapisuje
+`oidc_operation_failed` s operací `client_login_start` nebo
+`admin_login_start` a request ID; jeho obecný `OIDC_START_FAILED` sám příčinu
+nerozlišuje. Při šetření korelovat stav interního session endpointu, API kód a
+dostupnost Keycloaku. Nežádat po uživateli OTP reset kvůli provider 503.
+
+`AUTHENTICATION_REQUIRED` na interní session endpoint je odmítnutý serverový
+podpis včetně replay/změny těla; po release zkontrolovat soulad web/API revizí
+a `rawBody: true`. Vyčerpání omezené replay cache vrátí 503
+`SERVICE_UNAVAILABLE`. Definitivně zrušená relace se při resolve vrátí jako
+neplatná; aktuální kód nevydává samostatnou auditní událost pro každý důvod
+revokace. Absence takové události není důkaz úspěšného ověření ani výpadku.
+
+Provozní šetření sleduje latency token/JWKS endpointu proti osmisekundovému
+limitu, DB čekání na session řádek, aplikační pool saturation a opakované 503.
+Souběžné ověření má limit 50 různých session na proces, nonce cache 10 000
+živých položek. Tyto limity nejsou samostatně exportované metriky; dashboard
+je nesmí vydávat za zavedené měření. Žádný diagnostický log nesmí obsahovat
+HMAC, nonce, tělo interního requestu, cookie, JWT, refresh token ani client
+secret. Nové fetch limity ani odstranění opakovaných session zápisů nesnižují
+povinné admin MFA.
+
 ### Doména rezervací
 
 - booking attempts a outcomes: success, full, closed, duplicate, invalid;

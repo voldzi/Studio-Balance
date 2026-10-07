@@ -1,4 +1,7 @@
-export function StructuredData({ data }: { data: Record<string, unknown> }) {
+import { headers } from "next/headers";
+
+export async function StructuredData({ data }: { data: Record<string, unknown> }) {
   const json = JSON.stringify(data).replaceAll("<", "\\u003c");
-  return <script dangerouslySetInnerHTML={{ __html: json }} type="application/ld+json" />;
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: json }} type="application/ld+json" />;
 }

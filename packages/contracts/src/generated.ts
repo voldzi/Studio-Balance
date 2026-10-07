@@ -153,7 +153,7 @@ export interface paths {
         put?: never;
         /**
          * Create an opaque application session
-         * @description Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API.
+         * @description Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API. Internal signature v2 binds millisecond timestamp, 16-byte base64url nonce, method, matched path and SHA256 of the exact JSON body. Maximum clock skew is 60 seconds; authenticated nonce reuse is rejected. Public origins must return 404.
          */
         post: operations["createInternalApplicationSession"];
         delete?: never;
@@ -173,7 +173,7 @@ export interface paths {
         put?: never;
         /**
          * Resolve and revalidate an opaque application session
-         * @description Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes.
+         * @description Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes. Internal signature v2 binds millisecond timestamp, 16-byte base64url nonce, method, matched path and SHA256 of the exact JSON body. Maximum clock skew is 60 seconds; authenticated nonce reuse is rejected. Public origins must return 404.
          */
         post: operations["resolveInternalApplicationSession"];
         delete?: never;
@@ -193,7 +193,7 @@ export interface paths {
         put?: never;
         /**
          * Revoke an opaque application session
-         * @description Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak.
+         * @description Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak. Internal signature v2 binds millisecond timestamp, 16-byte base64url nonce, method, matched path and SHA256 of the exact JSON body. Maximum clock skew is 60 seconds; authenticated nonce reuse is rejected. Public origins must return 404.
          */
         post: operations["revokeInternalApplicationSession"];
         delete?: never;
@@ -2108,7 +2108,11 @@ export interface operations {
     createInternalApplicationSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "x-studiobalance-internal-timestamp": string;
+                "x-studiobalance-internal-nonce": string;
+                "x-studiobalance-internal-signature": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2130,12 +2134,17 @@ export interface operations {
             };
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     resolveInternalApplicationSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "x-studiobalance-internal-timestamp": string;
+                "x-studiobalance-internal-nonce": string;
+                "x-studiobalance-internal-signature": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2157,12 +2166,17 @@ export interface operations {
             };
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     revokeInternalApplicationSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "x-studiobalance-internal-timestamp": string;
+                "x-studiobalance-internal-nonce": string;
+                "x-studiobalance-internal-signature": string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2187,6 +2201,7 @@ export interface operations {
             };
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
+            503: components["responses"]["Error"];
         };
     };
     listClassTypes: {
@@ -2320,6 +2335,8 @@ export interface operations {
             /** @description Published WebP image. */
             200: {
                 headers: {
+                    /** @description Publication and consent are checked before each public read. */
+                    "Cache-Control"?: "private, no-store";
                     [name: string]: unknown;
                 };
                 content: {
@@ -2554,14 +2571,25 @@ export interface operations {
     };
     listMyBookings: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Maximum number of bookings in one page. */
+                limit?: number;
+                /** @description Opaque nextCursor from the preceding response; retain the same owner and filters. */
+                cursor?: string;
+                /** @description Inclusive session date in Europe/Prague. */
+                from?: string;
+                /** @description Inclusive session date in Europe/Prague; not before from. */
+                through?: string;
+                /** @description Upcoming reserved seats ordered nearest first; history contains all other seats. All/history are newest first. The cursor fixes the time boundary while paging. */
+                period?: "all" | "upcoming" | "history";
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Client bookings. */
+            /** @description Bounded bookings page, ordered by session start and booking ID. Continue with nextCursor until null; no records are silently truncated. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2569,9 +2597,12 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: components["schemas"]["Booking"][];
+                        /** @description Pass as cursor to continue, or null after the last page. */
+                        nextCursor: string | null;
                     };
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
         };
     };
@@ -3485,6 +3516,8 @@ export interface operations {
             /** @description Private WebP image. */
             200: {
                 headers: {
+                    /** @description Publication and consent are checked before each public read. */
+                    "Cache-Control"?: "private, no-store";
                     [name: string]: unknown;
                 };
                 content: {
@@ -3526,6 +3559,14 @@ export interface operations {
         parameters: {
             query?: {
                 sessionId?: string;
+                /** @description Maximum number of bookings in one page. */
+                limit?: number;
+                /** @description Opaque nextCursor from the preceding response; retain the same owner and filters. */
+                cursor?: string;
+                /** @description Inclusive session date in Europe/Prague. */
+                from?: string;
+                /** @description Inclusive session date in Europe/Prague; not before from. */
+                through?: string;
             };
             header?: never;
             path?: never;
@@ -3533,7 +3574,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Bookings. */
+            /** @description Bounded bookings page, ordered by session start and booking ID. Continue with nextCursor until null; no records are silently truncated. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3541,9 +3582,12 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: components["schemas"]["AdminBooking"][];
+                        /** @description Pass as cursor to continue, or null after the last page. */
+                        nextCursor: string | null;
                     };
                 };
             };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
         };

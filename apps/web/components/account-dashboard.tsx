@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   PiArrowRight, PiCalendarBlank, PiCalendarCheck, PiChatCircleText, PiCheckCircle,
   PiClock, PiEnvelopeSimple, PiGear, PiHeart, PiHeartFill, PiHouse, PiMapPin,
@@ -18,6 +18,8 @@ import { PwaInstallGuide } from "./pwa-install-guide";
 
 type AccountView = "favorites" | "home" | "messages" | "news" | "profile" | "reservations";
 type ReservationPeriod = "history" | "upcoming";
+type BookingPage = { items: Booking[]; nextCursor: string | null };
+type BookingDates = { from: string; through: string };
 
 const bookingLabels: Record<Booking["status"], string> = {
   attended: "Absolvováno",
@@ -32,7 +34,12 @@ const validViews = new Set<AccountView>(["favorites", "home", "messages", "news"
 
 export function AccountDashboard() {
   const [profile, setProfile] = useState<Profile>();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [upcoming, setUpcoming] = useState<Booking[]>([]);
+  const [history, setHistory] = useState<Booking[]>([]);
+  const [bookingCursors, setBookingCursors] = useState<Record<ReservationPeriod, string | null>>({ upcoming: null, history: null });
+  const [historyDates, setHistoryDates] = useState<BookingDates>({ from: "", through: "" });
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const bookingsGeneration = useRef(0);
   const [notifications, setNotifications] = useState<AccountNotification[]>([]);
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
   const [favorites, setFavorites] = useState<FavoriteClassType[]>([]);
@@ -45,28 +52,55 @@ export function AccountDashboard() {
 
   const load = useCallback(async () => {
     setMessage(undefined);
+    const generation = ++bookingsGeneration.current;
+    setBookingsLoading(true);
     try {
       // The profile row is created lazily from the verified identity. Ensure it
       // exists before requests that reference it through foreign keys.
       const nextProfile = await apiRequest<Profile>("/api/v1/me");
-      const [nextBookings, nextNotifications, nextClasses, nextFavorites, nextNews] = await Promise.all([
-        apiRequest<{ items: Booking[] }>("/api/v1/me/bookings"),
+      const [nextUpcoming, nextHistory, nextNotifications, nextClasses, nextFavorites, nextNews] = await Promise.all([
+        apiRequest<BookingPage>(reservationPath("upcoming")),
+        apiRequest<BookingPage>(reservationPath("history", historyDates)),
         apiRequest<{ items: AccountNotification[] }>("/api/v1/me/notifications"),
         apiRequest<{ items: ClassType[] }>("/api/v1/class-types"),
         apiRequest<{ items: FavoriteClassType[] }>("/api/v1/me/favorites"),
         apiRequest<{ items: NewsItem[] }>("/api/v1/news")
       ]);
+      if (generation !== bookingsGeneration.current) return;
       setProfile(nextProfile);
-      setBookings(nextBookings.items);
+      setUpcoming(nextUpcoming.items);
+      setHistory(nextHistory.items);
+      setBookingCursors({ upcoming: nextUpcoming.nextCursor, history: nextHistory.nextCursor });
       setNotifications(nextNotifications.items);
       setClassTypes(nextClasses.items);
       setFavorites(nextFavorites.items);
       setNews(nextNews.items);
       setMessage(undefined);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Účet se nepodařilo načíst.");
-    }
-  }, []);
+      if (generation === bookingsGeneration.current) setMessage(error instanceof Error ? error.message : "Účet se nepodařilo načíst.");
+    } finally { if (generation === bookingsGeneration.current) setBookingsLoading(false); }
+  }, [historyDates]);
+
+  function applyHistoryDates(dates: BookingDates) {
+    if (dates.from && dates.through && dates.through < dates.from) { setMessage("Datum do nesmí být dřívější než datum od."); return; }
+    setHistory([]); setHistoryDates(dates);
+  }
+
+  async function loadMoreBookings(nextPeriod: ReservationPeriod) {
+    const cursor = bookingCursors[nextPeriod];
+    if (!cursor || bookingsLoading) return;
+    const generation = bookingsGeneration.current;
+    setBookingsLoading(true); setMessage(undefined);
+    try {
+      const result = await apiRequest<BookingPage>(reservationPath(nextPeriod, nextPeriod === "history" ? historyDates : undefined, cursor));
+      if (generation !== bookingsGeneration.current) return;
+      const append = (items: Booking[]) => [...items, ...result.items.filter((item) => !items.some((existing) => existing.id === item.id))];
+      if (nextPeriod === "upcoming") setUpcoming(append); else setHistory(append);
+      setBookingCursors((previous) => ({ ...previous, [nextPeriod]: result.nextCursor }));
+    } catch (error) {
+      if (generation === bookingsGeneration.current) setMessage(error instanceof Error ? error.message : "Další rezervace se nepodařilo načíst. Zkuste to znovu.");
+    } finally { if (generation === bookingsGeneration.current) setBookingsLoading(false); }
+  }
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -74,12 +108,6 @@ export function AccountDashboard() {
     if (requested && validViews.has(requested)) setView(requested);
   }, []);
 
-  const upcoming = useMemo(() => bookings
-    .filter((booking) => booking.status === "reserved" && new Date(booking.session.startAt) > new Date())
-    .sort((left, right) => Date.parse(left.session.startAt) - Date.parse(right.session.startAt)), [bookings]);
-  const history = useMemo(() => bookings
-    .filter((booking) => !upcoming.includes(booking))
-    .sort((left, right) => Date.parse(right.session.startAt) - Date.parse(left.session.startAt)), [bookings, upcoming]);
   const classTypeBySlug = useMemo(() => new Map(classTypes.map((item) => [item.slug, item])), [classTypes]);
   const favoriteIds = useMemo(() => new Set(favorites.map((item) => item.id)), [favorites]);
 
@@ -165,7 +193,7 @@ export function AccountDashboard() {
 
       <main className="client-app-main">
         {view === "home" && <HomeView classType={nextClass} firstName={firstName} nextBooking={nextBooking} upcoming={upcoming} busy={busy} navigate={navigate} openCancellation={openCancellation} />}
-        {view === "reservations" && <ReservationsView busy={busy} history={history} openCancellation={openCancellation} period={period} setPeriod={setPeriod} upcoming={upcoming} />}
+        {view === "reservations" && <ReservationsView busy={busy} history={history} historyDates={historyDates} loadingMore={bookingsLoading} nextCursor={bookingCursors[period]} onDates={applyHistoryDates} onLoadMore={() => void loadMoreBookings(period)} openCancellation={openCancellation} period={period} setPeriod={setPeriod} upcoming={upcoming} />}
         {view === "favorites" && <FavoritesView busy={busy} classTypes={classTypes} favoriteIds={favoriteIds} toggleFavorite={toggleFavorite} />}
         {view === "news" && <NewsView items={news} />}
         {view === "messages" && <MessagesView items={notifications} />}
@@ -200,7 +228,7 @@ function HomeView({ busy, classType, firstName, navigate, nextBooking, openCance
     <section aria-labelledby="next-lesson-title" className="next-lesson-card">
       <h2 id="next-lesson-title">Další lekce</h2>
       {nextBooking ? <div className="next-lesson-layout">
-        {classType?.heroImage && <div className="next-lesson-image"><Image alt={classType.heroImage.alt} fill priority sizes="(max-width: 760px) 48vw, 32rem" src={classType.heroImage.src} /></div>}
+        {classType?.heroImage && <div className="next-lesson-image"><Image alt={classType.heroImage.alt} fill priority sizes="(max-width: 760px) 48vw, 32rem" src={classType.heroImage.src} unoptimized={classType.heroImage.src.startsWith("/api/v1/media/")} /></div>}
         <div className="next-lesson-copy">
           <h3>{nextBooking.session.classType.name}</h3><p>{participantLabel(nextBooking)}</p>
           <p><PiCalendarBlank aria-hidden="true" />{formatStudioDate(nextBooking.session.startAt, { weekday: "long", day: "numeric", month: "numeric", year: "numeric" })}</p>
@@ -225,12 +253,29 @@ function HomeView({ busy, classType, firstName, navigate, nextBooking, openCance
   </>;
 }
 
-function ReservationsView({ busy, history, openCancellation, period, setPeriod, upcoming }: { busy: boolean; history: Booking[]; openCancellation: (booking: Booking) => Promise<void>; period: ReservationPeriod; setPeriod: (period: ReservationPeriod) => void; upcoming: Booking[] }) {
+function reservationPath(period: ReservationPeriod, dates?: BookingDates, cursor?: string) {
+  const query = new URLSearchParams({ period, limit: "50" });
+  if (dates?.from) query.set("from", dates.from);
+  if (dates?.through) query.set("through", dates.through);
+  if (cursor) query.set("cursor", cursor);
+  return `/api/v1/me/bookings?${query}`;
+}
+
+export function ReservationsView({ busy, history, historyDates, loadingMore, nextCursor, onDates, onLoadMore, openCancellation, period, setPeriod, upcoming }: {
+  busy: boolean; history: Booking[]; historyDates: BookingDates; loadingMore: boolean; nextCursor: string | null;
+  onDates: (dates: BookingDates) => void; onLoadMore: () => void; openCancellation: (booking: Booking) => Promise<void>;
+  period: ReservationPeriod; setPeriod: (period: ReservationPeriod) => void; upcoming: Booking[];
+}) {
   const items = period === "upcoming" ? upcoming : history;
   return <section className="client-view" aria-labelledby="reservations-title">
     <p className="client-view-eyebrow">Studio Balance</p><h1 id="reservations-title">Moje rezervace</h1>
     <div className="client-segmented" role="tablist" aria-label="Období rezervací"><button aria-selected={period === "upcoming"} onClick={() => setPeriod("upcoming")} role="tab" type="button">Nadcházející</button><button aria-selected={period === "history"} onClick={() => setPeriod("history")} role="tab" type="button">Minulé</button></div>
-    {items.length ? <div className="client-reservation-list">{items.map((booking) => <BookingRow booking={booking} busy={busy} key={booking.id} onCancel={period === "upcoming" ? openCancellation : undefined} />)}</div> : <div className="client-empty-state"><p>{period === "upcoming" ? "Nemáte žádné nadcházející rezervace." : "Historie rezervací je zatím prázdná."}</p>{period === "upcoming" && <Link className="client-primary-action" href="/rozvrh">Vybrat lekci <PiArrowRight aria-hidden="true" /></Link>}</div>}
+    {period === "history" && <form className="client-profile-form" key={`${historyDates.from}:${historyDates.through}`} onSubmit={(event) => {
+      event.preventDefault(); const data = new FormData(event.currentTarget);
+      onDates({ from: String(data.get("from") ?? ""), through: String(data.get("through") ?? "") });
+    }}><label>Datum lekce od<input defaultValue={historyDates.from} name="from" type="date" /></label><label>Datum lekce do<input defaultValue={historyDates.through} min={historyDates.from || undefined} name="through" type="date" /></label><div className="actions"><button className="button button-secondary" disabled={busy || loadingMore} type="submit">Použít období</button>{(historyDates.from || historyDates.through) && <button className="button button-secondary" disabled={busy || loadingMore} onClick={() => onDates({ from: "", through: "" })} type="button">Celá historie</button>}</div></form>}
+    {!items.length && loadingMore ? <p role="status">Načítáme rezervace…</p> : items.length ? <div className="client-reservation-list" aria-busy={loadingMore}>{items.map((booking) => <BookingRow booking={booking} busy={busy} key={booking.id} onCancel={period === "upcoming" ? openCancellation : undefined} />)}</div> : <div className="client-empty-state"><p>{period === "upcoming" ? "Nemáte žádné nadcházející rezervace." : historyDates.from || historyDates.through ? "V tomto období nejsou žádné rezervace." : "Historie rezervací je zatím prázdná."}</p>{period === "upcoming" && <Link className="client-primary-action" href="/rozvrh">Vybrat lekci <PiArrowRight aria-hidden="true" /></Link>}</div>}
+    {nextCursor && <button className="button button-secondary" disabled={busy || loadingMore} onClick={onLoadMore} type="button">{loadingMore ? "Načítáme další rezervace…" : "Načíst další rezervace"}</button>}
   </section>;
 }
 

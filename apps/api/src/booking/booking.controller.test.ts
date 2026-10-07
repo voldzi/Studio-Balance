@@ -12,13 +12,14 @@ import { BookingService, CURRENT_TERMS_VERSION } from "./booking.service.js";
 const config = { environment: "test", version: "test", logLevel: "error" } as RuntimeConfig;
 const base = { sessionId: randomUUID(), termsVersion: CURRENT_TERMS_VERSION, termsAccepted: true };
 const create = vi.fn(async (input: unknown) => input);
+const listMine = vi.fn(async () => ({ items: [], nextCursor: null }));
 
 describe("booking companion HTTP contract", () => {
   let app: NestFastifyApplication;
   beforeEach(async () => {
-    create.mockClear();
+    create.mockClear(); listMine.mockClear();
     const module = await Test.createTestingModule({ controllers: [BookingController],
-      providers: [{ provide: BookingService, useValue: { create } }] })
+      providers: [{ provide: BookingService, useValue: { create, listMine } }] })
       .overrideGuard(SessionAuthGuard).useValue({ canActivate: (context: { switchToHttp: () => { getRequest: () => { headers: Record<string,string>; studioSession?: object } } }) => {
         const request = context.switchToHttp().getRequest();
         if (!request.headers.authorization) return false;
@@ -57,4 +58,19 @@ describe("booking companion HTTP contract", () => {
     expect((await post({ ...base, companionName: "Jana", companionResponsibilityAccepted: true },false)).statusCode).toBe(403);
     expect(create).not.toHaveBeenCalled();
   });
+  it("validates bounded client booking pages and preserves authentication", async () => {
+    const headers = { authorization: "synthetic-local-test" };
+    expect((await app.inject({ method: "GET", url: "/api/v1/me/bookings?limit=1" })).statusCode).toBe(403);
+    for (const query of ["limit=0", "limit=101", "limit=NaN", "from=2026-02-30", "from=0000-01-01", "period=other", "cursor=not%20a%20cursor", "sessionId=" + randomUUID()]) {
+      const response = await app.inject({ method: "GET", url: `/api/v1/me/bookings?${query}`, headers });
+      expect(response.statusCode,query).toBe(400);
+      expect(response.json()).toMatchObject({ error: { code: "VALIDATION_ERROR", requestId: expect.any(String) } });
+    }
+    expect(listMine).not.toHaveBeenCalled();
+    const response = await app.inject({ method: "GET", url: "/api/v1/me/bookings?limit=100&period=upcoming&from=2026-10-25&through=2026-10-25", headers });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ items: [], nextCursor: null });
+    expect(listMine).toHaveBeenCalledWith(expect.objectContaining({ subject: "owner" }), { limit: 100, period: "upcoming", from: "2026-10-25", through: "2026-10-25" });
+  });
+
 });

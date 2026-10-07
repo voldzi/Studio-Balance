@@ -61,6 +61,10 @@ export function AdminDashboard({ email }: { email: string }) {
   const [showAllBookings, setShowAllBookings] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [bookingsRefresh, setBookingsRefresh] = useState(0);
+  const [bookingsCursor, setBookingsCursor] = useState<string | null>(null);
+  const [bookingsLoadingMore, setBookingsLoadingMore] = useState(false);
+  const [bookingDates, setBookingDates] = useState({ from: "", through: "" });
+  const bookingsGeneration = useRef(0);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [transformations, setTransformations] = useState<Transformation[]>([]);
   const [news, setNews] = useState<News[]>([]);
@@ -89,20 +93,42 @@ export function AdminDashboard({ email }: { email: string }) {
   }, []);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
+    const generation = ++bookingsGeneration.current;
+    setBookingsLoadingMore(false);
     if (tab !== "bookings" || (!selectedSession && !showAllBookings)) return;
     let cancelled = false;
-    setBookingsLoading(true);
-    const path = selectedSession ? `/api/v1/admin/bookings?sessionId=${encodeURIComponent(selectedSession.id)}` : "/api/v1/admin/bookings";
-    void apiRequest<{ items: Booking[] }>(path)
-      .then((result) => { if (!cancelled) setBookings(result.items); })
+    setBookingsLoading(true); setBookings([]); setBookingsCursor(null);
+    void apiRequest<{ items: Booking[]; nextCursor: string | null }>(adminBookingsPath(selectedSession?.id, bookingDates))
+      .then((result) => { if (!cancelled) { setBookings(result.items); setBookingsCursor(result.nextCursor); } })
       .catch((error: unknown) => {
         if (cancelled) return;
         if (error instanceof ApiError && error.status === 401) setSessionExpired(true);
         else setMessage(error instanceof Error ? error.message : "Rezervace se nepodařilo načíst.");
       })
-      .finally(() => { if (!cancelled) setBookingsLoading(false); });
+      .finally(() => { if (!cancelled && generation === bookingsGeneration.current) setBookingsLoading(false); });
     return () => { cancelled = true; };
-  }, [tab, selectedSession, showAllBookings, bookingsRefresh]);
+  }, [tab, selectedSession, showAllBookings, bookingsRefresh, bookingDates]);
+
+  function applyBookingDates(dates: { from: string; through: string }) {
+    if (dates.from && dates.through && dates.through < dates.from) { setMessage("Datum do nesmí být dřívější než datum od."); return; }
+    setBookingDates(dates);
+  }
+
+  async function loadMoreBookings() {
+    if (!bookingsCursor || bookingsLoading || bookingsLoadingMore) return;
+    const generation = bookingsGeneration.current;
+    setBookingsLoadingMore(true); setMessage(undefined);
+    try {
+      const result = await apiRequest<{ items: Booking[]; nextCursor: string | null }>(adminBookingsPath(selectedSession?.id, bookingDates, bookingsCursor));
+      if (generation !== bookingsGeneration.current) return;
+      setBookings((previous) => [...previous, ...result.items.filter((item) => !previous.some((existing) => existing.id === item.id))]);
+      setBookingsCursor(result.nextCursor);
+    } catch (error) {
+      if (generation !== bookingsGeneration.current) return;
+      if (error instanceof ApiError && error.status === 401) setSessionExpired(true);
+      else setMessage(error instanceof Error ? error.message : "Další rezervace se nepodařilo načíst. Zkuste to znovu.");
+    } finally { if (generation === bookingsGeneration.current) setBookingsLoadingMore(false); }
+  }
 
   function editSession(item: Session) {
     setEditingSession(item);
@@ -249,7 +275,7 @@ export function AdminDashboard({ email }: { email: string }) {
     {tab === "transformations" && <><AdminHeading eyebrow="Obsah webu" title="Proměny klientek" copy="Vložte vždy skutečnou dvojici fotografií před a po. Zveřejnění je možné až po doložení výslovného souhlasu klientky." /><div className="admin-two-columns admin-transformations-layout"><DataCard title={editingTransformation ? `Upravit: ${editingTransformation.title}` : "Nová proměna"}><TransformationForm busy={busy} classTypes={classTypes} item={editingTransformation} key={editingTransformation?.id ?? "new"} nextSortOrder={transformations.length * 10 + 10} onCancel={() => setEditingTransformation(null)} onSubmit={saveTransformation} /></DataCard><DataCard title={`${transformations.length} proměn`}><ul className="admin-simple-list admin-transformation-list">{transformations.length ? transformations.map((item) => <li key={item.id}><div><div className="admin-before-after"><figure><Image alt="Před proměnou" height={item.beforeImage.height} src={item.beforeImage.url} unoptimized width={item.beforeImage.width} /><figcaption>Před</figcaption></figure><figure><Image alt="Po proměně" height={item.afterImage.height} src={item.afterImage.url} unoptimized width={item.afterImage.width} /><figcaption>Po</figcaption></figure></div><strong>{item.title} · {item.attribution}</strong><span>{item.published ? item.featured ? "Publikováno na titulní stránce" : "Publikováno" : "Koncept / skryto"}</span></div><button onClick={() => setEditingTransformation(item)} type="button">Upravit</button></li>) : <Empty text="Zatím není vložená žádná proměna. Nahrajte ji až se souhlasem klientky." />}</ul></DataCard></div></>}
     {tab === "news" && <><AdminHeading eyebrow="Klientská aplikace" title="Novinky ze studia" copy="Vytvořte krátké, skutečné sdělení. Publikovaná novinka se objeví klientkám v jejich účtu." /><div className="admin-two-columns"><DataCard title={editingNews ? `Upravit: ${editingNews.title}` : "Nová novinka"}><NewsForm busy={busy} item={editingNews} key={editingNews?.id ?? "new"} nextSortOrder={news.length * 10 + 10} onCancel={() => setEditingNews(null)} onSubmit={saveNews} /></DataCard><DataCard title={`${news.length} novinek`}><ul className="admin-simple-list">{news.length ? news.map((item) => <li key={item.id}><div><strong>{item.title}</strong><span>{item.summary}</span><span>{item.published ? item.featured ? "Publikováno a zvýrazněno" : "Publikováno" : "Koncept / skryto"}</span></div><button onClick={() => setEditingNews(item)} type="button">Upravit</button></li>) : <Empty text="Zatím není vložená žádná novinka." />}</ul></DataCard></div></>}
     {tab === "clients" && <><AdminHeading eyebrow="Klientská evidence" title="Klienti" copy="Kontaktní údaje a přehled rezervací, bez platebních údajů." /><DataCard title={`${clients.length} klientů`}><div className="admin-table-wrap"><table><thead><tr><th>Klient</th><th>E-mail</th><th>Telefon</th><th>Rezervace</th><th>Ověření</th></tr></thead><tbody>{clients.map((item) => <tr key={item.id}><td>{[item.firstName,item.lastName].filter(Boolean).join(" ") || "Nedoplněno"}</td><td>{item.email}</td><td>{item.phone ?? "—"}</td><td>{item.bookingCount}</td><td>{item.emailVerified ? "Ověřeno" : "Neověřeno"}</td></tr>)}</tbody></table></div></DataCard></>}
-    {tab === "bookings" && <BookingsPanel bookings={bookings} busy={busy} loading={bookingsLoading} onAttendance={attendance} onBack={() => { setSelectedSession(null); setShowAllBookings(false); setBookings([]); setTab(rosterOrigin); }} onSelect={openRoster} onShowAll={() => { setBookings([]); setSelectedSession(null); setShowAllBookings(true); }} selectedSession={selectedSession ? sessions.find((item) => item.id === selectedSession.id) ?? selectedSession : null} sessions={sessions} showAll={showAllBookings} />}
+    {tab === "bookings" && <BookingsPanel bookingDates={bookingDates} bookings={bookings} busy={busy} loading={bookingsLoading} loadingMore={bookingsLoadingMore} nextCursor={bookingsCursor} onDates={applyBookingDates} onLoadMore={() => void loadMoreBookings()} onAttendance={attendance} onBack={() => { setSelectedSession(null); setShowAllBookings(false); setBookings([]); setTab(rosterOrigin); }} onSelect={openRoster} onShowAll={() => { setBookings([]); setSelectedSession(null); setShowAllBookings(true); }} selectedSession={selectedSession ? sessions.find((item) => item.id === selectedSession.id) ?? selectedSession : null} sessions={sessions} showAll={showAllBookings} />}
 
   </>}</section></main>;
 }
@@ -350,7 +376,17 @@ function WeeklyRulesCard({ classTypes, busy, instructors, items, onApplied, onTo
   </DataCard>;
 }
 
-function BookingsPanel({ bookings, busy, loading, onAttendance, onBack, onSelect, onShowAll, selectedSession, sessions, showAll }: {
+function adminBookingsPath(sessionId: string | undefined, dates: { from: string; through: string }, cursor?: string) {
+  const query = new URLSearchParams({ limit: "50" });
+  if (sessionId) query.set("sessionId", sessionId);
+  else { if (dates.from) query.set("from", dates.from); if (dates.through) query.set("through", dates.through); }
+  if (cursor) query.set("cursor", cursor);
+  return `/api/v1/admin/bookings?${query}`;
+}
+
+export function BookingsPanel({ bookingDates, bookings, busy, loading, loadingMore, nextCursor, onAttendance, onBack, onDates, onLoadMore, onSelect, onShowAll, selectedSession, sessions, showAll }: {
+  bookingDates: { from: string; through: string }; loadingMore: boolean; nextCursor: string | null;
+  onDates: (dates: { from: string; through: string }) => void; onLoadMore: () => void;
   bookings: Booking[]; busy: boolean; loading: boolean; onAttendance: (booking: Booking, status: "attended" | "no_show") => Promise<void>;
   onBack: () => void; onSelect: (session: Session) => void; onShowAll: () => void; selectedSession: Session | null; sessions: Session[]; showAll: boolean;
 }) {
@@ -361,10 +397,15 @@ function BookingsPanel({ bookings, busy, loading, onAttendance, onBack, onSelect
   return <><AdminHeading eyebrow="Docházka" title="Přihlášení na lekci" copy="Vyberte konkrétní termín a uvidíte jeho přihlášené klienty." />
     {!selectedSession && !showAll && <DataCard title="Nejbližší termíny"><div className="admin-roster-choices">{upcoming.length ? upcoming.map((item) => <button key={item.id} onClick={() => onSelect(item)} type="button"><strong>{item.className}</strong><span>{formatStudioDate(item.startAt,{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}</span><span>{item.bookingCount} přihlášených</span></button>) : <Empty text="V nejbližších 14 dnech není naplánovaná lekce." />}</div><p className="admin-form-note">Všechny další termíny najdete v sekci Rozvrh.</p><button className="admin-text-button" onClick={onShowAll} type="button">Zobrazit všechny rezervace</button></DataCard>}
     {(selectedSession || showAll) && <DataCard title={selectedSession ? `${selectedSession.className} · ${formatStudioDate(selectedSession.startAt,{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}` : "Všechny rezervace"}>
-      <div className="admin-roster-summary"><strong>{selectedSession ? `${current.length} rezervací k docházce (kapacita ${selectedSession.capacity})` : `${bookings.length} rezervací`}</strong><button onClick={onBack} type="button">← Vybrat jiný termín</button></div>
+      <div className="admin-roster-summary"><strong>{selectedSession ? `${selectedSession.bookingCount} rezervací k docházce (kapacita ${selectedSession.capacity})` : `${bookings.length} načtených rezervací`}</strong><button onClick={onBack} type="button">← Vybrat jiný termín</button></div>
+      {showAll && <form className="admin-form admin-form-grid" key={`${bookingDates.from}:${bookingDates.through}`} onSubmit={(event) => {
+        event.preventDefault(); const data = new FormData(event.currentTarget);
+        onDates({ from: String(data.get("from") ?? ""), through: String(data.get("through") ?? "") });
+      }}><label>Datum lekce od<input defaultValue={bookingDates.from} name="from" type="date" /></label><label>Datum lekce do<input defaultValue={bookingDates.through} min={bookingDates.from || undefined} name="through" type="date" /></label><div className="admin-row-actions"><button className="button button-small" disabled={loading || loadingMore} type="submit">Použít období</button>{(bookingDates.from || bookingDates.through) && <button disabled={loading || loadingMore} onClick={() => onDates({ from: "", through: "" })} type="button">Všechna období</button>}</div></form>}
       {loading ? <p role="status">Načítám přihlášené…</p> : <>
         <BookingRosterList bookings={current} busy={busy} onAttendance={onAttendance} showSession={!selectedSession} />
         {cancelled.length > 0 && <details className="admin-roster-cancelled"><summary>Zrušené rezervace ({cancelled.length})</summary><BookingRosterList bookings={cancelled} busy={busy} onAttendance={onAttendance} showSession={!selectedSession} /></details>}
+        {nextCursor && <button className="button button-secondary" disabled={busy || loadingMore} onClick={onLoadMore} type="button">{loadingMore ? "Načítám další rezervace…" : "Načíst další rezervace"}</button>}
       </>}
     </DataCard>}
   </>;

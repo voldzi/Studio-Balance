@@ -1,8 +1,9 @@
 import "reflect-metadata";
 
-import { createHmac } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 
 import { Test } from "@nestjs/testing";
+import type { ExecutionContext } from "@nestjs/common";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +29,7 @@ describe("internal opaque session API", () => {
 
   afterEach(async () => {
     await app?.close();
+    vi.restoreAllMocks();
   });
 
   async function createApplication() {
@@ -36,7 +38,7 @@ describe("internal opaque session API", () => {
       controllers: [InternalSessionController],
       providers: [InternalSessionGuard, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: OpaqueSessionService, useValue: opaque }]
     }).compile();
-    const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false });
+    const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false, rawBody: true });
     configureHttp(created, config);
     await created.init();
     await created.getHttpAdapter().getInstance().ready();
@@ -44,11 +46,14 @@ describe("internal opaque session API", () => {
     return { app: created, opaque };
   }
 
-  function headers(path: string) {
-    const timestamp = String(Date.now());
+  function headers(path: string, payload: object | string, timestamp = String(Date.now())) {
+    const nonce = randomBytes(16).toString("base64url");
+    const rawBody = typeof payload === "string" ? payload : JSON.stringify(payload);
     return {
+      "content-type": "application/json",
+      "x-studiobalance-internal-nonce": nonce,
       "x-studiobalance-internal-timestamp": timestamp,
-      "x-studiobalance-internal-signature": createHmac("sha256", config.sessionSecret).update(`${timestamp}:POST:${path}`).digest("base64url")
+      "x-studiobalance-internal-signature": createHmac("sha256", config.sessionSecret).update(`${timestamp}:${nonce}:POST:${path}:${createHash("sha256").update(rawBody).digest("hex")}`).digest("base64url")
     };
   }
 
@@ -59,15 +64,59 @@ describe("internal opaque session API", () => {
     expect(response.json()).toMatchObject({ error: { code: "AUTHENTICATION_REQUIRED" } });
   });
 
+  it("fails closed if the HTTP adapter omits the exact raw request body", () => {
+    const path = "/api/internal/sessions/resolve";
+    const payload = { kind: "web", token: "a".repeat(43) };
+    const guard = new InternalSessionGuard({ value: config } as RuntimeConfigService);
+    const request = { method: "POST", url: path, routeOptions: { url: path }, headers: headers(path, payload), body: payload };
+    const context = { switchToHttp: () => ({ getRequest: () => request }) } as unknown as ExecutionContext;
+    expect(() => guard.canActivate(context)).toThrow("Interní požadavek nebyl ověřen.");
+  });
+
   it("creates and resolves a session only for a signed web-server request", async () => {
     const { app, opaque } = await createApplication();
-    const create = await app.inject({ method: "POST", url: "/api/internal/sessions", headers: headers("/api/internal/sessions"), payload: { kind: "web", refreshToken: "r".repeat(24), session } });
+    const payload = { kind: "web", refreshToken: "r".repeat(24), session };
+    const create = await app.inject({ method: "POST", url: "/api/internal/sessions", headers: headers("/api/internal/sessions", payload), payload });
     expect(create.statusCode).toBe(201);
     expect(create.headers["cache-control"]).toBe("no-store");
     expect(opaque.create).toHaveBeenCalledWith({ kind: "web", refreshToken: "r".repeat(24), session });
 
-    const resolve = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: headers("/api/internal/sessions/resolve"), payload: { kind: "web", token: "a".repeat(43) } });
+    const resolvePayload = { kind: "web", token: "a".repeat(43) };
+    const resolve = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: headers("/api/internal/sessions/resolve", resolvePayload), payload: resolvePayload });
     expect(resolve.statusCode).toBe(201);
     expect(resolve.json()).toEqual({ session });
+  });
+
+  it("rejects substituted roles and MFA before creating an application session", async () => {
+    const { app, opaque } = await createApplication();
+    const payload = { kind: "web", refreshToken: "r".repeat(24), session };
+    const response = await app.inject({ method: "POST", url: "/api/internal/sessions", headers: headers("/api/internal/sessions", payload),
+      payload: { ...payload, kind: "admin", session: { ...session, roles: ["admin"], mfaVerified: true } } });
+    expect(response.statusCode).toBe(401);
+    expect(opaque.create).not.toHaveBeenCalled();
+  });
+
+  it("authenticates the exact bytes including JSON whitespace and rejects replay", async () => {
+    const { app, opaque } = await createApplication();
+    const payload = JSON.stringify({ kind: "web", token: "a".repeat(43) }, null, 2);
+    const signedHeaders = headers("/api/internal/sessions/resolve", payload);
+    const altered = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: signedHeaders, payload: JSON.stringify(JSON.parse(payload)) });
+    expect(altered.statusCode).toBe(401);
+    const first = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: signedHeaders, payload });
+    expect(first.statusCode).toBe(201);
+    const replay = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: signedHeaders, payload });
+    expect(replay.statusCode).toBe(401);
+    expect(opaque.resolveToken).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects expired or legacy signatures without consuming provider credentials", async () => {
+    const { app, opaque } = await createApplication();
+    const payload = { kind: "web", token: "a".repeat(43) };
+    for (const signedHeaders of [headers("/api/internal/sessions/resolve", payload, String(Date.now() - 60_001)),
+      { "x-studiobalance-internal-timestamp": String(Date.now()), "x-studiobalance-internal-signature": "a".repeat(43) }]) {
+      const response = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: signedHeaders, payload });
+      expect(response.statusCode).toBe(401);
+    }
+    expect(opaque.resolveToken).not.toHaveBeenCalled();
   });
 });

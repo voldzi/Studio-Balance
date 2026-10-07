@@ -6,12 +6,42 @@ import tempfile
 import subprocess
 import os
 import unittest
+import hashlib
+import json
 
 spec = importlib.util.spec_from_file_location('storage', Path(__file__).with_name('manage-production-storage.py'))
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class RetentionTests(unittest.TestCase):
+    def backup(self, root, name, body=b'restore evidence'):
+        folder = root / name
+        folder.mkdir()
+        digest = hashlib.sha256(body).hexdigest()
+        (folder / (digest + '.bin')).write_bytes(body)
+        (folder / 'manifest.json').write_text(json.dumps({'bucket': 'studio-balance-media', 'objects': [{'key': 'media.webp', 'file': digest + '.bin', 'sha256': digest, 'size': len(body)}]}))
+        return folder / (digest + '.bin')
+
+    def test_old_verified_anchor_is_checked_even_when_latest_is_intact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.backup(root, 'latest')
+            anchor = self.backup(root, 'verified')
+            anchor.write_bytes(b'damaged evidence')
+            with self.assertRaises(RuntimeError):
+                module.verify_retained_backups(root, {'latest', 'verified'})
+
+    def test_retained_missing_objects_symlinks_and_directory_traversal_fail(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            obj = self.backup(root, 'verified')
+            module.verify_retained_backups(root, {'verified'})
+            obj.unlink()
+            with self.assertRaises(RuntimeError): module.verify_backup(root, 'verified')
+            obj.symlink_to(root / 'outside')
+            with self.assertRaises(RuntimeError): module.verify_backup(root, 'verified')
+            with self.assertRaises(RuntimeError): module.verify_backup(root, '../outside')
+
     def test_days_weeks_months_and_restore_anchor(self):
         now = dt.datetime(2026, 10, 7, tzinfo=dt.timezone.utc)
         snapshots = [(now - dt.timedelta(days=i), Path(f'backup-{i}')) for i in range(130)]

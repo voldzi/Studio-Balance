@@ -59,7 +59,7 @@ export class MediaController {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService, @Inject(MediaStorageService) private readonly storage: MediaStorageService) {}
 
   @Get(":id")
-  @Header("Cache-Control", "public, max-age=31536000, immutable")
+  @Header("Cache-Control", "private, no-store")
   async get(@Param("id") id: string, @Res({ passthrough: false }) reply: FastifyReply) {
     if (!uuid.safeParse(id).success) throw notFound();
     const result = await this.database.query<{ storage_key: string }>(`
@@ -79,7 +79,7 @@ export class MediaController {
     const asset = result.rows[0];
     if (!asset) throw notFound();
     const body = await this.storage.get(asset.storage_key);
-    return reply.type("image/webp").send(Buffer.from(body));
+    return reply.header("Cache-Control", "private, no-store").type("image/webp").send(Buffer.from(body));
   }
 }
 

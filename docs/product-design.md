@@ -543,3 +543,14 @@ Nově vytvořený profil se automaticky vybere, potvrzení náhrady však zůst�
 samostatnou akcí. Obnovený koncept se stejným typem se odmítne s vysvětlením.
 
 Neaktivní typy lekcí se nezobrazují v katalogu ani veřejném rozvrhu; starý veřejný detail vrací stav nenalezeno. Historie vlastních rezervací je zachována.
+
+## Výpisy rezervací po bezpečnostním auditu (7. 10. 2026)
+
+Účet nejprve načítá nadcházející rezervace; historii lze otevřít samostatně
+a filtrovat obdobím. Dlouhé seznamy používají tlačítko „Načíst další“.
+Při načítání je tlačítko neaktivní, chyba zachová již načtené položky a změna
+filtru načítá vlastní seznam. Administrátorský přehled termínu ukazuje
+celkový počet účastníků termínu nezávisle na stránce seznamu. Datumové
+filtry mají českou validaci pořadí od/do; veřejná kapacita zůstává skrytá.
+CSP nonce se vztahuje i na strukturovaná data a schválený analytics runtime;
+pravidla soukromí ani osobní údaje ve statistice se nemění.

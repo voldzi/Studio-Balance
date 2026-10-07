@@ -21,7 +21,8 @@ async function bootstrap(): Promise<void> {
   }
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, adapter, {
     abortOnError: false,
-    logger: false
+    logger: false,
+    rawBody: true
   });
   const config = app.get(RuntimeConfigService).value;
 

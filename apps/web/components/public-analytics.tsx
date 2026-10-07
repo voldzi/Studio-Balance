@@ -18,10 +18,11 @@ declare global {
   interface Window { vcodePublicAnalytics?: PublicAnalyticsRuntime | PublicAnalyticsV2Runtime; }
 }
 let runtimeLoading: Promise<void> | undefined;
-function loadRuntime(): Promise<void> {
+function loadRuntime(nonce?: string): Promise<void> {
   if (window.vcodePublicAnalytics?.contractVersion === plan.runtimeVersion) return Promise.resolve();
   if (!runtimeLoading) runtimeLoading = new Promise((resolve, reject) => {
     const script = document.createElement("script");
+    if (nonce) script.nonce = nonce;
     script.src = plan.runtimePath;
     script.async = true;
     script.integrity = plan.runtimeIntegrity;
@@ -34,7 +35,7 @@ function loadRuntime(): Promise<void> {
   return runtimeLoading;
 }
 
-export function PublicAnalytics({ eligible }: { eligible: boolean }) {
+export function PublicAnalytics({ eligible, nonce }: { eligible: boolean; nonce?: string | undefined }) {
   const pathname = usePathname();
   const bridge = useRef<ReturnType<typeof createPublicAnalyticsBridge> | null>(null);
   const v2Client = useRef<ReturnType<typeof configurePublicAnalyticsV2Runtime>>(null);
@@ -50,7 +51,7 @@ export function PublicAnalytics({ eligible }: { eligible: boolean }) {
       bridge.current?.(pathname, environment());
       return;
     }
-    void loadRuntime().then(() => {
+    void loadRuntime(nonce).then(() => {
       if (disposed || !analyticsPermitted(environment()) || !window.vcodePublicAnalytics) return;
       const runtime = window.vcodePublicAnalytics;
       if (runtime.contractVersion !== plan.runtimeVersion) return;
@@ -64,6 +65,6 @@ export function PublicAnalytics({ eligible }: { eligible: boolean }) {
       bridge.current?.(pathname, environment());
     }).catch(() => { /* Shared analytics failure does not affect booking. */ });
     return () => { disposed = true; clickDispatcher = null; };
-  }, [pathname, eligible]);
+  }, [pathname, eligible, nonce]);
   return null;
 }

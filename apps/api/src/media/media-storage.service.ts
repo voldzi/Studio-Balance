@@ -25,7 +25,8 @@ export class MediaStorageService {
   isConfigured(): boolean { return Boolean(this.client && this.config.value.mediaStorage); }
 
   async prepareImage(input: Buffer): Promise<{ body: Buffer; contentType: "image/webp"; height: number; width: number }> {
-    if (!input.length || input.length > MAX_UPLOAD_BYTES) throw invalidImage();
+    // Reject unsupported bytes before libvips can select an SVG/PDF decoder.
+    if (!input.length || input.length > MAX_UPLOAD_BYTES || !isSupportedRaster(input)) throw invalidImage();
     try {
       const body = await sharp(input, { failOn: "warning", limitInputPixels: 40_000_000 })
         .rotate()
@@ -42,7 +43,7 @@ export class MediaStorageService {
 
   async put(key: string, body: Buffer): Promise<void> {
     const { client, storage } = this.required();
-    await client.send(new PutObjectCommand({ Bucket: storage.bucket, Key: key, Body: body, ContentType: "image/webp", CacheControl: "public, max-age=31536000, immutable" }));
+    await client.send(new PutObjectCommand({ Bucket: storage.bucket, Key: key, Body: body, ContentType: "image/webp", CacheControl: "private, no-store" }));
   }
 
   async get(key: string): Promise<Uint8Array> {
@@ -64,6 +65,12 @@ export class MediaStorageService {
     }
     return { client: this.client, storage };
   }
+}
+
+function isSupportedRaster(input: Buffer): boolean {
+  return (input.length >= 3 && input[0] === 0xff && input[1] === 0xd8 && input[2] === 0xff)
+    || (input.length >= 8 && input.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])))
+    || (input.length >= 12 && input.subarray(0, 4).toString("ascii") === "RIFF" && input.subarray(8, 12).toString("ascii") === "WEBP");
 }
 
 function invalidImage() {

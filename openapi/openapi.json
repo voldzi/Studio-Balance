@@ -56,36 +56,250 @@
       "post": {
         "summary": "Create an opaque application session",
         "operationId": "createInternalApplicationSession",
-        "tags": ["Internal"],
+        "tags": [
+          "Internal"
+        ],
         "x-studioBalance-internal": true,
-        "description": "Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API.",
+        "description": "Server-to-server only. Requires a time-bound HMAC signature derived from SESSION_SECRET; it is not a browser API. Internal signature v2 binds millisecond timestamp, 16-byte base64url nonce, method, matched path and SHA256 of the exact JSON body. Maximum clock skew is 60 seconds; authenticated nonce reuse is rejected. Public origins must return 404.",
         "security": [],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionCreateRequest" } } } },
-        "responses": { "201": { "description": "Opaque token stored only in an HTTP-only application cookie.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionCreated" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternalSessionCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Opaque token stored only in an HTTP-only application cookie.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalSessionCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-studiobalance-internal-timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          },
+          {
+            "name": "x-studiobalance-internal-nonce",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{22}$"
+            }
+          },
+          {
+            "name": "x-studiobalance-internal-signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ]
       }
     },
     "/api/internal/sessions/resolve": {
       "post": {
         "summary": "Resolve and revalidate an opaque application session",
         "operationId": "resolveInternalApplicationSession",
-        "tags": ["Internal"],
+        "tags": [
+          "Internal"
+        ],
         "x-studioBalance-internal": true,
-        "description": "Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes.",
+        "description": "Server-to-server only. Revalidates Keycloak identity and roles at least every 15 minutes. Internal signature v2 binds millisecond timestamp, 16-byte base64url nonce, method, matched path and SHA256 of the exact JSON body. Maximum clock skew is 60 seconds; authenticated nonce reuse is rejected. Public origins must return 404.",
         "security": [],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionTokenRequest" } } } },
-        "responses": { "201": { "description": "Current identity or null when the session was revoked or expired.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionResolved" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternalSessionTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Current identity or null when the session was revoked or expired.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalSessionResolved"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-studiobalance-internal-timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          },
+          {
+            "name": "x-studiobalance-internal-nonce",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{22}$"
+            }
+          },
+          {
+            "name": "x-studiobalance-internal-signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ]
       }
     },
     "/api/internal/sessions/revoke": {
       "post": {
         "summary": "Revoke an opaque application session",
         "operationId": "revokeInternalApplicationSession",
-        "tags": ["Internal"],
+        "tags": [
+          "Internal"
+        ],
         "x-studioBalance-internal": true,
-        "description": "Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak.",
+        "description": "Server-to-server only. Clears the encrypted refresh token and requests refresh-token revocation from Keycloak. Internal signature v2 binds millisecond timestamp, 16-byte base64url nonce, method, matched path and SHA256 of the exact JSON body. Maximum clock skew is 60 seconds; authenticated nonce reuse is rejected. Public origins must return 404.",
         "security": [],
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InternalSessionTokenRequest" } } } },
-        "responses": { "201": { "description": "Revoked or already absent.", "headers": { "Cache-Control": { "schema": { "type": "string", "const": "no-store" } } }, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["revoked"], "properties": { "revoked": { "type": "boolean", "const": true } } } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InternalSessionTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Revoked or already absent.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "revoked"
+                  ],
+                  "properties": {
+                    "revoked": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "x-studiobalance-internal-timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          },
+          {
+            "name": "x-studiobalance-internal-nonce",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{22}$"
+            }
+          },
+          {
+            "name": "x-studiobalance-internal-signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            }
+          }
+        ]
       }
     },
     "/api/v1/class-types": {
@@ -152,7 +366,47 @@
       "get": { "summary": "List approved client transformations", "operationId": "listTransformations", "tags": ["Content"], "security": [], "parameters": [{ "name": "featured", "in": "query", "schema": { "type": "boolean", "default": false } }], "responses": { "200": { "description": "Published transformations with confirmed consent.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Transformation" } } } } } } }, "400": { "$ref": "#/components/responses/Error" } } }
     },
     "/api/v1/media/{id}": {
-      "get": { "summary": "Read an image referenced by published content, an active instructor, or an active class type", "operationId": "getPublicMedia", "tags": ["Content"], "security": [], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "responses": { "200": { "description": "Published WebP image.", "content": { "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "404": { "$ref": "#/components/responses/Error" }, "503": { "$ref": "#/components/responses/Error" } } }
+      "get": {
+        "summary": "Read an image referenced by published content, an active instructor, or an active class type",
+        "operationId": "getPublicMedia",
+        "tags": [
+          "Content"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published WebP image.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "private, no-store"
+                },
+                "description": "Publication and consent are checked before each public read."
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     },
     "/api/v1/sessions": {
       "get": {
@@ -316,24 +570,110 @@
       "get": {
         "summary": "List the authenticated client's bookings",
         "operationId": "listMyBookings",
-        "tags": ["Booking"],
-        "security": [{ "studioSession": [] }],
+        "tags": [
+          "Booking"
+        ],
+        "security": [
+          {
+            "studioSession": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Client bookings.",
+            "description": "Bounded bookings page, ordered by session start and booking ID. Continue with nextCursor until null; no records are silently truncated.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["items"],
-                  "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Booking" } } }
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Booking"
+                      },
+                      "maxItems": 100
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Pass as cursor to continue, or null after the last page.",
+                      "maxLength": 2048
+                    }
+                  }
                 }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Error" }
-        }
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of bookings in one page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque nextCursor from the preceding response; retain the same owner and filters.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive session date in Europe/Prague.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "through",
+            "in": "query",
+            "description": "Inclusive session date in Europe/Prague; not before from.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Upcoming reserved seats ordered nearest first; history contains all other seats. All/history are newest first. The cursor fixes the time boundary while paging.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "upcoming",
+                "history"
+              ],
+              "default": "all"
+            }
+          }
+        ]
       }
     },
     "/api/v1/me/bookings/{bookingId}/cancellation-preview": {
@@ -483,7 +823,54 @@
       "post": { "summary": "Upload and normalize a transformation image", "operationId": "adminUploadTransformationImage", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "image/jpeg": { "schema": { "type": "string", "format": "binary" } }, "image/png": { "schema": { "type": "string", "format": "binary" } }, "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "responses": { "201": { "description": "Normalized media asset.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MediaUploadResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "503": { "$ref": "#/components/responses/Error" } } }
     },
     "/api/v1/admin/media/{id}": {
-      "get": { "summary": "Read an uploaded image in administration", "operationId": "adminGetMedia", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "responses": { "200": { "description": "Private WebP image.", "content": { "image/webp": { "schema": { "type": "string", "format": "binary" } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+      "get": {
+        "summary": "Read an uploaded image in administration",
+        "operationId": "adminGetMedia",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private WebP image.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            },
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "private, no-store"
+                },
+                "description": "Publication and consent are checked before each public read."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     },
     "/api/v1/admin/users": {
       "get": { "summary": "List client profiles", "operationId": "adminListUsers", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "name": "search", "in": "query", "schema": { "type": "string", "maxLength": 200 } }], "responses": { "200": { "description": "Clients.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
@@ -508,25 +895,75 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of bookings in one page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque nextCursor from the preceding response; retain the same owner and filters.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive session date in Europe/Prague.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "through",
+            "in": "query",
+            "description": "Inclusive session date in Europe/Prague; not before from.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Bookings.",
+            "description": "Bounded bookings page, ordered by session start and booking ID. Continue with nextCursor until null; no records are silently truncated.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
                   "required": [
-                    "items"
+                    "items",
+                    "nextCursor"
                   ],
                   "properties": {
                     "items": {
                       "type": "array",
                       "items": {
                         "$ref": "#/components/schemas/AdminBooking"
-                      }
+                      },
+                      "maxItems": 100
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "Pass as cursor to continue, or null after the last page.",
+                      "maxLength": 2048
                     }
                   }
                 }
@@ -537,6 +974,9 @@
             "$ref": "#/components/responses/Error"
           },
           "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "400": {
             "$ref": "#/components/responses/Error"
           }
         }

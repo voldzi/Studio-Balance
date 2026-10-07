@@ -7,6 +7,8 @@ export const sessionCookieName = "sb_session";
 const adminAttemptCookieName = "sb_admin_oidc_attempt";
 const adminSessionCookieName = "sb_admin_session";
 const sessionIssuer = "studio-balance-web";
+const identityRequestTimeoutMs = 8_000;
+const jwksResolvers = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 type OidcDiscovery = {
   authorization_endpoint: string;
@@ -103,7 +105,8 @@ export function isSecureCookie(config = identityConfig()): boolean {
 }
 
 export function publicRedirectUrl(path: string, mode: IdentityMode = "web"): URL {
-  return new URL(path, identityConfig(mode).publicAppUrl);
+  const config = identityConfig(mode);
+  return new URL(sameOriginPath(path, config.publicAppUrl), config.publicAppUrl);
 }
 
 function key(secret: string): Uint8Array {
@@ -115,7 +118,18 @@ function base64Url(value: Buffer): string {
 }
 
 export function safeReturnTo(value: string | null | undefined): string {
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/muj-ucet";
+  return sameOriginPath(value, identityConfig().publicAppUrl);
+}
+
+function sameOriginPath(value: string | null | undefined, publicAppUrl: string): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020\u007f]/u.test(value)) return "/muj-ucet";
+  try {
+    const url = new URL(value, publicAppUrl);
+    if (url.origin !== new URL(publicAppUrl).origin) return "/muj-ucet";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "/muj-ucet";
+  }
 }
 
 export async function createLoginAttempt(
@@ -186,14 +200,15 @@ export async function finishLogin(input: {
       "content-type": "application/x-www-form-urlencoded"
     },
     body: body.toString(),
-    cache: "no-store"
+    cache: "no-store",
+    signal: AbortSignal.timeout(identityRequestTimeoutMs)
   });
   if (!tokenResponse.ok) throw new Error("OIDC token exchange failed");
 
   const tokens = (await tokenResponse.json()) as { id_token?: unknown; refresh_token?: unknown };
   if (typeof tokens.id_token !== "string" || typeof tokens.refresh_token !== "string") throw new Error("OIDC response did not contain identity and refresh tokens");
 
-  const claims = await jwtVerify(tokens.id_token, createRemoteJWKSet(new URL(discovery.jwks_uri), { headers: backchannelHeaders(config) }), {
+  const claims = await jwtVerify(tokens.id_token, jwksResolver(discovery.jwks_uri, config), {
     algorithms: ["RS256", "ES256"],
     issuer: config.issuer,
     audience: config.clientId
@@ -214,13 +229,16 @@ export async function createWebSession(login: CompletedLogin, mode: IdentityMode
   return response.token;
 }
 
-export async function readWebSession(cookieValue: string | undefined, mode: IdentityMode = "web"): Promise<WebSession | undefined> {
+export async function readWebSession(cookieValue: string | undefined, mode: IdentityMode = "web", options: { rejectUnavailable?: boolean } = {}): Promise<WebSession | undefined> {
   if (!cookieValue || !/^[A-Za-z0-9_-]{43}$/.test(cookieValue)) return undefined;
   try {
     const response = await internalRequest("/api/internal/sessions/resolve", { kind: mode, token: cookieValue });
-    if (!isSessionResponse(response)) return undefined;
+    if (!isSessionResponse(response)) throw new Error("Application session response is invalid");
     return response.session ?? undefined;
-  } catch {
+  } catch (error) {
+    // A login entry point must not replace a remembered session with a fresh
+    // password/MFA flow merely because its validation is temporarily unavailable.
+    if (options.rejectUnavailable) throw error;
     return undefined;
   }
 }
@@ -247,7 +265,8 @@ async function discover(config: IdentityConfig): Promise<OidcDiscovery> {
   const discoveryIssuer = config.backchannelIssuer ?? config.issuer;
   const response = await fetch(`${discoveryIssuer}/.well-known/openid-configuration`, {
     cache: "no-store",
-    headers: backchannelHeaders(config)
+    headers: backchannelHeaders(config),
+    signal: AbortSignal.timeout(identityRequestTimeoutMs)
   });
   if (!response.ok) throw new Error("OIDC discovery failed");
   const discovery = (await response.json()) as Partial<OidcDiscovery>;
@@ -261,6 +280,11 @@ async function discover(config: IdentityConfig): Promise<OidcDiscovery> {
     !URL.canParse(discovery.jwks_uri)
   ) {
     throw new Error("OIDC discovery document is invalid");
+  }
+  const publicIssuer = new URL(config.issuer);
+  const authorization = new URL(discovery.authorization_endpoint);
+  if (authorization.origin !== publicIssuer.origin || !authorization.pathname.startsWith(`${publicIssuer.pathname}/`)) {
+    throw new Error("OIDC authorization endpoint is outside the configured issuer");
   }
   return {
     ...discovery,
@@ -279,12 +303,28 @@ function backchannelHeaders(config: IdentityConfig): Record<string, string> {
   };
 }
 
-function backchannelUrl(endpoint: string, config: IdentityConfig): string {
-  if (!config.backchannelIssuer) return endpoint;
+function jwksResolver(endpoint: string, config: IdentityConfig): ReturnType<typeof createRemoteJWKSet> {
+  const cacheKey = `${config.issuer}:${endpoint}`;
+  let resolver = jwksResolvers.get(cacheKey);
+  if (!resolver) {
+    resolver = createRemoteJWKSet(new URL(endpoint), { headers: backchannelHeaders(config), timeoutDuration: identityRequestTimeoutMs });
+    // Runtime configuration is fixed, but keep the process cache bounded if it changes.
+    if (jwksResolvers.size >= 8) jwksResolvers.delete(jwksResolvers.keys().next().value!);
+    jwksResolvers.set(cacheKey, resolver);
+  }
+  return resolver;
+}
 
+function backchannelUrl(endpoint: string, config: IdentityConfig): string {
   const publicIssuer = new URL(config.issuer);
-  const backchannelIssuer = new URL(config.backchannelIssuer);
   const target = new URL(endpoint);
+  if (!config.backchannelIssuer) {
+    if (target.origin !== publicIssuer.origin || !target.pathname.startsWith(`${publicIssuer.pathname}/`)) {
+      throw new Error("OIDC discovery endpoint is outside the configured issuer");
+    }
+    return target.toString();
+  }
+  const backchannelIssuer = new URL(config.backchannelIssuer);
 
   if (target.origin === backchannelIssuer.origin && target.pathname.startsWith(`${backchannelIssuer.pathname}/`)) {
     return target.toString();
@@ -329,16 +369,21 @@ async function readAttempt(cookieValue: string | undefined, config: IdentityConf
 async function internalRequest(path: string, body: Record<string, unknown>): Promise<unknown> {
   const config = identityConfig();
   const timestamp = String(Date.now());
-  const signature = createHmac("sha256", config.sessionSecret).update(`${timestamp}:POST:${path}`).digest("base64url");
+  const nonce = randomBytes(16).toString("base64url");
+  const serializedBody = JSON.stringify(body);
+  const bodyHash = createHash("sha256").update(serializedBody).digest("hex");
+  const signature = createHmac("sha256", config.sessionSecret).update(`${timestamp}:${nonce}:POST:${path}:${bodyHash}`).digest("base64url");
   const response = await fetch(`${config.apiUrl}${path}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      "x-studiobalance-internal-nonce": nonce,
       "x-studiobalance-internal-signature": signature,
       "x-studiobalance-internal-timestamp": timestamp
     },
-    body: JSON.stringify(body),
-    cache: "no-store"
+    body: serializedBody,
+    cache: "no-store",
+    signal: AbortSignal.timeout(identityRequestTimeoutMs)
   });
   if (!response.ok) throw new Error("Internal application session request failed");
   return response.json();

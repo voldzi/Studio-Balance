@@ -7,18 +7,19 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const returnTo = safeReturnTo(request.nextUrl.searchParams.get("returnTo") ?? "/admin");
-  const webSession = await readWebSession(request.cookies.get(identityCookies.session)?.value, "web");
-  if (isMfaAdministrator(webSession)) {
-    return NextResponse.redirect(publicRedirectUrl(returnTo, "admin"));
-  }
-  const adminSession = await readWebSession(request.cookies.get(adminIdentityCookies.session)?.value, "admin");
-  if (isMfaAdministrator(adminSession)) {
-    return NextResponse.redirect(publicRedirectUrl(returnTo, "admin"));
-  }
-  const loginHint = webSession?.roles.some((role) => role === "admin" || role === "super_admin") ? webSession.email : undefined;
   const rememberDevice = request.nextUrl.searchParams.get("rememberDevice") === "1";
   let loginAttempt: Awaited<ReturnType<typeof createLoginAttempt>>;
   try {
+    const [web, admin] = await Promise.allSettled([
+      readWebSession(request.cookies.get(identityCookies.session)?.value, "web", { rejectUnavailable: true }),
+      readWebSession(request.cookies.get(adminIdentityCookies.session)?.value, "admin", { rejectUnavailable: true })
+    ]);
+    const webSession = web.status === "fulfilled" ? web.value : undefined;
+    const adminSession = admin.status === "fulfilled" ? admin.value : undefined;
+    if (isMfaAdministrator(webSession) || isMfaAdministrator(adminSession)) return NextResponse.redirect(publicRedirectUrl(returnTo, "admin"));
+    if (web.status === "rejected") throw web.reason;
+    if (admin.status === "rejected") throw admin.reason;
+    const loginHint = webSession?.roles.some((role) => role === "admin" || role === "super_admin") ? webSession.email : undefined;
     loginAttempt = await createLoginAttempt(returnTo, "admin", loginHint, rememberDevice);
   } catch (error) {
     const requestId = logIdentityFailure(request, "admin_login_start", error);

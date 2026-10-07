@@ -98,7 +98,7 @@ const sessionSelect = `
     i.id AS instructor_id,
     i.display_name AS instructor_name,
     ${instructorPortraitSql} AS instructor_portrait,
-    count(b.id) FILTER (WHERE b.status = 'reserved')::text AS active_bookings
+    count(b.id) FILTER (WHERE b.status IN ('reserved','attended','no_show'))::text AS active_bookings
   FROM class_sessions s
   JOIN class_types ct ON ct.id = s.class_type_id
   JOIN instructors i ON i.id = s.instructor_id
