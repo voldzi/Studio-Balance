@@ -82,7 +82,10 @@ before encoding one interpretation in code.
   is unavailable, and mandatory admin MFA. See ADR 0004. Registration and booking
   remain paused until an administrator opens the studio (CD-047 / ADR 0013).
 - Production application workloads run as Docker containers on
-  `docker.home.cz`.
+  `docker.home.cz`. Operational configuration and retained releases use
+  `/srv/studio-balance`; backups, archives and staging use the dedicated
+  `/srv/x5-production` categories with UUID validation (ADR 0024).
+  Never recreate internal-disk fallback paths if X5 is unavailable.
 - Public traffic for `https://studio-balance.cz` is published
   through Nginx on `dmz.home.cz` before reaching `docker.home.cz`.
 - The dedicated Studio Balance realm is exposed at

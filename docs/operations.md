@@ -627,17 +627,16 @@ nikdy celý sdílený S3 konfigurační soubor. Runtime export je
 předchozí konfiguraci. Žádné tajné hodnoty nepatří do repozitáře ani výstupu.
 
 `scripts/backup-media.sh` a `scripts/media-backup.mjs` jsou instalované v
-`/home/voldzi/deployments/studio-balance/`. Záloha se spouští denně ve 03:40
+`/srv/studio-balance/`. Záloha se spouští denně ve 03:40
 časové zóny serveru; každou hodinu v :15 probíhá `--check` (stáří do 36 h a
 SHA-256). `scripts/install-media-backup-cron.py` idempotentně spravuje pouze
 označený blok crontabu účtu `voldzi`, se zálohou původního crontabu. Není
 potřeba sudo ani trvale přihlášená uživatelská session.
 
-Zálohy leží v `media-backups/` (0700) na `docker.home.cz`, odděleně od storage
+Zálohy leží v `/srv/x5-production/backups/studio-balance/media/` (0700) na `docker.home.cz`, odděleně od storage
 hostitele. Manifest obsahuje původní klíč, S3 verzi, velikost a SHA-256;
 soubory mají oprávnění 0600. Snapshot se zveřejní jako dokončený až po
-dokončení všech zápisů. Automatické mazání ani retence se nezapínají bez
-rozhodnutí správce. Záloha vyžaduje po zápisu rezervu aspoň 5 GiB.
+dokončení všech zápisů. Retence se aktivuje pouze výslovným potvrzením správce; viz ADR 0024. Záloha vyžaduje po zápisu rezervu aspoň 5 GiB.
 
 Ověření 5. 9. 2026: aplikace provedla `prepareImage`, upload a readback;
 verzování je aktivní; neautorizované čtení, cizí bucket a zápis read-only účtem
@@ -656,7 +655,7 @@ ADR 0013 configuration: OIDC_OPERATIONS_CLIENT_ID (default studio-balance-operat
 OIDC_OPERATIONS_ISSUER_URL: optional trusted internal Keycloak realm URL; production compose maps existing OIDC_BACKCHANNEL_ISSUER_URL and joins the existing Keycloak network for API operations. Public admin endpoints of Keycloak need not be exposed. Provision with scripts/provision-registration-control.py --production on docker.home.cz, or --local for local dependencies. Provisioning initially disables registration and preserves existing runtime variables in a private backup.
 
 Production activation can be completed interactively with
-`ssh -t docker.home.cz 'bash /home/voldzi/deployments/studio-balance/activate-production-registration.sh'`.
+`ssh -t docker.home.cz 'bash /srv/studio-balance/activate-production-registration.sh'`.
 The wrapper prompts for master admin credentials/MFA without echo or history,
 provisions only the dedicated studio realm account, backs up runtime configuration,
 recreates only API with the same image, verifies readiness and closes both controls.
@@ -850,3 +849,12 @@ first dates (16 and 18 October), in addition to service health.
 CD-065: Power Yoga je okamžitě stažena z veřejné nabídky. Zbývající termíny 9. a 11. října mají pozastavené rezervace; profil je neaktivní. Vyřízení jedné rezervace 9. října vyžaduje rozhodnutí provozovatele, bez automatického přesunu či storna.
 
 Veřejný katalog a rozvrh včetně detailů vrací Cache-Control: no-store, aby CDN po změně lekce neuchovávala starou nabídku. Kontrola hlavičky je v schedule.controller.test.ts. Při již existující CDN cache je nutné ověřit obnovu veřejné odpovědi.
+
+## Studio Balance storage separation (2026-10-07)
+
+See [storage and retention runbook](production-storage.md) and ADR 0024.
+Deployment root is `/srv/studio-balance`; X5 UUID is
+`2f93f595-b61b-4eea-9054-7afa9b275b5b`. Production deploy and rollback
+require the storage guard and `/srv/studio-balance/storage-compose.yml`.
+No secrets or production environment variables change. Web cache is bounded
+128 MiB tmpfs; shared Docker image/build storage remains unchanged.

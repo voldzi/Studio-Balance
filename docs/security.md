@@ -380,3 +380,5 @@ ani volný soubor není důvodem ke zpřístupnění. Portrait vyžaduje aktivn�
 instruktora jako dosud.
 
 Nová rezervace kontroluje aktivní typ lekce na backendu; skrytí katalogu samo není autorizační hranicí. Neaktivní typ zachovává oprávněnému klientovi přístup k jeho existujícím rezervacím.
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).

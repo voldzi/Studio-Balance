@@ -19,6 +19,8 @@ for command in curl docker flock; do
   command -v "$command" >/dev/null || { echo "$command is required." >&2; exit 1; }
 done
 
+bash /srv/studio-balance/check-production-storage.sh
+
 lock_file="$(dirname "$env_file")/.production-operation.lock"
 exec 9>"$lock_file"
 if ! flock -n 9; then
@@ -39,7 +41,7 @@ for image in api web worker; do
 done
 
 export APP_VERSION="$version"
-compose=(docker compose --env-file "$env_file" -f "$root/docker-compose.production.yml")
+compose=(docker compose --env-file "$env_file" -f "$root/docker-compose.production.yml" -f /srv/studio-balance/storage-compose.yml)
 "${compose[@]}" up -d --no-build --remove-orphans
 
 for _ in {1..30}; do

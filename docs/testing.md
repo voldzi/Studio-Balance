@@ -409,3 +409,5 @@ Next image optimization. Confirm both poster and instructor portrait decode.
 Regrese CD-065: deaktivace typu skryje katalog, profil, termíny a veřejný detail; přímá nová rezervace je odmítnuta. Již vytvořené rezervace a jejich seznam v účtu zůstávají zachované. Ověřuje PostgreSQL test booking-companion.integration.test.ts.
 
 Veřejný katalog a rozvrh včetně detailů vrací Cache-Control: no-store, aby CDN po změně lekce neuchovávala starou nabídku. Kontrola hlavičky je v schedule.controller.test.ts. Při již existující CDN cache je nutné ověřit obnovu veřejné odpovědi.
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).

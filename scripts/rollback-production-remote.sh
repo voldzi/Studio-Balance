@@ -23,7 +23,7 @@ if ! git -C "$root" ls-files --error-unmatch infra/scripts/rollback-production.s
   exit 1
 fi
 
-remote_root="/home/voldzi/deployments/studio-balance"
+remote_root="/srv/studio-balance"
 release_dir="$remote_root/releases/$version"
 remote_tool=""
 remote_temporary=""

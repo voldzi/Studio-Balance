@@ -30,7 +30,7 @@
     "validate:keycloak-theme": "bash scripts/validate-keycloak-theme.sh",
     "validate:openapi": "python3 -m json.tool openapi/openapi.json >/dev/null",
     "validate:analytics": "bash scripts/check-public-analytics.sh",
-    "validate:repo": "pnpm validate:analytics && bash scripts/validate-skeleton.sh && pnpm validate:keycloak-theme && pnpm validate:openapi"
+    "validate:repo": "python3 scripts/test-production-storage.py && pnpm validate:analytics && bash scripts/validate-skeleton.sh && pnpm validate:keycloak-theme && pnpm validate:openapi"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "16.3.4",

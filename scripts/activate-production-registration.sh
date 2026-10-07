@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Interactive, Studio Balance only. Run on docker.home.cz as the deployment owner.
 set -euo pipefail
-task_root=/home/voldzi/deployments/studio-balance
+task_root=/srv/studio-balance
+bash "$task_root/check-production-storage.sh"
 [[ -f "$task_root/.env.production" ]] || { echo 'Spusťte skript na docker.home.cz.' >&2; exit 1; }
 exec 9>"$task_root/.production-operation.lock"
 flock -n 9 || { echo 'Právě probíhá nasazení. Spusťte skript po jeho dokončení.' >&2; exit 1; }
@@ -10,7 +11,7 @@ version="${current_image##*:}"
 [[ "$version" =~ ^[0-9a-f]{7,40}$ ]] || exit 1
 release="$task_root/releases/$version"
 [[ -f "$release/infra/postgres/migrations/0018_studio_opening.sql" ]] || { echo 'Nejprve musí být nasazená verze s přepínačem otevření.' >&2; exit 1; }
-backup_file="$task_root/.env.production.before-registration-$(date -u +%Y%m%dT%H%M%SZ)"
+backup_file="/srv/x5-production/archives/studio-balance/config-history/.env.production.before-registration-$(date -u +%Y%m%dT%H%M%SZ)"
 cp -p "$task_root/.env.production" "$backup_file"
 chmod 600 "$backup_file"
 cd "$task_root"

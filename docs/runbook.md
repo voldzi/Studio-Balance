@@ -200,3 +200,5 @@ Denní a hodinový záznam je v crontabu provozního účtu mezi značkami
 5. Pro jednotlivou kapacitu použít Změnit kapacitu přímo u termínu.
 6. Při souběhu znovu načíst náhled. Nepřepisovat databázi ani nesnižovat
    kapacitu pod potvrzené klienty. Obnova termínu neobnoví zrušené klienty.
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).

@@ -10,7 +10,7 @@ parser.add_argument('--local', action='store_true')
 a = parser.parse_args()
 if a.production == a.local: raise SystemExit('Choose exactly --production or --local')
 if a.production:
-    if not pathlib.Path('/home/voldzi/deployments/studio-balance/.env.production').is_file():
+    if not pathlib.Path('/srv/studio-balance/.env.production').is_file():
         raise SystemExit('Spusťte skript na docker.home.cz.')
     username = input('Správce Keycloak master [admin]: ').strip() or 'admin'
     password = getpass.getpass('Heslo správce (nezobrazuje se): ')
@@ -50,10 +50,11 @@ try:
     token=request('/realms/studio-balance/protocol/openid-connect/token','POST',urllib.parse.urlencode({'grant_type':'client_credentials','client_id':client_id,'client_secret':secret}).encode())['access_token']
     request(realm,'PUT',{'registrationAllowed':False},token)
     if request(realm,token=token)['registrationAllowed'] is not False: raise RuntimeError('Registration state was not confirmed')
-    envpath=pathlib.Path('/home/voldzi/deployments/studio-balance/.env.production') if a.production else pathlib.Path('.env')
+    envpath=pathlib.Path('/srv/studio-balance/.env.production') if a.production else pathlib.Path('.env')
     original=envpath.read_text()
     if a.production:
-        backup=envpath.with_name('.env.production.before-registration-control')
+        subprocess.run(['bash', '/srv/studio-balance/check-production-storage.sh'], check=True)
+        backup=pathlib.Path('/srv/x5-production/archives/studio-balance/config-history/.env.production.before-registration-control')
         if not backup.exists(): backup.write_text(original); backup.chmod(0o600)
     lines=[x for x in original.splitlines() if not x.startswith(('OIDC_OPERATIONS_CLIENT_ID=','OIDC_OPERATIONS_CLIENT_SECRET='))]
     lines += ['OIDC_OPERATIONS_CLIENT_ID='+client_id,'OIDC_OPERATIONS_CLIENT_SECRET='+secret]

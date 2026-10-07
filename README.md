@@ -150,3 +150,5 @@ booking start closed; the control synchronizes the dedicated Keycloak realm.
 See [ADR 0013](docs/adr/0013-studio-opening-control.md).
 
 Shared public analytics preparation and activation gates: [integration](docs/analytics/integration.md), [CS/EN privacy review](docs/analytics/privacy-review.md). Collection remains disabled.
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](docs/production-storage.md) (ADR 0024).

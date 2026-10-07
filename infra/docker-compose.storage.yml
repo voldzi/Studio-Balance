@@ -1,0 +1,5 @@
+# Applied by both deployment and rollback, including retained older revisions.
+services:
+  web:
+    tmpfs:
+      - /app/apps/web/.next/cache:size=128m,uid=1000,gid=1000,mode=0700

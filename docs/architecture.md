@@ -357,3 +357,5 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).

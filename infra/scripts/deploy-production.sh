@@ -24,6 +24,8 @@ if [[ "$(stat -c '%a' "$env_file")" != "600" ]]; then
   exit 1
 fi
 
+bash /srv/studio-balance/check-production-storage.sh
+
 lock_file="$(dirname "$env_file")/.production-operation.lock"
 exec 9>"$lock_file"
 if ! flock -n 9; then
@@ -52,7 +54,7 @@ if (( available_memory_kb < 2 * 1024 * 1024 )); then
 fi
 
 export APP_VERSION="$version"
-compose=(docker compose --parallel 1 --env-file "$env_file" -f "$root/docker-compose.production.yml")
+compose=(docker compose --parallel 1 --env-file "$env_file" -f "$root/docker-compose.production.yml" -f /srv/studio-balance/storage-compose.yml)
 previous_image="$(docker inspect --format '{{.Config.Image}}' studio-balance-production-web-1 2>/dev/null || true)"
 previous_version="${previous_image##*:}"
 
@@ -121,6 +123,7 @@ fi
 
 if wait_for_revision "$version"; then
   "${compose[@]}" ps
+  python3 /srv/studio-balance/record-verified-release.py "$version"
   exit 0
 fi
 

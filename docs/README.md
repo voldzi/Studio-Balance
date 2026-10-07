@@ -48,3 +48,5 @@ jen tím, že je zmíněn v návrhu `api.md`.
 - Kontrola kostry: `bash scripts/validate-skeleton.sh`.
 
 Aktuální S3 zapojení: [ADR 0012 – vlastní media bucket](adr/0012-dedicated-media-bucket.md).
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).

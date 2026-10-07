@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # Run on docker.home.cz after provisioning and transferring only Studio Balance keys.
 set -euo pipefail
-task_root=/home/voldzi/deployments/studio-balance
+task_root=/srv/studio-balance
+bash "$task_root/check-production-storage.sh"
 exec 9>"$task_root/.production-operation.lock"
 flock -n 9 || { echo 'Another production operation is running' >&2; exit 1; }
 current_image="$(docker inspect --format '{{.Config.Image}}' studio-balance-production-api-1)"
 version="${current_image##*:}"
 [[ "$version" =~ ^[0-9a-f]{7,40}$ ]] || exit 1
-backup_file="$task_root/.env.production.before-media-$(date -u +%Y%m%dT%H%M%SZ)"
+backup_file="/srv/x5-production/archives/studio-balance/config-history/.env.production.before-media-$(date -u +%Y%m%dT%H%M%SZ)"
 cp -p "$task_root/.env.production" "$backup_file"
 chmod 600 "$backup_file"
 python3 - <<'PY'
 from pathlib import Path
 import os
-root = Path('/home/voldzi/deployments/studio-balance')
+root = Path('/srv/studio-balance')
 incoming = dict(line.split('=', 1) for line in (root / '.env.media-incoming').read_text().splitlines() if line)
 allowed = {'S3_ENDPOINT','S3_BUCKET','S3_REGION','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','S3_FORCE_PATH_STYLE'}
 assert set(incoming) == allowed and all(incoming.values()), 'Incomplete dedicated media configuration'

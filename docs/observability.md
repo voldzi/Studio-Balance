@@ -236,3 +236,5 @@ the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
 
 Archivace typu a pozastavení rozvrhu používají existující administrativní audit class_type.updated a weekly_schedule_rule.versioned. Přímé požadavky na rezervaci neaktivního typu vracejí RESOURCE_NOT_FOUND se standardním requestId.
+
+Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).

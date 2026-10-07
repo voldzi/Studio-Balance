@@ -104,6 +104,8 @@ services:
 
   web:
     <<: *runtime-defaults
+    tmpfs:
+      - /app/apps/web/.next/cache:size=128m,uid=1000,gid=1000,mode=0700
     image: studiobalance/web:${APP_VERSION:?application version is required}
     build:
       context: .
