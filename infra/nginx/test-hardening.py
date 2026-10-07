@@ -71,6 +71,7 @@ server {
 INTERNAL = b'    location = /api/internal { return 404; }\n    location ^~ /api/internal/ { return 404; }\n'
 COMPRESSION = b'''        gzip off;
         location = /api/v1/sessions {
+            proxy_pass http://docker.home.cz:4281;
             gzip on;
             gzip_types application/json;
             gzip_min_length 1024;
@@ -80,6 +81,15 @@ COMPRESSION = b'''        gzip off;
 
 
 class RenderingTests(unittest.TestCase):
+    def test_known_four_directive_prior_child_is_narrowly_upgraded(self):
+        complete = hardening.render(configuration())
+        proxy = b'            proxy_pass http://docker.home.cz:4281;\n'
+        prior = complete.replace(proxy, b'', 1)
+        self.assertEqual(hardening.render(prior), complete)
+        self.assertEqual(hardening.render(complete), complete)
+        with self.assertRaises(hardening.HardeningError):
+            hardening.render(complete.replace(proxy, b'            proxy_pass http://foreign.home.cz:4281;\n', 1))
+
     def test_only_two_insertions_change_existing_bytes_and_rerun_is_identical(self):
         original = configuration()
         updated = hardening.render(original)

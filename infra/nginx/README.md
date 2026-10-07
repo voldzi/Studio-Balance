@@ -111,7 +111,9 @@ Mění pouze dva bloky kanonického HTTPS serveru:
 
 - exact `/api/internal` a prefix `/api/internal/` vracejí 404;
 - `/api/` má `gzip off`, pouze vnořená exact `/api/v1/sessions` zapíná gzip
-  pro JSON od 1024 bajtů s `Vary: Accept-Encoding`.
+  pro JSON od 1024 bajtů s `Vary: Accept-Encoding` a explicitním produkčním
+  `proxy_pass`. Nginx sice dědí proxy parametry, ale obsahový proxy handler
+  musí být definovaný také v této exact child location.
 
 Ostatní bajty zůstanou zachované: TLS, doménová přesměrování, Keycloak proxy,
 security headers, timeouty i schválený analytics include. Je vyžadována
@@ -150,3 +152,14 @@ Používá pouze soukromé fixture adresáře a mockované služby, žádnou pro
 konfiguraci ani síť. Kontroluje minimální změnu bajtů, idempotenci, oba režimy
 sites-enabled, metadata a integritu kopií, readiness revize, nebezpečné a
 částečné konfigurace, souběh, chyby syntaxe/reloadu a bezpečný rollback.
+
+Povinný runtime gate je na Linuxu s reálným Nginx:
+`python3 infra/nginx/test-hardening-runtime.py`. Spouští vlastní dočasnou
+konfiguraci, syntetický loopback upstream a vlastní Nginx proces na náhodném
+volném loopback portu; produkční konfiguraci, certifikáty, analytics include
+ani existující službu nepoužívá. Ověří skutečnou proxy odpověď a gzip rozvrhu,
+API bez gzip i s tělem přes 1024 bajtů, přepsání podvržené IP a interní 404.
+Zároveň reprodukuje statickou 404 chybné původní child location bez handleru
+a ověří nápravu. Samotné `nginx -t` tento funkční problém nezachytí.
+Nástroj bezpečně doplní handler i do této jediné známé původní čtyřdirektivní
+verze; jiný neznámý child blok odmítá.

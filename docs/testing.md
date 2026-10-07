@@ -452,6 +452,20 @@ constitute production deployment or an independent disaster recovery exercise.
 telefonu. Závěrečný záznam musí odlišit lokální testy, build, CI/image scan,
 produkční verzi a autentizovanou browser/PWA akceptaci.
 
+### Povinná funkční kontrola Nginx
+
+Linux CI vedle unit testu `python3 infra/nginx/test-hardening.py` instaluje
+Nginx a vždy spustí `python3 infra/nginx/test-hardening-runtime.py`. Gate
+nesmí přeskočit chybějící Nginx a samotné `nginx -t` nestačí: exact child
+location bez vlastního `proxy_pass` má validní syntaxi, ale vrací statickou
+404. Runtime test tuto chybu reprodukuje a ověří její opravu skutečnou proxy
+odpovědí 200 a gzip. Také při globálně zapnutém gzip ověří velké privátní
+API tělo i detail termínu bez komprese, přepsání podvržené IP a interní 404.
+Používá jen syntetický loopback upstream, dočasnou vlastní konfiguraci a
+vlastní Nginx proces; produkční konfiguraci, certifikáty ani existující službu
+nenačítá. Na vývojovém Macu není instalace Nginx požadovaná. Po změně edge
+pravidel se navíc musí ověřit skutečné veřejné HTTP odpovědi po nasazení.
+
 ## Production image gate regression
 
 `python3 scripts/test-production-image-scan.py` runs the real shell gate

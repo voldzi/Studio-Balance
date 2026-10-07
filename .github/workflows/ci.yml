@@ -42,6 +42,13 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Audit dependencies (including development tools)
         run: node scripts/audit-dependencies.mjs
+      - name: Mandatory isolated Nginx runtime regression
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends nginx
+          nginx -v
+          python3 infra/nginx/test-hardening.py
+          python3 infra/nginx/test-hardening-runtime.py
       - name: Lint, typecheck, test, build and validate contracts
         run: pnpm check
       - name: Mandatory isolated PostgreSQL integration tests
