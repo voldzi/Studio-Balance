@@ -12,7 +12,8 @@ export function proxy(request: NextRequest) {
   if (path.startsWith("/api/")) return NextResponse.next();
 
   const nonce = randomBytes(16).toString("base64");
-  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const identityIssuer = process.env.OIDC_ISSUER_URL ?? (process.env.APP_ENV === "production" ? undefined : "http://localhost:8081/realms/studio-balance");
+  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development", identityIssuer);
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", policy);

@@ -30,11 +30,38 @@ mode 0700; configuration secrets and backup files stay 0600.
 | Historical private configuration | `/srv/x5-production/archives/studio-balance/config-history` |
 | Backup logs | `/srv/x5-production/cache/studio-balance` |
 | Deployment transfer/work files | `/srv/x5-production/staging/studio-balance` |
+| Disposable image-scan exports | `/srv/x5-production/staging/studio-balance/.image-scan-<sha>.<token>` |
+| Studio Balance Trivy database/cache | `/srv/x5-production/cache/studio-balance/trivy` |
+| Image-scan JSON, tar hashes, verified identities | `/srv/x5-production/archives/studio-balance/image-scans/<sha>/<UTC>-<token>` |
 | Disposable live web image cache | tmpfs `/app/apps/web/.next/cache`, max 128 MiB |
 
 No global Docker data-root, shared builder, /var/lib/docker file or foreign app
 is changed. Build layers/images still use the daemon's normal storage; successful
 release archives are exported to X5 before scoped old image-tag deletion.
+
+The image scanner repeats the same mount/UUID/free-space guard before writes
+and owns a separate private `.image-scan.lock` under `/srv/studio-balance`.
+It serializes Studio Balance cache use and never reads another application's
+Trivy database. A uniquely created workspace exports only the three selected
+candidate images; the scanner receives read-only image tar files and its own
+writable cache, never the Docker socket or production environment files.
+Identity checks before/after export and scanning reject retagged candidates.
+The trap removes only its token-labelled scanner and its unique workspace;
+it refuses an internal-disk cleanup fallback if X5 has disappeared. Interrupted
+or failed JSON/log evidence stays in the owned archive. These scan receipts
+are audit evidence and are not automatically deleted by release retention.
+Trivy database/cache is rebuildable. Under the idle scanner lock, the scanner
+checks its explicit ownership/creation marker and resets only this cache when
+age reaches 14 days or total size exceeds 2 GiB, before and after scanning.
+Unmanaged contents, symlinks, foreign ownership and special files are refused
+instead of deleted. Audit reports have no automatic deletion policy. This
+bounded cache reset does not delete other archived records.
+The existing daily `manage-production-storage.py --apply` also applies the
+same policy under a nonblocking scanner lock, so unused cache does not require
+a future deployment to expire. A busy scanner defers only its cache cleanup;
+dry-run reports the proposed cache reset without changing cache contents.
+The helper is published with the selected complete maintenance snapshot;
+no additional cron job or foreign cache path is introduced.
 
 ## Deployment and retention
 

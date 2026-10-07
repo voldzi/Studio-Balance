@@ -30,7 +30,7 @@
     "validate:keycloak-theme": "bash scripts/validate-keycloak-theme.sh",
     "validate:openapi": "python3 -m json.tool openapi/openapi.json >/dev/null",
     "validate:analytics": "bash scripts/check-public-analytics.sh",
-    "validate:repo": "node scripts/verify-dependency-patches.mjs && node --test scripts/dependency-audit.test.mjs && python3 scripts/test-production-storage.py && python3 scripts/test-production-deployment.py && pnpm validate:analytics && bash scripts/validate-skeleton.sh && pnpm validate:keycloak-theme && pnpm validate:openapi"
+    "validate:repo": "node scripts/verify-dependency-patches.mjs && node --test scripts/dependency-audit.test.mjs && python3 scripts/test-production-storage.py && python3 scripts/test-production-deployment.py && python3 scripts/test-production-image-scan.py && python3 infra/nginx/test-hardening.py && pnpm validate:analytics && bash scripts/validate-skeleton.sh && pnpm validate:keycloak-theme && pnpm validate:openapi"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "16.3.8",

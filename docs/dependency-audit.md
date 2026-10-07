@@ -22,6 +22,33 @@ neprojde. Podrobnosti jsou v [záznamu patche](../patches/README.md) a
 Kontejnerové obrazy a produkční přihlášení se musí ověřit při nasazení;
 výsledky níže jsou výslovně historické kontroly příslušných dat.
 
+### Produkční kontrola skutečných obrazů
+
+`scripts/scan-production-images.sh <git-sha>` kontroluje přesně tři místní
+obrazy `studiobalance/{web,api,worker}:<git-sha>` před spuštěním nové verze.
+Používá dostupný Trivy 0.75.0 připnutý digestem
+`sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa`;
+nezískává Docker socket, produkční konfiguraci ani přístupové údaje.
+Vlastní exporty obrazů skenuje v omezeném jednorázovém kontejneru bez
+privilegií (read-only, non-root, no-new-privileges, odebrané capabilities,
+1 CPU / 1 GiB RAM). Scanner obraz se nesmí automaticky stáhnout pod jinou
+identitou. Aktualizace bezpečnostní databáze není vypnutá.
+
+Vysoké či kritické OS i npm nálezy blokují nasazení, včetně nálezů bez
+dostupné opravy. Blokuje také nepodporovaný OS, nedostupná databáze skeneru,
+chybný/neúplný JSON, chybějící OS či library výsledky nebo změna image ID
+mezi exportem, skenem a závěrečným ověřením. Neexistuje automatické přijetí
+výjimky ani `ignore-unfixed`; lokální patch vývojového braces nenahrazuje
+kontrolu výsledných produkčních obrazů. Případný falešný nález musí být
+nejprve doložen a samostatně schválen; bránu není možné obejít neurčitou
+výjimkou.
+
+Reporty, hashe exportů a úspěšná evidence s přesnými image ID jsou v
+`/srv/x5-production/archives/studio-balance/image-scans/<sha>/<UTC>-<token>/`.
+Chybná kontrola neprodukuje `verified.json`. Sken sám neprokazuje
+bezpečnost všech vlastních implementací ani správné přihlášení na telefonu.
+Viz [provozní cesty a retence](production-storage.md).
+
 ## Kontrola 2026-09-08
 
 Audit pokryl přímé a nepřímé npm závislosti, kompatibilitu peer dependencies,

@@ -8,6 +8,7 @@ import sys
 import tempfile
 
 TOOLS = ('check-production-storage.sh', 'manage-production-storage.py',
+         'maintain-production-scan-cache.py',
          'record-verified-release.py', 'verify-production-revision.py',
          'production-operation-lock.sh', 'backup-media.sh', 'media-backup.mjs',
          'install-media-backup-cron.py', 'connect-media-runtime.sh',

@@ -105,6 +105,9 @@ else
   up_args=()
   "${compose[@]}" build --pull
 fi
+# Do not replace a healthy revision with unscanned image contents. The scanner
+# records and verifies the exact three image IDs before any container change.
+bash "$root/scripts/scan-production-images.sh" "$version"
 if ! "${compose[@]}" up -d "${up_args[@]}"; then
   rollback_previous || true
   exit 1

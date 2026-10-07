@@ -4,6 +4,7 @@ import argparse
 import datetime as dt
 import fcntl
 import hashlib
+import importlib.util
 import json
 import pathlib
 import re
@@ -63,6 +64,30 @@ def verify_retained_backups(backups, retained):
 
 def run(*args):
     return subprocess.check_output(args, text=True).strip()
+
+def maintain_scan_cache(root, x5, apply=False):
+    """Only the approved owned cache, idle under its own lock; reports survive."""
+    cache = x5 / 'cache/studio-balance/trivy'
+    if not cache.exists() and not cache.is_symlink():
+        return {'status': 'absent', 'reset': False}
+    with open(root / '.image-scan.lock', 'a') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return {'status': 'busy', 'reset': False}
+        subprocess.run(['bash', str(root / 'check-production-storage.sh')], check=True)
+        if cache.lstat().st_dev != x5.stat().st_dev:
+            raise RuntimeError('Trivy cache differs from approved X5 filesystem')
+        source = pathlib.Path(__file__).with_name('maintain-production-scan-cache.py')
+        spec = importlib.util.spec_from_file_location('studio_balance_scan_cache', source)
+        helper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(helper)
+        plan = helper.inspect_cache(cache)
+        # Retention never adopts a pre-existing/unmanaged cache. The scanner
+        # alone may initialize a new empty one after its X5/ownership checks.
+        if apply and plan['reset'] and plan['managed']:
+            helper.maintain(cache)
+        return {'status': 'managed' if plan['managed'] else 'unmanaged-empty', **{key: plan[key] for key in ('reset', 'bytes', 'ageSeconds')}}
 
 def main():
     parser = argparse.ArgumentParser()
@@ -143,7 +168,8 @@ def main():
             identity = run('docker', 'image', 'inspect', '-f', '{{.Id}}', ref)
             if identity not in used:
                 image_removals.append(ref)
-    print(json.dumps({'protectedVersions': sorted(keep), 'paths': [str(p) for p in removals], 'images': image_removals, 'apply': args.apply}))
+    cache_plan = maintain_scan_cache(ROOT, X5, apply=args.apply)
+    print(json.dumps({'protectedVersions': sorted(keep), 'paths': [str(p) for p in removals], 'images': image_removals, 'trivyCache': cache_plan, 'apply': args.apply}))
     if args.apply:
         image_archives = X5 / 'archives/studio-balance/images'
         image_archives.mkdir(mode=0o700, exist_ok=True)

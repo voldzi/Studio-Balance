@@ -451,3 +451,15 @@ constitute production deployment or an independent disaster recovery exercise.
 `pnpm check` neprokazuje publikaci na produkci ani přijetí na skutečném
 telefonu. Závěrečný záznam musí odlišit lokální testy, build, CI/image scan,
 produkční verzi a autentizovanou browser/PWA akceptaci.
+
+## Production image gate regression
+
+`python3 scripts/test-production-image-scan.py` runs the real shell gate
+against private temporary paths and fake Docker, never a production daemon.
+It verifies all three scans, pinned scanner identity, container restrictions,
+absence of Docker socket/environment mounts, missing-X5 refusal before writes,
+real file-lock contention, tag changes, HIGH findings, scanner failure, empty
+or mismatched/incomplete reports, symlink refusal and own-workspace cleanup.
+Cache tests verify the explicit 14-day/2-GiB idle reset boundary and refusal
+to adopt or delete unmanaged/symlinked contents.
+This regression test does not substitute for scanning the built release.

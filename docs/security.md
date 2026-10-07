@@ -1,5 +1,11 @@
 # Bezpečnost a soukromí
 
+CSP `form-action` dovoluje vlastní původ a pouze původ nakonfigurovaného
+OIDC issueru. Prohlížeče tuto direktivu kontrolují také při přesměrování
+přihlašovacího formuláře na Keycloak. Povolení se neodvozuje od hlaviček
+požadavku ani `returnTo`; nepovoluje externí skripty nebo fetch. HTTP je
+přípustné pouze pro lokální loopback identity při vývoji.
+
 ## Status a cíle
 
 Identita používá Keycloak 26.1.5, realm `studio-balance` a oddělené web/admin

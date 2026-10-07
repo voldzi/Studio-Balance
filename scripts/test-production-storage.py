@@ -8,6 +8,8 @@ import os
 import unittest
 import hashlib
 import json
+import fcntl
+import time
 
 spec = importlib.util.spec_from_file_location('storage', Path(__file__).with_name('manage-production-storage.py'))
 module = importlib.util.module_from_spec(spec)
@@ -67,6 +69,36 @@ class RetentionTests(unittest.TestCase):
             result = subprocess.run(['bash', str(Path(__file__).with_name('check-production-storage.sh'))], env={**os.environ,'PATH':directory+':'+os.environ['PATH']}, capture_output=True)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn(b'refusing internal-disk fallback', result.stderr)
+
+    def test_daily_scan_cache_dry_run_and_idle_apply_preserve_audit_and_foreign_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root, x5 = base / 'runtime', base / 'x5'
+            root.mkdir()
+            (root / 'check-production-storage.sh').write_text('exit 0\n')
+            cache = x5 / 'cache/studio-balance/trivy'
+            cache.mkdir(parents=True, mode=0o700)
+            marker = cache / '.studio-balance-cache-policy.json'
+            marker.write_text(json.dumps({'owner': 'studio-balance', 'schema': 1, 'createdAt': time.time() - 15 * 86400}))
+            (cache / 'db').mkdir()
+            (cache / 'db/rebuildable').write_text('old own database')
+            evidence = x5 / 'archives/studio-balance/image-scans/audit.json'
+            evidence.parent.mkdir(parents=True)
+            evidence.write_text('audit evidence')
+            foreign = x5 / 'cache/masaze/keep'
+            foreign.parent.mkdir(parents=True)
+            foreign.write_text('foreign application')
+            plan = module.maintain_scan_cache(root, x5, apply=False)
+            self.assertTrue(plan['reset'])
+            self.assertTrue((cache / 'db/rebuildable').exists())
+            with (root / '.image-scan.lock').open('a') as holder:
+                fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                self.assertEqual(module.maintain_scan_cache(root, x5, apply=True)['status'], 'busy')
+                self.assertTrue((cache / 'db/rebuildable').exists())
+            module.maintain_scan_cache(root, x5, apply=True)
+            self.assertFalse((cache / 'db').exists())
+            self.assertEqual(evidence.read_text(), 'audit evidence')
+            self.assertEqual(foreign.read_text(), 'foreign application')
 
 if __name__ == '__main__':
     unittest.main()

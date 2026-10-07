@@ -63,6 +63,22 @@ describe("CSP and request nonce boundary", () => {
     expect(await response.json()).toMatchObject({ code: "RESOURCE_NOT_FOUND", requestId: expect.any(String) });
   });
 
+  it("permits the configured identity form redirect without broadening fetch or scripts", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("OIDC_ISSUER_URL", "https://login.studio-balance.cz/realms/studio-balance");
+    const policy = proxy(request("/admin/prihlaseni?returnTo=https://attacker.example", { "x-forwarded-host": "attacker.example" })).headers.get("Content-Security-Policy")!;
+    expect(policy).toContain("form-action 'self' https://login.studio-balance.cz");
+    expect(policy).toContain("connect-src 'self';");
+    expect(policy).not.toContain("attacker.example");
+    expect(policy).not.toContain("form-action *");
+    expect(contentSecurityPolicy("nonce", false, "http://localhost:8081/realms/studio-balance")).toContain("form-action 'self' http://localhost:8081");
+  });
+
+  it.each(["javascript:alert(1)", "http://identity.example/realm", "https://user:password@identity.example/realm"])("rejects unsafe configured identity origin %s", issuer => {
+    expect(() => contentSecurityPolicy("nonce", false, issuer)).toThrow("Invalid identity origin");
+  });
+
   it("continues normal JSON API routing without issuing an HTML nonce policy", () => {
     const response = proxy(request("/api/v1/sessions"));
     expect(response.headers.get("x-middleware-next")).toBe("1");

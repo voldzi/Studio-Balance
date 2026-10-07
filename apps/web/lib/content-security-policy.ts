@@ -1,4 +1,13 @@
-export function contentSecurityPolicy(nonce: string, development = false): string {
+export function contentSecurityPolicy(nonce: string, development = false, identityIssuer?: string): string {
+  let identityOrigin = "";
+  if (identityIssuer) {
+    const issuer = new URL(identityIssuer);
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(issuer.hostname);
+    if (issuer.username || issuer.password || (issuer.protocol !== "https:" && !(issuer.protocol === "http:" && local))) {
+      throw new Error("Invalid identity origin for form navigation");
+    }
+    identityOrigin = ` ${issuer.origin}`;
+  }
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
@@ -12,7 +21,9 @@ export function contentSecurityPolicy(nonce: string, development = false): strin
     "media-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    // Browsers apply form-action to login form redirects as well. Permit only
+    // the configured identity origin, never a request-supplied return address.
+    `form-action 'self'${identityOrigin}`,
     "frame-ancestors 'none'"
   ].join("; ");
 }
