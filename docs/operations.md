@@ -918,3 +918,11 @@ expires after seven hours. It needs no new persisted environment setting.
 Retention validates the latest, independently verified anchor and every other
 retained media snapshot before deleting alternatives; any integrity failure
 stops cleanup.
+
+Production security release 2026-10-07: web/API/worker run revision
+`1923ef305c679d0da28c3973e86ea3e5f886bf96`; the later edge-only corrections
+are `162e70c` and `bc18d54`. Exact identities, scan receipts, public HTTP
+acceptance, Nginx backup paths and verification limits are recorded in
+[the release verification](security-performance-verification-2026-10-07.md).
+Previous verified app revisions retained for rollback are `0d016c0` and
+`817f7ff`; always recheck `verified-releases.json` before a later rollback.

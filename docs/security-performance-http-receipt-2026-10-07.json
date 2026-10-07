@@ -1,0 +1,172 @@
+{
+  "verifiedAt": "2026-10-07T16:56:59.974825+00:00",
+  "expectedApplicationVersion": "1923ef305c679d0da28c3973e86ea3e5f886bf96",
+  "boundary": "Public HTTP only; DNT=1/Sec-GPC=1; no cookies, login attempts, analytics posts or booking writes. Container revision verified separately by deployment.",
+  "html": {
+    "/": {
+      "attempts": [
+        {
+          "status": 200,
+          "scriptCount": 12,
+          "allScriptsMatchNonce": true,
+          "noncePresent": true,
+          "cspHeaderCount": 1,
+          "cacheControl": "private, no-store",
+          "frameOptions": "DENY",
+          "nosniff": "nosniff",
+          "formAction": [
+            "'self'",
+            "https://login.studio-balance.cz"
+          ],
+          "elapsedMs": 348.75
+        },
+        {
+          "status": 200,
+          "scriptCount": 12,
+          "allScriptsMatchNonce": true,
+          "noncePresent": true,
+          "cspHeaderCount": 1,
+          "cacheControl": "private, no-store",
+          "frameOptions": "DENY",
+          "nosniff": "nosniff",
+          "formAction": [
+            "'self'",
+            "https://login.studio-balance.cz"
+          ],
+          "elapsedMs": 252.23
+        }
+      ],
+      "nonceFresh": true,
+      "pass": true
+    },
+    "/admin/prihlaseni": {
+      "attempts": [
+        {
+          "status": 200,
+          "scriptCount": 10,
+          "allScriptsMatchNonce": true,
+          "noncePresent": true,
+          "cspHeaderCount": 1,
+          "cacheControl": "private, no-store",
+          "frameOptions": "DENY",
+          "nosniff": "nosniff",
+          "formAction": [
+            "'self'",
+            "https://login.studio-balance.cz"
+          ],
+          "elapsedMs": 221.37
+        },
+        {
+          "status": 200,
+          "scriptCount": 10,
+          "allScriptsMatchNonce": true,
+          "noncePresent": true,
+          "cspHeaderCount": 1,
+          "cacheControl": "private, no-store",
+          "frameOptions": "DENY",
+          "nosniff": "nosniff",
+          "formAction": [
+            "'self'",
+            "https://login.studio-balance.cz"
+          ],
+          "elapsedMs": 186.67
+        }
+      ],
+      "nonceFresh": true,
+      "pass": true
+    }
+  },
+  "schedule": {
+    "identityStatus": 200,
+    "gzipStatus": 200,
+    "identityBytes": 161971,
+    "gzipWireBytes": 13891,
+    "gzipDecodedBytes": 161971,
+    "gzipEncoding": "gzip",
+    "vary": "Accept-Encoding",
+    "cacheControl": "no-store",
+    "jsonValid": true,
+    "sameDecodedContent": true,
+    "publicCapacityFieldsAbsent": true,
+    "identityElapsedMs": 317.53,
+    "gzipElapsedMs": 224.8,
+    "pass": true
+  },
+  "privateApis": {
+    "/api/v1/me": {
+      "status": 401,
+      "cacheControl": "no-store, no-cache, must-revalidate, max-age=0",
+      "encoding": "",
+      "pass": true
+    },
+    "/api/v1/me/bookings": {
+      "status": 401,
+      "cacheControl": "no-store, no-cache, must-revalidate, max-age=0",
+      "encoding": "",
+      "pass": true
+    },
+    "/api/v1/admin/bookings": {
+      "status": 401,
+      "cacheControl": "no-store, no-cache, must-revalidate, max-age=0",
+      "encoding": "",
+      "pass": true
+    }
+  },
+  "denied": {
+    "/api/internal": {
+      "status": 404,
+      "pass": true
+    },
+    "/api/internal/": {
+      "status": 404,
+      "pass": true
+    },
+    "/api/internal/auth/session": {
+      "status": 404,
+      "pass": true
+    },
+    "/api/%69nternal/auth/session": {
+      "status": 404,
+      "pass": true
+    },
+    "/health": {
+      "status": 404,
+      "pass": true
+    },
+    "/ready": {
+      "status": 404,
+      "pass": true
+    }
+  },
+  "redirects": {
+    "https://www.studio-balance.cz/o-studiu": {
+      "status": 301,
+      "location": "https://studio-balance.cz/o-studiu",
+      "pass": true
+    },
+    "http://studio-balance.cz/o-studiu": {
+      "status": 301,
+      "location": "https://studio-balance.cz/o-studiu",
+      "pass": true
+    },
+    "https://studio-balance.cz/admin": {
+      "status": 307,
+      "location": "/admin/prihlaseni",
+      "pass": true
+    }
+  },
+  "identity": {
+    "status": 200,
+    "issuerMatches": true,
+    "endpointsInsideDedicatedIssuer": true,
+    "pass": true,
+    "adminConsolePubliclyBlocked": true
+  },
+  "tracker": {
+    "status": 200,
+    "matchesCommittedBytes": true,
+    "matchesApprovedSri": true,
+    "pass": true
+  },
+  "pass": true
+}

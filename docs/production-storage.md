@@ -2,7 +2,7 @@
 
 ## Scope and inventory (2026-10-07)
 
-Production app revision: 0d016c0, API/web/worker healthy. No app host-data bind
+Inventory app revision: 0d016c0, API/web/worker healthy at the storage move. No app host-data bind
 mounts or local database volumes. PostgreSQL uses HAProxy; media use the dedicated
 S3 bucket on storage.home.cz. No database, queue or user/audit record is migrated.
 
@@ -138,7 +138,10 @@ Web accepts the same live image with bounded tmpfs; API/database stay running.
 Rollback: before original removal, stop the dedicated backup cron, lock both
 operations, restore original paths/cron and remove the storage overlay; restart web
 with its unchanged image. After removal, guarded rollback uses the preserved
-sources and images for 0d016c0, 817f7ff, 0f51679. If local images are lost, verify
+sources and images pinned by the current `verified-releases.json` ledger. After
+the security release on 2026-10-07 these are 1923ef305c679d0da28c3973e86ea3e5f886bf96,
+0d016c0 and 817f7ff; 0f51679 was retired by the approved rolling retention.
+If local images are lost, verify
 `gzip -t` on X5 archives then `gzip -dc <sha>.tar.gz | docker image load`; use
 `pnpm rollback:production -- <sha>`. Never switch runtime version during a file-restore
 probe or restore production DB without its separately approved runbook.
