@@ -210,8 +210,15 @@ def render(original):
             # own proxy_pass content handler. Upgrade only the byte-preserved,
             # known four-directive prior revision; reject any foreign clauses.
             position, indentation = line_after(text, sessions[0], opening=True)
-            changes.append((position, indentation + '    proxy_pass http://docker.home.cz:4281;' + newline))
-        elif len(session_children) != len(expected) + 1 or len(select(session_children, 'proxy_pass', ['http://docker.home.cz:4281'])) != 1:
+            changes.append((position, indentation + '    proxy_pass http://docker.home.cz:4281;' + newline + indentation + '    gzip_proxied any;' + newline))
+        elif len(session_children) == len(expected) + 1 and len(select(session_children, 'proxy_pass', ['http://docker.home.cz:4281'])) == 1:
+            # A real incoming Via header selects the inherited gzip_proxied
+            # policy; its default is off. Permit proxy compression only for
+            # this public JSON endpoint, never the private parent API scope.
+            handler = select(session_children, 'proxy_pass', ['http://docker.home.cz:4281'])[0]
+            position, indentation = line_after(text, handler)
+            changes.append((position, indentation + 'gzip_proxied any;' + newline))
+        elif len(session_children) != len(expected) + 2 or len(select(session_children, 'proxy_pass', ['http://docker.home.cz:4281'])) != 1 or len(select(session_children, 'gzip_proxied', ['any'])) != 1:
             raise HardeningError('Unfamiliar session proxy/compression configuration.')
     else:
         if any(item.name.startswith('gzip') for item in api.children):
@@ -219,7 +226,7 @@ def render(original):
         position, indentation = line_after(text, api, opening=True)
         child = indentation + '    '
         grandchild = child + '    '
-        patch = newline.join([child + 'gzip off;', child + 'location = /api/v1/sessions {', grandchild + 'proxy_pass http://docker.home.cz:4281;', grandchild + 'gzip on;', grandchild + 'gzip_types application/json;', grandchild + 'gzip_min_length 1024;', grandchild + 'gzip_vary on;', child + '}', ''])
+        patch = newline.join([child + 'gzip off;', child + 'location = /api/v1/sessions {', grandchild + 'proxy_pass http://docker.home.cz:4281;', grandchild + 'gzip_proxied any;', grandchild + 'gzip on;', grandchild + 'gzip_types application/json;', grandchild + 'gzip_min_length 1024;', grandchild + 'gzip_vary on;', child + '}', ''])
         changes.append((position, patch))
     for position, patch in sorted(changes, reverse=True):
         text = text[:position] + patch + text[position:]

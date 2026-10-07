@@ -72,6 +72,7 @@ INTERNAL = b'    location = /api/internal { return 404; }\n    location ^~ /api/
 COMPRESSION = b'''        gzip off;
         location = /api/v1/sessions {
             proxy_pass http://docker.home.cz:4281;
+            gzip_proxied any;
             gzip on;
             gzip_types application/json;
             gzip_min_length 1024;
@@ -81,14 +82,19 @@ COMPRESSION = b'''        gzip off;
 
 
 class RenderingTests(unittest.TestCase):
-    def test_known_four_directive_prior_child_is_narrowly_upgraded(self):
+    def test_known_four_and_five_directive_prior_children_are_narrowly_upgraded(self):
         complete = hardening.render(configuration())
         proxy = b'            proxy_pass http://docker.home.cz:4281;\n'
-        prior = complete.replace(proxy, b'', 1)
-        self.assertEqual(hardening.render(prior), complete)
+        proxied = b'            gzip_proxied any;\n'
+        prior_five = complete.replace(proxied, b'', 1)
+        prior_four = prior_five.replace(proxy, b'', 1)
+        self.assertEqual(hardening.render(prior_four), complete)
+        self.assertEqual(hardening.render(prior_five), complete)
         self.assertEqual(hardening.render(complete), complete)
         with self.assertRaises(hardening.HardeningError):
             hardening.render(complete.replace(proxy, b'            proxy_pass http://foreign.home.cz:4281;\n', 1))
+        with self.assertRaises(hardening.HardeningError):
+            hardening.render(complete.replace(proxied, b'            gzip_proxied off;\n', 1))
 
     def test_only_two_insertions_change_existing_bytes_and_rerun_is_identical(self):
         original = configuration()

@@ -161,5 +161,10 @@ ani existující službu nepoužívá. Ověří skutečnou proxy odpověď a gzi
 API bez gzip i s tělem přes 1024 bajtů, přepsání podvržené IP a interní 404.
 Zároveň reprodukuje statickou 404 chybné původní child location bez handleru
 a ověří nápravu. Samotné `nginx -t` tento funkční problém nezachytí.
-Nástroj bezpečně doplní handler i do této jediné známé původní čtyřdirektivní
-verze; jiný neznámý child blok odmítá.
+Další regrese reprodukuje vypnutí gzip při příchozí hlavičce `Via` pod výchozí
+politikou `gzip_proxied off`. Pouze veřejný exact child proto nastavuje
+`gzip_proxied any`; test ověří kompresi i stejný rozbalený obsah a zachování
+velké privátní odpovědi a detailu termínu bez gzip také s touto hlavičkou.
+Nástroj bezpečně doplní handler a tuto úzkou politiku do známé původní
+čtyřdirektivní verze nebo politiku do pětidirektivní verze s vlastním handlerem.
+Jiný neznámý child blok odmítá.

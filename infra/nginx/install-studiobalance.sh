@@ -132,6 +132,7 @@ append_app_proxy() {
         gzip off;
         location = /api/v1/sessions {
             proxy_pass http://$api_upstream;
+            gzip_proxied any;
             gzip on;
             gzip_types application/json;
             gzip_min_length 1024;

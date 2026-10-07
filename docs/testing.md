@@ -461,6 +461,9 @@ location bez vlastního `proxy_pass` má validní syntaxi, ale vrací statickou
 404. Runtime test tuto chybu reprodukuje a ověří její opravu skutečnou proxy
 odpovědí 200 a gzip. Také při globálně zapnutém gzip ověří velké privátní
 API tělo i detail termínu bez komprese, přepsání podvržené IP a interní 404.
+Příchozí hlavička `Via` musí být součástí regrese: reprodukuje vypnutí gzip
+pod výchozí proxy politikou a ověří opravu pouze veřejného exact endpointu,
+stejný rozbalený obsah a zachování privátního API i detailu bez komprese.
 Používá jen syntetický loopback upstream, dočasnou vlastní konfiguraci a
 vlastní Nginx proces; produkční konfiguraci, certifikáty ani existující službu
 nenačítá. Na vývojovém Macu není instalace Nginx požadovaná. Po změně edge

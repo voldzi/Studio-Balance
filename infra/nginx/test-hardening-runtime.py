@@ -123,9 +123,12 @@ def nginx_fixture(config):
         thread.join(timeout=5)
 
 
-def get(port, path, encoding='gzip'):
+def get(port, path, encoding='gzip', via=False):
     opener = request.build_opener(request.ProxyHandler({}))
-    req = request.Request(f'http://127.0.0.1:{port}' + path, headers={'Accept-Encoding': encoding, 'X-Forwarded-For': '192.0.2.123', 'DNT': '1'})
+    headers = {'Accept-Encoding': encoding, 'X-Forwarded-For': '192.0.2.123', 'DNT': '1'}
+    if via:
+        headers['Via'] = '1.1 release-fixture'
+    req = request.Request(f'http://127.0.0.1:{port}' + path, headers=headers)
     try:
         response = opener.open(req, timeout=3)
     except error.HTTPError as caught:
@@ -159,7 +162,7 @@ class NginxRuntimeTests(unittest.TestCase):
 
     def test_known_prior_child_failure_is_reproduced_and_upgrade_restores_proxy(self):
         fixed = hardening.render(unit.configuration())
-        known_prior = fixed.replace(b'            proxy_pass http://docker.home.cz:4281;\n', b'', 1)
+        known_prior = fixed.replace(b'            proxy_pass http://docker.home.cz:4281;\n', b'', 1).replace(b'            gzip_proxied any;\n', b'', 1)
         with nginx_fixture(known_prior) as (port, requests):
             # Syntax succeeds but an exact child without a content handler
             # serves a static 404 rather than inheriting the parent proxy.
@@ -170,6 +173,30 @@ class NginxRuntimeTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(headers.get('Content-Encoding'), 'gzip')
             self.assertEqual(json.loads(gzip.decompress(body))['kind'], 'public')
+
+    def test_via_requests_compress_only_public_list_and_known_prior_policy_is_upgraded(self):
+        fixed = hardening.render(unit.configuration())
+        known_prior = fixed.replace(b'            gzip_proxied any;\n', b'', 1)
+        with nginx_fixture(known_prior) as (port, requests):
+            self.assertEqual(get(port, '/api/v1/sessions')[1].get('Content-Encoding'), 'gzip')
+            status, headers, body = get(port, '/api/v1/sessions', via=True)
+            self.assertEqual(status, 200)
+            self.assertIsNone(headers.get('Content-Encoding'))
+            self.assertGreater(len(body), 1024)
+        with nginx_fixture(hardening.render(known_prior)) as (port, requests):
+            status, headers, body = get(port, '/api/v1/sessions', via=True)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers.get('Content-Encoding'), 'gzip')
+            self.assertEqual(json.loads(gzip.decompress(body))['kind'], 'public')
+            identity_status, identity_headers, identity_body = get(port, '/api/v1/sessions', encoding='identity', via=True)
+            self.assertEqual(identity_status, 200)
+            self.assertIsNone(identity_headers.get('Content-Encoding'))
+            self.assertEqual(gzip.decompress(body), identity_body)
+            for path, expected_status in [('/api/v1/me', 401), ('/api/v1/sessions/fixture', 200)]:
+                status, headers, body = get(port, path, via=True)
+                self.assertEqual(status, expected_status)
+                self.assertIsNone(headers.get('Content-Encoding'))
+                self.assertGreater(len(body), 1024)
 
 
 if __name__ == '__main__':
