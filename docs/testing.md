@@ -529,3 +529,24 @@ produkční nebo fyzické PWA akceptaci:
   rezervací a historických snapshotů výkazů. Viditelný název i nový výchozí
   plakát jsou „Formuj břicho a hýždě“; starý odkaz dál otevře stejnou lekci.
   Individuálně nahraný obraz se migrací nepřepíše a dodaný originál zůstane zachovaný.
+
+## CD-069–070: diagnostika relace a autorský podpis
+
+- Skutečný PostgreSQL: důvod a request ID se ukládají atomicky s revokací;
+  opakování a souběh zachovají první důvod a nevydají druhou událost.
+  Expiry, idle, chybějící/poškozená credential, invalid grant, neplatné
+  identity claims, změna subjektu a odebrání role mají vymezené důvody.
+- Provider timeout/503/JWKS nedostupnost zachovají relaci a rotovanou
+  credential bez zvýšení MFA. Žádný diagnostický log nesmí obsahovat
+  fixture token, cookie, jejich hash, e-mail, IP nebo provider free text.
+  Rollback transakce nesmí vydat událost dokončené revokace.
+- Explicitní admin vstup loguje jen přítomnost cookies; callback rozlišuje
+  persistentní/session-only cookie a logout zachovává request ID.
+  Diagnostika nepatří do veřejných REST odpovědí ani produktové analytiky.
+- Patička: přesné tři HTTPS cíle, oficiální lokální ikony, 360 px i desktop,
+  keyboard/fokus a dotykové cíle. Tři kliknutí mají odlišné centrální
+  události, původní outbound-click funguje. Libovolné názvy se odmítnou.
+- Zachovat osm veřejných cest, obě approval gates, byte-exact společný
+  runtime/SRI, DNT/GPC, offline discard a obě session-cookie exclusions.
+  Runtime test běží proti izolovanému přijímači bez skutečného analytického
+  zápisu. Centrální příjem a souhrn se potvrzují samostatně ve VCode.

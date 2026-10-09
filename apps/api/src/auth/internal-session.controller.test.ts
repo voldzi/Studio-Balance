@@ -1,6 +1,8 @@
 import "reflect-metadata";
 
 import { createHash, createHmac, randomBytes } from "node:crypto";
+import type { IncomingMessage } from "node:http";
+import type { Http2ServerRequest } from "node:http2";
 
 import { Test } from "@nestjs/testing";
 import type { ExecutionContext } from "@nestjs/common";
@@ -8,7 +10,7 @@ import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fa
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RuntimeConfigService, type RuntimeConfig } from "../config/runtime-config.js";
-import { configureHttp } from "../http/configure-http.js";
+import { configureHttp, requestIdFromHeader } from "../http/configure-http.js";
 import { InternalSessionController } from "./internal-session.controller.js";
 import { InternalSessionGuard } from "./internal-session.guard.js";
 import { OpaqueSessionService } from "./opaque-session.service.js";
@@ -38,7 +40,8 @@ describe("internal opaque session API", () => {
       controllers: [InternalSessionController],
       providers: [InternalSessionGuard, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: OpaqueSessionService, useValue: opaque }]
     }).compile();
-    const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false, rawBody: true });
+    const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false,
+      genReqId: (request: IncomingMessage | Http2ServerRequest) => requestIdFromHeader(request.headers["x-request-id"]) }), { logger: false, rawBody: true });
     configureHttp(created, config);
     await created.init();
     await created.getHttpAdapter().getInstance().ready();
@@ -85,6 +88,20 @@ describe("internal opaque session API", () => {
     const resolve = await app.inject({ method: "POST", url: "/api/internal/sessions/resolve", headers: headers("/api/internal/sessions/resolve", resolvePayload), payload: resolvePayload });
     expect(resolve.statusCode).toBe(201);
     expect(resolve.json()).toEqual({ session });
+  });
+
+  it("correlates signed resolve and logout requests without changing the signed body", async () => {
+    const { app, opaque } = await createApplication();
+    const payload = { kind: "admin", token: "a".repeat(43) };
+    for (const operation of ["resolve", "revoke"] as const) {
+      const path = `/api/internal/sessions/${operation}`;
+      const response = await app.inject({ method: "POST", url: path, payload,
+        headers: { ...headers(path, payload), "x-request-id": "req_bff_correlation" } });
+      expect(response.statusCode).toBe(201);
+      expect(response.headers["x-request-id"]).toBe("req_bff_correlation");
+      expect(operation === "resolve" ? opaque.resolveToken : opaque.revokeToken)
+        .toHaveBeenCalledWith(payload.token, "admin", "req_bff_correlation");
+    }
   });
 
   it("rejects substituted roles and MFA before creating an application session", async () => {

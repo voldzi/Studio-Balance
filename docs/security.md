@@ -90,6 +90,15 @@ kontakt nejsou požadovány. Volná interní poznámka nesmí sloužit jako skry
 
 ### Ověřování relace při výpadku identity
 
+Podle CD-069 / ADR 0027 první revokace atomicky uloží vymezený důvod a
+request ID spolu s časem zneplatnění. Diagnostický log smí použít netajné UUID
+serverového záznamu, nikdy přihlašovací cookie, její hash, credential, e-mail,
+IP nebo volný text chyby poskytovatele. Historické relace se zpětně
+neklasifikují. Přítomnost cookie u explicitního vstupu na přihlášení je jen
+vymezený stav bez hodnoty; absence neurčuje, zda ji odstranil prohlížeč,
+odhlášení nebo uživatel.
+Diagnostika je interní a není přístupná přes nové veřejné API ani analytiku.
+
 Patnáctiminutový interval ověření účtu a rolí, absolutní limit 90 dní,
 30denní limit neaktivity a uložený důkaz OTP se výpadkem neprodlužují.
 Rozlišují se následující výsledky obnovy:

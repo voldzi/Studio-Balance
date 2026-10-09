@@ -600,3 +600,18 @@ celkový počet účastníků termínu nezávisle na stránce seznamu. Datumové
 filtry mají českou validaci pořadí od/do; veřejná kapacita zůstává skrytá.
 CSP nonce se vztahuje i na strukturovaná data a schválený analytics runtime;
 pravidla soukromí ani osobní údaje ve statistice se nemění.
+
+## Autorský podpis (CD-070 / ADR 0028)
+
+Ve společné veřejné patičce pod kontaktní částí je klidný, jemně oddělený
+podpis: „Web a rezervační systém vytvořilo VCode. Od stejného týmu také
+aplikace Moje porce a Městem hrou.“ Každá značka má oficiální lokální ikonu,
+čitelné jméno a samostatný odkaz. Ikona je dekorativní při současném textu.
+Odkazy upozorňují na otevření nové karty, mají viditelný fokus a dotykový
+cíl nejméně 44 px; při 360 px se přirozeně zalamují. Původní kontaktní
+obsah zůstává zachovaný. Žádná další partnerská administrace nebo změna
+klientské spodní lišty nevzniká.
+
+Při explicitním kliknutí lze odeslat pouze schválený konečný název události
+na povolené veřejné stránce. Analytická chyba nikdy neblokuje odkaz. V
+soukromých sekcích nebo při přihlášené aplikační relaci se nic nesbírá.

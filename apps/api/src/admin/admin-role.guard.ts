@@ -12,10 +12,10 @@ export class AdminRoleGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AdminRequest>();
-    const separateAdminSession = await this.sessions.resolveCookie(request.headers.cookie, "admin");
+    const separateAdminSession = await this.sessions.resolveCookie(request.headers.cookie, "admin", request.id);
     const webSession = isMfaAdministrator(separateAdminSession)
       ? undefined
-      : await this.sessions.resolveCookie(request.headers.cookie, "web");
+      : await this.sessions.resolveCookie(request.headers.cookie, "web", request.id);
     // Prefer a proven fallback admin session, but never let a legacy/unproven
     // admin cookie shadow a valid MFA-proven web session during migration.
     const session = isMfaAdministrator(separateAdminSession) ? separateAdminSession : webSession ?? separateAdminSession;

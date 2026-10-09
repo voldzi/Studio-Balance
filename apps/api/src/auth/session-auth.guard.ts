@@ -12,7 +12,7 @@ export class SessionAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<SessionRequest>();
-    const session = await this.sessions.resolveCookie(request.headers.cookie, "web");
+    const session = await this.sessions.resolveCookie(request.headers.cookie, "web", request.id);
 
     if (!session) {
       throw new HttpException(

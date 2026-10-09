@@ -38,6 +38,7 @@ describe("OpaqueSessionService", () => {
   it("revalidates a stale role snapshot before returning a session", async () => {
     const createdQueries: unknown[][] = [];
     const row = {
+      id: "902a6b84-2b84-4f69-9084-bf5bf764b68f",
       oidc_subject: identity.subject,
       email: identity.email,
       email_verified: false,
@@ -87,18 +88,25 @@ describe("OpaqueSessionService", () => {
   });
 });
 
-async function sessionHarness(kind: "web" | "admin" = "web", session: StudioSession = identity) {
+async function sessionHarness(kind: "web" | "admin" = "web", session: StudioSession = identity, logLevel: RuntimeConfig["logLevel"] = "error") {
   const row = {
+    id: "902a6b84-2b84-4f69-9084-bf5bf764b68f",
     oidc_subject: session.subject, email: session.email, email_verified: session.emailVerified,
     first_name: null as string | null, last_name: null as string | null, mfa_verified: session.mfaVerified, roles: session.roles,
     refresh_token_ciphertext: null as string | null,
     absolute_expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), idle_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    last_revalidated_at: new Date(), last_seen_at: new Date(), revoked_at: null as Date | null
+    last_revalidated_at: new Date(), last_seen_at: new Date(), revoked_at: null as Date | null,
+    revoke_reason: null as string | null, revoke_detail: null as string | null, revoke_request_id: null as string | null
   };
   const query = vi.fn(async (sql: string, values: unknown[] = []) => {
     if (sql.startsWith("SELECT")) return { rows: row.revoked_at ? [] : [{ ...row }] };
     if (sql.includes("INSERT INTO application_sessions")) row.refresh_token_ciphertext = values[9] as string;
-    if (sql.includes("SET revoked_at")) { row.revoked_at = new Date(); row.refresh_token_ciphertext = null; }
+    if (sql.includes("SET revoked_at")) {
+      if (row.revoked_at) return { rows: [] };
+      row.revoked_at = new Date(); row.refresh_token_ciphertext = null;
+      row.revoke_reason = values[2] as string; row.revoke_detail = values[3] as string | null; row.revoke_request_id = values[4] as string;
+      return { rows: [{ id: row.id }] };
+    }
     if (sql.includes("SET refresh_token_ciphertext")) row.refresh_token_ciphertext = values[2] as string;
     if (sql.includes("SET email")) {
       row.email = values[2] as string; row.roles = values[6] as StudioSession["roles"];
@@ -114,7 +122,7 @@ async function sessionHarness(kind: "web" | "admin" = "web", session: StudioSess
     return { rows: [] };
   });
   const database = { query, transaction: vi.fn(async (work: (client: { query: typeof query }) => Promise<unknown>) => work({ query })) };
-  const service = new OpaqueSessionService(database as never, { value: config } as never);
+  const service = new OpaqueSessionService(database as never, { value: { ...config, logLevel } } as never);
   const created = await service.create({ kind, refreshToken: "synthetic-initial-refresh-token", session });
   query.mockClear();
   return { row, database, service, token: created.token };
@@ -176,7 +184,7 @@ describe("session revalidation and bounded writes", () => {
     const admin = { ...identity, roles: ["admin"] as StudioSession["roles"], mfaVerified: true };
     const { service, token, row } = await sessionHarness("admin", admin);
     row.last_revalidated_at = new Date(Date.now() - SESSION_REVALIDATION_INTERVAL_MS - 1);
-    vi.spyOn(service as unknown as { refresh: () => Promise<unknown> }, "refresh").mockResolvedValue(reason === "invalid" ? undefined : {
+    vi.spyOn(service as unknown as { refresh: () => Promise<unknown> }, "refresh").mockResolvedValue(reason === "invalid" ? { rejected: true, reason: "provider_invalid_grant" } : {
       subject: reason === "subject" ? "different-subject" : identity.subject,
       session: reason === "role" ? identity : admin
     });
@@ -195,6 +203,82 @@ describe("session revalidation and bounded writes", () => {
   });
 });
 
+
+describe("safe session revocation diagnostics", () => {
+  it.each([
+    ["absolute_expired", "absolute"], ["idle_expired", "idle"],
+    ["refresh_credential_missing", "missing"], ["refresh_credential_unreadable", "unreadable"],
+    ["provider_invalid_grant", "provider"], ["identity_token_invalid", "claims"],
+    ["subject_changed", "subject"], ["admin_role_removed", "role"]
+  ])("persists and safely logs the first %s reason without account or credential data", async (expected, branch) => {
+    const admin = { ...identity, roles: ["admin"] as StudioSession["roles"], mfaVerified: true };
+    const { service, token, row } = await sessionHarness("admin", admin, "info");
+    row.last_revalidated_at = new Date(Date.now() - SESSION_REVALIDATION_INTERVAL_MS - 1);
+    const ciphertext = row.refresh_token_ciphertext!;
+    if (branch === "absolute") row.absolute_expires_at = new Date(Date.now() - 1);
+    if (branch === "idle") row.idle_expires_at = new Date(Date.now() - 1);
+    if (branch === "missing") row.refresh_token_ciphertext = null;
+    if (branch === "unreadable") row.refresh_token_ciphertext = "synthetic-corrupted-credential";
+    const refresh = vi.spyOn(service as unknown as { refresh: () => Promise<unknown> }, "refresh")
+      .mockResolvedValue(branch === "provider" ? { rejected: true, reason: "provider_invalid_grant" }
+        : branch === "claims" ? { rejected: true, reason: "identity_token_invalid", detail: "issuer_invalid" }
+        : { subject: branch === "subject" ? "different-subject" : identity.subject, session: branch === "role" ? identity : admin });
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    expect(await service.resolveToken(token, "admin", "req_diagnostic")).toBeUndefined();
+    const firstRevokedAt = row.revoked_at;
+    expect(row).toMatchObject({ revoke_reason: expected, revoke_request_id: "req_diagnostic", refresh_token_ciphertext: null,
+      revoke_detail: branch === "claims" ? "issuer_invalid" : null });
+    expect(await service.resolveToken(token, "admin", "req_later")).toBeUndefined();
+    await service.revokeToken(token, "admin", "req_logout_later");
+    expect(row.revoked_at).toBe(firstRevokedAt);
+    expect(row.revoke_request_id).toBe("req_diagnostic");
+    expect(log).toHaveBeenCalledTimes(1);
+    const record = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(record).toMatchObject({ service: "studio-balance-api", environment: "test", version: "test", level: "info",
+      message: "application_session_revoked", requestId: "req_diagnostic", sessionId: row.id, kind: "admin", reason: expected });
+    expect(record.timestamp).toBeTruthy();
+    const serialized = JSON.stringify(record);
+    for (const sensitive of [token, ciphertext, identity.email, identity.subject, "synthetic-initial-refresh-token", "synthetic-corrupted-credential"]) {
+      expect(serialized).not.toContain(sensitive);
+    }
+    expect(serialized).not.toMatch(/token_hash|refresh_token|authorization|cookie/i);
+    if (["absolute", "idle", "missing", "unreadable"].includes(branch!)) expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("keeps unavailable-provider diagnostics separate from a terminal revocation", async () => {
+    const { service, token, row } = await sessionHarness("web", identity, "info");
+    row.last_revalidated_at = new Date(Date.now() - SESSION_REVALIDATION_INTERVAL_MS - 1);
+    vi.spyOn(service as unknown as { refresh: () => Promise<unknown> }, "refresh").mockResolvedValue({ unavailable: true, stage: "token_endpoint", failure: "provider_rejected", statusCode: 503 });
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await expect(service.resolveToken(token, "web", "req_provider")).rejects.toMatchObject({ status: 503 });
+    expect(row.revoked_at).toBeNull(); expect(row.revoke_reason).toBeNull(); expect(row.revoke_request_id).toBeNull();
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({ message: "application_session_revalidation_unavailable",
+      sessionId: row.id, requestId: "req_provider", stage: "token_endpoint", failure: "provider_rejected", statusCode: 503 });
+  });
+
+  it("logs one explicit logout under concurrent requests and preserves its original metadata", async () => {
+    const { service, token, row } = await sessionHarness("web", identity, "info");
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const provider = vi.spyOn(service as unknown as { revokeAtIdentityProvider: () => Promise<void> }, "revokeAtIdentityProvider").mockResolvedValue();
+    await Promise.all(Array.from({ length: 6 }, (_, index) => service.revokeToken(token, "web", `req_logout_${index}`)));
+    const firstRequest = row.revoke_request_id;
+    await service.revokeToken(token, "web", "req_later_logout");
+    expect(row.revoke_request_id).toBe(firstRequest);
+    expect(row.revoke_reason).toBe("explicit_logout");
+    expect(log).toHaveBeenCalledTimes(1); expect(provider).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({ requestId: firstRequest, reason: "explicit_logout" });
+  });
+
+  it("does not emit a completed revocation when the transaction cannot commit", async () => {
+    const { service, token, row, database } = await sessionHarness("web", identity, "info");
+    row.absolute_expires_at = new Date(Date.now() - 1);
+    database.transaction.mockImplementation(async (work) => { await work({ query: database.query }); throw new Error("Synthetic commit failed"); });
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    await expect(service.resolveToken(token, "web", "req_commit")).rejects.toThrow("Synthetic commit failed");
+    expect(log).not.toHaveBeenCalled();
+  });
+});
 
 describe("identity backchannel", () => {
   it("refreshes using the internal token and JWKS endpoints but rejects a different token issuer", async () => {
@@ -227,13 +311,13 @@ describe("identity backchannel", () => {
       expect(paths).toContain("/realms/studio-balance/protocol/openid-connect/token");
       expect(paths).toContain("/realms/studio-balance/protocol/openid-connect/certs");
       tokenIssuer = "https://wrong-issuer.test/realms/studio-balance";
-      expect(await internal.refresh("test-refresh", "admin")).toBeUndefined();
+      expect(await internal.refresh("test-refresh", "admin")).toEqual({ rejected: true, reason: "identity_token_invalid", detail: "issuer_invalid" });
       tokenIssuer = issuer;
       tokenAudience = "different-client";
-      expect(await internal.refresh("test-refresh", "admin")).toBeUndefined();
+      expect(await internal.refresh("test-refresh", "admin")).toEqual({ rejected: true, reason: "identity_token_invalid", detail: "audience_invalid" });
       tokenAudience = "admin";
       signingKey = (await generateKeyPair("RS256")).privateKey;
-      expect(await internal.refresh("test-refresh", "admin")).toBeUndefined();
+      expect(await internal.refresh("test-refresh", "admin")).toEqual({ rejected: true, reason: "identity_token_invalid", detail: "signature_invalid" });
       expect(paths.filter((path) => path.endsWith("/certs"))).toHaveLength(1);
       await internal.revokeAtIdentityProvider("test-refresh", "admin");
       expect(paths).toContain("/realms/studio-balance/protocol/openid-connect/revoke");
@@ -260,7 +344,7 @@ describe("identity backchannel", () => {
       backchannelIssuer: `http://127.0.0.1:${address.port}/realms/studio-balance` } } } as never);
     try {
       const internal = service as unknown as { refresh: (refreshToken: string, kind: "web") => Promise<unknown> };
-      expect(await internal.refresh("synthetic-original-refresh", "web")).toEqual({ unavailable: true, refreshToken: "synthetic-rotated-after-token-success" });
+      expect(await internal.refresh("synthetic-original-refresh", "web")).toEqual({ unavailable: true, stage: "jwks", failure: "network_or_provider", refreshToken: "synthetic-rotated-after-token-success" });
       expect(paths).toEqual(["/realms/studio-balance/protocol/openid-connect/token", "/realms/studio-balance/protocol/openid-connect/certs"]);
     } finally { server.closeAllConnections(); await new Promise<void>((resolve) => server.close(() => resolve())); }
   }, 20_000);
@@ -269,10 +353,10 @@ describe("identity backchannel", () => {
     const service = new OpaqueSessionService({} as never, { value: config } as never);
     const internal = service as unknown as { refresh: (token: string, kind: "web") => Promise<unknown> };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "invalid_grant" }), { status: 400 })));
-    expect(await internal.refresh("synthetic-refresh", "web")).toBeUndefined();
+    expect(await internal.refresh("synthetic-refresh", "web")).toEqual({ rejected: true, reason: "provider_invalid_grant" });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("Temporary provider outage", { status: 503 })));
-    expect(await internal.refresh("synthetic-refresh", "web")).toEqual({ unavailable: true });
+    expect(await internal.refresh("synthetic-refresh", "web")).toEqual({ unavailable: true, stage: "token_endpoint", failure: "provider_rejected", statusCode: 503 });
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new DOMException("Synthetic timeout", "TimeoutError")));
-    expect(await internal.refresh("synthetic-refresh", "web")).toEqual({ unavailable: true });
+    expect(await internal.refresh("synthetic-refresh", "web")).toEqual({ unavailable: true, stage: "token_endpoint", failure: "timeout" });
   });
 });

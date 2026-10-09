@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { allowedPublicAnalyticsPath, analyticsPermitted, createPublicAnalyticsBridge, configurePublicAnalyticsRuntime, type PublicAnalyticsRuntime } from "../lib/public-analytics";
 
-import { configurePublicAnalyticsV2Runtime, selectPublicAnalyticsPlan, type PublicAnalyticsClickName, type PublicAnalyticsV2Runtime } from "../lib/public-analytics-v2";
+import { configurePublicAnalyticsV2Runtime, publicAnalyticsV2Config, selectPublicAnalyticsPlan, type PublicAnalyticsClickName, type PublicAnalyticsV2Runtime } from "../lib/public-analytics-v2";
 
 const plan = selectPublicAnalyticsPlan();
 let clickDispatcher: ((name: PublicAnalyticsClickName) => void) | null = null;
@@ -19,7 +19,9 @@ declare global {
 }
 let runtimeLoading: Promise<void> | undefined;
 function loadRuntime(nonce?: string): Promise<void> {
-  if (window.vcodePublicAnalytics?.contractVersion === plan.runtimeVersion) return Promise.resolve();
+  const runtime = window.vcodePublicAnalytics;
+  if (runtime?.contractVersion === plan.runtimeVersion
+    && (runtime.contractVersion === "vcode-public-v1" || runtime.runtimeRevision === publicAnalyticsV2Config.runtimeRevision)) return Promise.resolve();
   if (!runtimeLoading) runtimeLoading = new Promise((resolve, reject) => {
     const script = document.createElement("script");
     if (nonce) script.nonce = nonce;

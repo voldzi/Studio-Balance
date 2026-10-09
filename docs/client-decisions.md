@@ -400,3 +400,31 @@ v hlavičce účtu a Oblíbené lekce v Profilu. Novinky studia jsou odlišné o
 provozních zpráv účtu; počet všech zpráv se nevydává za nepřečtené.
 Přímý vstup do sekce po přihlášení zachová jen povolenou hodnotu `view`.
 Nativní aplikace, push ani nový rozsah analytiky nevznikají.
+
+## CD-069 — Dohledatelné zneplatnění přihlášení (2026-10-09)
+
+Vlastník schválil zaznamenání důvodu ukončení aplikační relace, času a
+diagnostického ID požadavku. Rozlišit odhlášení, absolutní/neaktivní limit,
+nepoužitelný obnovovací údaj, odmítnutí poskytovatelem, neplatnou identitu
+a odebrání oprávnění. Staré záznamy se zpětně neklasifikují odhadem.
+Dočasné výpadky identity nezneplatňují platnou relaci; MFA, 90denní maximum
+a 30denní neaktivní limit se nemění. Záznamy nesmějí obsahovat hesla, OTP,
+tokeny, jejich hashe, cookie, šifrované přihlašovací údaje, e-mail ani IP.
+Přítomnost cookie je pouze technický signál, nikoli důkaz jejího smazání
+nebo izolace prohlížeče. Diagnostika je oddělená od veřejné analytiky.
+
+## CD-070 — Autorská patička a měřitelné odkazy (2026-10-09)
+
+Vlastník schválil veřejnou patičku s textem „Web a rezervační systém vytvořilo
+VCode. Od stejného týmu také aplikace Moje porce a Městem hrou.“ Každý název
+má oficiální lokální ikonu a vlastní HTTPS odkaz na `vcode.zeleznalady.cz`,
+`mojeporce.cz`, respektive `mestemhrou.cz`. Patička nezasahuje do soukromé
+administrace ani spodní navigace rezervací.
+
+Samostatně schváleno rozlišení tří explicitních kliknutí v centrálních
+statistikách VCode. Použít pouze konečné povolené názvy událostí, nikoli
+libovolnou cílovou URL, text odkazu či údaje účtu. Zachovat původní povolené
+veřejné cesty, DNT/GPC, zahazování offline událostí a zákaz sběru v
+přihlášených/privátních částech. Kliknutí není registrace ani konverze.
+Kontrakt, sdílený runtime a jeho kontrolní součet se koordinují s VCode;
+bez potvrzené podpory příjemce se neprohlašuje funkční centrální měření.

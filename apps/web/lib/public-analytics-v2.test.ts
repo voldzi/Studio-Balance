@@ -6,14 +6,14 @@ const anonymous={eligible:true,online:true,doNotTrack:null,globalPrivacyControl:
 const websiteId="00000000-0000-4000-8000-000000000000";
 function setup() {
   const event=vi.fn(),pageview=vi.fn(),create=vi.fn(()=>({event,pageview}));
-  const bridge=configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",create},websiteId)!;
+  const bridge=configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",runtimeRevision:"portfolio-1",create},websiteId)!;
   return {bridge,create,event,pageview};
 }
 describe("approved v2 release retains v1 fallback",()=>{
   it("selects only the specifically approved v2 release",()=>{
     expect(publicAnalyticsV2Config.enabled).toBe(true);
     expect(publicAnalyticsV2Config.privacyNoticeApproved).toBe(true);
-    expect(selectPublicAnalyticsPlan()).toMatchObject({runtimeVersion:"vcode-public-v2",captureSources:true,allowedEvents:["outbound-click"]});
+    expect(selectPublicAnalyticsPlan()).toMatchObject({runtimeVersion:"vcode-public-v2",captureSources:true,allowedEvents:publicAnalyticsV2Config.allowedEvents});
     expect(publicAnalyticsConfig).toMatchObject({enabled:true,privacyNoticeApproved:true,runtimeVersion:"vcode-public-v1",runtimePath:"/analytics/v1/tracker.js",collectorPath:"/analytics/v1/events"});
   });
   it.each([[true,false],[false,true],[false,false]])("one incomplete gate %s/%s still selects v1",(enabled,privacyNoticeApproved)=>{
@@ -21,15 +21,16 @@ describe("approved v2 release retains v1 fallback",()=>{
   });
   it("requires both gates and retains the exact original paths and website",()=>{
     const plan=selectPublicAnalyticsPlan({...publicAnalyticsV2Config,enabled:true,privacyNoticeApproved:true});
-    expect(plan).toMatchObject({runtimeVersion:"vcode-public-v2",collectorPath:"/analytics/v2/events",captureSources:true,allowedEvents:["outbound-click"]});
+    expect(plan).toMatchObject({runtimeVersion:"vcode-public-v2",collectorPath:"/analytics/v2/events",captureSources:true,allowedEvents:publicAnalyticsV2Config.allowedEvents});
     expect(plan.allowedPaths).toBe(publicAnalyticsConfig.allowedPaths);
     expect(plan.websiteId).toBe(publicAnalyticsConfig.websiteId);
   });
 });
 describe("explicit v2 event privacy boundary",()=>{
-  it("passes source capture and only existing outbound events, without raw source inputs",()=>{
+  it("passes source capture and exactly the approved click events, without raw source inputs",()=>{
     const {create}=setup();
-    expect(create).toHaveBeenCalledWith({websiteId,collectorPath:"/analytics/v2/events",allowedPaths:publicAnalyticsConfig.allowedPaths,captureSources:true,allowedEvents:["outbound-click"],autoPageview:false,autoClick:false,captureTitle:false,captureReferrer:false,credentials:"omit",offline:"discard"});
+    expect(publicAnalyticsV2Config.allowedEvents).toEqual(["outbound-click","portfolio-vcode-click","portfolio-moje-porce-click","portfolio-mestem-hrou-click"]);
+    expect(create).toHaveBeenCalledWith({websiteId,collectorPath:"/analytics/v2/events",allowedPaths:publicAnalyticsConfig.allowedPaths,captureSources:true,allowedEvents:publicAnalyticsV2Config.allowedEvents,autoPageview:false,autoClick:false,captureTitle:false,captureReferrer:false,credentials:"omit",offline:"discard"});
   });
   it("sends only name and canonical current page, once per explicit click",()=>{
     const {bridge,event}=setup();bridge.event("outbound-click","/",anonymous);
@@ -38,6 +39,10 @@ describe("explicit v2 event privacy boundary",()=>{
   });
   it.each(["contact-click","app-store-click","pageview","unknown","https://private.invalid/?email=private"])("rejects unpaired or arbitrary event %s",name=>{
     const {bridge,event}=setup();bridge.event(name,"/",anonymous);expect(event).not.toHaveBeenCalled();
+  });
+  it.each(["portfolio-vcode-click","portfolio-moje-porce-click","portfolio-mestem-hrou-click"])("sends only the fixed name for %s and no generic duplicate",name=>{
+    const {bridge,event}=setup();bridge.event(name,"/o-studiu",anonymous);
+    expect(event.mock.calls).toEqual([[name,"/o-studiu"]]);
   });
   it.each(["/admin","/admin/prihlaseni","/muj-ucet","/kontakt","/lekce/barre","/rozvrh/123","/?email=private","/#private","https://private.invalid"])("discards events on nonpublic path %s",path=>{
     const {bridge,event}=setup();bridge.event("outbound-click",path,anonymous);expect(event).not.toHaveBeenCalled();
@@ -55,11 +60,14 @@ describe("explicit v2 event privacy boundary",()=>{
   it("invalid runtime or website never initializes source capture",()=>{
     const create=vi.fn();
     expect(configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v1",create} as unknown as PublicAnalyticsV2Runtime,websiteId)).toBeNull();
-    expect(configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",create},"invalid")).toBeNull();expect(create).not.toHaveBeenCalled();
+    expect(configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",runtimeRevision:"portfolio-1",create},"invalid")).toBeNull();expect(create).not.toHaveBeenCalled();
+    expect(configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",runtimeRevision:"other",create} as unknown as PublicAnalyticsV2Runtime,websiteId)).toBeNull();
+    expect(configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",create} as unknown as PublicAnalyticsV2Runtime,websiteId)).toBeNull();
+    expect(create).not.toHaveBeenCalled();
   });
   it("analytics failure never prevents the outbound link action or retries",()=>{
     const event=vi.fn(()=>{throw new Error("Unavailable");});
-    const bridge=configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",create:()=>({event,pageview:vi.fn()})},websiteId)!;
+    const bridge=configurePublicAnalyticsV2Runtime({contractVersion:"vcode-public-v2",runtimeRevision:"portfolio-1",create:()=>({event,pageview:vi.fn()})},websiteId)!;
     expect(()=>bridge.event("outbound-click","/",anonymous)).not.toThrow();expect(event).toHaveBeenCalledTimes(1);
   });
 });
@@ -72,8 +80,12 @@ describe("exact approved scope and paragraph replacement",()=>{
     expect(publicAnalyticsConfig.allowedPaths).toEqual(["/","/o-studiu","/lekce","/rozvrh","/cenik","/galerie","/recenze","/balance-flow"]);
   });
   it.each(["cs","en"] as const)("preserves introduction and remaining paragraphs for %s",lang=>{
-    expect(publicAnalyticsNoticeV2[lang]).toHaveLength(4);
+    expect(publicAnalyticsNoticeV2[lang]).toHaveLength(5);
     for(const index of [0,2,3])expect(publicAnalyticsNoticeV2[lang][index]).toBe(publicAnalyticsNotice[lang][index]);
     expect(publicAnalyticsNoticeV2[lang][1]).not.toBe(publicAnalyticsNotice[lang][1]);
+  });
+  it("publishes the exact site-specific portfolio scope in both languages",()=>{
+    expect(publicAnalyticsNoticeV2.cs[4]).toBe("Samostatně rozlišujeme kliknutí na odkazy VCode, Moje porce a Městem hrou v patičce webu. Ukládáme pouze předem určený název události a povolenou veřejnou stránku, ze které se odkaz otevřel; cílovou adresu ani totožnost návštěvníka neposíláme. Kliknutí neznamená registraci nebo používání jiné aplikace.");
+    expect(publicAnalyticsNoticeV2.en[4]).toBe("We separately count clicks on the VCode, Moje porce and Městem hrou links in the website footer. We send only a predefined event name and the allowed public page from which the link was opened, never the destination URL or the visitor's identity. A click does not mean registration or use of another application.");
   });
 });

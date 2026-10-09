@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createWebSession, finishLogin, identityConfig, identityCookies, isSecureCookie, publicRedirectUrl, rememberedDeviceMaxAgeSeconds } from "../../../lib/identity";
+import { identityRequestId, logSessionCookieIssued } from "../../../lib/identity-log";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const requestId = identityRequestId(request);
   const code = request.nextUrl.searchParams.get("code");
   if (!code) return NextResponse.redirect(publicRedirectUrl("/prihlaseni?error=callback"));
 
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       cookieValue: request.cookies.get(identityCookies.attempt)?.value
     });
     const response = NextResponse.redirect(publicRedirectUrl(result.returnTo));
-    const sessionToken = await createWebSession(result, "web");
+    const sessionToken = await createWebSession(result, "web", requestId);
     response.cookies.set(identityCookies.session, sessionToken, {
       httpOnly: true,
       ...(result.rememberDevice ? { maxAge: rememberedDeviceMaxAgeSeconds } : {}),
@@ -24,6 +26,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       secure: isSecureCookie(identityConfig())
     });
     response.cookies.delete(identityCookies.attempt);
+    logSessionCookieIssued(requestId, "web", result.rememberDevice);
     return response;
   } catch {
     const response = NextResponse.redirect(publicRedirectUrl("/prihlaseni?error=callback"));

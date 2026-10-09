@@ -49,12 +49,13 @@ describe("publicRedirectUrl", () => {
     vi.stubGlobal("fetch", fetchMock);
     const login = { refreshToken: "synthetic-refresh-token", rememberDevice: false, returnTo: "/muj-ucet", roles: ["client"] as const,
       session: { subject: "synthetic", email: "client@example.test", emailVerified: false, mfaVerified: false, roles: ["client"] as ("client" | "admin" | "super_admin")[] } };
-    await createWebSession({ ...login, roles: [...login.roles] }, "web");
+    await createWebSession({ ...login, roles: [...login.roles] }, "web", "req_session_create");
     await createWebSession({ ...login, roles: [...login.roles] }, "web");
     const calls = fetchMock.mock.calls as unknown as [string, RequestInit][];
     const first = calls[0]![1];
     const second = calls[1]![1];
     const signed = first.headers as Record<string, string>;
+    expect(signed["x-request-id"]).toBe("req_session_create");
     expect(signed["x-studiobalance-internal-nonce"]).toMatch(/^[A-Za-z0-9_-]{22}$/);
     expect((second.headers as Record<string, string>)["x-studiobalance-internal-nonce"]).not.toBe(signed["x-studiobalance-internal-nonce"]);
     const bodyHash = createHash("sha256").update(String(first.body)).digest("hex");

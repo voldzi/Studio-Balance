@@ -202,13 +202,18 @@ in ordinary releases; emergency suspension must be explicit and documented.
 Preserve its bridge in the root layout, exact public path configuration and release
 check. Use the shared versioned tracker and same-origin collector; secrets and
 internal endpoints remain server-side. Never collect accounts, forms, bookings,
-content IDs, location, health data or communication. Only the explicit Masáže, Instagram and Facebook outbound-click handlers are
-approved in v2. No automatic click capture, contact-click or app-store-click.
+content IDs, location, health data or communication. The explicit Masáže, Instagram
+and Facebook outbound-click handlers remain approved in v2. CD-070 / ADR 0028
+adds only portfolio-vcode-click, portfolio-moje-porce-click and
+portfolio-mestem-hrou-click on the three creator footer links, approved by the
+owner on 2026-10-09. No automatic click capture, contact-click or app-store-click.
 Preserve captureSources=true, exact SRI and both v2 approval/activation gates
 after migration; production deployment is coordinated separately.
 The owner-approved TikTok addition uses the byte-exact pinned shared static
-asset /vcode-analytics-tiktok.js under ADR 0023; no local runtime fork or edge
-change. Preserve its reviewed SRI and committed-asset release check.
+asset /vcode-analytics-tiktok.js under ADR 0023, retained byte-exact for compatibility.
+ADR 0028 selects the shared /vcode-analytics-portfolio-v1.js runtime (portfolio-1)
+which preserves TikTok and adds the three fixed events. No local runtime fork or
+edge change. Preserve reviewed SRI and committed-asset release checks for both.
 Respect DNT/GPC, omit cookies/credentials, discard offline visits and prohibit
 session replay. Suppress collection when either application session cookie exists.
 Changes to scope require privacy review. Layout, navigation, CSP and deployment

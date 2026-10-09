@@ -4,7 +4,7 @@ import {runInNewContext} from "node:vm";
 import {describe,expect,it} from "vitest";
 import {configurePublicAnalyticsV2Runtime,publicAnalyticsV2Config,type PublicAnalyticsV2Runtime} from "./public-analytics-v2";
 
-const source=readFileSync(new URL("../public/vcode-analytics-tiktok.js",import.meta.url),"utf8");
+const source=readFileSync(new URL("../public/vcode-analytics-portfolio-v1.js",import.meta.url),"utf8");
 const anonymous={eligible:true,online:true,doNotTrack:null as string|null,globalPrivacyControl:false};
 function setup(referrer:string,environment={...anonymous}){
   const requests:Array<{path:string;options:Record<string,unknown>;input:Record<string,unknown>}>=[];
@@ -13,11 +13,11 @@ function setup(referrer:string,environment={...anonymous}){
   const bridge=configurePublicAnalyticsV2Runtime(scope.window.vcodePublicAnalytics,"00000000-0000-4000-8000-000000000000")!;
   return {requests,bridge,scope,environment};
 }
-describe("byte-pinned shared TikTok runtime",()=>{
+describe("byte-pinned shared portfolio runtime",()=>{
   it("pins the published shared asset and exact approved SHA384",()=>{
-    expect(publicAnalyticsV2Config.runtimePath).toBe("/vcode-analytics-tiktok.js");
+    expect(publicAnalyticsV2Config.runtimePath).toBe("/vcode-analytics-portfolio-v1.js");
     expect("sha384-"+createHash("sha384").update(source).digest("base64")).toBe(publicAnalyticsV2Config.runtimeIntegrity);
-    expect(publicAnalyticsV2Config.runtimeIntegrity).toBe("sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5");
+    expect(publicAnalyticsV2Config.runtimeIntegrity).toBe("sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf");
   });
   it.each(["https://tiktok.com/@private/video/123?secret=test#private","https://www.tiktok.com/@private","https://vm.tiktok.com/secret","https://TIKTOK.COM/private"])("reduces %s to service label only",referrer=>{
     const {bridge,requests,environment}=setup(referrer);bridge.pageview("/",environment);
@@ -34,9 +34,20 @@ describe("byte-pinned shared TikTok runtime",()=>{
     expect(requests.map(r=>r.path)).toEqual(["/analytics/v2/events","/analytics/v2/events"]);
     expect(requests[0]!.input.source).toBe("google");expect(requests[1]!.input).toEqual({website:"00000000-0000-4000-8000-000000000000",name:"outbound-click",path:"/"});
   });
+  it.each(["portfolio-vcode-click","portfolio-moje-porce-click","portfolio-mestem-hrou-click"])("sends exactly one portfolio event %s with no target data",name=>{
+    const {bridge,requests,environment,scope}=setup("https://tiktok.com/private");
+    expect(scope.window.vcodePublicAnalytics.runtimeRevision).toBe("portfolio-1");
+    bridge.event(name,"/o-studiu",environment);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.path).toBe("/analytics/v2/events");
+    expect(requests[0]!.input).toEqual({website:"00000000-0000-4000-8000-000000000000",name,path:"/o-studiu"});
+    expect(requests[0]!.options).toMatchObject({credentials:"omit",referrerPolicy:"no-referrer"});
+  });
   it.each([{eligible:false},{online:false},{doNotTrack:"1"},{doNotTrack:"yes"},{globalPrivacyControl:true}])("collects nothing for excluded %j and never replays",override=>{
     const {bridge,requests,environment,scope}=setup("https://tiktok.com/private",{...anonymous,...override});
-    bridge.pageview("/",environment);bridge.event("outbound-click","/",environment);expect(requests).toHaveLength(0);
+    bridge.pageview("/",environment);
+    for(const event of ["outbound-click","portfolio-vcode-click","portfolio-moje-porce-click","portfolio-mestem-hrou-click"])bridge.event(event,"/",environment);
+    expect(requests).toHaveLength(0);
     Object.assign(scope.navigator,{onLine:true,doNotTrack:null,globalPrivacyControl:false});expect(requests).toHaveLength(0);
   });
   it("rejects private paths and unapproved events and deduplicates pageviews",()=>{

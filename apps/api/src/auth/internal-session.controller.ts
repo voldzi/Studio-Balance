@@ -1,4 +1,5 @@
-import { Body, Controller, Header, HttpException, HttpStatus, Inject, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Header, HttpException, HttpStatus, Inject, Post, Req, UseGuards } from "@nestjs/common";
+import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 
 import { InternalSessionGuard } from "./internal-session.guard.js";
@@ -48,19 +49,19 @@ export class InternalSessionController {
 
   @Post("resolve")
   @Header("Cache-Control", "no-store")
-  async resolve(@Body() body: unknown) {
+  async resolve(@Body() body: unknown, @Req() request?: FastifyRequest) {
     const input = tokenSchema.safeParse(body);
     if (!input.success) throw invalid();
-    const session = await this.sessions.resolveToken(input.data.token, input.data.kind as ApplicationSessionKind);
+    const session = await this.sessions.resolveToken(input.data.token, input.data.kind as ApplicationSessionKind, request?.id);
     return { session: session ?? null };
   }
 
   @Post("revoke")
   @Header("Cache-Control", "no-store")
-  async revoke(@Body() body: unknown) {
+  async revoke(@Body() body: unknown, @Req() request?: FastifyRequest) {
     const input = tokenSchema.safeParse(body);
     if (!input.success) throw invalid();
-    await this.sessions.revokeToken(input.data.token, input.data.kind as ApplicationSessionKind);
+    await this.sessions.revokeToken(input.data.token, input.data.kind as ApplicationSessionKind, request?.id);
     return { revoked: true };
   }
 }

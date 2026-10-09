@@ -61,8 +61,9 @@ dostupnost Keycloaku. Nežádat po uživateli OTP reset kvůli provider 503.
 podpis včetně replay/změny těla; po release zkontrolovat soulad web/API revizí
 a `rawBody: true`. Vyčerpání omezené replay cache vrátí 503
 `SERVICE_UNAVAILABLE`. Definitivně zrušená relace se při resolve vrátí jako
-neplatná; aktuální kód nevydává samostatnou auditní událost pro každý důvod
-revokace. Absence takové události není důkaz úspěšného ověření ani výpadku.
+neplatná. ADR 0027 doplňuje uložený první důvod a strukturovanou provozní
+událost zneplatnění; starší záznam bez důvodu zůstává neznámý. Absence logu
+není důkaz úspěšného ověření ani výpadku.
 
 Provozní šetření sleduje latency token/JWKS endpointu proti osmisekundovému
 limitu, DB čekání na session řádek, aplikační pool saturation a opakované 503.
@@ -72,6 +73,23 @@ je nesmí vydávat za zavedené měření. Žádný diagnostický log nesmí obs
 HMAC, nonce, tělo interního requestu, cookie, JWT, refresh token ani client
 secret. Nové fetch limity ani odstranění opakovaných session zápisů nesnižují
 povinné admin MFA.
+
+### Diagnostické události relací (CD-069 / ADR 0027)
+
+`application_session_revoked` vznikne až po úspěšném commitu prvního
+zneplatnění. Nese netajné `sessionId`, `kind`, pevný `reason`, případně
+vymezený `detail` a obvyklá provozní pole včetně request ID.
+`application_session_revalidation_unavailable` je varování s vymezenou
+fází/typem selhání a případně HTTP stavem; neznamená zrušení relace.
+
+Web zaznamenává jen explicitní auth operace:
+`admin_interactive_login_required` (vymezené stavy cookies a požadavek
+zapamatování), `application_session_cookie_issued` (browser_session nebo
+remembered_90_days), `application_session_cookie_cleared` (explicit_logout
+nebo callback_failed). Není to souvislé sledování prohlížeče ani potvrzení
+příčiny ztráty cookie. Request ID propojuje webový auth request s interním
+podepsaným voláním API. Důvody nejsou veřejnou API odpovědí, statistikou
+VCode nebo textem pro koncového klienta.
 
 ### Doména rezervací
 

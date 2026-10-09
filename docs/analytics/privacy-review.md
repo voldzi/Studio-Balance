@@ -37,12 +37,14 @@ nejde o potvrzení fungujícího end-to-end sběru.
 Česky: https://studio-balance.cz/#public-analytics-privacy-title
 English: https://studio-balance.cz/#public-analytics-privacy-en (rozbalit English).
 
-## Schválená náhrada v2 (kandidát, dosud nenasazeno)
+## Historický stav schválené náhrady v2 před aktivací
 
 Konkrétní společný odstavec z VCode 6dc4dd3 schválil vlastník v a56b160.
-Aktuální kandidát používá expanded-metrics-review.md; nahrazuje pouze druhý
-odstavec obou jazyků. Výše uvedený text je zachován jako v1 fallback. Produkce
-zůstává na v1, dokud koordinátor nepřidělí nasazovací slot a neproběhne ověření.
+Tehdejší kandidát používal expanded-metrics-review.md; nahrazoval pouze druhý
+odstavec obou jazyků. Výše uvedený text je zachován jako v1 fallback. Před aktivací
+produkce zůstávala na v1. Tento stav překonalo nasazení v2 a jeho TikTok
+rozšíření; aktuální runtime a příjem popisuje integration.md. Nové portfolio
+rozšíření vyžaduje vlastní závěrečné potvrzení centrální aktivace.
 
 
 ## Approved TikTok source runtime — 2026-10-05
@@ -58,3 +60,29 @@ checks validate committed asset bytes and actual runtime privacy tests. Browser
 acceptance uses an isolated memory sink or blocked collector. VCode alone updates
 the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
+
+## Autorské odkazy — review 2026-10-09 (CD-070 / ADR 0028)
+
+Vlastník nejprve požádal o podpis VCode a odkazy na Moje porce a Městem hrou
+s měřitelnými kliknutími pro vyhodnocení ve VCode. Následně přímo schválil:
+„Realizuj a dohodni úpravu i s vcode“. VCode potvrdilo, že níže uvedené
+konkrétní znění odpovídá výslovně schválenému rozsahu a nevyžaduje duplicitní
+souhlas. Redakční kontrola CS/EN ověřila stejný význam, přesné tři cíle a
+rozlišení kliknutí od registrace/používání. Původní čtyři schválené odstavce
+v2 zůstávají zachované; následuje pouze tento pátý odstavec.
+
+Review: tři konečné eventy bez cílové adresy nebo identity, beze změny osmi
+veřejných cest, 180denní retence, DNT/GPC, offline discard a potlačení při
+obou session cookies. Žádné automatické zachytávání kliknutí, contact/app
+store eventy, nové cookies, fingerprint nebo sledování rezervací. Centrální
+per-site allowlist a portfolioMetricsApprovedAt se otevřou teprve po
+nezávislém ověření publikovaného textu a bridge. Připravený kód není důkaz
+publikace ani příjmu; produkční potvrzení bude v integration.md.
+
+### Český pátý odstavec
+
+Samostatně rozlišujeme kliknutí na odkazy VCode, Moje porce a Městem hrou v patičce webu. Ukládáme pouze předem určený název události a povolenou veřejnou stránku, ze které se odkaz otevřel; cílovou adresu ani totožnost návštěvníka neposíláme. Kliknutí neznamená registraci nebo používání jiné aplikace.
+
+### English fifth paragraph
+
+We separately count clicks on the VCode, Moje porce and Městem hrou links in the website footer. We send only a predefined event name and the allowed public page from which the link was opened, never the destination URL or the visitor's identity. A click does not mean registration or use of another application.

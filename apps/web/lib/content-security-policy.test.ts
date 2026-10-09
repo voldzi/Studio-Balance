@@ -92,7 +92,7 @@ describe("proxy route coverage and unchanged analytics privacy", () => {
     expect(matches!({ config, url: `https://studio-balance.cz${path}` })).toBe(true);
   });
 
-  it.each(["/_next/static/chunks/app.js", "/_next/image?url=%2Fimages%2Fphoto.webp&w=64&q=75", "/images/photo.webp", "/vcode-analytics-tiktok.js", "/sw.js", "/manifest.webmanifest", "/icon.svg", "/apple-icon.png", "/favicon.ico", "/robots.txt", "/sitemap.xml"])("keeps static asset %s outside nonce processing", path => {
+  it.each(["/_next/static/chunks/app.js", "/_next/image?url=%2Fimages%2Fphoto.webp&w=64&q=75", "/images/photo.webp", "/vcode-analytics-tiktok.js", "/vcode-analytics-portfolio-v1.js", "/sw.js", "/manifest.webmanifest", "/icon.svg", "/apple-icon.png", "/favicon.ico", "/robots.txt", "/sitemap.xml"])("keeps static asset %s outside nonce processing", path => {
     expect(matches!({ config, url: `https://studio-balance.cz${path}` })).toBe(false);
   });
 
@@ -100,7 +100,7 @@ describe("proxy route coverage and unchanged analytics privacy", () => {
     const plan = selectPublicAnalyticsPlan();
     expect(plan.enabled).toBe(true);
     expect(plan.privacyNoticeApproved).toBe(true);
-    expect(plan.runtimeIntegrity).toBe("sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5");
+    expect(plan.runtimeIntegrity).toBe("sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf");
     const send = vi.fn();
     const bridge = createPublicAnalyticsBridge(send);
     const anonymous = { eligible: true, online: true, doNotTrack: null, globalPrivacyControl: false };

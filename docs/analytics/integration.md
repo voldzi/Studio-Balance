@@ -1,5 +1,10 @@
 # Studio Balance shared analytics integration
 
+Current candidate 2026-10-09: CD-070 / ADR 0028 adds the three creator-footer
+events described below. Existing production scope remains the approved v2
+scope until the new application is deployed and VCode opens its separate gate.
+The dated entries below are historical receipts, not current pending decisions.
+
 Status 2026-10-04: prepared, disabled, registered; deployment validation recorded below.
 Repository: git@github.com:voldzi/Studio-Balance.git. Baseline production revision
 8cbd727: Docker web/API/worker on docker.home.cz, public origin
@@ -7,6 +12,38 @@ https://studio-balance.cz through the Studio Balance Nginx virtualhost on dmz.ho
 The existing booking database and S3 storage are not analytics infrastructure.
 
 ## Contract and scope
+
+### Portfolio extension — 2026-10-09
+
+Owner-approved creator links use exactly `portfolio-vcode-click`,
+`portfolio-moje-porce-click`, `portfolio-mestem-hrou-click`. Each explicit footer
+click sends one event, without a generic outbound-click duplicate. Existing
+massage/social outbound-click behavior is unchanged. No URL, label or target
+property is sent; payload is only website/name/path. The original eight public
+paths, anonymous-session exclusion, DNT/GPC, offline discard, 180-day retention
+and both frontend approval gates remain. No private route, contact or app-store
+event is added.
+
+Shared source supplied by VCode: `services/analytics/public-v2-portfolio.js`;
+local byte-exact asset `/vcode-analytics-portfolio-v1.js`, wire contract
+`vcode-public-v2`, runtimeRevision `portfolio-1`, collector `/analytics/v2/events`.
+SHA-384: `sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf`.
+The previous TikTok runtime is retained byte-exact, but the active pin is the
+reviewed shared portfolio extension. No local runtime fork or Nginx change.
+Release checks validate both committed assets and the three explicit handlers.
+
+VCode owns the central per-site allowlist, `portfolioMetricsApprovedAt` gate,
+collector and private dashboard. New events remain rejected centrally until
+the exact fifth CS/EN paragraph in [privacy review](privacy-review.md) is
+published and the bridge/SRI are independently verified. Test ingestion uses
+an isolated sink, never fabricated visits in real Studio statistics. Receipt
+of the final central activation will be recorded separately after release.
+
+Official icons supplied by VCode are vendored unchanged in
+`apps/web/public/images/creators/`: VCode af0610b52c23 SVG,
+Moje porce b244faa9e68a SVG, Městem hrou e40bec4cb730 PNG.
+Component tests pin full SHA-256 against the supplied manifest. The links
+use the canonical HTTPS domains without tracking query parameters.
 
 VCode owns the single Umami service, registry, versioned `vcode-public-v1` runtime,
 collector adapter, private dashboard, retention and backup/restore. The local bridge

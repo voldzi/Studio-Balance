@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes } from "node:crypto";
 
 import { SignJWT, createRemoteJWKSet, jwtVerify } from "jose";
+import { safeIdentityRequestId } from "./identity-log";
 
 const attemptCookieName = "sb_oidc_attempt";
 export const sessionCookieName = "sb_session";
@@ -219,20 +220,20 @@ export async function finishLogin(input: {
   return { returnTo: attempt.returnTo, roles: session.roles, session, refreshToken: tokens.refresh_token, rememberDevice: attempt.rememberDevice };
 }
 
-export async function createWebSession(login: CompletedLogin, mode: IdentityMode): Promise<string> {
+export async function createWebSession(login: CompletedLogin, mode: IdentityMode, requestId?: string): Promise<string> {
   const response = await internalRequest("/api/internal/sessions", {
     kind: mode,
     refreshToken: login.refreshToken,
     session: login.session
-  });
+  }, requestId);
   if (!isOpaqueTokenResponse(response)) throw new Error("Opaque application session could not be created");
   return response.token;
 }
 
-export async function readWebSession(cookieValue: string | undefined, mode: IdentityMode = "web", options: { rejectUnavailable?: boolean } = {}): Promise<WebSession | undefined> {
+export async function readWebSession(cookieValue: string | undefined, mode: IdentityMode = "web", options: { rejectUnavailable?: boolean; requestId?: string } = {}): Promise<WebSession | undefined> {
   if (!cookieValue || !/^[A-Za-z0-9_-]{43}$/.test(cookieValue)) return undefined;
   try {
-    const response = await internalRequest("/api/internal/sessions/resolve", { kind: mode, token: cookieValue });
+    const response = await internalRequest("/api/internal/sessions/resolve", { kind: mode, token: cookieValue }, options.requestId);
     if (!isSessionResponse(response)) throw new Error("Application session response is invalid");
     return response.session ?? undefined;
   } catch (error) {
@@ -243,10 +244,10 @@ export async function readWebSession(cookieValue: string | undefined, mode: Iden
   }
 }
 
-export async function revokeWebSession(cookieValue: string | undefined, mode: IdentityMode): Promise<void> {
+export async function revokeWebSession(cookieValue: string | undefined, mode: IdentityMode, requestId?: string): Promise<void> {
   if (!cookieValue || !/^[A-Za-z0-9_-]{43}$/.test(cookieValue)) return;
   try {
-    await internalRequest("/api/internal/sessions/revoke", { kind: mode, token: cookieValue });
+    await internalRequest("/api/internal/sessions/revoke", { kind: mode, token: cookieValue }, requestId);
   } catch {
     // Cookie deletion still prevents use in the browser if the API is temporarily unavailable.
   }
@@ -366,7 +367,7 @@ async function readAttempt(cookieValue: string | undefined, config: IdentityConf
   }
 }
 
-async function internalRequest(path: string, body: Record<string, unknown>): Promise<unknown> {
+async function internalRequest(path: string, body: Record<string, unknown>, requestId?: string): Promise<unknown> {
   const config = identityConfig();
   const timestamp = String(Date.now());
   const nonce = randomBytes(16).toString("base64url");
@@ -378,6 +379,7 @@ async function internalRequest(path: string, body: Record<string, unknown>): Pro
     headers: {
       "content-type": "application/json",
       "x-studiobalance-internal-nonce": nonce,
+      "x-request-id": safeIdentityRequestId(requestId),
       "x-studiobalance-internal-signature": signature,
       "x-studiobalance-internal-timestamp": timestamp
     },

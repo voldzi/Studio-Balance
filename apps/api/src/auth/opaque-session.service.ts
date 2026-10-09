@@ -6,6 +6,8 @@ import type { PoolClient } from "pg";
 
 import { RuntimeConfigService } from "../config/runtime-config.js";
 import { DatabaseService } from "../database/database.service.js";
+import { requestIdFromHeader } from "../http/configure-http.js";
+import { writeLog } from "../observability/structured-log.js";
 import type { StudioRole, StudioSession } from "./session.js";
 
 export type ApplicationSessionKind = "web" | "admin";
@@ -16,6 +18,7 @@ export const SESSION_REVALIDATION_INTERVAL_MS = 15 * 60 * 1000;
 export const SESSION_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 
 type SessionRow = {
+  id: string;
   absolute_expires_at: Date;
   email: string;
   email_verified: boolean;
@@ -32,9 +35,16 @@ type SessionRow = {
 };
 
 type RefreshedSession = { refreshToken?: string; session: StudioSession; subject: string };
-type RefreshUnavailable = { unavailable: true; refreshToken?: string };
-type SessionResolution = StudioSession | RefreshUnavailable | undefined;
-const sessionColumns = `oidc_subject, email, email_verified, first_name, last_name, mfa_verified, roles, refresh_token_ciphertext,
+export type SessionRevocationReason = "explicit_logout" | "absolute_expired" | "idle_expired" |
+  "refresh_credential_missing" | "refresh_credential_unreadable" | "provider_invalid_grant" |
+  "identity_token_invalid" | "subject_changed" | "admin_role_removed";
+type RevocationDetail = "identity_token_missing" | "identity_claims_incomplete" | "issuer_invalid" |
+  "audience_invalid" | "token_expired" | "signature_invalid" | "token_malformed" | "algorithm_invalid" | "claims_invalid";
+type RefreshRejected = { rejected: true; reason: SessionRevocationReason; detail?: RevocationDetail };
+type RefreshUnavailable = { unavailable: true; refreshToken?: string; sessionId?: string; stage?: "token_endpoint" | "jwks"; failure?: "timeout" | "network_or_provider" | "provider_rejected"; statusCode?: number };
+type RevokedSession = { revoked: true; sessionId: string; reason: SessionRevocationReason; detail?: RevocationDetail; requestId: string };
+type SessionResolution = StudioSession | RefreshUnavailable | RevokedSession | undefined;
+const sessionColumns = `id, oidc_subject, email, email_verified, first_name, last_name, mfa_verified, roles, refresh_token_ciphertext,
   absolute_expires_at, idle_expires_at, last_revalidated_at, last_seen_at, revoked_at`;
 
 @Injectable()
@@ -91,11 +101,11 @@ export class OpaqueSessionService {
     return { token };
   }
 
-  async resolveCookie(cookieHeader: string | undefined, kind: ApplicationSessionKind): Promise<StudioSession | undefined> {
-    return this.resolveToken(cookieValue(cookieHeader, kind === "admin" ? "sb_admin_session" : "sb_session"), kind);
+  async resolveCookie(cookieHeader: string | undefined, kind: ApplicationSessionKind, requestId?: string): Promise<StudioSession | undefined> {
+    return this.resolveToken(cookieValue(cookieHeader, kind === "admin" ? "sb_admin_session" : "sb_session"), kind, requestId);
   }
 
-  async resolveToken(token: string | undefined, kind: ApplicationSessionKind): Promise<StudioSession | undefined> {
+  async resolveToken(token: string | undefined, kind: ApplicationSessionKind, requestId?: string): Promise<StudioSession | undefined> {
     if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return undefined;
     const tokenHash = hashToken(token);
     let row = await this.readSession(tokenHash, kind);
@@ -124,7 +134,7 @@ export class OpaqueSessionService {
     const pending = this.pendingRevalidations.get(key);
     if (pending) return pending;
     if (this.pendingRevalidations.size >= 50) throw identityUnavailable();
-    const revalidation = this.resolveStaleToken(tokenHash, kind);
+    const revalidation = this.resolveStaleToken(tokenHash, kind, requestIdFromHeader(requestId));
     this.pendingRevalidations.set(key, revalidation);
     try {
       return await revalidation;
@@ -133,15 +143,15 @@ export class OpaqueSessionService {
     }
   }
 
-  private async resolveStaleToken(tokenHash: string, kind: ApplicationSessionKind): Promise<StudioSession | undefined> {
+  private async resolveStaleToken(tokenHash: string, kind: ApplicationSessionKind, requestId: string): Promise<StudioSession | undefined> {
     const resolved = await this.database.transaction<SessionResolution>(async (client) => {
       const row = await this.readSession(tokenHash, kind, client);
       if (!row) return undefined;
 
       const now = new Date();
       if (row.absolute_expires_at <= now || row.idle_expires_at <= now) {
-        await this.revokeLocked(client, tokenHash, kind);
-        return undefined;
+        return this.revokeLocked(client, tokenHash, kind, requestId,
+          row.absolute_expires_at <= now ? "absolute_expired" : "idle_expired");
       }
       if (isCurrent(row, now) && now.getTime() - row.last_seen_at.getTime() < SESSION_TOUCH_INTERVAL_MS) return sessionFromRow(row);
 
@@ -150,17 +160,16 @@ export class OpaqueSessionService {
       let revalidatedAt = row.last_revalidated_at;
       if (now.getTime() - row.last_revalidated_at.getTime() >= SESSION_REVALIDATION_INTERVAL_MS) {
         if (!refreshTokenCiphertext) {
-          await this.revokeLocked(client, tokenHash, kind);
-          return undefined;
+          return this.revokeLocked(client, tokenHash, kind, requestId, "refresh_credential_missing");
         }
-        let refreshed: Awaited<ReturnType<OpaqueSessionService["refresh"]>>;
+        let refreshToken: string;
         try {
-          refreshed = await this.refresh(this.decrypt(refreshTokenCiphertext), kind);
+          refreshToken = this.decrypt(refreshTokenCiphertext);
         } catch {
           // A damaged locally encrypted credential cannot be used again.
-          await this.revokeLocked(client, tokenHash, kind);
-          return undefined;
+          return this.revokeLocked(client, tokenHash, kind, requestId, "refresh_credential_unreadable");
         }
+        const refreshed = await this.refresh(refreshToken, kind);
         if (refreshed && "unavailable" in refreshed) {
           if (refreshed.refreshToken) {
             // The provider may rotate the refresh token before its JWKS becomes
@@ -172,11 +181,19 @@ export class OpaqueSessionService {
               [tokenHash, kind, this.encrypt(refreshed.refreshToken), now]
             );
           }
-          return { unavailable: true };
+          return { unavailable: true, sessionId: row.id,
+            ...(refreshed.stage ? { stage: refreshed.stage } : {}),
+            ...(refreshed.failure ? { failure: refreshed.failure } : {}),
+            ...(refreshed.statusCode !== undefined ? { statusCode: refreshed.statusCode } : {}) };
         }
-        if (!refreshed || refreshed.subject !== row.oidc_subject || (kind === "admin" && !isAdministrator(refreshed.session.roles))) {
-          await this.revokeLocked(client, tokenHash, kind);
-          return undefined;
+        if ("rejected" in refreshed) {
+          return this.revokeLocked(client, tokenHash, kind, requestId, refreshed.reason, refreshed.detail);
+        }
+        if (refreshed.subject !== row.oidc_subject) {
+          return this.revokeLocked(client, tokenHash, kind, requestId, "subject_changed");
+        }
+        if (kind === "admin" && !isAdministrator(refreshed.session.roles)) {
+          return this.revokeLocked(client, tokenHash, kind, requestId, "admin_role_removed");
         }
         // MFA assurance belongs to the original interactive authentication.
         // A refresh may update identity and roles, but must never upgrade a
@@ -198,30 +215,35 @@ export class OpaqueSessionService {
       return session;
     });
     if (resolved && "unavailable" in resolved) {
+      writeLog(this.config.value, "warn", "application_session_revalidation_unavailable", requestId, {
+        sessionId: resolved.sessionId, kind, stage: resolved.stage, failure: resolved.failure, statusCode: resolved.statusCode
+      });
       throw identityUnavailable();
+    }
+    if (resolved && "revoked" in resolved) {
+      this.logRevocation(resolved, kind);
+      return undefined;
     }
     return resolved;
   }
 
-  async revokeCookie(cookieHeader: string | undefined, kind: ApplicationSessionKind): Promise<void> {
-    await this.revokeToken(cookieValue(cookieHeader, kind === "admin" ? "sb_admin_session" : "sb_session"), kind);
+  async revokeCookie(cookieHeader: string | undefined, kind: ApplicationSessionKind, requestId?: string): Promise<void> {
+    await this.revokeToken(cookieValue(cookieHeader, kind === "admin" ? "sb_admin_session" : "sb_session"), kind, requestId);
   }
 
-  async revokeToken(token: string | undefined, kind: ApplicationSessionKind): Promise<void> {
+  async revokeToken(token: string | undefined, kind: ApplicationSessionKind, incomingRequestId?: string): Promise<void> {
     if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return;
     const tokenHash = hashToken(token);
-    const result = await this.database.query<Pick<SessionRow, "refresh_token_ciphertext">>(
-      `SELECT refresh_token_ciphertext FROM application_sessions
-       WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL`,
-      [tokenHash, kind]
-    );
-    const refreshTokenCiphertext = result.rows[0]?.refresh_token_ciphertext;
-    await this.database.query(
-      `UPDATE application_sessions
-       SET revoked_at = now(), refresh_token_ciphertext = NULL, updated_at = now()
-       WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL`,
-      [tokenHash, kind]
-    );
+    const requestId = requestIdFromHeader(incomingRequestId);
+    const result = await this.database.transaction(async (client) => {
+      const row = await this.readSession(tokenHash, kind, client);
+      if (!row) return undefined;
+      const revoked = await this.revokeLocked(client, tokenHash, kind, requestId, "explicit_logout");
+      return revoked ? { revoked, refreshTokenCiphertext: row.refresh_token_ciphertext } : undefined;
+    });
+    if (!result) return;
+    this.logRevocation(result.revoked, kind);
+    const { refreshTokenCiphertext } = result;
     if (refreshTokenCiphertext) {
       try {
         await this.revokeAtIdentityProvider(this.decrypt(refreshTokenCiphertext), kind);
@@ -242,19 +264,30 @@ export class OpaqueSessionService {
     return result.rows[0];
   }
 
-  private async revokeLocked(client: PoolClient, tokenHash: string, kind: ApplicationSessionKind): Promise<void> {
-    await client.query(
-      `UPDATE application_sessions SET revoked_at = now(), refresh_token_ciphertext = NULL, updated_at = now()
-       WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL`,
-      [tokenHash, kind]
+  private async revokeLocked(client: PoolClient, tokenHash: string, kind: ApplicationSessionKind, requestId: string,
+    reason: SessionRevocationReason, detail?: RevocationDetail): Promise<RevokedSession | undefined> {
+    const result = await client.query<{ id: string }>(
+      `UPDATE application_sessions SET revoked_at = now(), refresh_token_ciphertext = NULL, updated_at = now(),
+         revoke_reason = $3, revoke_detail = $4, revoke_request_id = $5
+       WHERE token_hash = $1 AND kind = $2 AND revoked_at IS NULL RETURNING id`,
+      [tokenHash, kind, reason, detail ?? null, requestId]
     );
+    const sessionId = result.rows[0]?.id;
+    return sessionId ? { revoked: true, sessionId, reason, ...(detail ? { detail } : {}), requestId } : undefined;
   }
 
-  private async refresh(refreshToken: string, kind: ApplicationSessionKind): Promise<RefreshedSession | RefreshUnavailable | undefined> {
+  private logRevocation(revoked: RevokedSession, kind: ApplicationSessionKind): void {
+    writeLog(this.config.value, "info", "application_session_revoked", revoked.requestId, {
+      sessionId: revoked.sessionId, kind, reason: revoked.reason, detail: revoked.detail
+    });
+  }
+
+  private async refresh(refreshToken: string, kind: ApplicationSessionKind): Promise<RefreshedSession | RefreshUnavailable | RefreshRejected> {
     const client = kind === "admin"
       ? { id: this.config.value.oidc.adminClientId, secret: this.config.value.oidc.adminClientSecret }
       : { id: this.config.value.oidc.webClientId, secret: this.config.value.oidc.webClientSecret };
     let rotatedRefreshToken: string | undefined;
+    let stage: "token_endpoint" | "jwks" = "token_endpoint";
     try {
       const response = await fetch(`${this.config.value.oidc.backchannelIssuer ?? this.config.value.oidc.issuer}/protocol/openid-connect/token`, {
         method: "POST",
@@ -268,24 +301,29 @@ export class OpaqueSessionService {
       });
       if (!response.ok) {
         const error = await response.json().catch(() => null) as { error?: unknown } | null;
-        return error?.error === "invalid_grant" ? undefined : { unavailable: true };
+        return error?.error === "invalid_grant"
+          ? { rejected: true, reason: "provider_invalid_grant" }
+          : { unavailable: true, stage, failure: "provider_rejected", statusCode: response.status };
       }
       const body = (await response.json()) as { id_token?: unknown; refresh_token?: unknown };
       rotatedRefreshToken = typeof body.refresh_token === "string" ? body.refresh_token : undefined;
-      if (typeof body.id_token !== "string") return undefined;
+      if (typeof body.id_token !== "string") return { rejected: true, reason: "identity_token_invalid", detail: "identity_token_missing" };
+      stage = "jwks";
       const claims = await jwtVerify(body.id_token, this.jwks, {
         algorithms: ["RS256", "ES256"],
         issuer: this.config.value.oidc.issuer,
         audience: client.id
       });
       const session = sessionFromClaims(claims.payload);
-      if (!session) return undefined;
+      if (!session) return { rejected: true, reason: "identity_token_invalid", detail: "identity_claims_incomplete" };
       return { subject: session.subject, session, ...(typeof body.refresh_token === "string" ? { refreshToken: body.refresh_token } : {}) };
     } catch (error) {
-      if (error instanceof joseErrors.JWTClaimValidationFailed || error instanceof joseErrors.JWTExpired ||
-        error instanceof joseErrors.JWSSignatureVerificationFailed || error instanceof joseErrors.JWSInvalid ||
-        error instanceof joseErrors.JWTInvalid || error instanceof joseErrors.JOSEAlgNotAllowed || error instanceof joseErrors.JOSENotSupported) return undefined;
-      return { unavailable: true, ...(rotatedRefreshToken ? { refreshToken: rotatedRefreshToken } : {}) };
+      const detail = invalidIdentityDetail(error);
+      if (detail) return { rejected: true, reason: "identity_token_invalid", detail };
+      return { unavailable: true, stage,
+        failure: error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError" || error instanceof joseErrors.JWKSTimeout)
+          ? "timeout" : "network_or_provider",
+        ...(rotatedRefreshToken ? { refreshToken: rotatedRefreshToken } : {}) };
     }
   }
 
@@ -323,6 +361,19 @@ export class OpaqueSessionService {
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
   }
+}
+
+function invalidIdentityDetail(error: unknown): RevocationDetail | undefined {
+  if (error instanceof joseErrors.JWTExpired) return "token_expired";
+  if (error instanceof joseErrors.JWTClaimValidationFailed) {
+    if (error.claim === "iss") return "issuer_invalid";
+    if (error.claim === "aud") return "audience_invalid";
+    return "claims_invalid";
+  }
+  if (error instanceof joseErrors.JWSSignatureVerificationFailed) return "signature_invalid";
+  if (error instanceof joseErrors.JWSInvalid || error instanceof joseErrors.JWTInvalid) return "token_malformed";
+  if (error instanceof joseErrors.JOSEAlgNotAllowed || error instanceof joseErrors.JOSENotSupported) return "algorithm_invalid";
+  return undefined;
 }
 
 function isCurrent(row: SessionRow, now: Date): boolean {

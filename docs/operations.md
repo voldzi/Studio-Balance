@@ -972,3 +972,38 @@ data v PostgreSQL, nikoli obnovitelná cache. Nevztahuje se na ně čtrnáctiden
 úklid pracovních souborů; retenční politika vyžaduje samostatné rozhodnutí.
 Test obnovy musí obsahovat výkazy i audit. Lokální test není důkaz produkční
 nebo fyzické PWA akceptace.
+
+## Diagnostika opakovaného přihlášení (CD-069 / ADR 0027)
+
+Migrace 0031 přidává k relaci první důvod revokace, vymezený detail a request
+ID. Nemění stávající relace ani secret. Nasazovat společně web/API/worker;
+rollback na předchozí aplikaci ponechá aditivní sloupce i záznamy. Nevymýšlet
+zpětně důvody pro historické záznamy, kde jsou nové sloupce prázdné.
+
+Při dalším vyžádání OTP korelovat explicitní vstup na přihlášení,
+vydání/odstranění cookie a událost zneplatnění podle času a request ID.
+Kontrolovat jen přítomnost a atributy cookie; nekopírovat její hodnotu do
+chatu, dokumentace nebo logu. Samotná chybějící cookie neurčuje příčinu.
+Bez zapamatování je cookie do zavření prohlížeče; se zapamatováním nadále
+platí maximum 90 dní, neaktivita 30 dní a bezpečnostní revokace. Provozní
+událost dočasně nedostupné revalidace není revokace a nevyžaduje reset MFA.
+
+Před release ověřit migraci v testovací DB a zálohu. Po release ověřit
+readiness, shodnou verzi procesů a pokračující platnost přihlášené relace.
+Řízené logout/expiry/identity-error testy patří do izolovaného prostředí;
+neodhlašovat skutečné administrátory jen pro vytvoření ukázkového logu.
+
+Provozní reakce podle důvodu:
+
+| Důvod | Další ověření |
+| --- | --- |
+| `absolute_expired`, `idle_expired` | Ověřit dobu platnosti a vysvětlit nové přihlášení. |
+| `refresh_credential_missing`, `refresh_credential_unreadable` | Ověřit integritu konfigurace a případnou změnu `SESSION_SECRET`; tajné hodnoty nevypisovat. |
+| `provider_invalid_grant` | Prověřit odmítnutý refresh a zneplatněnou/expirovanou relaci Keycloak. |
+| `identity_token_invalid`, `subject_changed` | Korelovat pevný detail a konfiguraci identity; nepřebírat volný text/token. |
+| `admin_role_removed` | Ověřit přiřazení role, neobcházet MFA ani kontrolu oprávnění. |
+| `explicit_logout` | Běžné vědomé odhlášení. |
+
+Samostatné `application_session_revalidation_unavailable` znamená dočasnou
+chybu poskytovatele. Ověřit jeho dostupnost; neodvolávat relace ani resetovat
+MFA jako náhradu za opravu dostupnosti.

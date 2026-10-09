@@ -36,9 +36,17 @@ done
 for path in apps/web/components/social-links.tsx apps/web/components/massage-partner-section.tsx; do
   git -C "$root" show "$version:$path" | rg -q 'analyticsEvent="outbound-click"' || { echo "Deployment refused: explicit outbound handler missing $path." >&2; exit 1; }
 done
-git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5' || { echo "Deployment refused: approved v2 integrity changed." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -Fq 'sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf' || { echo "Deployment refused: approved portfolio integrity changed." >&2; exit 1; }
 
-git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'runtimePath: "/vcode-analytics-tiktok.js"' || { echo "Deployment refused: approved TikTok runtime path missing." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'runtimePath: "/vcode-analytics-portfolio-v1.js"' || { echo "Deployment refused: approved portfolio runtime path missing." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'runtimeRevision: "portfolio-1"' || { echo "Deployment refused: approved portfolio runtime revision missing." >&2; exit 1; }
+portfolio_sri="$(git -C "$root" show "$version:apps/web/public/vcode-analytics-portfolio-v1.js" | openssl dgst -sha384 -binary | openssl base64 -A)"
+[[ "sha384-$portfolio_sri" == "sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf" ]] || { echo "Deployment refused: shared portfolio runtime bytes changed." >&2; exit 1; }
+for event in portfolio-vcode-click portfolio-moje-porce-click portfolio-mestem-hrou-click; do
+  git -C "$root" show "$version:apps/web/components/site-footer.tsx" | rg -q "analyticsEvent=\"$event\"" || { echo "Deployment refused: explicit creator handler missing $event." >&2; exit 1; }
+done
+# Retain the prior byte-exact asset for historical compatibility; active pin above
+# is the centrally reviewed portfolio extension, which preserves TikTok behavior.
 asset_sri="$(git -C "$root" show "$version:apps/web/public/vcode-analytics-tiktok.js" | openssl dgst -sha384 -binary | openssl base64 -A)"
 [[ "sha384-$asset_sri" == "sha384-JpAOJexapVVtAZAFpz3dwp4AHY8PLbao7cLk7Mg7VFIDy2g0/bOUl0zb/HO1qbX5" ]] || { echo "Deployment refused: shared TikTok runtime bytes changed." >&2; exit 1; }
 git -C "$root" cat-file -e "$version:apps/web/lib/public-analytics-runtime.test.ts" || { echo "Deployment refused: shared runtime privacy tests missing." >&2; exit 1; }

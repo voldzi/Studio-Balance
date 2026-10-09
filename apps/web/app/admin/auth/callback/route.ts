@@ -1,18 +1,19 @@
-import { randomUUID } from "node:crypto";
-
 import { NextRequest, NextResponse } from "next/server";
 
 import { adminIdentityCookies, createWebSession, finishLogin, identityConfig, isSecureCookie, publicRedirectUrl, rememberedDeviceMaxAgeSeconds } from "../../../../lib/identity";
+import { identityRequestId, logSessionCookieCleared, logSessionCookieIssued } from "../../../../lib/identity-log";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const correlationId = identityRequestId(request);
   const code = request.nextUrl.searchParams.get("code");
   if (!code) {
-    const requestId = logAdminLoginFailure(request, { errorCode: "ADMIN_OIDC_CODE_MISSING", stage: "authorization_response" });
+    const requestId = logAdminLoginFailure({ errorCode: "ADMIN_OIDC_CODE_MISSING", stage: "authorization_response" }, correlationId);
     const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?error=callback&requestId=${encodeURIComponent(requestId)}`, "admin"));
     response.cookies.delete(adminIdentityCookies.attempt);
     response.cookies.delete(adminIdentityCookies.session);
+    if (request.cookies.has(adminIdentityCookies.session)) logSessionCookieCleared(correlationId, "admin", "callback_failed");
     return response;
   }
   try {
@@ -20,18 +21,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (!result.roles.some((role) => role === "admin" || role === "super_admin")) throw new Error("Admin role is required");
     if (!result.session.mfaVerified) throw new Error("Admin MFA is required");
     const response = NextResponse.redirect(publicRedirectUrl(result.returnTo, "admin"));
-    const sessionToken = await createWebSession(result, "admin");
+    const sessionToken = await createWebSession(result, "admin", correlationId);
     response.cookies.set(adminIdentityCookies.session, sessionToken, { httpOnly: true, ...(result.rememberDevice ? { maxAge: rememberedDeviceMaxAgeSeconds } : {}), path: "/", sameSite: "lax", secure: isSecureCookie(identityConfig("admin")) });
     response.cookies.delete(adminIdentityCookies.attempt);
+    logSessionCookieIssued(correlationId, "admin", result.rememberDevice);
     return response;
   } catch (error) {
     const roleMissing = error instanceof Error && error.message === "Admin role is required";
     const mfaMissing = error instanceof Error && error.message === "Admin MFA is required";
-    const requestId = logAdminLoginFailure(request, roleMissing
+    const requestId = logAdminLoginFailure(roleMissing
       ? { errorCode: "ADMIN_ROLE_REQUIRED", stage: "authorization" }
       : mfaMissing
         ? { errorCode: "ADMIN_MFA_REQUIRED", stage: "authorization" }
-      : classifyCallbackFailure(error));
+      : classifyCallbackFailure(error), correlationId);
     const params = new URLSearchParams({
       error: roleMissing ? "role" : mfaMissing ? "mfa" : "callback",
       requestId
@@ -39,6 +41,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const response = NextResponse.redirect(publicRedirectUrl(`/admin/prihlaseni?${params.toString()}`, "admin"));
     response.cookies.delete(adminIdentityCookies.attempt);
     response.cookies.delete(adminIdentityCookies.session);
+    if (request.cookies.has(adminIdentityCookies.session)) logSessionCookieCleared(correlationId, "admin", "callback_failed");
     return response;
   }
 }
@@ -74,11 +77,7 @@ function classifyCallbackFailure(error: unknown): AdminLoginFailure {
   }
 }
 
-function logAdminLoginFailure(request: NextRequest, failure: AdminLoginFailure): string {
-  const incomingRequestId = request.headers.get("x-request-id");
-  const requestId = incomingRequestId && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(incomingRequestId)
-    ? incomingRequestId
-    : randomUUID();
+function logAdminLoginFailure(failure: AdminLoginFailure, requestId: string): string {
   console.error(JSON.stringify({
     timestamp: new Date().toISOString(),
     level: "error",

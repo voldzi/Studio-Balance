@@ -57,6 +57,10 @@ a aktuální rolí `admin` nebo `super_admin`.
 Profil je svázaný s Keycloak subjectem a ukládá jméno, příjmení, telefon,
 stav e-mailu z identity a přijatou verzi podmínek.
 
+CD-069 / ADR 0027 nemění těla ani výsledky interního REST kontraktu. Request
+ID se předává do resolveru pro provozní korelaci. Důvod revokace je výhradně
+serverová diagnostika; session odpověď ani veřejná chyba jej neobsahuje.
+
 ## Konvence
 
 - JSON media type `application/json`; UTF-8;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { SiteHeader } from "../components/site-header";
+import { CreatorCredits } from "../components/site-footer";
 import { LessonCatalog } from "../components/lesson-catalog";
 import { MassagePartnerSection } from "../components/massage-partner-section";
 import { ReviewsShowcase } from "../components/reviews-showcase";
@@ -96,7 +97,7 @@ export default function HomePage() {
         <MassagePartnerSection />
       </main>
 
-      <footer id="kontakt">
+      <footer id="kontakt" className="site-footer">
         <div className="footer-brand">
           <Image alt="Studio Balance" height={92} src="/images/studio-balance/brand-logo.jpg" width={154} />
           <p>Najdi si svůj balanc.</p>
@@ -112,6 +113,7 @@ export default function HomePage() {
           <Link href="/rozvrh">Rozvrh lekcí</Link>
           <Link href="/muj-ucet">Můj účet</Link>
         </div>
+        <CreatorCredits />
       </footer>
     </>
   );
