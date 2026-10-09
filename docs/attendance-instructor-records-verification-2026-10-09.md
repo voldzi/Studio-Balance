@@ -1,6 +1,7 @@
 # Ověření docházky, výkazů a klientské navigace 2026-10-09
 
-Stav: implementováno a lokálně ověřeno; není nasazeno do produkce.
+Stav: nasazeno do produkce 2026-10-09.
+Živá společná revize web/API/worker: `09415a2dd1168c2df67b1cde73b6308715128ec3`.
 Izolovaná větev: `codex/attendance-instructor-records`.
 Výchozí revize: `1258f1f207ef19b5977bacc733e6d1df8ed6ecae`;
 navazuje na aplikační bezpečnostní release `1923ef305c`.
@@ -54,10 +55,45 @@ Výsledek byl vizuálně zkontrolován; dodaný originál zůstává zachovaný.
 
 ## Nasazení a návrat
 
-Standardní společný release web/API/worker musí zahrnout migrace 0029 a 0030,
-DB zálohu, skeny obrazů a stávající X5/readiness brány. Ještě zbývá ověřit
-produkční migrace a autentizované cesty, skutečný tisk/export a fyzickou PWA.
-Žádné produkční účty, rezervace ani zprávy nebyly v této implementaci změněny.
+Standardní společný release web/API/worker zahrnul migrace 0029 a 0030,
+DB zálohu, skeny obrazů a stávající X5/readiness brány. Produkční čtecí kontrola
+potvrdila obě migrace, oprávnění SELECT/INSERT/UPDATE aplikačního účtu k nové
+tabulce, nový název a výchozí obrázek. Evidence má po migraci nula záznamů;
+historická účast se nedoplnila odhadem. Žádný účet, rezervace, odměna ani
+zpráva nebyly při ověřování změněny. Zbývá autentizované ověření administrace,
+skutečný tisk/export a fyzická PWA; prohlížeč je na přihlašovací stránce.
+
+## Produkční důkazy
+
+Záloha před migrací:
+`/srv/x5-production/backups/studio-balance/database-before-09415a2-20261009T105244Z/`.
+Custom pg_dump má 490 290 bajtů, soukromá oprávnění a SHA-256 manifest.
+pg_restore přečetl TOC i celý archiv do `/dev/null` bez chyby. Úplná obnova
+do jiné databáze v tomto release nebyla provedena. Dočasný soubor klientských
+přístupových údajů se po záloze odstranil. DB se nadále používá pouze přes
+`haproxy.home.cz:5000`.
+
+Trivy receipt:
+`/srv/x5-production/archives/studio-balance/image-scans/09415a2dd1168c2df67b1cde73b6308715128ec3/20261009T105844Z-uSEutkzj/verified.json`.
+Aktualizovaný scan všech tří obrazů má **0 HIGH / CRITICAL** pro OS i knihovny.
+
+| Služba | Skenovaná a skutečně běžící image ID |
+|---|---|
+| web | `sha256:23347f671cc9dfcf0b9c56a44dd9fb6f4fa46a36f88418091a4178a14dbc8d6c` |
+| API | `sha256:0209cd5e59f2a6aea2fd46fe688517c93aa3018d54732b641899a85054cd96df` |
+| worker | `sha256:25f50cdb67d201143cc5f9f0bbc97f1908c01f83797e30b59946ee2d740b9010` |
+
+Kontrola přesné revize i první úspěšné práce workeru prošla. Všechny kontejnery
+jsou zdravé, bez restartu a OOM. API log od spuštění nemá error/fatal.
+Veřejný HTTPS gate ověřil 200 pro `/`, `/rozvrh`, `/lekce`, `/admin/prihlaseni`
+a `/lekce/body-sculpt`, CSP a HSTS, nový název v HTML/API, byte-exact nový PNG,
+401 + `no-store` + strukturovanou chybu pro nepřihlášený výkaz a rozvrh bez
+veřejného počtu míst. Produkční prohlížeč zobrazil správný nadpis i plakát.
+
+Použité prostředí a CPU shares overlay zůstaly zachované. Nesouvisející aplikace,
+globální Docker data-root a sdílené buildery se nekonfigurovaly ani nečistily.
+Standardní retence chrání novou verzi a obnovitelné `1923ef305c` a `0d016c0`.
+Při skutečném návratu vždy znovu ověřit `verified-releases.json`.
 
 Návrat starší aplikace ponechá tabulku výkazů a audity. Starší webový obraz
 ale neobsahuje nový PNG: před jeho aktivací je nutné podmíněně vrátit pouze
