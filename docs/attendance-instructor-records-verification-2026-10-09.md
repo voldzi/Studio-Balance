@@ -60,8 +60,23 @@ DB zálohu, skeny obrazů a stávající X5/readiness brány. Produkční čtec�
 potvrdila obě migrace, oprávnění SELECT/INSERT/UPDATE aplikačního účtu k nové
 tabulce, nový název a výchozí obrázek. Evidence má po migraci nula záznamů;
 historická účast se nedoplnila odhadem. Žádný účet, rezervace, odměna ani
-zpráva nebyly při ověřování změněny. Zbývá autentizované ověření administrace,
-skutečný tisk/export a fyzická PWA; prohlížeč je na přihlašovací stránce.
+zpráva nebyly při ověřování změněny. Autentizované čtecí ověření administrace
+proběhlo po přihlášení vlastníkem. Zbývá skutečný produkční zápis výkazu,
+produkční tisk/export a fyzická PWA.
+
+### Autentizovaná administrace
+
+V produkční relaci na `/admin` se načetl Výkaz instruktorů pro říjen 2026:
+nula potvrzených výkazů, osm minulých lekcí k ověření a viditelné varování
+neúplnosti. Tlačítka CSV a tisku jsou dostupná; jejich produkční výstup se
+v této čtecí kontrole nestahoval ani netiskl.
+
+Formulář kruhového tréninku 1. 10. načetl skutečného instruktora, český čas,
+60 minut, prázdnou odměnu a informaci o již vyhodnocené docházce. Formulář
+lekce Formuj břicho a hýždě 8. 10. načetl pět dosud rezervovaných účastníků,
+nezvolené checkboxy nepřítomnosti, instruktorku a možnost společného potvrzení.
+Oba formuláře se načetly bez chybové či přihlašovací hlášky. Žádné potvrzovací
+tlačítko nebylo odesláno; skutečné účasti ani odměny nebyly změněny.
 
 ## Produkční důkazy
 
