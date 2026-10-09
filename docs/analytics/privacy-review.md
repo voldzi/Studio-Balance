@@ -77,7 +77,9 @@ obou session cookies. Žádné automatické zachytávání kliknutí, contact/ap
 store eventy, nové cookies, fingerprint nebo sledování rezervací. Centrální
 per-site allowlist a portfolioMetricsApprovedAt se otevřou teprve po
 nezávislém ověření publikovaného textu a bridge. Připravený kód není důkaz
-publikace ani příjmu; produkční potvrzení bude v integration.md.
+publikace ani příjmu. Publikaci release 27b6e11 a centrální aktivaci
+2026-10-09T13:03:50.827715Z nezávisle potvrdilo VCode (receipt 0f78ef6);
+produkční ověření je uvedeno v integration.md a souvisejícím release receipt.
 
 ### Český pátý odstavec
 

@@ -1,9 +1,13 @@
 # Studio Balance shared analytics integration
 
-Current candidate 2026-10-09: CD-070 / ADR 0028 adds the three creator-footer
-events described below. Existing production scope remains the approved v2
-scope until the new application is deployed and VCode opens its separate gate.
+Current production 2026-10-09: CD-070 / ADR 0028 adds the three creator-footer
+events described below. Studio release 27b6e11 is deployed; VCode opened its
+per-site portfolio gate at 13:03:50.827715 UTC. Dashboard and collector acceptance
+and the production monitor's exact request passed. No synthetic event was sent
+to the real website ID; full receipt is linked below.
 The dated entries below are historical receipts, not current pending decisions.
+
+Current acceptance: [session diagnostics and creator footer verification](../session-diagnostics-creator-footer-verification-2026-10-09.md).
 
 Status 2026-10-04: prepared, disabled, registered; deployment validation recorded below.
 Repository: git@github.com:voldzi/Studio-Balance.git. Baseline production revision
