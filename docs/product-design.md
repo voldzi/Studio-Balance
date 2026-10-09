@@ -77,6 +77,43 @@ počet přihlášených nebo mezitím změněném stavu server změnu odmítne a
 formulář nabídne nový náhled. Individuálně změněné termíny se nepřepisují;
 vysvětlení této výjimky je viditelné přímo u ovládání.
 
+### Jedno potvrzení po lekci a Výkazy instruktorů
+
+CD-067 přidává u konkrétního ukončeného termínu jedno společné potvrzení:
+„Označte pouze ty, kteří nepřišli; ostatní nepotvrzené rezervace potvrdíme jako
+účast.“ Jméno doprovodu má samostatnou volbu. Již potvrzená účast/neúčast je
+zobrazená, ale její oprava patří do samostatné akce s důvodem. U neúčasti je
+před uložením jasně uveden poplatek; potvrzení není platební krok.
+
+Stejný formulář předvyplní instruktora a začátek/konec z rozvrhu. Správce
+může uvést záskok, skutečný čas a odměnu za lekci v Kč. Prázdná odměna má
+výslovné „K doplnění“ a nesmí se tvářit jako nula. Před uložením se zobrazí
+počty potvrzovaných účastí/neúčastí a vysvětlení, co bude uložené společně.
+Budoucí ani zrušenou lekci nelze potvrdit jako odučenou. Při konfliktu se
+načte nový seznam; formulář neprovede tichou změnu označení či odměny.
+
+Samostatné „Výkazy instruktorů“ nabízejí měsíc, souhrny lekcí/hodin/známých
+odměn, jednotlivé potvrzené lekce a ukončené termíny k doplnění. Záskok se
+počítá skutečnému instruktorovi. Chybějící odměna a změněná docházka po
+potvrzení mají čitelnou výzvu ke kontrole. Oprava času, instruktora či odměny
+vyžaduje důvod a uchová historii; automatický přepočet částky nevzniká.
+
+Tisk/CSV odpovídají vybranému měsíci, mají zřetelné neúplné odměny a označení
+„Provozní evidence odučených lekcí“. Počet ukončených nepotvrzených lekcí a
+chybějících odměn je viditelný i na tisku a v CSV; export nesmí neúplný měsíc
+vydávat za uzavřený. Nesmí slibovat kompletní evidenci
+pracovní doby nebo výplatní podklad bez další kontroly. Nápověda obsahuje
+krátký postup potvrzení lekce, záskoku, doplnění odměny a měsíčního exportu.
+Loading, empty, error, stale, success a permission-denied jsou samostatné
+stavy; potvrzení, oprava a export jsou použitelné z klávesnice i od 360 px.
+
+CD-066 mění veřejný název na **Formuj břicho a hýždě**. Slug ani ID se
+nepřejmenovávají a nevzniká nový typ lekce. Připravený plakát
+`/images/studio-balance/lessons/formuj-bricho-a-hyzde.png` je derivát dodaného
+podkladu s opraveným nadpisem; původní obraz zůstává zachovaný. Nahrazuje jen
+výchozí plakát, nikoli individuálně nahraná média. Správný název je v obraze,
+nikoli pouze v alt textu.
+
 ## Informační architektura
 
 ### Veřejný web
@@ -120,8 +157,17 @@ pozadí, hnědá typografie, měděné/zlatavé akce, elegantní nadpisové pís
 oficiální logo a schválené fotografie lekcí. Úvod přivítá klientku, ukáže její
 nejbližší rezervaci s fotografií a nabídne detail i bezpečné storno.
 
-Spodní mobilní navigace má přesné pořadí Domů, Rozvrh, Rezervace, Oblíbené a
-Profil. Klientský přehled dále obsahuje nadcházející/minulé rezervace, novinky,
+Spodní mobilní navigace má podle CD-068 přesné pořadí Rozvrh, Rezervace, Novinky,
+Zprávy a Profil. Stejné položky a aktivní stav používá účet, rozvrh i detail.
+Domů je výslovně dostupné z hlavičky účtu; Oblíbené lekce mají viditelný odkaz
+v Profilu. Zprávy účtu a Novinky studia zůstávají samostatné sekce. Bez evidence
+přečtení se počet všech zpráv nezobrazuje jako počet nepřečtených. Přímý vstup
+do sekce po přihlášení zachová pouze povolené `view`, včetně bezpečného návratu
+při vypršení relace. Lišta respektuje safe area, viditelný fokus a dotykové cíle
+na 360 px; při omezeném pohybu není návrat na začátek stránky animovaný.
+Přepnutí sekce tlačítkem po vykreslení přesune fokus na nový hlavní nadpis,
+aby čtečka oznámila otevřenou sekci. Nadpis není další zastávkou běžného Tab.
+Klientský přehled dále obsahuje nadcházející/minulé rezervace, novinky,
 zprávy účtu, profil, nastavení a odhlášení. Rozvrh, detail i rezervační krok
 zůstávají součástí stejného responzivního webu a používají tentýž serverový stav
 jako desktop a administrace. Číselný počet volných míst z referenčních obrázků

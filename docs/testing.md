@@ -480,3 +480,52 @@ or mismatched/incomplete reports, symlink refusal and own-workspace cleanup.
 Cache tests verify the explicit 14-day/2-GiB idle reset boundary and refusal
 to adopt or delete unmanaged/symlinked contents.
 This regression test does not substitute for scanning the built release.
+
+## CD-066–068: potvrzení lekce, výkazy a přímá klientská navigace
+
+Závazné scénáře nového řezu; jejich seznam není tvrzením o dokončené
+produkční nebo fyzické PWA akceptaci:
+
+- Skutečný PostgreSQL: společné potvrzení označí jen `reserved` místa,
+  vynechá storna a zachová dříve potvrzené stavy; vlastní místo a doprovod
+  mají nezávislou účast. Výkaz, attendance, fee i audit se buď uloží všechny,
+  nebo při chybě některé části nevznikne nic.
+- Souběh se stornem, novou rezervací, změnou docházky či výkazem odmítne
+  zastaralý `rosterToken`/`expectedVersion`. Test obsahuje poslední stav
+  seznamu a nedovolí automatické potvrzení nově změněných účastníků.
+- Totožný retry po commitu vrátí tentýž výkaz a nepřidá audit nebo poplatek.
+  Jiný obsah se zastaralou verzí nesmí uspět jako idempotentní opakování.
+- Budoucí, zrušený či neexistující termín se nepotvrdí. Skutečný čas má
+  validní kladnou délku, nesmí skončit v budoucnosti; záskok se uloží
+  skutečnému instruktorovi a oprava má důvod, staré/nové hodnoty a verzi.
+- Neúčast vytvoří jeden fee ze snapshotu. Oprava na účast zruší pouze
+  neuhrazený `due`; již `settled`/`waived` zachová včetně částky a úhrady.
+  Opačná oprava obnoví původní zrušený fee bez změny snapshotu. Retry a
+  skutečný souběh oprav nesmí vytvořit dvojí poplatek.
+- Měsíční výkaz počítá pouze potvrzené lekce a skutečné minuty; budoucí či
+  zrušené termíny se nezapočítají. Pokryty jsou oba měsíční okraje v
+  `Europe/Prague` a měsíce přechodu DST. Historie se nemigruje odhadem.
+- `rewardCents=null` je k doplnění, explicitní 0 je zadaná částka. Souhrn
+  uvádí neúplné odměny. Změna docházky po potvrzení vrátí
+  `attendanceChanged`; nezmění automaticky ruční odměnu ani schválenou částku.
+- Neautentizovaný klient, klient bez role a admin bez MFA nečtou ani
+  nezapisují výkazy; odpovědi mají kontrakt, requestId a soukromé cache
+  hlavičky. Export neobsahuje kontakty klientů a escapuje CSV vzorce.
+- Formulář a výkazy: pending/error/stale/permission/empty/success, viditelný
+  důvod a neúčastníkův fee před uložením, záskok, ruční doplnění odměny,
+  tisk/CSV právě zvoleného měsíce a čitelné upozornění na neúplnost.
+  Nepotvrzené lekce a chybějící odměny mají počet i v exportu/tisku, nikoli
+  pouze ve sbaleném nebo pro tisk skrytém seznamu obrazovky.
+- Klientská lišta na účtu i rozvrhu má shodné položky a aktivní stav
+  Rozvrh/Rezervace/Novinky/Zprávy/Profil. Domů a Oblíbené zůstávají dohledatelné.
+  Novinky/Zprávy se po vypršení přihlášení otevřou v původní sekci; neznámé,
+  opakované nebo útočné `view` přejde do bezpečného přehledu účtu.
+- 360 px, tablet, desktop, safe area instalované PWA, keyboard/fokus a
+  reduced motion. Soukromé sekce neposílají analytiku; runtime/SRI a
+  dosavadní DNT/GPC/offline/session guards zůstávají ověřené.
+  Přepnutí tlačítkem přesune fokus na nový h1 po renderu; nadpis je přitom
+  mimo běžné pořadí Tab a není animovaný scroll při reduced motion.
+- Přejmenování má jeden zachovaný typ/slug, beze změny času/ceny/kapacity,
+  rezervací a historických snapshotů výkazů. Viditelný název i nový výchozí
+  plakát jsou „Formuj břicho a hýždě“; starý odkaz dál otevře stejnou lekci.
+  Individuálně nahraný obraz se migrací nepřepíše a dodaný originál zůstane zachovaný.

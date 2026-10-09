@@ -463,11 +463,11 @@ input[type="text"], input[type="tel"], input:not([type]) { width: 100%; min-heig
 .client-security-entry a { min-height: 44px; display: inline-flex; align-items: center; gap: .45rem; color: var(--client-copper-dark); font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
 .client-security-entry small { margin-top: .5rem; display: block; color: var(--color-text-secondary); line-height: 1.45; }
 .client-bottom-nav { width: min(calc(100% - 2rem), 62rem); min-height: 6.4rem; padding: .65rem clamp(.4rem, 2vw, 1.5rem); position: fixed; z-index: 15; right: 0; bottom: 1rem; left: 0; margin-inline: auto; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; border: 1px solid rgb(225 210 199 / 90%); border-radius: 1rem; background: rgb(255 252 248 / 94%); box-shadow: 0 1rem 3.5rem rgb(64 38 24 / 13%); backdrop-filter: blur(1rem); }
-.client-bottom-nav a, .client-bottom-nav button { min-width: 0; min-height: 4.7rem; padding: .25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; border: 0; background: transparent; color: #564239; cursor: pointer; font-size: .78rem; text-decoration: none; }
+.client-bottom-nav a, .client-bottom-nav button { min-width: 0; min-height: 4.7rem; padding: .25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; border: 0; background: transparent; color: #564239; cursor: pointer; font-size: .78rem; font-weight: 650; letter-spacing: 0; text-transform: none; text-decoration: none; }
 .client-bottom-nav svg { width: 1.9rem; height: 1.9rem; }
-.client-bottom-nav [aria-current="page"] { color: #b36b15; }
+.client-bottom-nav [aria-current="page"] { color: #945818; }
 .client-bottom-nav [aria-current="page"]::after { content: ""; width: 2.2rem; height: .2rem; border-radius: 999px; background: #b36b15; }
-body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
+body:has(.client-bottom-nav) { padding-bottom: calc(7.4rem + env(safe-area-inset-bottom, 0px)); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; padding: var(--space-4); display: grid; place-items: center; background: rgb(35 27 23 / 58%); }
 .cancel-dialog { width: min(100%, 34rem); padding: clamp(2rem, 5vw, 3rem); border-radius: var(--radius-lg); background: var(--color-bg-light); box-shadow: 0 2rem 5rem rgb(0 0 0 / 25%); }
 .cancel-dialog h2 { font-size: 2.2rem; }
@@ -701,9 +701,9 @@ body:has(.client-bottom-nav) { padding-bottom: 7.4rem; }
   .client-favorite-card h2 { font-size: 1.45rem; }
   .client-favorite-card p { min-height: 0; font-size: .82rem; }
   .client-bottom-nav { width: 100%; min-height: 5.8rem; padding: .45rem .15rem max(.45rem, env(safe-area-inset-bottom)); bottom: 0; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 0; }
-  .client-bottom-nav a, .client-bottom-nav button { min-height: 4.4rem; gap: .25rem; font-size: .65rem; }
+  .client-bottom-nav a, .client-bottom-nav button { min-height: 4.4rem; gap: .25rem; font-size: .72rem; }
   .client-bottom-nav svg { width: 1.55rem; height: 1.55rem; }
-  body:has(.client-bottom-nav) { padding-bottom: 6.4rem; }
+  body:has(.client-bottom-nav) { padding-bottom: calc(6.4rem + env(safe-area-inset-bottom, 0px)); }
   .admin-app { display: block; }
   .admin-sidebar { min-height: auto; padding: var(--space-4); position: static; }
   .admin-sidebar nav { margin-top: var(--space-4); grid-auto-flow: column; grid-auto-columns: minmax(8rem, 1fr); grid-template-columns: none; overflow-x: auto; }
@@ -783,3 +783,34 @@ dialog.pwa-install-modal { width: 100vw; height: 100dvh; max-width: none; max-he
 dialog.pwa-install-modal::backdrop { background: transparent; }
 
 .pwa-install-modal-panel { padding-top: 3.5rem; }
+
+.admin-completion { margin-top: 1.5rem; padding: clamp(1rem, 3vw, 2rem); border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-surface, #fffaf6); }
+.admin-completion h3 { font-size: 1.6rem; }
+.admin-completion .admin-row-actions { flex-wrap: wrap; }
+.admin-completion .admin-row-actions button { min-height: 44px; }
+.admin-completion .admin-row-actions .button { background: #825020; color: #fffaf4; }
+.admin-completion .admin-row-actions .button:hover { background: #694017; color: #fffaf4; }
+.admin-completion fieldset { min-width: 0; border: 1px solid var(--color-border); border-radius: .6rem; padding: 1rem; }
+.admin-completion legend { padding: 0 .4rem; font-weight: 700; }
+.admin-completion .admin-check { display: flex; align-items: center; gap: .7rem; min-height: 44px; overflow-wrap: anywhere; }
+.admin-feedback { padding: .8rem; background: #f2e4d7; border-radius: .5rem; overflow-wrap: anywhere; }
+.admin-wide-field { grid-column: 1 / -1; }
+.admin-report-summaries { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
+.admin-report-summaries h3 { font-size: 1.45rem; }
+.admin-instructor-records > h2 { margin-top: 2rem; }
+.admin-instructor-records input[type=month] { min-height: 44px; max-width: 100%; padding: .6rem; border: 1px solid var(--color-border); border-radius: .4rem; }
+.admin-report-table { overflow-x: auto; max-width: 100%; margin: 1rem 0; }
+.admin-report-table table { min-width: 44rem; width: 100%; border-collapse: collapse; text-align: left; }
+.admin-report-table th, .admin-report-table td { padding: .7rem; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+.admin-report-table button { min-height: 44px; }
+@media print {
+  body { background: white; }
+  .site-header, .site-footer, .admin-sidebar, .client-bottom-nav, .client-route-nav, .admin-instructor-records button, .admin-completion, .admin-instructor-records details { display: none !important; }
+  .admin-app { display: block; }
+  .admin-content { padding: 0; }
+  .admin-report-table { overflow: visible; }
+  .admin-report-table th:last-child, .admin-report-table td:last-child { display: none; }
+  .admin-report-table table { min-width: 0; font-size: 10pt; }
+  .admin-report-table tr { break-inside: avoid; }
+  .admin-report-summaries article { break-inside: avoid; }
+}

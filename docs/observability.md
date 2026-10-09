@@ -265,3 +265,20 @@ in docs/analytics/integration.md.
 Archivace typu a pozastavení rozvrhu používají existující administrativní audit class_type.updated a weekly_schedule_rule.versioned. Přímé požadavky na rezervaci neaktivního typu vracejí RESOURCE_NOT_FOUND se standardním requestId.
 
 Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).
+
+## Potvrzení lekce a výkazy instruktorů (ADR 0026)
+
+V jedné transakci vznikají `booking.attendance_changed` pro skutečně změněná
+místa a `instructor_lesson_record.confirmed` nebo
+`instructor_lesson_record.corrected` pro výkaz. Audit obsahuje admin subjekt,
+requestId, termín, důvod, předchozí/nové hodnoty a verzi; fee změna má zachovaný
+původní stav a částku. Běžný log nemá kopírovat odměny, jména ani celý seznam.
+Idempotentní opakování nepřidává audit ani další poplatek. Chyba auditu vrátí
+celé potvrzení, nikoli jen část výkazu.
+
+Provozní UI rozlišuje ukončené nepotvrzené lekce, chybějící odměny a
+`attendanceChanged` po změně docházky. Tyto stavy nejsou potvrzenými tržbami,
+neúspěšnými platbami ani automaticky vypočítanou odměnou. Měsíční souhrn se
+počítá ze skutečně potvrzených výkazů; nepoužívá budoucí plán nebo očekávanou
+docházku. Konflikt `INSTRUCTOR_RECORD_CONFLICT` korelovat přes requestId,
+nevynucovat přepsání verze. Výkazy ani jejich exporty nepatří do veřejné analytiky.

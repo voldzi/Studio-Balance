@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  PiArrowRight, PiCalendarBlank, PiCalendarCheck, PiChatCircleText, PiCheckCircle,
-  PiClock, PiEnvelopeSimple, PiGear, PiHeart, PiHeartFill, PiHouse, PiMapPin,
+  PiArrowRight, PiCalendarBlank, PiChatCircleText, PiCheckCircle,
+  PiClock, PiEnvelopeSimple, PiGear, PiHeart, PiHeartFill, PiMapPin,
   PiNewspaperClipping, PiShieldCheck, PiSignOut, PiUser, PiUserCircle
 } from "react-icons/pi";
 
@@ -14,9 +14,10 @@ import {
   type Booking, type CancellationPreview, type ClassType, type FavoriteClassType,
   type NewsItem, type Profile
 } from "../lib/api-types";
+import { accountView, accountViewHref, type AccountView } from "../lib/client-navigation";
+import { ClientBottomNavigation } from "./client-bottom-navigation";
 import { PwaInstallGuide } from "./pwa-install-guide";
 
-type AccountView = "favorites" | "home" | "messages" | "news" | "profile" | "reservations";
 type ReservationPeriod = "history" | "upcoming";
 type BookingPage = { items: Booking[]; nextCursor: string | null };
 type BookingDates = { from: string; through: string };
@@ -30,9 +31,7 @@ const bookingLabels: Record<Booking["status"], string> = {
   reserved: "Rezervováno"
 };
 
-const validViews = new Set<AccountView>(["favorites", "home", "messages", "news", "profile", "reservations"]);
-
-export function AccountDashboard() {
+export function AccountDashboard({ initialView = "home" }: { initialView?: AccountView }) {
   const [profile, setProfile] = useState<Profile>();
   const [upcoming, setUpcoming] = useState<Booking[]>([]);
   const [history, setHistory] = useState<Booking[]>([]);
@@ -40,11 +39,13 @@ export function AccountDashboard() {
   const [historyDates, setHistoryDates] = useState<BookingDates>({ from: "", through: "" });
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const bookingsGeneration = useRef(0);
+  const accountMain = useRef<HTMLElement>(null);
+  const focusNewHeading = useRef(false);
   const [notifications, setNotifications] = useState<AccountNotification[]>([]);
   const [classTypes, setClassTypes] = useState<ClassType[]>([]);
   const [favorites, setFavorites] = useState<FavoriteClassType[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
-  const [view, setView] = useState<AccountView>("home");
+  const [view, setView] = useState<AccountView>(initialView);
   const [period, setPeriod] = useState<ReservationPeriod>("upcoming");
   const [selected, setSelected] = useState<{ booking: Booking; preview: CancellationPreview }>();
   const [message, setMessage] = useState<string>();
@@ -104,18 +105,27 @@ export function AccountDashboard() {
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("view") as AccountView | null;
-    if (requested && validViews.has(requested)) setView(requested);
+    const restoreView = () => setView(accountView(new URLSearchParams(window.location.search).get("view")));
+    window.addEventListener("popstate", restoreView);
+    return () => window.removeEventListener("popstate", restoreView);
   }, []);
+  useEffect(() => { setView(initialView); }, [initialView]);
+  useEffect(() => {
+    if (!focusNewHeading.current) return;
+    focusNewHeading.current = false;
+    accountMain.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true });
+  }, [view]);
 
   const classTypeBySlug = useMemo(() => new Map(classTypes.map((item) => [item.slug, item])), [classTypes]);
   const favoriteIds = useMemo(() => new Set(favorites.map((item) => item.id)), [favorites]);
 
   function navigate(nextView: AccountView) {
+    focusNewHeading.current = nextView !== view;
+    if (nextView === view) accountMain.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true });
     setView(nextView);
-    const nextUrl = nextView === "home" ? "/muj-ucet" : `/muj-ucet?view=${nextView}`;
+    const nextUrl = accountViewHref(nextView);
     window.history.replaceState({}, "", nextUrl);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -186,12 +196,13 @@ export function AccountDashboard() {
           <Image alt="Studio Balance" height={150} priority src="/images/studio-balance/brand-logo.jpg" width={220} />
         </button>
         <div className="client-header-actions">
-          <button aria-label="Zprávy účtu" onClick={() => navigate("messages")} type="button"><PiChatCircleText aria-hidden="true" />{notifications.length > 0 && <span>{notifications.length}</span>}</button>
+          <button aria-label="Domů – přehled účtu" onClick={() => navigate("home")} type="button">Domů</button>
+          <button aria-label="Zprávy účtu" onClick={() => navigate("messages")} type="button"><PiChatCircleText aria-hidden="true" /></button>
           <button aria-label="Profil" onClick={() => navigate("profile")} type="button"><PiUserCircle aria-hidden="true" /></button>
         </div>
       </header>
 
-      <main className="client-app-main">
+      <main className="client-app-main" ref={accountMain}>
         {view === "home" && <HomeView classType={nextClass} firstName={firstName} nextBooking={nextBooking} upcoming={upcoming} busy={busy} navigate={navigate} openCancellation={openCancellation} />}
         {view === "reservations" && <ReservationsView busy={busy} history={history} historyDates={historyDates} loadingMore={bookingsLoading} nextCursor={bookingCursors[period]} onDates={applyHistoryDates} onLoadMore={() => void loadMoreBookings(period)} openCancellation={openCancellation} period={period} setPeriod={setPeriod} upcoming={upcoming} />}
         {view === "favorites" && <FavoritesView busy={busy} classTypes={classTypes} favoriteIds={favoriteIds} toggleFavorite={toggleFavorite} />}
@@ -224,7 +235,7 @@ export function AccountDashboard() {
 
 function HomeView({ busy, classType, firstName, navigate, nextBooking, openCancellation, upcoming }: { busy: boolean; classType: ClassType | undefined; firstName: string; navigate: (view: AccountView) => void; nextBooking: Booking | undefined; openCancellation: (booking: Booking) => Promise<void>; upcoming: Booking[] }) {
   return <>
-    <h1 className="client-greeting">{greeting()}{firstName ? `, ${vocative(firstName)}` : ""}</h1>
+    <h1 className="client-greeting" tabIndex={-1}>{greeting()}{firstName ? `, ${vocative(firstName)}` : ""}</h1>
     <section aria-labelledby="next-lesson-title" className="next-lesson-card">
       <h2 id="next-lesson-title">Další lekce</h2>
       {nextBooking ? <div className="next-lesson-layout">
@@ -268,7 +279,7 @@ export function ReservationsView({ busy, history, historyDates, loadingMore, nex
 }) {
   const items = period === "upcoming" ? upcoming : history;
   return <section className="client-view" aria-labelledby="reservations-title">
-    <p className="client-view-eyebrow">Studio Balance</p><h1 id="reservations-title">Moje rezervace</h1>
+    <p className="client-view-eyebrow">Studio Balance</p><h1 id="reservations-title" tabIndex={-1}>Moje rezervace</h1>
     <div className="client-segmented" role="tablist" aria-label="Období rezervací"><button aria-selected={period === "upcoming"} onClick={() => setPeriod("upcoming")} role="tab" type="button">Nadcházející</button><button aria-selected={period === "history"} onClick={() => setPeriod("history")} role="tab" type="button">Minulé</button></div>
     {period === "history" && <form className="client-profile-form" key={`${historyDates.from}:${historyDates.through}`} onSubmit={(event) => {
       event.preventDefault(); const data = new FormData(event.currentTarget);
@@ -287,24 +298,20 @@ function BookingRow({ booking, busy, onCancel }: { booking: Booking; busy: boole
 }
 
 function FavoritesView({ busy, classTypes, favoriteIds, toggleFavorite }: { busy: boolean; classTypes: ClassType[]; favoriteIds: Set<string>; toggleFavorite: (item: ClassType) => Promise<void> }) {
-  return <section className="client-view" aria-labelledby="favorites-title"><p className="client-view-eyebrow">Váš pohyb</p><h1 id="favorites-title">Oblíbené lekce</h1><p className="client-view-intro">Uložte si lekce, ke kterým se chcete rychle vracet.</p><div className="client-favorite-grid">{classTypes.map((item) => <article className="client-favorite-card" key={item.id}>{item.heroImage && <Link href={`/lekce/${item.slug}`}><Image alt={item.heroImage.alt} height={500} src={item.heroImage.src} unoptimized={item.heroImage.src.startsWith("/api/v1/media/")} width={700} /></Link>}<div><Link href={`/lekce/${item.slug}`}><h2>{item.name}</h2></Link><p>{item.tagline}</p><button aria-label={`${favoriteIds.has(item.id) ? "Odebrat" : "Přidat"} ${item.name} ${favoriteIds.has(item.id) ? "z" : "do"} oblíbených`} disabled={busy} onClick={() => void toggleFavorite(item)} type="button">{favoriteIds.has(item.id) ? <PiHeartFill aria-hidden="true" /> : <PiHeart aria-hidden="true" />}<span>{favoriteIds.has(item.id) ? "Oblíbená" : "Přidat"}</span></button></div></article>)}</div></section>;
+  return <section className="client-view" aria-labelledby="favorites-title"><p className="client-view-eyebrow">Váš pohyb</p><h1 id="favorites-title" tabIndex={-1}>Oblíbené lekce</h1><p className="client-view-intro">Uložte si lekce, ke kterým se chcete rychle vracet.</p><div className="client-favorite-grid">{classTypes.map((item) => <article className="client-favorite-card" key={item.id}>{item.heroImage && <Link href={`/lekce/${item.slug}`}><Image alt={item.heroImage.alt} height={500} src={item.heroImage.src} unoptimized={item.heroImage.src.startsWith("/api/v1/media/")} width={700} /></Link>}<div><Link href={`/lekce/${item.slug}`}><h2>{item.name}</h2></Link><p>{item.tagline}</p><button aria-label={`${favoriteIds.has(item.id) ? "Odebrat" : "Přidat"} ${item.name} ${favoriteIds.has(item.id) ? "z" : "do"} oblíbených`} disabled={busy} onClick={() => void toggleFavorite(item)} type="button">{favoriteIds.has(item.id) ? <PiHeartFill aria-hidden="true" /> : <PiHeart aria-hidden="true" />}<span>{favoriteIds.has(item.id) ? "Oblíbená" : "Přidat"}</span></button></div></article>)}</div></section>;
 }
 
 function NewsView({ items }: { items: NewsItem[] }) {
-  return <section className="client-view" aria-labelledby="news-title"><p className="client-view-eyebrow">Ze studia</p><h1 id="news-title">Novinky</h1>{items.length ? <div className="client-news-list">{items.map((item) => <article key={item.id}><time>{formatStudioDate(item.publishedAt, { day: "numeric", month: "long", year: "numeric" })}</time><h2>{item.title}</h2><p className="client-news-summary">{item.summary}</p><p>{item.body}</p></article>)}</div> : <div className="client-empty-state"><p>Jakmile bude ve studiu něco nového, najdete to tady.</p></div>}</section>;
+  return <section className="client-view" aria-labelledby="news-title"><p className="client-view-eyebrow">Ze studia</p><h1 id="news-title" tabIndex={-1}>Novinky</h1>{items.length ? <div className="client-news-list">{items.map((item) => <article key={item.id}><time>{formatStudioDate(item.publishedAt, { day: "numeric", month: "long", year: "numeric" })}</time><h2>{item.title}</h2><p className="client-news-summary">{item.summary}</p><p>{item.body}</p></article>)}</div> : <div className="client-empty-state"><p>Jakmile bude ve studiu něco nového, najdete to tady.</p></div>}</section>;
 }
 
 function MessagesView({ items }: { items: AccountNotification[] }) {
-  return <section className="client-view" aria-labelledby="messages-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="messages-title">Zprávy účtu</h1>{items.length ? <div className="client-news-list">{items.map((item) => <article key={item.id}><time>{formatStudioDate(item.createdAt, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time><h2>{item.title}</h2><p>{item.body}</p></article>)}</div> : <div className="client-empty-state"><p>Zatím tu nemáte žádné zprávy.</p></div>}</section>;
+  return <section className="client-view" aria-labelledby="messages-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="messages-title" tabIndex={-1}>Zprávy účtu</h1>{items.length ? <div className="client-news-list">{items.map((item) => <article key={item.id}><time>{formatStudioDate(item.createdAt, { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</time><h2>{item.title}</h2><p>{item.body}</p></article>)}</div> : <div className="client-empty-state"><p>Zatím tu nemáte žádné zprávy.</p></div>}</section>;
 }
 
 export function ProfileView({ busy, profile, saveProfile }: { busy: boolean; profile: Profile; saveProfile: (event: FormEvent<HTMLFormElement>) => Promise<void> }) {
   const canManageStudio = profile.roles.some((role) => role === "admin" || role === "super_admin");
-  return <section className="client-view client-profile-view" aria-labelledby="profile-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="profile-title">Profil</h1><div className="client-profile-layout"><form className="client-profile-form" onSubmit={(event) => void saveProfile(event)}><label>Jméno<input defaultValue={profile.firstName ?? ""} name="firstName" required /></label><label>Příjmení<input defaultValue={profile.lastName ?? ""} name="lastName" required /></label><label>Telefon<input autoComplete="tel" defaultValue={profile.phone ?? ""} name="phone" required type="tel" /></label><label>E-mail<input disabled value={profile.email} /></label><button className="client-primary-action" disabled={busy} type="submit">Uložit údaje</button></form><aside className="client-settings"><h2><PiGear aria-hidden="true" /> Nastavení</h2><p>Přihlášení a zabezpečení účtu spravuje Studio Balance. Platby probíhají pouze ve studiu.</p><div className="client-security-entry"><h3>Zabezpečení účtu</h3><p>Heslo si volíte sami a zůstává stejné. Administrátor navíc při novém přihlášení používá měnící se šestimístný kód z Authenticatoru.</p><Link href="/auth/change-password">Změnit vlastní heslo <PiArrowRight aria-hidden="true" /></Link><small>Obnovu zapomenutého hesla zpřístupníme po zapojení e-mailů.</small></div><PwaInstallGuide />{canManageStudio && <div className="client-admin-entry"><h3><PiShieldCheck aria-hidden="true" /> Správa studia</h3><p>Rozvrh, rezervace, klienti a obsah. Z přihlášeného administrátorského účtu se správa otevře rovnou.</p><Link href="/admin">Otevřít administraci <PiArrowRight aria-hidden="true" /></Link></div>}<form action="/auth/logout" method="post"><button type="submit"><PiSignOut aria-hidden="true" /> Odhlásit se</button></form></aside></div></section>;
-}
-
-function ClientBottomNavigation({ active, navigate }: { active: AccountView; navigate: (view: AccountView) => void }) {
-  return <nav aria-label="Klientská aplikace" className="client-bottom-nav"><button aria-current={active === "home" ? "page" : undefined} onClick={() => navigate("home")} type="button"><PiHouse aria-hidden="true" /><span>Domů</span></button><Link href="/rozvrh"><PiCalendarBlank aria-hidden="true" /><span>Rozvrh</span></Link><button aria-current={active === "reservations" ? "page" : undefined} onClick={() => navigate("reservations")} type="button"><PiCalendarCheck aria-hidden="true" /><span>Rezervace</span></button><button aria-current={active === "favorites" ? "page" : undefined} onClick={() => navigate("favorites")} type="button"><PiHeart aria-hidden="true" /><span>Oblíbené</span></button><button aria-current={active === "profile" ? "page" : undefined} onClick={() => navigate("profile")} type="button"><PiUser aria-hidden="true" /><span>Profil</span></button></nav>;
+  return <section className="client-view client-profile-view" aria-labelledby="profile-title"><p className="client-view-eyebrow">Váš účet</p><h1 id="profile-title" tabIndex={-1}>Profil</h1><div className="actions"><Link className="button button-secondary" href={accountViewHref("favorites")}><PiHeart aria-hidden="true" /> Oblíbené lekce</Link></div><div className="client-profile-layout"><form className="client-profile-form" onSubmit={(event) => void saveProfile(event)}><label>Jméno<input defaultValue={profile.firstName ?? ""} name="firstName" required /></label><label>Příjmení<input defaultValue={profile.lastName ?? ""} name="lastName" required /></label><label>Telefon<input autoComplete="tel" defaultValue={profile.phone ?? ""} name="phone" required type="tel" /></label><label>E-mail<input disabled value={profile.email} /></label><button className="client-primary-action" disabled={busy} type="submit">Uložit údaje</button></form><aside className="client-settings"><h2><PiGear aria-hidden="true" /> Nastavení</h2><p>Přihlášení a zabezpečení účtu spravuje Studio Balance. Platby probíhají pouze ve studiu.</p><div className="client-security-entry"><h3>Zabezpečení účtu</h3><p>Heslo si volíte sami a zůstává stejné. Administrátor navíc při novém přihlášení používá měnící se šestimístný kód z Authenticatoru.</p><Link href="/auth/change-password">Změnit vlastní heslo <PiArrowRight aria-hidden="true" /></Link><small>Obnovu zapomenutého hesla zpřístupníme po zapojení e-mailů.</small></div><PwaInstallGuide />{canManageStudio && <div className="client-admin-entry"><h3><PiShieldCheck aria-hidden="true" /> Správa studia</h3><p>Rozvrh, rezervace, klienti a obsah. Z přihlášeného administrátorského účtu se správa otevře rovnou.</p><Link href="/admin">Otevřít administraci <PiArrowRight aria-hidden="true" /></Link></div>}<form action="/auth/logout" method="post"><button type="submit"><PiSignOut aria-hidden="true" /> Odhlásit se</button></form></aside></div></section>;
 }
 
 function greeting() {

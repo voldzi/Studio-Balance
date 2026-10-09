@@ -32,9 +32,9 @@ zapíše do `open-questions.md` a vyřeší před implementací.
 | `source-register.md` | evidence, priorita a interpretace vstupních podkladů | ověřeno 2026-08-04 |
 | `adr/` | architektonická rozhodnutí a jejich historie | živý registr |
 
-Strojovým zdrojem API je `openapi/openapi.json`. V počáteční fázi obsahuje jen
-platformní health/readiness kontrakt; funkční endpoint se nestává schváleným
-jen tím, že je zmíněn v návrhu `api.md`.
+Strojovým zdrojem API je `openapi/openapi.json`, včetně funkčních endpointů.
+Lidský popis v `api.md` jej doplňuje; změna endpointu musí aktualizovat oba
+kontrakty společně s implementací a testy.
 
 ## Pravidla údržby
 
@@ -50,3 +50,10 @@ jen tím, že je zmíněn v návrhu `api.md`.
 Aktuální S3 zapojení: [ADR 0012 – vlastní media bucket](adr/0012-dedicated-media-bucket.md).
 
 Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).
+
+Potvrzení docházky a měsíční provozní výkazy instruktorů:
+[ADR 0026](adr/0026-session-completion-and-instructor-records.md),
+CD-067 a krátký [provozní postup](operations.md).
+
+Implementace a lokální ověření 2026-10-09:
+[docházka, výkazy a klientská navigace](attendance-instructor-records-verification-2026-10-09.md).

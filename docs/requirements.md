@@ -167,6 +167,9 @@ provozem se musí doplnit a ověřit doručování.
   instalační wrapper ani app-store release.
 - Klientský účet na webu zpřístupní nejbližší rezervaci, historii, storno,
   profil a provozní zprávy.
+- Podle CD-068 mají účet, rozvrh a detail stejnou spodní lištu: Rozvrh,
+  Rezervace, Novinky, Zprávy, Profil. Domů je viditelný vstup v hlavičce,
+  Oblíbené jsou dostupné z Profilu a přihlášení zachová povolenou cílovou sekci.
 - Mobilní browser dostává plnohodnotný responzivní tok, nikoli omezenou
   sekundární verzi.
 - Mobilní push, APNs/FCM a native deep links jsou mimo rozsah. PWA smí uložit
@@ -206,6 +209,34 @@ označených jako účast je vždy popsán jen jako provozní odhad hodnoty náv
 nikoli skutečná tržba nebo potvrzení platby; účetní výdělek zůstává bez evidence
 zaplacení a permanentek mimo dostupná data.
 Rozvrh se nesmí hardcodovat z referenčního obrázku.
+
+### Potvrzení lekce a výkaz instruktorů (CD-067)
+
+Po konci lekce označí administrátor nepřítomné a jedním potvrzením uloží účast
+ostatních dosud rezervovaných míst i skutečně odučenou lekci. Budoucí rezervace
+se nezapočítají jako účast; zrušená místa se neobnoví a doprovod je samostatný
+účastník. Neúčast má stávající poplatek podle cenového snapshotu. Úhrady a
+prominutí se opravou docházky neruší. Celé potvrzení, poplatky, výkaz a audit
+se uloží v jedné transakci; zastaralý seznam či verze způsobí bezpečný konflikt.
+Opakování totožného úspěšného požadavku nevytvoří druhý výkaz ani další poplatek.
+
+Výkaz obsahuje datum, snapshot jména skutečného instruktora a názvu lekce,
+skutečný začátek/konec, minuty výuky, počet účastníků a ruční odměnu. Instruktor
+a čas se předvyplní z termínu, záskok a délku lze opravit s důvodem a auditem.
+Odměna je nepovinná k prvnímu potvrzení; nevyplněná je k doplnění, ne nulová.
+Po změně docházky je třeba odměnu zkontrolovat; částka se potichu nepřepočítá.
+
+Měsíční souhrn v `Europe/Prague` sčítá jen potvrzené lekce a skutečné hodiny
+po instruktorech. Známé odměny, jejich neúplnost a ukončené nepotvrzené termíny
+se uvádějí odděleně. Správce má detail, tisk a CSV export stejného období.
+Historická výuka ani účast se neodhadují z rezervací či týdenního plánu.
+Provozní evidence výuky pro DPP není mzdová agenda ani úplná evidence další
+práce mimo lekci. Výpočet odměn podle počtu osob vyžaduje samostatné pravidlo.
+
+CD-066 přejmenovává Body Sculpt na **Formuj břicho a hýždě** při zachování ID,
+slugu a rezervací. Nemění cenu, kapacitu, čas ani instruktora. Výchozí plakát
+nahrazuje připravený derivát s opraveným nadpisem Formuj břicho a hýždě;
+původní podklad a individuálně nahraná média administrátorky se zachovají.
 
 Recenze je prostý text se schváleným jménem nebo iniciálou, volitelným zdrojem,
 volitelným datem, volitelnou vazbou na lekci a volitelným skutečným hodnocením

@@ -1,7 +1,7 @@
 # Studio Balance
 
-Studio Balance je připravované jednotné digitální řešení pro boutique pohybové
-studio. Zahrne responzivní veřejný web, klientský účet s rezervacemi a webovou
+Studio Balance je jednotné digitální řešení pro boutique pohybové
+studio. Obsahuje responzivní veřejný web, klientský účet s rezervacemi a webovou
 administraci nad jedním backendem a jednou databází.
 Primárními uživateli jsou návštěvníci a klienti studia, provozovatelka a hlavní
 administrátor. Vlastníkem produktu je Studio Balance; jmenovitý produktový
@@ -9,10 +9,11 @@ vlastník a technický správce musí být před zahájením implementace potvrz
 
 ## Stav projektu
 
-Projekt přešel z analýzy do vývoje. Repozitář obsahuje první aplikační základ:
+Repozitář obsahuje aplikaci a její provozní/deployment nástroje:
 Next.js web, NestJS/Fastify API, worker, sdílené balíčky, lokální PostgreSQL 18
-a Keycloak. Rezervační pravidla se začnou implementovat až po uzavření
-připraveného dotazu zadavateli.
+a Keycloak. Rezervace, oddělená administrace a obsah používají jeden backend.
+Aktuální produkční revizi a meze ověření dokládá provozní dokumentace;
+implementovaná změna se nevydává za nasazenou bez samostatné akceptace.
 
 ## Hlavní schopnosti
 
@@ -22,6 +23,9 @@ připraveného dotazu zadavateli.
 - automatické vyhodnocení storna na hranici 24 hodin v `Europe/Prague`;
 - responzivní klientský účet použitelný od mobilního telefonu po desktop;
 - administrace rozvrhu, rezervací, docházky, klientů a obsahu;
+- společné potvrzení účasti po lekci a provozní měsíční výkazy instruktorů
+  se skutečným časem, záskokem a ruční odměnou (CD-067 / ADR 0026);
+- přímé klientské Novinky a Zprávy v jednotné spodní navigaci (CD-068);
 - jeden sdílený backend, datový model a auditní stopa.
 
 ## Závazné hranice první verze
@@ -149,6 +153,9 @@ Studio opening: administration → Přehled → Otevření studia. Registration 
 booking start closed; the control synchronizes the dedicated Keycloak realm.
 See [ADR 0013](docs/adr/0013-studio-opening-control.md).
 
-Shared public analytics preparation and activation gates: [integration](docs/analytics/integration.md), [CS/EN privacy review](docs/analytics/privacy-review.md). Collection remains disabled.
+Schválená veřejná analytika a její aktivace: [integrace](docs/analytics/integration.md),
+[CS/EN privacy review](docs/analytics/privacy-review.md). Běžný release zachovává
+`enabled=true` a `privacyNoticeApproved=true` i všechny soukromé/session ochrany;
+nové klientské sekce nebo výkazy rozsah sběru nerozšiřují.
 
 Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](docs/production-storage.md) (ADR 0024).

@@ -303,6 +303,28 @@ URL nebo payment token jsou zakázané.
 
 ## Administrace
 
+### Potvrzení lekce a provozní výkaz instruktorů (CD-067)
+
+- `GET /api/v1/admin/sessions/{id}/completion` vrací termín, celý seznam
+  účastníků, předvyplněný výkaz, jeho verzi a `rosterToken`.
+- `POST /api/v1/admin/sessions/{id}/completion` po skončení lekce atomicky
+  potvrdí dosud rezervované osoby kromě `absentBookingIds` a uloží skutečného
+  instruktora, čas vedení, ruční `rewardCents` (null = k doplnění) a důvod.
+  Již vyhodnocená docházka a storna se nezmění. Oprava se posílá s aktuální
+  `expectedVersion`; rozdílný zastaralý stav vrátí 409. Opakování identického
+  podání je idempotentní. Uhrazené/prominuté poplatky se nepřepisují.
+- `GET /api/v1/admin/instructor-records?month=YYYY-MM` vrací potvrzené lekce,
+  souhrn minut/lekcí/zadaných odměn a nepotvrzené minulé termíny. Měsíc používá
+  kalendář `Europe/Prague`, nikoli UTC. `pendingRewards` odděluje chybějící
+  částky; `attendanceChanged` upozorňuje na nutnou kontrolu odměny po opravě
+  docházky. CSV a tisk používají tentýž autorizovaný měsíční výsledek.
+
+Všechny cesty vyžadují administrátorskou relaci s MFA, vrací `private,
+no-store` a neposkytují zaměstnanecká data klientům. Výkaz je evidence vedení
+lekcí a podklad pro odměny, nikoli potvrzení vyplacení, mzdy ani úplná evidence
+pracovní doby DPP. Zrušení již potvrzené odvedené lekce je odmítnuto konfliktem;
+historický výkaz se nemaže. Jednotlivá docházka je dostupná až od začátku lekce.
+
 | Oblast | Doporučené cesty |
 | --- | --- |
 | typy lekcí | `GET/POST /api/v1/admin/class-types`, `GET/PATCH /api/v1/admin/class-types/{id}` |

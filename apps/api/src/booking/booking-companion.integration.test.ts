@@ -215,12 +215,25 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
     vi.setSystemTime(new Date("2026-10-24T08:00:01Z"));
     expect((await bookings.cancellationPreview(owner,receipt.companionBooking!.id)).mode).toBe("late");
   });
-  it("keeps early attendance occupied in capacity checks, public availability and rosters", async () => {
+  it("refuses both premature attendance states without changing either companion seat or fees", async () => {
+    const receipt = await bookings.create(input());
+    const original = (await client.query("SELECT id,status,updated_at FROM bookings WHERE session_id=$1 ORDER BY id", [sessionId])).rows;
+    for (const id of [receipt.id, receipt.companionBooking!.id]) {
+      for (const status of ["attended", "no_show"] as const) {
+        await expect(admin.attendance(id,status,"Lekce ještě nezačala",context)).rejects.toMatchObject({ response: { code: "STATE_CONFLICT" } });
+      }
+    }
+    expect((await client.query("SELECT id,status,updated_at FROM bookings WHERE session_id=$1 ORDER BY id", [sessionId])).rows).toEqual(original);
+    expect((await client.query("SELECT 1 FROM cancellation_fees")).rowCount).toBe(0);
+    expect((await client.query("SELECT 1 FROM application_audit WHERE action='booking.attendance_changed'")).rowCount).toBe(0);
+  });
+
+  it("keeps legacy recorded attendance occupied in capacity checks, public availability and rosters", async () => {
     await client.query("UPDATE class_sessions SET capacity=2 WHERE id=$1", [sessionId]);
     const receipt = await bookings.create(input());
-    await admin.attendance(receipt.id,"attended","Předem potvrzená účast",context);
-    await admin.attendance(receipt.id,"attended","Opakované potvrzení",context);
-    await expect(admin.attendance(receipt.companionBooking!.id,"no_show","Ještě nezačalo",context)).rejects.toMatchObject({ response: { code: "STATE_CONFLICT" } });
+    // Earlier releases allowed attendance before start. Existing rows still
+    // occupy capacity even though new premature confirmations are refused.
+    await client.query("UPDATE bookings SET status='attended' WHERE id=$1", [receipt.id]);
     expect((await schedule.getSession(sessionId))?.availability).toBe("full");
     const terms = await admin.listSessions(new Date(startAt.getTime()-1000),new Date(startAt.getTime()+1000));
     expect(terms.items.find((item) => item.id === sessionId)?.bookingCount).toBe(2);
@@ -242,13 +255,16 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
     await expect(admin.applyWeeklyRuleEdit(rule.id,{ ...ruleChange, previewToken: preview.previewToken },context)).rejects.toMatchObject({ response: { code: "STATE_CONFLICT" } });
     await client.query("UPDATE class_sessions SET capacity=4 WHERE id=$1", [sessionId]);
     await expect(bookings.create(input())).rejects.toMatchObject({ response: { code: "BOOKING_ALREADY_EXISTS" } });
-    expect((await client.query("SELECT 1 FROM application_audit WHERE action='booking.attendance_changed'")).rowCount).toBe(1);
+    expect((await client.query("SELECT status FROM bookings WHERE id=$1", [receipt.id])).rows[0].status).toBe("attended");
+    expect((await client.query("SELECT status FROM bookings WHERE id=$1", [receipt.companionBooking!.id])).rows[0].status).toBe("reserved");
   });
 
-  it("serializes concurrent attendance and a new booking under the session lock", async () => {
+  it("serializes valid attendance and a late booking attempt under the session lock", async () => {
     await client.query("UPDATE class_sessions SET capacity=1 WHERE id=$1", [sessionId]);
     const single = { ...input(), companionName: undefined, companionResponsibilityAccepted: undefined };
     const receipt = await bookings.create(single);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(startAt.getTime()+1000));
     await client.query("BEGIN");
     await client.query("SELECT id FROM class_sessions WHERE id=$1 FOR UPDATE",[sessionId]);
     const attendance = admin.attendance(receipt.id,"attended","Dorazil",context);
@@ -265,9 +281,10 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
     } finally { await client.query("COMMIT"); }
     const results = await resultsPromise;
     expect(results[0]?.status).toBe("fulfilled");
-    expect(results[1]).toMatchObject({ status: "rejected", reason: { response: { code: "SESSION_FULL" } } });
-    expect((await client.query("SELECT 1 FROM bookings WHERE session_id=$1 AND status IN ('reserved','attended','no_show')",[sessionId])).rowCount).toBe(1);
-    expect((await schedule.getSession(sessionId))?.availability).toBe("full");
+    expect(results[1]).toMatchObject({ status: "rejected", reason: { response: { code: "BOOKING_CLOSED" } } });
+    expect((await client.query("SELECT 1 FROM bookings WHERE session_id=$1 AND status='attended'",[sessionId])).rowCount).toBe(1);
+    expect((await client.query("SELECT 1 FROM bookings WHERE session_id=$1",[sessionId])).rowCount).toBe(1);
+    expect((await schedule.getSession(sessionId))?.availability).toBe("closed");
   },10_000);
 
   it("rolls class, session and instructor changes back when audit insertion fails", async () => {

@@ -1,3 +1,4 @@
+import { applyAttendanceWithClient } from "./attendance-mutation.js";
 import { bookingPage, type BookingPageQuery } from "../booking/booking-list-page.js";
 import { scheduleChange, type ScheduleChangeInput } from "./schedule-change.js";
 import { instructorPortraitSql, type StudioImage } from "../media/studio-image.js";
@@ -711,6 +712,8 @@ export class AdminService {
   async cancelSessionWithClient(client: PoolClient, id: string, reason: string, context: MutationContext) {
     const session = await client.query("SELECT id FROM class_sessions WHERE id=$1 FOR UPDATE", [id]);
     if (!session.rowCount) throw notFound("Termín nebyl nalezen.");
+    const confirmed = await client.query("SELECT id FROM instructor_lesson_records WHERE session_id=$1", [id]);
+    if (confirmed.rowCount) throw conflict("Lekce už má potvrzený výkaz odučení a nelze ji zrušit. Případné chyby opravte v docházce a výkazu.");
     await client.query("UPDATE class_sessions SET status='cancelled', change_notice=$2, updated_at=now() WHERE id=$1", [id, reason]);
     const changed = await client.query<{id:string}>("UPDATE bookings SET status='cancelled_by_studio', cancelled_at=now(), updated_at=now() WHERE session_id=$1 AND status='reserved' RETURNING id", [id]);
     const bookingIds = changed.rows.map((row) => row.id);
@@ -785,18 +788,13 @@ export class AdminService {
         WHERE booking.id=$1 FOR UPDATE OF booking`, [id]);
       const row = current.rows[0];
       if (!row) throw notFound("Rezervace nebyla nalezena.");
-      if (row.session_status !== "scheduled" || !["reserved", "attended", "no_show"].includes(row.status)) {
+      if (!["scheduled", "completed"].includes(row.session_status) || !["reserved", "attended", "no_show"].includes(row.status)) {
         throw conflict("Docházku lze upravit jen u platné rezervace nezrušené lekce.");
       }
-      if (status === "no_show" && row.session_start_at > new Date()) {
-        throw conflict("Neúčast lze zaznamenat až po začátku lekce.");
+      if (row.session_start_at > new Date()) {
+        throw conflict("Docházku lze zaznamenat až po začátku lekce.");
       }
-      if (row.status === status) return { id, status };
-      await client.query("UPDATE bookings SET status=$2,updated_at=now() WHERE id=$1", [id, status]);
-      if (status === "no_show") await client.query("INSERT INTO cancellation_fees (booking_id,user_id,amount_cents) VALUES ($1,$2,$3) ON CONFLICT (booking_id) DO UPDATE SET status='due',amount_cents=excluded.amount_cents,settlement_method=NULL,settled_at=NULL,updated_at=now()", [id, row.user_id, row.price_snapshot_cents]);
-      if (status === "attended") await client.query("UPDATE cancellation_fees SET status='cancelled',updated_at=now() WHERE booking_id=$1 AND status='due'", [id]);
-      await auditWithClient(client, context, "booking.attendance_changed", "booking", id, { from: row.status, to: status, reason });
-      return { id, status };
+      return applyAttendanceWithClient(client, row, status, reason, context);
     });
   }
 }

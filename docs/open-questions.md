@@ -86,7 +86,23 @@ blokátorem implementace.
 | OQ-028 | Má být po lekci výzva k hodnocení už v první verzi? | vyžaduje pravidlo četnosti a marketing/provozní klasifikaci |
 | OQ-029 | Má „Přidat do kalendáře“ nabídnout stažitelný ICS, webové odkazy Google/Outlook/Apple, nebo obojí? | ovlivní webový tok a časové testy |
 
-## Co lze dělat před uzavřením otázek
+## Provozní evidence — upřesnění 2026-10-09
+
+Název Formuj břicho a hýždě, provozní výkazy instruktorů na DPP a přímé
+Novinky/Zprávy jsou schválené v CD-066–068 / ADR 0026. Chybný název
+na plakátu není variantou k rozhodnutí; správný text je již potvrzen a
+opravený derivát výchozího plakátu je připravený v repozitáři.
+Přehled výuky se neoznačuje jako kompletní zákonná evidence pracovní doby.
+
+| ID | Otevřená otázka | Dopad / aktuální bezpečný režim |
+| --- | --- | --- |
+| OQ-034 | Jaké přesné počty účastníků určují odměnu instruktora a platí tabulka pro všechny stejně? | Neblokuje manuální výkaz; bez tabulky se odměna zadává ručně, prázdná zůstává k doplnění. Automatický výpočet není schválen. |
+| OQ-035 | Má Nikol později změnit dosavadní poplatek při neúčasti, nebo pouze snížit hodnotu návštěv? | Tato verze zachová platná poplatková pravidla a samostatné prominutí; odečtená účast není odpuštění fee. Změna pravidla vyžaduje nové rozhodnutí. |
+
+OQ-021 zahrnuje také retenční dobu výkazů instruktorů, ručních odměn a jejich
+auditní historie. Bez schválené politiky se tato data automaticky nemažou.
+
+## Rozsah před uzavřením zbývajících otázek
 
 Lze dokončit doménový model, transakční pravidla rezervace, veřejné stavy,
 bezpečnostní baseline, wireframy bez finálních assetů, testovací scénáře a

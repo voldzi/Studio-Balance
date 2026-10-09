@@ -14,6 +14,9 @@ describe("ProfileView", () => {
     const html = renderToStaticMarkup(<ProfileView busy={false} profile={baseProfile} saveProfile={async () => undefined} />);
     expect(html).not.toContain("Správa studia");
     expect(html).not.toContain('href="/admin"');
+    expect(html).toContain('href="/muj-ucet?view=favorites"');
+    expect(html).toContain("Oblíbené lekce");
+    expect(html).toContain('<h1 id="profile-title" tabindex="-1">Profil</h1>');
   });
 
   it("offers a direct protected administration entry to an administrator", () => {
@@ -32,6 +35,7 @@ describe("reservation pages", () => {
     expect(html).toContain("Načíst další rezervace");
     expect(html).toContain('name="from"'); expect(html).toContain('name="through"');
     expect(html).toContain("Historie rezervací je zatím prázdná.");
+    expect(html).toContain('<h1 id="reservations-title" tabindex="-1">Moje rezervace</h1>');
   });
   it("makes load-in-progress visible, disabled, and does not promise more after the last page", () => {
     const loading = renderToStaticMarkup(<ReservationsView {...props} loadingMore />);

@@ -19,6 +19,8 @@ import { BookingService } from "./booking/booking.service.js";
 import { AdminController } from "./admin/admin.controller.js";
 import { AdminRoleGuard } from "./admin/admin-role.guard.js";
 import { AdminService } from "./admin/admin.service.js";
+import { InstructorRecordsController } from "./admin/instructor-records.controller.js";
+import { InstructorRecordsService } from "./admin/instructor-records.service.js";
 import { AdminReviewsController, ReviewsController } from "./content/reviews.controller.js";
 import { ReviewsService } from "./content/reviews.service.js";
 import { AdminTransformationsController, TransformationsController } from "./content/transformations.controller.js";
@@ -29,7 +31,7 @@ import { AdminNewsController, NewsController } from "./content/news.controller.j
 import { NewsService } from "./content/news.service.js";
 
 @Module({
-  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
-  providers: [StudioStatusService, RegistrationControl, RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService]
+  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, InstructorRecordsController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
+  providers: [StudioStatusService, RegistrationControl, RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService, InstructorRecordsService]
 })
 export class AppModule {}

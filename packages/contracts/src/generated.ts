@@ -4,6 +4,44 @@
  */
 
 export interface paths {
+    "/api/v1/admin/instructor-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read confirmed taught lessons and manual rewards for a Prague calendar month */
+        get: operations["getInstructorMonthlyReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sessions/{id}/completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a coherent session roster and instructor record for confirmation */
+        get: operations["getSessionCompletion"];
+        put?: never;
+        /**
+         * Atomically confirm attendance and the actual taught lesson after its end
+         * @description Only reserved people are batch-classified; pre-existing attendance and cancelled bookings are preserved. Same submission retry is idempotent. Stale roster/version conflicts. Paid or waived cancellation fees stay unchanged. Corrections retain historical snapshots and require a reason.
+         */
+        post: operations["confirmSessionCompletion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/studio-status": {
         parameters: {
             query?: never;
@@ -967,7 +1005,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Record attendance or no-show */
+        /**
+         * Record attendance or no-show
+         * @description Only after the lesson starts. Cancelled bookings cannot be revived. Same status is idempotent. Corrections preserve settled or waived fees and the original fee amount.
+         */
         post: operations["adminRecordAttendance"];
         delete?: never;
         options?: never;
@@ -979,6 +1020,103 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        InstructorLedSession: {
+            /** Format: uuid */
+            id: string;
+            className: string;
+            /** Format: uuid */
+            instructorId: string;
+            instructorName: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @enum {string} */
+            status: "scheduled" | "cancelled" | "completed";
+        };
+        InstructorLessonRecord: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            sessionId: string;
+            /** Format: uuid */
+            instructorId: string;
+            instructorName: string;
+            className: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            minutes: number;
+            rewardCents: number | null;
+            participants: number;
+            version: number;
+            /** @description Attendance changed since confirmation; review the saved reward manually. */
+            attendanceChanged: boolean;
+            /** Format: date-time */
+            confirmedAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        InstructorMonthlySummary: {
+            /** Format: uuid */
+            instructorId: string;
+            instructorName: string;
+            lessons: number;
+            minutes: number;
+            rewardCents: number;
+            pendingRewards: number;
+        };
+        InstructorMonthlyReport: {
+            month: string;
+            /** @constant */
+            timeZone: "Europe/Prague";
+            summary: components["schemas"]["InstructorMonthlySummary"][];
+            records: components["schemas"]["InstructorLessonRecord"][];
+            unconfirmedSessions: components["schemas"]["InstructorLedSession"][];
+        };
+        SessionCompletionBooking: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "reserved" | "attended" | "no_show" | "cancelled_on_time" | "cancelled_late" | "cancelled_by_studio";
+            priceCents: number;
+            /** @enum {string} */
+            participantKind: "self" | "companion";
+            participantName: string | null;
+            ownerName: string;
+        };
+        SessionCompletion: {
+            session: components["schemas"]["InstructorLedSession"];
+            record: components["schemas"]["InstructorLessonRecord"] | null;
+            rosterToken: string;
+            bookings: components["schemas"]["SessionCompletionBooking"][];
+        };
+        SessionCompletionRequest: {
+            /** Format: uuid */
+            instructorId: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @description Manual lesson reward, not payment. Null explicitly means pending. */
+            rewardCents: number | null;
+            absentBookingIds: string[];
+            rosterToken: string;
+            expectedVersion: number | null;
+            reason: string;
+        };
+        SessionCompletionResult: {
+            record: components["schemas"]["InstructorLessonRecord"];
+            attendedCount: number;
+            noShowCount: number;
+        };
+        AdminAttendanceResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "attended" | "no_show";
+        };
         AdminStudioStatus: {
             open: boolean;
             announcement: string | null;
@@ -1807,6 +1945,91 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getInstructorMonthlyReport: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private operational evidence; not payroll or a receipt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstructorMonthlyReport"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    getSessionCompletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private operational evidence; not payroll or a receipt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionCompletion"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    confirmSessionCompletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionCompletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Private operational evidence; not payroll or a receipt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionCompletionResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
     getAdminStudioStatus: {
         parameters: {
             query?: never;
@@ -3612,10 +3835,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminAttendanceResult"];
+                };
             };
             400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
 }

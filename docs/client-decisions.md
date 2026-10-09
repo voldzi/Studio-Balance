@@ -346,3 +346,57 @@ automaticky; vysvětlení samo o sobě není změnou typu.
 ## CD-065 — Okamžité stažení Power Yogy z nabídky (2026-10-06)
 
 Zadavatelka požaduje odstranit Power Yogu z veřejné nabídky i z pátku a neděle již nyní. Profil bude neaktivní a nové rezervace nepůjdou vytvořit ani přes starý odkaz. Latino Ladies a její účinnost od 16. října zůstávají podle CD-064. Historie rezervací zůstává; vyřízení jedné rezervace 9. října čeká na rozhodnutí provozovatele.
+
+## CD-066 — Formuj břicho a hýždě (2026-10-09)
+
+Nikol potvrdila název **Formuj břicho a hýždě** místo Body Sculpt. Jde o
+přejmenování stejného typu lekce; jeho ID, slug, pravidelná řada a rezervace
+zůstávají. Nemění se čas, instruktor, cena ani kapacita podle CD-061. Název
+se sjednotí ve veřejném webu, klientském účtu a administraci. Historické
+snapshoty potvrzených výkazů se kosmetickou změnou nepřepisují.
+
+Plakát dodaný 8. 10. má chybné „Formuj tělo a hýždě“. Tento text není schváleným
+názvem. Pro release je připravený derivát s opraveným nadpisem
+`apps/web/public/images/studio-balance/lessons/formuj-bricho-a-hyzde.png`;
+původní dodaný obraz zůstává zachovaný. Změna se týká titulku, nikoli nového
+vzhledu lekce. Migrace nahradí původní výchozí plakát Body Sculpt; individuálně
+nahraná fotografie administrátorky se nepřepisuje.
+
+## CD-067 — Potvrzení lekce a provozní výkaz instruktorů (2026-10-09)
+
+Zadavatel schválil realizaci návrhu po doplnění Nikol: všichni uvedení instruktoři
+pracují na DPP a požadován je především provozní přehled odučených lekcí.
+Po skončení lekce administrátorka označí nepřítomné a jedním potvrzením označí
+ostatní dosud nepotvrzené rezervace jako účast. Doprovod je samostatné místo.
+Budoucí rezervace ani minulá nepotvrzená lekce se automaticky nepovažují za účast.
+Existující poplatková pravidla zůstávají: neúčast vytváří poplatek ze snapshotu
+ceny; snížení hodnoty návštěv není prominutím poplatku. Uhrazené a prominuté
+poplatky se opravou docházky nepřepisují ani neodstraňují.
+
+Ve stejném atomickém potvrzení vznikne výkaz konkrétního termínu: datum a
+skutečný čas lekce, jméno skutečného instruktora, název lekce, odučené minuty,
+počet účastníků a ručně zadaná odměna. Instruktor a hodinová délka se převezmou
+z termínu; záskok nebo skutečnou délku lze upravit. Odměna závisí na účastnících
+a je orientačně 350–500 Kč, ale přesná tabulka nebyla dodána. Proto se
+automaticky nepočítá; chybějící odměna znamená „K doplnění“, nikoli nulu.
+
+Měsíční souhrn podle `Europe/Prague` počítá pouze potvrzené skutečně odučené
+lekce, hodiny a známé odměny. Nepotvrzené lekce a chybějící odměny ukáže zvlášť.
+Podporuje rozkliknutí, tisk a export. Změny instruktora, času či odměny mají
+povinný důvod, verzování a audit. Pozdější změna docházky vyznačí potřebu
+kontroly odměny; nepřepočítá potichu již potvrzenou částku.
+
+Nikol uvádí Xaviera v pátek a neděli, Terezu v úterý a čtvrtek, Moniku v neděli
+a Katku u jedné týdenní Barre. Výkaz však vždy vychází z konkrétního termínu
+a potvrzeného záskoku, nikoli z pevně zakódovaných jmen nebo dnů.
+Jde o provozní evidenci výuky, ne mzdový systém ani potvrzení úplné zákonné
+evidence pracovní doby DPP; případná příprava a jiná práce jsou mimo tento řez.
+
+## CD-068 — Přímé klientské Novinky a Zprávy (2026-10-09)
+
+Spodní navigace účtu, rozvrhu i detailu používá jednotné pořadí **Rozvrh,
+Rezervace, Novinky, Zprávy, Profil**. Přehled Domů zůstává viditelně dostupný
+v hlavičce účtu a Oblíbené lekce v Profilu. Novinky studia jsou odlišné od
+provozních zpráv účtu; počet všech zpráv se nevydává za nepřečtené.
+Přímý vstup do sekce po přihlášení zachová jen povolenou hodnotu `view`.
+Nativní aplikace, push ani nový rozsah analytiky nevznikají.

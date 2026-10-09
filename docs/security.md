@@ -456,3 +456,30 @@ instruktora jako dosud.
 Nová rezervace kontroluje aktivní typ lekce na backendu; skrytí katalogu samo není autorizační hranicí. Neaktivní typ zachovává oprávněnému klientovi přístup k jeho existujícím rezervacím.
 
 Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).
+
+## Provozní výkazy instruktorů a potvrzení lekce (ADR 0026)
+
+Jména instruktorů, odměny a výkazy výuky jsou neveřejná osobní/provozní data.
+Čtení, změna, tisk i export vyžadují ověřenou roli `admin` nebo `super_admin`
+s MFA. Samotná položka navigace oprávnění neuděluje. API zachová standardní
+ErrorResponse/requestId, BFF same-origin/CSRF hranici a `private, no-store`.
+Veřejný klient nesmí zjistit výkazy ani odměny odhadnutím ID termínu.
+
+Potvrzení lekce transakčně uloží docházku, případné poplatky, výkaz i audit.
+Server ověří konec lekce, její nezrušený stav, instruktora, celý seznam
+nepřítomných, `rosterToken` a `expectedVersion`. Token není oprávnění ani
+náhrada rolí. Při konfliktu se nic částečně neuloží; retry totožného úspěšného
+obsahu nevytvoří druhý výkaz, poplatek ani audit. Zámky dodržují termín před
+rezervacemi. Uhrazené/prominuté poplatky zůstanou při opravě docházky nedotčené.
+
+Oprava výkazu vyžaduje důvod a záznam starých/nových hodnot, verze, admin
+subjektu a requestId. Audity nesmějí mizet při úklidu cache/releasů. Export
+obsahuje pouze provozní výuku vybraného měsíce, ne kontakty klientů, hesla,
+identity tokeny či nadbytečné poznámky. Textová pole exportu musí být bezpečná
+pro CSV import, včetně hodnot začínajících znaky tabulkových vzorců.
+
+Výkazy a docházka se neposílají do sdílené veřejné analytiky. Nové klientské
+sekce Novinky/Zprávy zůstávají soukromé; stávající cookie, DNT/GPC a offline
+ochrany analytiky se změnou lišty nemění. Výkaz není mzdový systém ani záruka
+úplné zákonné evidence DPP. Zpracovává jen nezbytný skutečný čas výuky a
+ručně zadanou odměnu; příprava nebo jiné pracovní činnosti se neodhadují.

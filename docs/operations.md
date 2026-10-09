@@ -926,3 +926,49 @@ acceptance, Nginx backup paths and verification limits are recorded in
 [the release verification](security-performance-verification-2026-10-07.md).
 Previous verified app revisions retained for rollback are `0d016c0` and
 `817f7ff`; always recheck `verified-releases.json` before a later rollback.
+
+## Potvrzení lekce a měsíční výkazy (CD-066–068 / ADR 0026)
+
+Tento řez přidává provozní evidenci výuky; neprokazuje, že je již nasazený.
+Release používá standardní společnou revizi web/API/worker a všechny stávající
+scan, zálohovací, X5 a health brány. Nový secret, externí služba, plánovač ani
+produkční změna pracovních smluv nejsou potřeba.
+
+Migrace 0029 přidává výkazy instruktorů bez automatického doplnění historie.
+Migrace 0030 mění název Body Sculpt na Formuj břicho a hýždě; zachovává ID,
+slug, pravidla, rezervace i jejich ceny. Původní výchozí
+`/images/studio-balance/lessons/body-sculpt.jpeg` nahradí připravený derivát
+`/images/studio-balance/lessons/formuj-bricho-a-hyzde.png` s opraveným
+nadpisem; jiný individuálně nahraný obraz se nepřepisuje a dodaný originál
+zůstává zachovaný. Po release ověřit skutečně vykreslený nadpis i cestu obrázku.
+Před release ověřit DB zálohu; následný rollback aplikace nemaže tabulku
+výkazů, audity ani potvrzené údaje. Návrat datové migrace destruktivním SQL
+není běžný rollback. Produkční databáze zůstává přes `haproxy.home.cz:5000`.
+Starší webový image nový výchozí PNG neobsahuje: před jeho aktivací podmíněně
+vrátit pouze výchozí cestu a alt na původní `body-sculpt.jpeg`; vlastní uploady
+ani přejmenování lekce tím neměnit. Podrobnosti a lokální důkazy:
+[ověření 2026-10-09](attendance-instructor-records-verification-2026-10-09.md).
+Starší API nemá nové ochrany rušení potvrzených lekcí a oprav docházky
+s uhrazeným/prominutým poplatkem; při rollbacku tyto zápisy pozastavit
+do návratu opravené verze.
+
+Postup pro administrátorku:
+
+1. Po skončení lekce otevřít konkrétní termín a potvrzení lekce.
+2. Označit pouze nepřítomné. Zkontrolovat instruktora, případný záskok,
+   skutečný začátek/konec a odměnu. Neznámou odměnu ponechat k doplnění.
+3. Potvrdit společně účast ostatních a výkaz. Neúčast má dosavadní poplatek;
+   prominutí/úhrada se řeší samostatně. Při konfliktu načíst nový seznam.
+4. V měsíčních výkazech doplnit ukončené nepotvrzené termíny a chybějící
+   odměny. Změnu docházky po potvrzení zkontrolovat před uzavřením odměny.
+5. Vybrat měsíc a vytisknout/exportovat provozní přehled. Zkontrolovat
+   varování neúplnosti; počet nepotvrzených lekcí a chybějících odměn
+   zůstává viditelný i v tisku/CSV. Přípravu či jinou pracovní dobu evidovat odděleně.
+
+Akceptace release odděleně ověří migrace, snapshoty/záskok, jeden atomický
+zápis a retry, fee korekce, měsíční hranice v Praze, tisk/CSV, soukromé
+hlavičky a návrat Novinek/Zpráv po přihlášení. Výkazy jsou trvalá uživatelská
+data v PostgreSQL, nikoli obnovitelná cache. Nevztahuje se na ně čtrnáctidenní
+úklid pracovních souborů; retenční politika vyžaduje samostatné rozhodnutí.
+Test obnovy musí obsahovat výkazy i audit. Lokální test není důkaz produkční
+nebo fyzické PWA akceptace.
