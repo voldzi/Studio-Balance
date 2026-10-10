@@ -11,21 +11,21 @@ fi
 for path in apps/web/lib/public-analytics.ts apps/web/lib/public-analytics.test.ts apps/web/lib/public-analytics-notice.ts apps/web/components/public-analytics.tsx apps/web/components/public-analytics-notice.tsx scripts/check-public-analytics.sh docs/analytics/integration.md docs/analytics/privacy-review.md; do
   git -C "$root" cat-file -e "$version:$path" || { echo "Deployment refused: analytics integration missing $path." >&2; exit 1; }
 done
-if ! git -C "$root" show "$version:apps/web/app/layout.tsx" | rg -q 'PublicAnalytics eligible=\{analyticsEligible\}'; then
+if ! git -C "$root" show "$version:apps/web/app/layout.tsx" | rg 'PublicAnalytics eligible=\{analyticsEligible\}' >/dev/null; then
   echo "Deployment refused: analytics root-layout bridge missing." >&2
   exit 1
 fi
 
 # Preserve the approved activation in the actual release candidate, not only HEAD.
 for flag in enabled privacyNoticeApproved; do
-  git -C "$root" show "$version:apps/web/lib/public-analytics.ts" | rg -q "${flag}: true" || {
+  git -C "$root" show "$version:apps/web/lib/public-analytics.ts" | rg "${flag}: true" >/dev/null || {
     echo "Deployment refused: approved analytics flag ${flag} is disabled." >&2; exit 1;
   }
 done
 
 # Preserve specifically approved v2 in the release candidate, with retained v1 fallback.
 for flag in enabled privacyNoticeApproved; do
-  git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q "${flag}: true" || {
+  git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg "${flag}: true" >/dev/null || {
     echo "Deployment refused: approved v2 flag ${flag} is disabled." >&2; exit 1;
   }
 done
@@ -34,16 +34,16 @@ for path in apps/web/lib/public-analytics-notice-v2.ts apps/web/lib/public-analy
   git -C "$root" cat-file -e "$version:$path" || { echo "Deployment refused: approved v2 file missing $path." >&2; exit 1; }
 done
 for path in apps/web/components/social-links.tsx apps/web/components/massage-partner-section.tsx; do
-  git -C "$root" show "$version:$path" | rg -q 'analyticsEvent="outbound-click"' || { echo "Deployment refused: explicit outbound handler missing $path." >&2; exit 1; }
+  git -C "$root" show "$version:$path" | rg 'analyticsEvent="outbound-click"' >/dev/null || { echo "Deployment refused: explicit outbound handler missing $path." >&2; exit 1; }
 done
-git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -Fq 'sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf' || { echo "Deployment refused: approved portfolio integrity changed." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -F 'sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf' >/dev/null || { echo "Deployment refused: approved portfolio integrity changed." >&2; exit 1; }
 
-git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'runtimePath: "/vcode-analytics-portfolio-v1.js"' || { echo "Deployment refused: approved portfolio runtime path missing." >&2; exit 1; }
-git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg -q 'runtimeRevision: "portfolio-1"' || { echo "Deployment refused: approved portfolio runtime revision missing." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg 'runtimePath: "/vcode-analytics-portfolio-v1.js"' >/dev/null || { echo "Deployment refused: approved portfolio runtime path missing." >&2; exit 1; }
+git -C "$root" show "$version:apps/web/lib/public-analytics-v2.ts" | rg 'runtimeRevision: "portfolio-1"' >/dev/null || { echo "Deployment refused: approved portfolio runtime revision missing." >&2; exit 1; }
 portfolio_sri="$(git -C "$root" show "$version:apps/web/public/vcode-analytics-portfolio-v1.js" | openssl dgst -sha384 -binary | openssl base64 -A)"
 [[ "sha384-$portfolio_sri" == "sha384-zkZSzDImQVzQLiRsYnPvb7exdTP5bDp+cGuBD0J+Tb40PGH8ffG+b4qQGqfrP6lf" ]] || { echo "Deployment refused: shared portfolio runtime bytes changed." >&2; exit 1; }
 for event in portfolio-vcode-click portfolio-moje-porce-click portfolio-mestem-hrou-click; do
-  git -C "$root" show "$version:apps/web/components/site-footer.tsx" | rg -q "analyticsEvent=\"$event\"" || { echo "Deployment refused: explicit creator handler missing $event." >&2; exit 1; }
+  git -C "$root" show "$version:apps/web/components/site-footer.tsx" | rg "analyticsEvent=\"$event\"" >/dev/null || { echo "Deployment refused: explicit creator handler missing $event." >&2; exit 1; }
 done
 # Retain the prior byte-exact asset for historical compatibility; active pin above
 # is the centrally reviewed portfolio extension, which preserves TikTok behavior.
