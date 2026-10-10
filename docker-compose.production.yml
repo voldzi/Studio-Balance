@@ -19,6 +19,7 @@ services:
       APP_VERSION: ${APP_VERSION:?application version is required}
       DATABASE_URL: ${DATABASE_URL_MIGRATOR:?production migrator URL is required}
       SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
       OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
       OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}
@@ -45,6 +46,7 @@ services:
       APP_VERSION: ${APP_VERSION:?application version is required}
       DATABASE_URL: ${DATABASE_URL:?production application URL is required}
       SESSION_SECRET: ${SESSION_SECRET:?session secret is required}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:?public application URL is required}
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?OIDC issuer is required}
       OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:?OIDC web client ID is required}
       OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:?OIDC web client secret is required}

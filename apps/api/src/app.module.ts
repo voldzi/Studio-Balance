@@ -22,6 +22,8 @@ import { AdminService } from "./admin/admin.service.js";
 import { InstructorRecordsController } from "./admin/instructor-records.controller.js";
 import { InstructorRecordsService } from "./admin/instructor-records.service.js";
 import { AdminReviewsController, ReviewsController } from "./content/reviews.controller.js";
+import { AdminReviewSubmissionsController, ReviewSubmissionsController } from "./content/review-submissions.controller.js";
+import { ReviewSubmissionsService } from "./content/review-submissions.service.js";
 import { ReviewsService } from "./content/reviews.service.js";
 import { AdminTransformationsController, TransformationsController } from "./content/transformations.controller.js";
 import { TransformationsService } from "./content/transformations.service.js";
@@ -31,7 +33,7 @@ import { AdminNewsController, NewsController } from "./content/news.controller.j
 import { NewsService } from "./content/news.service.js";
 
 @Module({
-  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, InstructorRecordsController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
-  providers: [StudioStatusService, RegistrationControl, RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService, InstructorRecordsService]
+  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, ReviewSubmissionsController, AdminReviewSubmissionsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, InstructorRecordsController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
+  providers: [StudioStatusService, RegistrationControl, RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, ReviewSubmissionsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService, InstructorRecordsService]
 })
 export class AppModule {}

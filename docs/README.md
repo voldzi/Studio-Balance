@@ -57,3 +57,6 @@ CD-067 a krátký [provozní postup](operations.md).
 
 Implementace a lokální ověření 2026-10-09:
 [docházka, výkazy a klientská navigace](attendance-instructor-records-verification-2026-10-09.md).
+
+Klientské recenze a moderace: [ADR 0029](adr/0029-client-review-submissions.md),
+CD-072 a [jednoduchý postup pro správce](reviews-guide.md).

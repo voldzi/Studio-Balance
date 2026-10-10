@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
 import type { PoolClient } from "pg";
 
 import type { StudioSession } from "../auth/session.js";
@@ -17,6 +17,8 @@ export type ReviewInput = {
   source: string | null;
 };
 
+export type ReviewVisibilityInput = { published: boolean; featured: boolean; sortOrder: number };
+
 type MutationContext = { requestId: string; session: StudioSession };
 type ReviewRow = {
   author_label: string;
@@ -34,13 +36,14 @@ type ReviewRow = {
   reviewed_on: string | null;
   sort_order: number;
   source: string | null;
+  submitted_by_client: boolean;
 };
 
 const reviewSelect = `
   SELECT r.id, r.author_label, r.body, r.source, r.reviewed_on::text, r.rating,
     r.class_type_id, r.consent_confirmed, r.published, r.featured, r.sort_order,
     r.created_at, ct.active AS class_type_active, ct.name AS class_type_name,
-    ct.slug AS class_type_slug
+    ct.slug AS class_type_slug, EXISTS(SELECT 1 FROM review_submissions s WHERE s.review_id=r.id) AS submitted_by_client
   FROM reviews r
   LEFT JOIN class_types ct ON ct.id = r.class_type_id
 `;
@@ -80,11 +83,26 @@ export class ReviewsService {
     });
   }
 
-  async update(id: string, data: ReviewInput, context: MutationContext) {
+  async update(id: string, data: ReviewInput | ReviewVisibilityInput, context: MutationContext) {
     return this.database.transaction(async (client) => {
-      const existing = await client.query("SELECT id FROM reviews WHERE id = $1 FOR UPDATE", [id]);
+      const existing = await client.query<{ id: string; author_label: string; body: string; rating: number | null; submitted: boolean; consent_confirmed: boolean; class_type_id: string | null }>(
+        `SELECT r.id,r.author_label,r.body,r.rating,r.consent_confirmed,r.class_type_id,EXISTS(SELECT 1 FROM review_submissions s WHERE s.review_id=r.id) AS submitted
+          FROM reviews r WHERE r.id=$1 FOR UPDATE`, [id]);
       if (!existing.rowCount) return undefined;
 
+      const original = existing.rows[0]!;
+      if (!("authorLabel" in data)) {
+        if (!original.submitted || (data.published && !original.consent_confirmed)) {
+          throw new HttpException({ code: "VALIDATION_ERROR", message: "Zkontrolujte údaje recenze a souhlas se zveřejněním." }, HttpStatus.BAD_REQUEST);
+        }
+        await this.validateClassType(client, { classTypeId: original.class_type_id, published: data.published });
+        await client.query("UPDATE reviews SET published=$2,featured=$3,sort_order=$4,updated_at=now() WHERE id=$1", [id,data.published,data.featured,data.sortOrder]);
+        await this.audit(client, context, "review.updated", id);
+        return { id };
+      }
+      if (original.submitted && (original.author_label !== data.authorLabel || original.body !== data.body || original.rating !== data.rating)) {
+        throw new HttpException({ code: "VALIDATION_ERROR", message: "Jméno, text a hodnocení klientské recenze se nemění. Můžete upravit její zveřejnění a umístění." }, HttpStatus.BAD_REQUEST);
+      }
       await this.validateClassType(client, data);
       await client.query(`
         UPDATE reviews SET author_label=$2, body=$3, source=$4, reviewed_on=$5, rating=$6,
@@ -97,7 +115,7 @@ export class ReviewsService {
     });
   }
 
-  private async validateClassType(client: PoolClient, data: ReviewInput) {
+  private async validateClassType(client: PoolClient, data: Pick<ReviewInput, "classTypeId" | "published">) {
     if (!data.classTypeId) return;
     const result = await client.query<{ active: boolean }>(
       "SELECT active FROM class_types WHERE id = $1 FOR SHARE",
@@ -148,6 +166,7 @@ function mapAdminReview(row: ReviewRow) {
     ...mapPublicReview(row),
     classTypeId: row.class_type_id,
     consentConfirmed: row.consent_confirmed,
+    submittedByClient: Boolean(row.submitted_by_client),
     featured: row.featured,
     published: row.published,
     sortOrder: row.sort_order

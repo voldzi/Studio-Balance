@@ -4,6 +4,86 @@
  */
 
 export interface paths {
+    "/api/v1/review-submissions/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prepare anonymous review submission
+         * @description No-store signed purpose-specific token, valid for 30 minutes and usable after at least 2 seconds. No account or tracking cookie.
+         */
+        get: operations["createReviewSubmissionChallenge"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a client review for moderation
+         * @description Anonymous JSON only, exact PUBLIC_APP_URL Origin, credentials omitted. Name/text are trimmed and stored with explicit consent. No immediate publication, ID or personal content in response. Same nonce and same normalized payload is idempotent; changed payload returns 409. Rolling-hour transactional acceptance limits: 30 per normalized network, 200 globally; serialized by one global transaction lock.
+         */
+        post: operations["submitReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/review-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List client review proposals for moderation
+         * @description Admin MFA required; private, no-store. At most 100 proposals. Pending oldest first, other states most recently submitted first. pendingCount includes all waiting proposals.
+         */
+        get: operations["adminListReviewSubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/review-submissions/{id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve or reject a client review
+         * @description Admin MFA and mutation origin protection. Approval creates one published review with unchanged client content and source Web studia. Rejection requires a reason. Repeating the same decision is idempotent; opposite decisions return 409. Decision, published review and audit commit atomically.
+         */
+        post: operations["adminDecideReviewSubmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/instructor-records": {
         parameters: {
             query?: never;
@@ -854,7 +934,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update, publish, feature or hide a review */
+        /**
+         * Update, publish, feature or hide a review
+         * @description For client-submitted reviews, original authorLabel, body and rating cannot be changed. A visibility-only patch (published, featured, sortOrder) is accepted only for these reviews; partial input for a manually added review is rejected. Full manual input remains available and cannot overwrite client-submitted originals.
+         */
         patch: operations["adminUpdateReview"];
         trace?: never;
     };
@@ -1020,6 +1103,71 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ReviewSubmissionChallenge: {
+            token: string;
+            /** @enum {string} */
+            consentVersion: "reviews-public-v1-2026-10-10";
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ReviewSubmissionInput: {
+            authorLabel: string;
+            body: string;
+            rating: number | null;
+            /** @constant */
+            consent: true;
+            /** @enum {string} */
+            consentVersion: "reviews-public-v1-2026-10-10";
+            token: string;
+            /** @description Honeypot. Must be empty. */
+            website: string;
+        };
+        ReviewSubmissionAccepted: {
+            /** @constant */
+            status: "pending";
+        };
+        AdminReviewSubmission: {
+            /** Format: uuid */
+            id: string;
+            authorLabel: string;
+            body: string;
+            rating: number | null;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            moderatedAt: string | null;
+            moderationReason: string | null;
+            /** Format: uuid */
+            reviewId: string | null;
+            consentVersion: string;
+            /** Format: date-time */
+            consentedAt: string;
+        };
+        AdminReviewSubmissions: {
+            items: components["schemas"]["AdminReviewSubmission"][];
+            pendingCount: number;
+        };
+        AdminReviewSubmissionDecisionInput: {
+            /** @constant */
+            decision: "approve";
+            featured: boolean;
+            reason: string | null;
+        } | {
+            /** @constant */
+            decision: "reject";
+            featured: boolean;
+            reason: string;
+        };
+        AdminReviewSubmissionDecisionResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "approved" | "rejected";
+            /** Format: uuid */
+            reviewId: string | null;
+        };
         InstructorLedSession: {
             /** Format: uuid */
             id: string;
@@ -1480,6 +1628,12 @@ export interface components {
             featured: boolean;
             sortOrder: number;
         };
+        /** @description Visibility-only input accepted exclusively for client-submitted reviews. */
+        AdminReviewVisibilityPatch: {
+            published: boolean;
+            featured: boolean;
+            sortOrder: number;
+        };
         AdminReview: {
             /** Format: uuid */
             id: string;
@@ -1500,6 +1654,8 @@ export interface components {
             published: boolean;
             featured: boolean;
             sortOrder: number;
+            /** @description True for a review approved from a client proposal; original author, text and rating are read-only. */
+            submittedByClient: boolean;
         };
         TransformationImage: {
             url: string;
@@ -1945,6 +2101,118 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    createReviewSubmissionChallenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Review consent version and short-lived challenge. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSubmissionChallenge"];
+                };
+            };
+            503: components["responses"]["Error"];
+        };
+    };
+    submitReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Must exactly match the configured public origin. */
+                Origin: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewSubmissionInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted for moderation; identical retry has the same result. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSubmissionAccepted"];
+                };
+            };
+            400: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    adminListReviewSubmissions: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private proposals in the selected state and total waiting count. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReviewSubmissions"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
+    adminDecideReviewSubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReviewSubmissionDecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded decision or identical replay. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminReviewSubmissionDecisionResult"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            503: components["responses"]["Error"];
+        };
+    };
     getInstructorMonthlyReport: {
         parameters: {
             query: {
@@ -3520,7 +3788,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AdminReviewInput"];
+                "application/json": components["schemas"]["AdminReviewInput"] | components["schemas"]["AdminReviewVisibilityPatch"];
             };
         };
         responses: {

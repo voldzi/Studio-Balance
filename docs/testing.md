@@ -585,3 +585,47 @@ produkční nebo fyzické PWA akceptaci:
   fokus po otevření a návratu, popisky polí, stavová oznámení a čitelnost
   chyby. Ověření v produkci provést bez zrušení skutečné lekce; mutační
   scénáře pouze na izolovaných testovacích datech.
+
+## CD-072: klientský návrh recenze a moderace
+
+- veřejný návrh bez přihlášení, s ratingem i bez něj, délky jména 1–80 a textu
+  10–2000; neznámá pole, HTML jako prostý text, neplatný rating a chybějící
+  nebo starý souhlas vracejí ErrorResponse;
+- výzva: správný podpis/účel, expirace 30 minut, minimální stáří 2 sekundy,
+  tamper, chybný origin, ne-JSON a honeypot; žádné credentials/PII v odpovědi;
+- idempotentní stejný nonce a stejný obsah, změněný obsah se stejným nonce
+  409 a souběžný retry právě jeden DB návrh;
+- transakční 30/network a 200/global za klouzavých 60 minut, /24 a /56
+  normalizace, přechod oken, 2hodinová expirace technických záznamů a periodický
+  10minutový worker úklid nejvýše 500 pouze expirovaných řádků; žádná surová IP
+  v uložených řádcích a žádné předstírané přijetí při DB chybě;
+- administrační GET/decision bez relace 401 a klientská relace/role bez MFA
+  403; pending oldest-first, max 100 a přesný pendingCount;
+- schválení založí právě jednu recenzi s původním jménem/textem/ratingem,
+  zdrojem Web studia a auditem; paralelní schválení ani retry nevytvoří kopii;
+- odmítnutí vyžaduje důvod, opakování je idempotentní, opačné rozhodnutí je
+  409; návrh čekající/odmítnutý se nikdy nevrací veřejným GET;
+- starý admin editor nesmí změnit původní klientský text/jméno/rating,
+  může skrýt, zvýraznit nebo změnit pořadí; stažení souhlasu skrytím odstraní
+  veřejnou vazbu a nenutí mazat audit;
+- UI od 360 px, klávesnice, čtečka/popisky, bez ratingu, neplatný souhlas,
+  výzva nedostupná/expirující, limit četnosti, zachování textu po chybě,
+  submit pending/success, admin loading/empty/error/conflict/expired session;
+- homepage a Recenze nabízejí formulář i při prázdném pásu; QR i čitelný odkaz
+  otevírají přesně `/recenze/napsat`, tisk bez navigačního balastu;
+- analytics: nové `/recenze/napsat` a `/recenze/qr`, jejich query varianty,
+  pole formuláře a odeslání neposílají žádnou veřejnou událost; dosavadní
+  explicitní odchozí kliknutí, cookie suppression, DNT/GPC a SRI se nemění.
+
+Před vydáním spustit validační JSON/OpenAPI a generování kontraktů, relevantní
+API/controller/DB a web component/security testy. DB souběh ověřit izolovanou
+lokální databází, ne produkčními klienty. Produkční evidence musí oddělit
+nasazení, anonymní dostupnost a skutečně vykonanou autorizovanou moderaci;
+nezveřejňovat testovací reference a netvrdit QR test na fyzickém telefonu,
+pokud nebyl proveden.
+
+- Klientská schválená recenze přijme PATCH pouze zobrazení (`published`,
+  `featured`, `sortOrder`); ruční recenze odmítne tento zkrácený vstup.
+  Původní klientské jméno, text a hodnocení zůstanou při skrytí beze změny.
+- Validační délky nového formuláře počítají znaky Unicode konzistentně
+  s databází; krátký text z několika emoji vrátí 400, nikoli systémovou chybu.

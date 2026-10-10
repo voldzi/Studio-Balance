@@ -56,6 +56,7 @@ a obchodní pravidla.
 | WEB-011 | P1 | web má PWA manifest, oficiální instalovací ikonu, bezpečnou cache pouze statických assetů a pravdivý offline stav; nikdy necachuje API, stav účtu, rozvrh ani rezervace jako použitelné offline údaje. Přihlášený profil poskytne kontextový, jednorázově odmítnutelný a platformně správný návod: na iOS kroky v menu Safari, na Androidu/desktopu skutečné instalační tlačítko jen pokud jej prohlížeč nabízí, jinak výslovně označené kroky v menu. |
 | WEB-012 | P0 | přihlášený klientský web má prémiový mobilní přehled s přivítáním, nejbližší rezervací a fotografií, přímým stornem, nadcházejícími/minulými rezervacemi, oblíbenými typy lekcí, novinkami, zprávami účtu, profilem, nastavením a spodní navigací; všechna provozní data používají stejné API a databázi jako veřejný rozvrh a administrace |
 | WEB-013 | P1 | domovská stránka obsahuje za recenzemi a před footerem jedno pevné partnerské doporučení Masáží Jiřina se schváleným textem, oficiální fotografií a přístupným odkazem na `https://masaze.zeleznalady.cz/`; partner se nespravuje v administraci a doporučení nevstupuje do rezervačního toku ani hlavní navigace |
+| WEB-015 | P1 | klient může bez účtu odeslat vlastní recenzi se jménem/iniciálami, textem, volitelným hodnocením a explicitním souhlasem; návrh je neveřejný do moderace a stejný formulář otevře QR kód ve studiu (CD-072 / ADR 0029) |
 | WEB-014 | P1 | společná veřejná patička obsahuje autorský podpis VCode a odkazy na Moje porce a Městem hrou s oficiálními lokálními ikonami; explicitní kliknutí se rozlišují třemi pevnými centrálně schválenými událostmi pouze v dosavadním anonymním veřejném rozsahu (CD-070 / ADR 0028). |
 
 Aktuální typy lekcí jsou Barre, TRX, Balance Flow, Jumping, Kruhový trénink a
@@ -407,3 +408,25 @@ Výpisy rezervací používají omezené stránky s možností načíst další.
 Nadcházející rezervace zůstávají oddělené od historie a filtrů období;
 administrátorský celkový počet účastníků nevyjadřuje velikost načtené stránky.
 Bezpečnostní hlavičky nesmějí narušit PWA, přihlášení ani schválenou analytiku.
+
+## Klientské recenze (CD-072)
+
+Veřejný formulář přijímá jméno nebo iniciály o 1–80 znacích, text o
+10–2000 znacích, volitelné celé hodnocení 1–5 a nepředvyplněný souhlas se
+zveřejněním právě tohoto obsahu. Bez hodnocení se žádné hvězdičky nedopočítají.
+Nežádá účet, kontakt, rezervaci, zdravotní údaje ani fotografii. Úspěch jasně
+sdělí, že recenze čeká na kontrolu; původní návrh se nezobrazuje veřejně.
+
+Administrace Recenzí má přehled čekajících návrhů, historii schválených a
+odmítnutých a akce schválení/odmítnutí s jednoduchou nápovědou. Odmítnutí
+vyžaduje důvod alespoň 3 znaky. Původní jméno, text a rating klienta se při
+schválení zachovají; zveřejnění nevytváří příznak ověřené návštěvy. Moderace
+chrání před spamem, nevhodným obsahem a osobními údaji, nikoli před negativním
+názorem. Souhlas lze stáhnout kontaktováním studia; správce recenzi skryje.
+
+Server vynucuje validaci, origin, podepsanou výzvu a databázově koordinovaná
+omezení. Návrh a následná publikace jsou idempotentní a auditované. Formulář
+po chybě zachová vstup jen v aktuální paměti stránky, nevytváří trvalou cache
+osobních údajů. QR tisk je odkaz na týž formulář pro vlastní telefon klienta,
+ne společný účet studia. Nové cesty `/recenze/napsat` a `/recenze/qr` ani
+formulářové interakce nevstupují do veřejné analytiky.

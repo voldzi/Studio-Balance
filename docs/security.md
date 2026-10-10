@@ -492,3 +492,40 @@ sekce Novinky/Zprávy zůstávají soukromé; stávající cookie, DNT/GPC a off
 ochrany analytiky se změnou lišty nemění. Výkaz není mzdový systém ani záruka
 úplné zákonné evidence DPP. Zpracovává jen nezbytný skutečný čas výuky a
 ručně zadanou odměnu; příprava nebo jiné pracovní činnosti se neodhadují.
+
+## Anonymní návrhy recenzí (CD-072 / ADR 0029)
+
+Návrh není publikovaná recenze ani důkaz návštěvy. Neveřejný výpis a rozhodnutí
+jsou pod stávajícím admin role/MFA guardem a odpovědi `private, no-store`.
+Schválení/odmítnutí a minimální audit jsou atomická transakce; jedinečná vazba
+brání dvěma publikacím při souběhu. Původní autor, text a rating jsou chráněné
+před následným přepsáním ve starém editoru. Odmítnutí vyžaduje důvod.
+
+Anonymní POST nepoužívá klientskou ani admin cookie; přijímá pouze JSON z
+přesného originu `PUBLIC_APP_URL`, prázdný honeypot, explicitní souhlas
+aktuální verze a účelově oddělený HMAC token podepsaný `SESSION_SECRET`.
+Výzva expiruje za 30 minut a lze ji použít nejdříve po 2 sekundách.
+Nelze ji zaměnit za session, autentizační nebo jiný token. Její nonce a
+obsahový otisk zajistí idempotenci; změna těla při témže nonce vrátí 409.
+Token ani obsah recenze se nesmějí objevit v logu, URL, analytice nebo trvalé
+browser cache. Úspěch nevrací ID, text ani jméno klienta.
+
+Databáze koordinuje 30 přijatých návrhů na síť a 200 celkem za klouzavých
+60 minut pod globálním transakčním advisory lockem sdíleným API replikami. Normalizovanou /24 IPv4 nebo /56 IPv6 síť reprezentuje účelově
+oddělený HMAC otisk; původní IP/síť se neukládá. Krátkodobé záznamy přijatých odeslání
+expirují po 2 hodinách a worker je odstraňuje v omezených dávkách každých
+10 minut i bez nových odeslání. Jedná se o omezení četnosti, nikoli nezávislé ověření
+člověka: útočník s různými sítěmi může limit obejít, naopak společná síť studia
+může limit vyčerpat. Při chybě DB se nic nepřijme jen do paměti a nepředstírá
+se úspěch. Produkční proxy hranice musí používat důvěryhodné údaje o síti,
+ne libovolný klientský `X-Forwarded-For`.
+
+Souhlas `reviews-public-v1-2026-10-10` eviduje čas a verzi pro jméno/iniciály,
+text a dobrovolné hodnocení. Formulář nežádá kontakt ani zdravotní údaje.
+Žádost o odvolání souhlasu nebo opravu se řeší přes zveřejněný kontakt studia
+s přiměřeným ověřením; nevzniká anonymní mazací endpoint. Studio může
+publikovanou recenzi ihned skrýt. Recenze, souhlasy a audit nemají automatické
+mazání bez schválené politiky; 2hodinová retence se vztahuje pouze na technické
+počítadlo. Nezavádí se externí CAPTCHA, nový vendor, e-mail ani push.
+`/recenze/napsat`, `/recenze/qr` a jakákoli pole/události formuláře zůstávají
+mimo dosavadní přesný allowlist VCode analytiky.

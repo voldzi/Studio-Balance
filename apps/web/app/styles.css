@@ -208,9 +208,9 @@ h3 { font-size: 1.7rem; }
 .reviews-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: var(--space-5); }
 .review-card { min-width: 0; min-height: 18rem; margin: 0; padding: clamp(1.5rem, 3vw, 2.25rem); display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-light); box-shadow: var(--shadow-soft); }
 .review-rating { margin: 0 0 var(--space-4); color: var(--color-accent-hover); font-size: 1.05rem; letter-spacing: .08em; }
-.review-quote { margin: 0; color: var(--color-text-primary); font-family: var(--font-display); font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.35; }
+.review-quote { margin: 0; color: var(--color-text-primary); font-family: var(--font-display); font-size: clamp(1.3rem, 2.2vw, 1.75rem); line-height: 1.35; white-space: pre-wrap; overflow-wrap: anywhere; }
 .reviews-section-homepage .review-quote { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 6; }
-.review-attribution { margin-top: auto; padding-top: var(--space-6); display: grid; gap: var(--space-1); border-top: 1px solid var(--color-border); }
+.review-attribution { margin-top: auto; padding-top: var(--space-6); display: grid; gap: var(--space-1); border-top: 1px solid var(--color-border); overflow-wrap: anywhere; }
 .review-attribution cite { font-style: normal; font-weight: 800; }
 .review-attribution a { width: fit-content; color: var(--color-accent-hover); font-size: .82rem; }
 .review-meta { color: var(--color-text-secondary); font-size: .78rem; }
@@ -850,3 +850,54 @@ dialog.pwa-install-modal::backdrop { background: transparent; }
 .admin-single-cancel .admin-check { display: flex; align-items: center; gap: .7rem; min-height: 44px; }
 .admin-single-cancel .admin-check input { width: 1.25rem; min-height: 1.25rem; flex-shrink: 0; }
 .admin-single-cancel button:disabled { cursor: not-allowed; opacity: .6; }
+
+/* Client reviews keep the text and publication choice clear on small screens. */
+.review-invitation { margin-top: var(--space-6); padding: clamp(1.5rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-light); }
+.review-invitation h2 { margin: 0 0 .65rem; font-size: clamp(1.7rem, 3vw, 2.5rem); }
+.review-invitation p:last-child { margin-bottom: 0; color: var(--color-text-secondary); }
+.review-invitation .button { flex-shrink: 0; }
+.review-submission-shell { max-width: 58rem; }
+.review-submission-card, .review-submission-outcome { padding: clamp(1.3rem, 4vw, 3rem); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-light); box-shadow: var(--shadow-soft); overflow-wrap: anywhere; }
+.review-submission-card h2, .review-submission-outcome h2 { font-size: clamp(1.7rem, 4vw, 2.5rem); }
+.review-form-intro { margin-bottom: 1.75rem; color: var(--color-text-secondary); }
+.review-submission-form { display: grid; gap: 1rem; }
+.review-submission-form > label:not(.review-consent) { display: grid; gap: .5rem; font-weight: 700; }
+.review-submission-form input:not([type="checkbox"]), .review-submission-form textarea, .review-submission-form select { width: 100%; min-width: 0; min-height: 3rem; padding: .75rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; color: var(--color-text-primary); font: inherit; }
+.review-submission-form textarea { resize: vertical; line-height: 1.6; }
+.review-submission-form [aria-invalid="true"] { border-color: #963c30; }
+.review-field-help { margin: -.5rem 0 .3rem; color: var(--color-text-secondary); font-size: .86rem; }
+.review-field-error { margin: -.4rem 0 .3rem; color: #78382c; font-size: .9rem; }
+.review-rating-field { min-width: 0; margin: 0; padding: 0; display: grid; gap: .5rem; border: 0; }
+.review-rating-field legend { padding: 0 0 .5rem; font-weight: 700; }
+.review-consent { min-height: 44px; margin: .5rem 0; display: flex; align-items: flex-start; gap: .8rem; font-size: .94rem; }
+.review-consent input { width: 1.4rem; height: 1.4rem; flex-shrink: 0; margin-top: .15rem; accent-color: #825020; }
+.review-privacy { margin-bottom: .75rem; color: var(--color-text-secondary); font-size: .86rem; }
+.review-privacy summary { min-height: 44px; padding-block: .5rem; color: var(--color-text-primary); cursor: pointer; font-weight: 700; }
+.review-submission-error { padding: 1rem; border: 1px solid #c59789; border-radius: var(--radius-sm); background: #f3e3de; color: #78382c; }
+.review-submission-form .button { width: fit-content; max-width: 100%; background: #825020; color: #fffaf4; border-color: #825020; }
+.review-submission-form .button:hover { background: #694017; }
+.review-submission-form .button-secondary { background: transparent; color: #694017; }
+.review-submission-form .button-secondary:hover { background: #694017; color: #fffaf4; }
+.admin-submissions-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.admin-submissions-heading h2 { margin-bottom: .75rem; font-size: clamp(1.6rem, 3vw, 2rem); }
+.admin-review-submissions { overflow-wrap: anywhere; }
+.admin-review-submissions .admin-row-actions { flex-wrap: wrap; }
+.admin-review-submissions .admin-row-actions a, .admin-submissions-heading button { min-height: 44px; padding: .55rem .8rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; color: var(--color-text-primary); }
+.admin-review-submissions button:disabled { cursor: not-allowed; opacity: .6; }
+.admin-review-submissions > .admin-form { margin-top: 1.25rem; }
+.admin-submission-list { margin: 0; padding: 0; list-style: none; }
+.admin-submission-list > li { margin-bottom: 1.5rem; padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.admin-submission-original strong { font-size: 1rem; }
+.admin-submission-original p { margin-bottom: .75rem; }
+.admin-submission-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-review-decision { margin-top: 1.5rem; padding: 1.25rem; border: 2px solid #825020; border-radius: var(--radius-sm); }
+.admin-review-decision .admin-check { align-items: flex-start; min-height: 44px; }
+.admin-review-decision .admin-check input { width: 1.3rem; min-height: 1.3rem; flex-shrink: 0; margin-top: .15rem; }
+.admin-review-submissions .button { background: #825020; color: #fffaf4; border-color: #825020; }
+.admin-review-submissions .button:hover { background: #694017; }
+@media (max-width: 600px) {
+  .review-invitation { flex-direction: column; align-items: stretch; }
+  .review-invitation .button, .review-submission-form .button { width: 100%; text-align: center; }
+  .admin-review-submissions .admin-row-actions { align-items: stretch; flex-direction: column; }
+  .admin-submission-list > li, .admin-review-decision { padding: .85rem; }
+}

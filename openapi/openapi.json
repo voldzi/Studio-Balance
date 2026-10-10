@@ -16,6 +16,208 @@
     }
   ],
   "paths": {
+    "/api/v1/review-submissions/challenge": {
+      "get": {
+        "summary": "Prepare anonymous review submission",
+        "operationId": "createReviewSubmissionChallenge",
+        "tags": [
+          "Content"
+        ],
+        "security": [],
+        "description": "No-store signed purpose-specific token, valid for 30 minutes and usable after at least 2 seconds. No account or tracking cookie.",
+        "responses": {
+          "200": {
+            "description": "Review consent version and short-lived challenge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSubmissionChallenge"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/review-submissions": {
+      "post": {
+        "summary": "Submit a client review for moderation",
+        "operationId": "submitReview",
+        "tags": [
+          "Content"
+        ],
+        "security": [],
+        "description": "Anonymous JSON only, exact PUBLIC_APP_URL Origin, credentials omitted. Name/text are trimmed and stored with explicit consent. No immediate publication, ID or personal content in response. Same nonce and same normalized payload is idempotent; changed payload returns 409. Rolling-hour transactional acceptance limits: 30 per normalized network, 200 globally; serialized by one global transaction lock.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Must exactly match the configured public origin."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSubmissionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted for moderation; identical retry has the same result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewSubmissionAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/review-submissions": {
+      "get": {
+        "summary": "List client review proposals for moderation",
+        "operationId": "adminListReviewSubmissions",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "description": "Admin MFA required; private, no-store. At most 100 proposals. Pending oldest first, other states most recently submitted first. pendingCount includes all waiting proposals.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ],
+              "default": "pending"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private proposals in the selected state and total waiting count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReviewSubmissions"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/content/review-submissions/{id}/decision": {
+      "post": {
+        "summary": "Approve or reject a client review",
+        "operationId": "adminDecideReviewSubmission",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "description": "Admin MFA and mutation origin protection. Approval creates one published review with unchanged client content and source Web studia. Rejection requires a reason. Repeating the same decision is idempotent; opposite decisions return 409. Decision, published review and audit commit atomically.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminReviewSubmissionDecisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded decision or identical replay.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReviewSubmissionDecisionResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/admin/instructor-records": {"get":{"summary":"Read confirmed taught lessons and manual rewards for a Prague calendar month","operationId":"getInstructorMonthlyReport","tags":["Administration"],"security":[{"adminSession":[]}],"responses":{"200":{"description":"Private operational evidence; not payroll or a receipt.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/InstructorMonthlyReport"}}}},"400":{"$ref":"#/components/responses/Error"},"401":{"$ref":"#/components/responses/Error"},"403":{"$ref":"#/components/responses/Error"},"404":{"$ref":"#/components/responses/Error"},"409":{"$ref":"#/components/responses/Error"}},"parameters":[{"name":"month","in":"query","required":true,"schema":{"type":"string","pattern":"^(20[0-9]{2})-(0[1-9]|1[0-2])$"}}]}},
     "/api/v1/admin/sessions/{id}/completion": {"get":{"summary":"Read a coherent session roster and instructor record for confirmation","operationId":"getSessionCompletion","tags":["Administration"],"security":[{"adminSession":[]}],"responses":{"200":{"description":"Private operational evidence; not payroll or a receipt.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SessionCompletion"}}}},"400":{"$ref":"#/components/responses/Error"},"401":{"$ref":"#/components/responses/Error"},"403":{"$ref":"#/components/responses/Error"},"404":{"$ref":"#/components/responses/Error"},"409":{"$ref":"#/components/responses/Error"}},"parameters":[{"$ref":"#/components/parameters/ResourceId"}]},"post":{"summary":"Atomically confirm attendance and the actual taught lesson after its end","operationId":"confirmSessionCompletion","tags":["Administration"],"security":[{"adminSession":[]}],"responses":{"200":{"description":"Private operational evidence; not payroll or a receipt.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/SessionCompletionResult"}}}},"400":{"$ref":"#/components/responses/Error"},"401":{"$ref":"#/components/responses/Error"},"403":{"$ref":"#/components/responses/Error"},"404":{"$ref":"#/components/responses/Error"},"409":{"$ref":"#/components/responses/Error"}},"parameters":[{"$ref":"#/components/parameters/ResourceId"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/SessionCompletionRequest"}}}},"description":"Only reserved people are batch-classified; pre-existing attendance and cancelled bookings are preserved. Same submission retry is idempotent. Stale roster/version conflicts. Paid or waived cancellation fees stay unchanged. Corrections retain historical snapshots and require a reason."}},
     "/api/v1/admin/studio-status": {"get":{"operationId":"getAdminStudioStatus","summary":"Studio opening and registration synchronization","security":[{"adminSession":[]}],"responses":{"200":{"description":"Current studio opening status","headers":{"Cache-Control":{"schema":{"type":"string"},"description":"no-store"}},"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminStudioStatus"}}}},"401":{"description":"Request failed; registration sync pending (503) keeps booking closed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"403":{"description":"Request failed; registration sync pending (503) keeps booking closed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}}},"put":{"operationId":"updateStudioStatus","summary":"Open or pause registration and booking","security":[{"adminSession":[]}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","additionalProperties":false,"required":["open"],"properties":{"open":{"type":"boolean"}}}}}},"responses":{"200":{"description":"Current studio opening status","headers":{"Cache-Control":{"schema":{"type":"string"},"description":"no-store"}},"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminStudioStatus"}}}},"401":{"description":"Request failed; registration sync pending (503) keeps booking closed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"403":{"description":"Request failed; registration sync pending (503) keeps booking closed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"400":{"description":"Request failed; registration sync pending (503) keeps booking closed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}},"503":{"description":"Request failed; registration sync pending (503) keeps booking closed","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ErrorResponse"}}}}}}},
@@ -805,7 +1007,61 @@
       "post": { "summary": "Create a review draft or approved review", "operationId": "adminCreateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "201": { "description": "Created.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } }
     },
     "/api/v1/admin/content/reviews/{id}": {
-      "patch": { "summary": "Update, publish, feature or hide a review", "operationId": "adminUpdateReview", "tags": ["Administration"], "security": [{ "adminSession": [] }], "parameters": [{ "$ref": "#/components/parameters/ResourceId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReviewInput" } } } }, "responses": { "200": { "description": "Updated.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminMutationResponse" } } } }, "400": { "$ref": "#/components/responses/Error" }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" }, "404": { "$ref": "#/components/responses/Error" } } }
+      "patch": {
+        "summary": "Update, publish, feature or hide a review",
+        "operationId": "adminUpdateReview",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ResourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/AdminReviewInput" },
+                  { "$ref": "#/components/schemas/AdminReviewVisibilityPatch" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "description": "For client-submitted reviews, original authorLabel, body and rating cannot be changed. A visibility-only patch (published, featured, sortOrder) is accepted only for these reviews; partial input for a manually added review is rejected. Full manual input remains available and cannot overwrite client-submitted originals."
+      }
     },
     "/api/v1/admin/content/news": {
       "get": { "summary": "List news including drafts", "operationId": "adminListNews", "tags": ["Administration"], "security": [{ "adminSession": [] }], "responses": { "200": { "description": "All news.", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": false, "required": ["items"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminNewsItem" } } } } } } }, "401": { "$ref": "#/components/responses/Error" }, "403": { "$ref": "#/components/responses/Error" } } },
@@ -1006,6 +1262,291 @@
       }
     },
     "schemas": {
+      "ReviewSubmissionChallenge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "consentVersion",
+          "expiresAt"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "consentVersion": {
+            "type": "string",
+            "enum": [
+              "reviews-public-v1-2026-10-10"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReviewSubmissionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "authorLabel",
+          "body",
+          "rating",
+          "consent",
+          "consentVersion",
+          "token",
+          "website"
+        ],
+        "properties": {
+          "authorLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "body": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "rating": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consent": {
+            "type": "boolean",
+            "const": true
+          },
+          "consentVersion": {
+            "type": "string",
+            "enum": [
+              "reviews-public-v1-2026-10-10"
+            ]
+          },
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "website": {
+            "type": "string",
+            "maxLength": 0,
+            "description": "Honeypot. Must be empty."
+          }
+        }
+      },
+      "ReviewSubmissionAccepted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "pending"
+          }
+        }
+      },
+      "AdminReviewSubmission": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "authorLabel",
+          "body",
+          "rating",
+          "status",
+          "createdAt",
+          "moderatedAt",
+          "moderationReason",
+          "reviewId",
+          "consentVersion",
+          "consentedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authorLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "body": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "rating": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "moderatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "moderationReason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "reviewId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "consentVersion": {
+            "type": "string"
+          },
+          "consentedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminReviewSubmissions": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pendingCount"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/AdminReviewSubmission"
+            }
+          },
+          "pendingCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AdminReviewSubmissionDecisionInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "decision",
+              "featured",
+              "reason"
+            ],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "const": "approve"
+              },
+              "featured": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 3,
+                "maxLength": 500
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "decision",
+              "featured",
+              "reason"
+            ],
+            "properties": {
+              "decision": {
+                "type": "string",
+                "const": "reject"
+              },
+              "featured": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 500
+              }
+            }
+          }
+        ]
+      },
+      "AdminReviewSubmissionDecisionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "reviewId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ]
+          },
+          "reviewId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "InstructorLedSession": {"type":"object","additionalProperties":false,"required":["id","className","instructorId","instructorName","startAt","endAt","status"],"properties":{"id":{"type":"string","format":"uuid"},"className":{"type":"string"},"instructorId":{"type":"string","format":"uuid"},"instructorName":{"type":"string"},"startAt":{"type":"string","format":"date-time"},"endAt":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["scheduled","cancelled","completed"]}}},
       "InstructorLessonRecord": {"type":"object","additionalProperties":false,"required":["id","sessionId","instructorId","instructorName","className","startAt","endAt","minutes","rewardCents","participants","version","attendanceChanged","confirmedAt","updatedAt"],"properties":{"id":{"type":"string","format":"uuid"},"sessionId":{"type":"string","format":"uuid"},"instructorId":{"type":"string","format":"uuid"},"instructorName":{"type":"string"},"className":{"type":"string"},"startAt":{"type":"string","format":"date-time"},"endAt":{"type":"string","format":"date-time"},"minutes":{"type":"number","minimum":15,"maximum":240},"rewardCents":{"type":["integer","null"],"minimum":0,"maximum":1000000},"participants":{"type":"integer","minimum":0,"maximum":500},"version":{"type":"integer","minimum":1},"attendanceChanged":{"type":"boolean","description":"Attendance changed since confirmation; review the saved reward manually."},"confirmedAt":{"type":"string","format":"date-time"},"updatedAt":{"type":"string","format":"date-time"}}},
       "InstructorMonthlySummary": {"type":"object","additionalProperties":false,"required":["instructorId","instructorName","lessons","minutes","rewardCents","pendingRewards"],"properties":{"instructorId":{"type":"string","format":"uuid"},"instructorName":{"type":"string"},"lessons":{"type":"integer","minimum":0},"minutes":{"type":"number","minimum":0},"rewardCents":{"type":"integer","minimum":0},"pendingRewards":{"type":"integer","minimum":0}}},
@@ -1483,7 +2024,126 @@
       },
       "Review": { "type": "object", "additionalProperties": false, "required": ["id","authorLabel","body","source","reviewedOn","rating","classType"], "properties": { "id": { "type": "string", "format": "uuid" }, "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] } } },
       "AdminReviewInput": { "type": "object", "additionalProperties": false, "required": ["authorLabel","body","reviewedOn","rating","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean", "description": "Must be true before publication." }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
-      "AdminReview": { "type": "object", "additionalProperties": false, "required": ["id","authorLabel","body","source","reviewedOn","rating","classType","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "id": { "type": "string", "format": "uuid" }, "authorLabel": { "type": "string", "minLength": 1, "maxLength": 120 }, "body": { "type": "string", "minLength": 10, "maxLength": 2000 }, "source": { "type": ["string","null"], "minLength": 2, "maxLength": 200 }, "reviewedOn": { "type": ["string","null"], "format": "date" }, "rating": { "oneOf": [{ "type": "integer", "minimum": 1, "maximum": 5 }, { "type": "null" }] }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean" }, "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
+      "AdminReviewVisibilityPatch": { "type": "object", "additionalProperties": false, "required": ["published","featured","sortOrder"], "description": "Visibility-only input accepted exclusively for client-submitted reviews.", "properties": { "published": { "type": "boolean" }, "featured": { "type": "boolean" }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },
+      "AdminReview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "authorLabel",
+          "body",
+          "source",
+          "reviewedOn",
+          "rating",
+          "classType",
+          "classTypeId",
+          "consentConfirmed",
+          "published",
+          "featured",
+          "sortOrder",
+          "submittedByClient"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "authorLabel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "body": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "reviewedOn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "rating": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "classType": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "name",
+                  "slug"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "classTypeId": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consentConfirmed": {
+            "type": "boolean"
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "featured": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "submittedByClient": {
+            "type": "boolean",
+            "description": "True for a review approved from a client proposal; original author, text and rating are read-only."
+          }
+        }
+      },
       "TransformationImage": { "type": "object", "additionalProperties": false, "required": ["url","width","height"], "properties": { "url": { "type": "string", "pattern": "^/api/v1/(admin/)?media/" }, "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 } } },
       "Transformation": { "type": "object", "additionalProperties": false, "required": ["id","title","story","attribution","beforeImage","afterImage","classType"], "properties": { "id": { "type": "string", "format": "uuid" }, "title": { "type": "string", "minLength": 2, "maxLength": 160 }, "story": { "type": "string", "minLength": 10, "maxLength": 2000 }, "attribution": { "type": "string", "minLength": 1, "maxLength": 120 }, "beforeImage": { "$ref": "#/components/schemas/TransformationImage" }, "afterImage": { "$ref": "#/components/schemas/TransformationImage" }, "classType": { "oneOf": [{ "type": "object", "additionalProperties": false, "required": ["id","name","slug"], "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "slug": { "type": "string" } } }, { "type": "null" }] } } },
       "AdminTransformationInput": { "type": "object", "additionalProperties": false, "required": ["title","story","attribution","beforeAssetId","afterAssetId","classTypeId","consentConfirmed","published","featured","sortOrder"], "properties": { "title": { "type": "string", "minLength": 2, "maxLength": 160 }, "story": { "type": "string", "minLength": 10, "maxLength": 2000 }, "attribution": { "type": "string", "minLength": 1, "maxLength": 120 }, "beforeAssetId": { "type": "string", "format": "uuid" }, "afterAssetId": { "type": "string", "format": "uuid" }, "classTypeId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }] }, "consentConfirmed": { "type": "boolean", "description": "Must be true before publication." }, "published": { "type": "boolean" }, "featured": { "type": "boolean", "description": "May be true only for published content." }, "sortOrder": { "type": "integer", "minimum": 0, "maximum": 10000 } } },

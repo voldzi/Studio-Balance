@@ -44,7 +44,7 @@ describe("explicit v2 event privacy boundary",()=>{
     const {bridge,event}=setup();bridge.event(name,"/o-studiu",anonymous);
     expect(event.mock.calls).toEqual([[name,"/o-studiu"]]);
   });
-  it.each(["/admin","/admin/prihlaseni","/muj-ucet","/kontakt","/lekce/barre","/rozvrh/123","/?email=private","/#private","https://private.invalid"])("discards events on nonpublic path %s",path=>{
+  it.each(["/admin","/admin/prihlaseni","/muj-ucet","/kontakt","/recenze/napsat","/recenze/qr","/api/v1/review-submissions","/lekce/barre","/rozvrh/123","/?email=private","/#private","https://private.invalid"])("discards events on nonpublic path %s",path=>{
     const {bridge,event}=setup();bridge.event("outbound-click",path,anonymous);expect(event).not.toHaveBeenCalled();
   });
   it.each([{eligible:false},{online:false},{doNotTrack:"1"},{doNotTrack:"yes"},{globalPrivacyControl:true}])("discards suppressed clicks and never replays %j",override=>{

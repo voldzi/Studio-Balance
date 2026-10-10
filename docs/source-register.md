@@ -187,3 +187,13 @@ návrhu se v produkci nepoužívá. SHA-256 lokální kopie je
 - 2026-10-01: `WhatsApp Image 2026-10-01 at 19.23.29.jpeg`, opravený
   schválený plakát Body Sculpt; produkční kopie
   `apps/web/public/images/studio-balance/lessons/body-sculpt.jpeg`, CD-061.
+
+## Přímé klientské recenze — 2026-10-10
+
+Výslovná žádost zadavatele „Realizuj přidávání recenzí podle návrhu a
+schvalování v administraci. Po otestování nasaď do produkce.“ schvaluje
+návrh jméno/iniciály, text, dobrovolné hodnocení, explicitní souhlas a ruční
+moderace; zaznamenána jako CD-072. QR je pouze pohodlný přímý odkaz ze studia
+na stejný formulář. Nejde o schválení převzetí recenzí z Google, automatické
+publikace, označení návštěvy za ověřenou, sběru zdravotních údajů nebo rozšíření
+analytiky. Staré ručně dodané reference si zachovají vlastní souhlasy a zdroje.

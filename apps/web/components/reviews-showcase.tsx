@@ -15,6 +15,10 @@ export type PublicReview = {
   source: string | null;
 };
 
+export function ReviewInvitation({ homepage = false }: { homepage?: boolean }) {
+  return <div className="review-invitation"><div><p className="eyebrow">Vaše zkušenost nám pomáhá</p><h2>{homepage ? "Jak se vám u nás líbilo?" : "Podělte se o svou zkušenost"}</h2><p>Napište krátkou recenzi. Přihlášení není potřeba; nejprve ji zkontroluje studio.</p></div><Link className="button button-secondary" href="/recenze/napsat">Napsat recenzi</Link></div>;
+}
+
 export function ReviewsShowcase({ homepage = false }: { homepage?: boolean }) {
   const [items, setItems] = useState<PublicReview[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -32,18 +36,19 @@ export function ReviewsShowcase({ homepage = false }: { homepage?: boolean }) {
   useEffect(() => { void load(); }, [load]);
 
   if (state === "loading") {
-    return homepage ? <section aria-label="Recenze klientek" className="reviews-section reviews-loading"><p role="status">Načítáme zkušenosti klientek…</p></section> : <p className="content-message" role="status">Načítáme recenze…</p>;
+    return homepage ? <section aria-label="Recenze klientek" className="reviews-section reviews-loading"><p role="status">Načítáme zkušenosti klientek…</p><ReviewInvitation homepage /></section> : <><p className="content-message" role="status">Načítáme recenze…</p><ReviewInvitation /></>;
   }
   if (state === "error") {
-    return <div className="content-message" role="alert"><p>Recenze se právě nepodařilo načíst.</p><button className="button button-secondary" onClick={() => void load()} type="button">Zkusit znovu</button></div>;
+    return <><div className="content-message" role="alert"><p>Recenze se právě nepodařilo načíst.</p><button className="button button-secondary" onClick={() => void load()} type="button">Zkusit znovu</button></div><ReviewInvitation homepage={homepage} /></>;
   }
   if (!items.length) {
-    return homepage ? null : <div className="content-message"><p>První ověřené zkušenosti zveřejníme po souhlasu klientek.</p><Link className="button button-secondary" href="/rozvrh">Prohlédnout rozvrh</Link></div>;
+    return homepage ? <section className="reviews-section" aria-label="Recenze klientek"><ReviewInvitation homepage /></section> : <><div className="content-message"><p>Zatím není zveřejněná žádná zkušenost. Vaši recenzi nejprve zkontroluje studio.</p></div><ReviewInvitation /></>;
   }
 
   const cards = <div className="reviews-grid">{items.map((review) => <ReviewCard key={review.id} review={review} />)}</div>;
   if (!homepage) return <>
     {cards}
+    <ReviewInvitation />
     <div className="reviews-action"><Link className="button" href="/rozvrh">Vybrat si lekci</Link></div>
   </>;
 
@@ -53,6 +58,7 @@ export function ReviewsShowcase({ homepage = false }: { homepage?: boolean }) {
       <Link className="text-link" href="/recenze">Všechny recenze</Link>
     </div>
     {cards}
+    <ReviewInvitation homepage />
     <div className="reviews-action"><Link className="button" href="/rozvrh">Vybrat si lekci</Link></div>
   </section>;
 }

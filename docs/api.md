@@ -502,3 +502,68 @@ JPG/PNG/WebP upload musí mít správnou binární signaturu ještě před Sharp
 dekódováním. SVG a jiné formáty se odmítají; 8 MB a40MP limity zůstávají.
 Schválené statické fotografie nejsou změněné. Veřejný JSON rozvrhu lze
 komprimovat na Nginx; osobní API tuto novou kompresní cestu nepoužívá.
+
+## Klientské recenze a moderace (CD-072 / ADR 0029)
+
+| Metoda | Cesta | Účel |
+| --- | --- | --- |
+| GET | `/api/v1/review-submissions/challenge` | krátkodobá výzva a verze souhlasu, bez relace |
+| POST | `/api/v1/review-submissions` | anonymní návrh do kontroly, bez publikace |
+| GET | `/api/v1/admin/content/review-submissions?status=pending` | neveřejné návrhy a celkový počet čekajících |
+| POST | `/api/v1/admin/content/review-submissions/{id}/decision` | explicitní schválení nebo odmítnutí s auditem |
+
+Strojový kontrakt všech čtyř cest je v `openapi/openapi.json`. Challenge vrací
+`200 {token, consentVersion, expiresAt}` s `no-store`. Výzva má samostatný
+účel, expiraci 30 minut a minimální stáří 2 sekundy. Aktuální consentVersion
+je `reviews-public-v1-2026-10-10`. Anonymní JSON POST vyžaduje přesný `Origin`
+podle `PUBLIC_APP_URL` a browser `credentials: omit`:
+
+```json
+{
+  "authorLabel": "Jana K.",
+  "body": "Příjemná lekce a vstřícná instruktorka.",
+  "rating": null,
+  "consent": true,
+  "consentVersion": "reviews-public-v1-2026-10-10",
+  "token": "kratkodoba-podepsana-vyzva",
+  "website": ""
+}
+```
+
+Jméno/iniciály mají 1–80 znaků, prostý text 10–2000, rating je null nebo celé
+1–5, `website` musí zůstat prázdné a neznámá pole jsou neplatná. Server
+normalizuje krajní mezery a ověří nepředvyplněný souhlas. Úspěch je pouze
+`202 {"status":"pending"}` bez ID, jména nebo textu. Stejný nonce a obsah je
+idempotentní, změněný obsah vrátí 409. Neplatný vstup/výzva 400, nepřípustný
+origin 403, překročený payload limit 413, limit četnosti 429 a nedostupná DB
+503 používají standardní `ErrorResponse` s requestId. Přijetí je omezené na
+30 návrhů na normalizovanou síť a 200 globálně za klouzavých 60 minut;
+serverovým účelovým HMAC se ukládá jen krátkodobý síťový otisk s expirací
+technického záznamu po 2 hodinách, ne původní IP/síť.
+
+Administrační GET přijímá `pending|approved|rejected` (výchozí pending).
+Vrací `{items, pendingCount}` s nejvýše 100 záznamy: čekající od nejstaršího,
+ostatní od nejnovějšího odeslání. Položka obsahuje `id, authorLabel, body,
+rating, status, createdAt, moderatedAt, moderationReason, reviewId,
+consentVersion, consentedAt`. Je to neveřejná odpověď `private, no-store`
+pod role/MFA guardem, nikoli výpis veřejných referencí.
+
+Rozhodnutí má tělo `{decision: "approve"|"reject", featured: boolean,
+reason: string|null}`. Odmítnutí vyžaduje důvod 3–500 znaků. Úspěch je
+výslovně HTTP 200 s `{id, status, reviewId}`; schválení zakládá jednu
+publikovanou recenzi ze stejného jména/textu/ratingu se zdrojem `Web studia`
+a audit, odmítnutí ji nezakládá. Opakování stejného rozhodnutí je idempotentní,
+opačné rozhodnutí je 409; neexistující návrh je 404. Tvar ErrorResponse,
+role, MFA a ochrana změnového originu se nemění.
+
+Stávající veřejný GET `/api/v1/reviews` stále vrací jen publikované reference
+se souhlasem. Stávající PATCH recenze chrání původní klientské jméno, text a
+hodnocení před přepisem; pokus o jejich změnu je 400 VALIDATION_ERROR. AdminReview
+obsahuje `submittedByClient` (false pro ruční reference), aby formulář poznal
+chráněný původ klientského obsahu. Veřejný Review tento příznak neobsahuje. Viditelnost,
+zvýraznění a pořadí zůstávají editovatelné: PATCH schválené klientské recenze
+přijímá také `AdminReviewVisibilityPatch` s povinnými `published`, `featured` a
+`sortOrder`, bez dalších polí. Tento zkrácený vstup pro ručně vloženou recenzi
+vrací 400; její stávající plný `AdminReviewInput` se nemění. QR není nový REST endpoint,
+je to statický odkaz na `/recenze/napsat` a tisková stránka `/recenze/qr`.
+Žádný návrh se neposílá do VCode analytiky ani externích recenzních služeb.

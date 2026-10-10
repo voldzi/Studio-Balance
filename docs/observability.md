@@ -300,3 +300,20 @@ neúspěšnými platbami ani automaticky vypočítanou odměnou. Měsíční sou
 počítá ze skutečně potvrzených výkazů; nepoužívá budoucí plán nebo očekávanou
 docházku. Konflikt `INSTRUCTOR_RECORD_CONFLICT` korelovat přes requestId,
 nevynucovat přepsání verze. Výkazy ani jejich exporty nepatří do veřejné analytiky.
+
+## Návrhy recenzí (CD-072)
+
+Sledovat běžné request počty/chyby a latenci podle šablony veřejné nebo
+administrační cesty. Kódy validační chyby, odmítnutí originu, limitu 429,
+konfliktu 409 a nedostupnosti DB 503 umožní rozlišit běžnou opravu formuláře
+od problému služby. Neznamenají samy spam nebo ověřenou návštěvu. Log musí
+zachovat timestamp/level/service/message/requestId/environment/version a
+nesmí obsahovat jméno, text, hodnocení, consent payload, HMAC token, nonce,
+surovou IP/síť nebo krátkodobý síťový otisk.
+
+Moderace má minimální databázový audit s aktérem, ID návrhu/recenze, rozhodnutím,
+časem a requestId, nikoli plný text nebo jméno klienta. Čas/verze souhlasu
+zůstávají v neveřejném návrhu; neduplikují se do logu ani veřejných metrik.
+Počet čekajících zobrazuje admin API, není klientskou ani VCode statistikou.
+Nevytváří se nový analytický endpoint nebo vendor; formule, nové cesty a QR
+jsou mimo veřejný tracker. Chybějící log není důkaz úspěšně přijaté recenze.

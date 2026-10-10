@@ -256,7 +256,7 @@ znamená, že konkrétní prostředí musí hodnotu dodat bezpečným kanálem.
 | `APP_ENV` | ano | `development` | ne | runtime prostředí |
 | `APP_VERSION` | ano | `0.1.0` | ne | verze v health response a strukturovaných logách |
 | `API_PORT` | ano | `3001` | ne | lokální port API |
-| `PUBLIC_APP_URL` | ano | `http://localhost:3000` | ne | kanonická veřejná URL a odkazy |
+| `PUBLIC_APP_URL` | ano | `http://localhost:3000` | ne | kanonická veřejná URL a odkazy; stejná hodnota v API pro přesnou kontrolu originu recenzí |
 | `ADMIN_APP_URL` | ano | `http://localhost:3000/admin` | ne | povolený admin origin a návratové URL |
 | `API_URL` | ano | `http://localhost:3001` | ne | serverový endpoint sdíleného API |
 | `DATABASE_URL` | runtime | lokální fixture na `localhost:5433/studio_balance` | ano | lokálně Docker PostgreSQL 18; produkčně host `haproxy.home.cz`, port `5000` |
@@ -1034,3 +1034,43 @@ Provozní reakce podle důvodu:
 Samostatné `application_session_revalidation_unavailable` znamená dočasnou
 chybu poskytovatele. Ověřit jeho dostupnost; neodvolávat relace ani resetovat
 MFA jako náhradu za opravu dostupnosti.
+
+## Klientské recenze a jejich kontrola (CD-072)
+
+`PUBLIC_APP_URL` již existuje pro kanonické odkazy; nově musí být stejná
+ve webu i API, protože API kontroluje přesný origin anonymního odeslání.
+V produkci použít `https://studio-balance.cz`, lokálně jen izolovaný lokální
+origin. Při chybějícím/neplatném nastavení výzvu ani odesílání neotevírat.
+Existující `SESSION_SECRET` podepisuje oddělený účel výzvy; nezavádí se nový
+secret nebo externí poskytovatel. Rotace zneplatní nevyužité výzvy, nikoli
+uložené recenze. Načtení i odeslání výzvy používá `no-store`.
+
+Nasazení nejprve aplikuje nedestruktivní migraci tabulek návrhů a krátkodobých
+počítadel, poté sladěné API/web. Migrace neobsahuje ukázkové recenze a nemění
+stávající reference ani rezervace. Ověřit anonymní formulář, přenos originu
+přes veřejnou proxy, ochranu proti podvržení forwarding hlaviček, odmítnutí
+admin API bez relace a běžné veřejné recenze. Produkční acceptance nesmí
+zveřejnit smyšlenou recenzi jen pro demonstraci.
+
+Krátký pracovní postup správce je v [reviews-guide.md](reviews-guide.md).
+QR tisk má `/recenze/qr` a lokální asset
+`/images/studio-balance/reviews-qr.svg`; jeho obsah musí být přesná kanonická
+adresa formuláře. Nevede na Google, přihlášení ani statistický redirect.
+
+Zálohy PostgreSQL zahrnují návrhy, souhlasy, vazby i audit v existující politice;
+S3 záloha nepotřebuje textové recenze. Nové osobní/auditní záznamy nemají
+automatické mazání, dokud vlastník nepotvrdí retenční politiku. Technická
+počítadla expirují po 2 hodinách. Stávající worker každých 10 minut smaže
+nejvýše 500 již expirovaných řádků, s ochranou proti souběhu v procesu;
+stejný omezený úklid doplňuje přijetí nového návrhu. V běžném provozu se
+řádky fyzicky odstraní do následujícího 10minutového cyklu po expiraci,
+i když se nové recenze neposílají. Nikdy se tím nemažou návrhy nebo audit. Při limitu 429 vyčkat, než předchozí odeslání opustí hodinové okno;
+neobcházet limiter odlišnou
+konfigurací pro studio. Při 503 zkontrolovat readiness, DB a shodu originu;
+pouhá přítomnost formuláře není důkaz přijetí dat.
+
+Rollback aktivuje předchozí ověřené aplikační obrazy podle obvyklého postupu.
+Nové tabulky se ponechají, nerozběhne se down migrace ani smazání návrhů.
+Starší aplikace jejich obsah nepublikuje; již schválené reference zůstávají
+běžným veřejným obsahem a studio je může samostatně skrýt. Diskové a X5
+hranice ani retence ostatních dat se tímto řezem nemění.

@@ -30,6 +30,9 @@ export function configureHttp(app: NestFastifyApplication, config: RuntimeConfig
       void reply.header("Cache-Control", "private, no-store");
       void reply.header("Vary", "Cookie");
     }
+    if (path === "/api/v1/review-submissions" || path === "/api/v1/review-submissions/challenge") {
+      void reply.header("Cache-Control", "private, no-store");
+    }
     done();
   });
   fastify.addHook("onResponse", (request, reply, done) => {

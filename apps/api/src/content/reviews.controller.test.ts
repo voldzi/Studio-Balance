@@ -164,6 +164,17 @@ describe("reviews API", () => {
     expect(setup.reviews.create).not.toHaveBeenCalled();
   });
 
+  it("accepts only the closed visibility patch without resending client originals", async () => {
+    const setup = await createApplication();
+    const response = await setup.app.inject({ method: "PATCH", url: "/api/v1/admin/content/reviews/11111111-1111-4111-8111-111111111111",
+      headers: { cookie: await cookie(["admin"]) }, payload: { published: false, featured: true, sortOrder: 10 } });
+    expect(response.statusCode).toBe(200);
+    expect(setup.reviews.update).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", {published:false,featured:true,sortOrder:10},expect.any(Object));
+    const injected = await setup.app.inject({ method: "PATCH", url: "/api/v1/admin/content/reviews/11111111-1111-4111-8111-111111111111",
+      headers: { cookie: await cookie(["admin"]) }, payload: { published: false, featured: true, sortOrder: 10, body: "Přepsaný klientský text" } });
+    expect(injected.statusCode).toBe(400);
+  });
+
   it("keeps AdminReview as a closed flat response schema", () => {
     const document = JSON.parse(readFileSync(
       new URL("../../../../openapi/openapi.json", import.meta.url),

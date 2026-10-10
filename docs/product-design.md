@@ -138,6 +138,8 @@ Routes:
 /balance-flow
 /galerie
 /recenze
+/recenze/napsat (formulář, noindex)
+/recenze/qr (tisk QR, noindex)
 /cenik
 /kontakt
 /faq
@@ -254,7 +256,8 @@ Recenzní pás používá tři až šest ručně schválených referencí. Na de
 karty v klidné mřížce, na mobilu se posouvají po jedné bez autoplay. Hodnocení
 recenze je volitelné a vizuálně i přístupnostním popiskem se odlišuje od
 náročnosti lekce. Pokud není publikovaná žádná skutečná recenze, homepage celý
-pás vynechá a stránka Recenze zobrazí pravdivý prázdný stav. Schválený zdroj a
+pás referencí vynechá a stránka Recenze zobrazí pravdivý prázdný stav.
+Odkaz **Napsat recenzi** podle CD-072 je dostupný i bez publikovaných referencí. Schválený zdroj a
 datum se zobrazí jen tehdy, pokud byly skutečně dodány; samostatná stránka vždy
 nabídne CTA do rozvrhu a používá společný kontaktní footer.
 
@@ -654,3 +657,47 @@ klientské spodní lišty nevzniká.
 Při explicitním kliknutí lze odeslat pouze schválený konečný název události
 na povolené veřejné stránce. Analytická chyba nikdy neblokuje odkaz. V
 soukromých sekcích nebo při přihlášené aplikační relaci se nic nesbírá.
+
+## Napsat recenzi a kontrola návrhů (CD-072)
+
+Na homepage u recenzí a na stránce Recenze je klidná, jasně pojmenovaná akce
+**Napsat recenzi**, dostupná i při nulovém počtu publikovaných referencí.
+Formulář má pole **Jméno nebo iniciály**, **Vaše zkušenost**, volitelné
+**Hodnocení** s výchozím stavem bez hvězdiček a nepředvyplněný souhlas. Před
+odesláním vysvětlí, že se zveřejní pouze odsouhlasené jméno/iniciály, text a
+případné hodnocení, až po kontrole studiem. Vysvětlení **Jak pracujeme s vaší
+recenzí?** a kontakt pro odvolání souhlasu jsou viditelné. Nápověda žádá osobní zkušenost
+bez kontaktů nebo citlivých údajů dalších osob. Recenze se neoznačuje za
+ověřenou návštěvu a není svázaná s účtem.
+
+Načítání výzvy, její nedostupnost, příliš rychlé odeslání, vypršení, validační
+chyba, limit četnosti, odesílání a úspěch mají rozlišitelné čitelné stavy.
+Chyba zachová rozepsaný text v paměti otevřené stránky. Úspěch říká
+**Recenze dorazila do studia** a vysvětlí čekání na kontrolu; neslibuje okamžité zveřejnění nebo e-mail.
+Vypnuté/dvojité odeslání je chráněné i backendem. Pole mají propojené popisky,
+limity a validační zprávy, stavové oznámení je dostupné čtečce a hvězdičky
+lze zvolit i odstranit klávesnicí. Ověřit 360 px a velké zvětšení textu.
+
+V administraci Recenze je sekce **Recenze čekající na kontrolu** s počtem a
+nejstaršími návrhy nahoře, dále historie schválených a odmítnutých. Správce
+čte přesně odeslaný obsah a vidí volitelné hodnocení. **Zveřejnit** otevře kontrolu původního obsahu. Checkbox
+**Zkontrolovala jsem obsah a chci recenzi zveřejnit v tomto znění.** a akce
+**Potvrdit zveřejnění recenze** jasně popisují veřejný dopad; zvýraznění je vědomá volba. **Nezveřejnit**
+vyžaduje krátký důvod a potvrzení **Potvrdit nezveřejnění** a nápověda oddělí spam/nevhodný obsah od slušné kritiky.
+Dvojklik nesmí vytvořit druhou referenci. Chyba a konflikt uchovají návrh;
+vypršená relace nabídne přihlášení do administrace. Prázdný seznam není chyba.
+Karta potvrzuje zaznamenání klientského souhlasu; jeho čas a verze jsou
+dostupné ve chráněné evidenci a API. Nejde o nový ručně odklikávaný souhlas.
+Přesné znění: „Souhlasím se zveřejněním uvedeného jména nebo iniciál, textu
+recenze a případného hodnocení na webu Studia Balance. Recenze bude zveřejněna
+až po kontrole studiem.“
+Původní klientský text/jméno/hodnocení nelze marketingově přepsat ani přes
+původní editor; viditelnost, pořadí a zvýraznění se spravují jako dosud.
+
+Tisková stránka z odkazu **QR kód pro studio a tisk** obsahuje čitelnou výzvu, QR a záložní
+adresu `https://studio-balance.cz/recenze/napsat`. QR má přístupný textový
+odkaz, kontrast a dostatečný bílý okraj. V administraci stačí otevřít a
+vytisknout tento list; klient ve studiu použije vlastní telefon. Stejný
+formulář použije doma. Nevyžaduje instalaci nebo sdílené přihlášení. Obě nové
+stránky jsou noindex a nic neodesílají do veřejné analytiky; lokální QR není
+obrázek získaný od externí sledovací služby.

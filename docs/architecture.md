@@ -359,3 +359,22 @@ the central registry after verified deployment. Deployment evidence is recorded
 in docs/analytics/integration.md.
 
 Storage separation, X5 mount guards, retention, recovery evidence and operational limits: [production storage](production-storage.md) (ADR 0024).
+
+## Klientské recenze a moderace (ADR 0029)
+
+Anonymní návrhy recenzí tvoří omezený samostatný vstup do Content Service.
+Challenge a odeslání používají veřejné API bez session; browser odesílá
+`credentials: omit`. `PUBLIC_APP_URL` v API určuje jediný přípustný origin,
+`SESSION_SECRET` účelově oddělený podpis výzvy a krátkodobých síťových otisků.
+PostgreSQL je zdrojem návrhů, souhlasů, idempotence a technických záznamů limitu.
+
+Administrační moderace je pod dosavadním role/MFA guardem. Schválení v jedné
+transakci propojí návrh s běžnou publikovanou referencí a auditem; veřejné
+čtení `/api/v1/reviews` nemění tvar ani se nikdy nestane výpisem návrhů.
+Původní klientský obsah je po publikaci chráněný před přepisem. Zamítnutý
+nebo čekající návrh nevstoupí do veřejného cache ani indexu.
+
+QR je lokální statický asset s přímým odkazem na stejný formulář, nikoli
+provider, účet, identifikátor místa nebo analytický kanál. Nové stránky jsou
+noindex a nevstupují do VCode analytiky. Recenze zůstávají textem v PostgreSQL;
+S3, booking, Keycloak a workerové fronty se tímto řezem nepropojují.

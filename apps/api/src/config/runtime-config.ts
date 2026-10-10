@@ -12,6 +12,7 @@ const schema = z.object({
     .url()
     .default("postgresql://studio_balance:local-development-only@localhost:5433/studio_balance"),
   SESSION_SECRET: z.string().min(32).optional(),
+  PUBLIC_APP_URL: optional(z.string().url()),
   OIDC_ISSUER_URL: z.string().url().default("http://localhost:8081/realms/studio-balance"),
   OIDC_WEB_CLIENT_ID: z.string().min(1).default("studiobalance-web"),
   OIDC_WEB_CLIENT_SECRET: z.string().min(1).default("local-web-client-only"),
@@ -56,6 +57,7 @@ export type RuntimeConfig = {
     webClientId: string;
     webClientSecret: string;
   };
+  publicAppUrl?: string;
   sessionSecret: string;
   version: string;
 };
@@ -91,6 +93,15 @@ export function loadRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
     throw new Error("Production OIDC configuration is required");
   }
 
+  if (result.data.APP_ENV === "production" && !result.data.PUBLIC_APP_URL) {
+    throw new Error("Production PUBLIC_APP_URL is required");
+  }
+  const publicAppUrl = new URL(result.data.PUBLIC_APP_URL ?? "http://localhost:3000");
+  if (publicAppUrl.username || publicAppUrl.password || publicAppUrl.search || publicAppUrl.hash || publicAppUrl.pathname !== "/" ||
+    !["http:", "https:"].includes(publicAppUrl.protocol) || (result.data.APP_ENV === "production" && publicAppUrl.protocol !== "https:")) {
+    throw new Error("PUBLIC_APP_URL must be a canonical application origin (HTTPS in production)");
+  }
+
   const mediaValues = [result.data.S3_ENDPOINT, result.data.S3_BUCKET, result.data.S3_ACCESS_KEY_ID, result.data.S3_SECRET_ACCESS_KEY];
   const configuredMediaValues = mediaValues.filter(Boolean).length;
   if (configuredMediaValues > 0 && configuredMediaValues !== mediaValues.length) {
@@ -121,6 +132,7 @@ export function loadRuntimeConfig(environment: NodeJS.ProcessEnv = process.env):
       webClientId: result.data.OIDC_WEB_CLIENT_ID,
       webClientSecret: result.data.OIDC_WEB_CLIENT_SECRET
     },
+    publicAppUrl: publicAppUrl.origin,
     sessionSecret: result.data.SESSION_SECRET ?? "local-development-session-secret-change-before-sharing",
     version: result.data.APP_VERSION
   };

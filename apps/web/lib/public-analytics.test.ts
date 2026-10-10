@@ -14,7 +14,7 @@ describe("public analytics privacy boundary", () => {
   it.each(publicAnalyticsConfig.allowedPaths)("accepts only general public path %s", (path) => {
     expect(allowedPublicAnalyticsPath(path)).toBe(path);
   });
-  it.each(["/admin", "/admin/prihlaseni", "/muj-ucet", "/prihlaseni", "/auth/login", "/rezervace/123", "/rozvrh/123", "/lekce/barre", "/kontakt", "/promeny", "/api/v1/bookings", "/?email=private", "/#private", "/%61dmin", "/galerie/"])("rejects %s", (path) => {
+  it.each(["/admin", "/admin/prihlaseni", "/muj-ucet", "/prihlaseni", "/auth/login", "/rezervace/123", "/rozvrh/123", "/lekce/barre", "/kontakt", "/promeny", "/recenze/napsat", "/recenze/qr", "/api/v1/review-submissions", "/api/v1/bookings", "/?email=private", "/#private", "/%61dmin", "/galerie/"])("rejects %s", (path) => {
     const send = vi.fn();
     createPublicAnalyticsBridge(send)(path, anonymous);
     expect(send).not.toHaveBeenCalled();

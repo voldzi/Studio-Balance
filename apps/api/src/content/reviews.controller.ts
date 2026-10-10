@@ -5,9 +5,10 @@ import { AdminRoleGuard, type AdminRequest } from "../admin/admin-role.guard.js"
 import { InvalidReviewClassTypeError, ReviewsService } from "./reviews.service.js";
 
 const uuid = z.string().uuid();
+const visibilitySchema = z.object({ published: z.boolean(), featured: z.boolean(), sortOrder: z.number().int().min(0).max(10000) }).strict();
 const reviewSchema = z.object({
-  authorLabel: z.string().trim().min(1).max(120),
-  body: z.string().trim().min(10).max(2000),
+  authorLabel: z.string().trim().max(240).refine((value) => validTextLength(value,1,120)),
+  body: z.string().trim().max(4000).refine((value) => validTextLength(value,10,2000)),
   classTypeId: uuid.nullable(),
   consentConfirmed: z.boolean(),
   featured: z.boolean(),
@@ -15,7 +16,7 @@ const reviewSchema = z.object({
   rating: z.number().int().min(1).max(5).nullable(),
   reviewedOn: z.iso.date().nullable(),
   sortOrder: z.number().int().min(0).max(10000),
-  source: z.string().trim().min(2).max(200).nullish().transform((value) => value ?? null)
+  source: z.string().trim().max(400).refine((value) => validTextLength(value,2,200)).nullish().transform((value) => value ?? null)
 }).strict().refine((value) => !value.published || value.consentConfirmed, {
   message: "Published reviews require confirmed consent."
 });
@@ -57,7 +58,7 @@ export class AdminReviewsController {
   async update(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     if (!uuid.safeParse(id).success) throw notFound();
     try {
-      const result = await this.reviews.update(id, parse(body), context(request));
+      const result = await this.reviews.update(id, parseUpdate(body), context(request));
       if (!result) throw notFound();
       return result;
     } catch (error) {
@@ -77,10 +78,20 @@ function parse(body: unknown) {
   return result.data;
 }
 
+function parseUpdate(body: unknown) {
+  const visibility = visibilitySchema.safeParse(body);
+  return visibility.success ? visibility.data : parse(body);
+}
+
 function validation() {
   return new HttpException({ code: "VALIDATION_ERROR", message: "Zkontrolujte zadané údaje recenze." }, HttpStatus.BAD_REQUEST);
 }
 
 function notFound() {
   return new HttpException({ code: "RESOURCE_NOT_FOUND", message: "Recenze nebyla nalezena." }, HttpStatus.NOT_FOUND);
+}
+
+function validTextLength(value: string, minimum: number, maximum: number) {
+  const length = [...value].length;
+  return length >= minimum && length <= maximum && !value.includes("\u0000");
 }

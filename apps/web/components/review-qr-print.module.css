@@ -1,0 +1,16 @@
+ .page { max-width: 42rem; margin: 2rem auto; padding: 1rem; }
+.card { padding: 2.5rem 1.5rem; background: #fffaf5; color: #34251e; text-align: center; border: 1px solid #dac5b4; border-radius: 1.25rem; }
+.logo { margin: 0 auto 1rem; object-fit: contain; }
+.card h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.15; margin: 1rem 0; }
+.card p { max-width: 28rem; margin: 1rem auto; }
+.qr { display: block; width: min(100%, 360px); height: auto; margin: 1.5rem auto; background: white; }
+.address { font-weight: 600; overflow-wrap: anywhere; }
+.note { font-size: .95rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+.actions p { flex-basis: 100%; margin: 0; }
+@media print {
+  .page { max-width: 150mm; margin: 15mm auto; padding: 0; }
+  .card { break-inside: avoid; border-radius: 0; background: white; color: black; }
+  .actions { display: none; }
+  .address a { color: black; text-decoration: none; }
+}

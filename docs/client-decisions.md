@@ -458,3 +458,34 @@ transakční API určuje konečný dopad případné rezervace vzniklé mezi tí
 načtením a zrušením. Nevzniká nový endpoint ani příslib atomické shody počtu
 rezervací s náhledem. Tento požadavek zjednodušuje současnou aplikaci;
 nezavádí multi-tenant platformu ani nezrušuje žádný skutečný termín při nasazení.
+
+## CD-072 — Klientské recenze se schválením správce (2026-10-10)
+
+Zadavatel výslovně schválil realizaci přidávání recenzí klienty podle návrhu
+bez povinného přihlášení a schvalování v administraci, s následným otestováním
+a produkčním nasazením. Toto rozhodnutí nahrazuje CD-018 pouze v omezení
+ručního sběru: ruční vložení správcem zůstává možné, nově klient odešle vlastní
+text, jméno nebo iniciály a volitelné skutečné hodnocení 1–5. Povinný,
+nepředvyplněný souhlas se vztahuje právě k uvedenému jménu, textu a hodnocení;
+server eviduje jeho čas a verzi `reviews-public-v1-2026-10-10`.
+
+Tlačítko **Napsat recenzi** na titulní stránce a stránce Recenze vede na
+`/recenze/napsat`. Každá odeslaná recenze nejprve čeká na kontrolu; veřejně se
+objeví až po výslovném schválení administrátorem s MFA. Správce může také
+odmítnout spam, nevhodný obsah nebo osobní údaje s uloženým důvodem, nikoli
+pouze kvůli negativnímu hodnocení. Zobrazuje se původní klientský text, nikoli
+jeho marketingový přepis. Schválení nevytváří tvrzení o ověřené návštěvě.
+Ruční správa původních referencí, skrytí, zvýraznění a pořadí zůstávají.
+
+QR kód pro vytištění ve studiu vede na stejný formulář. Klient jej použije
+na vlastním telefonu; není to společný přihlášený účet ani automatické
+hodnocení na Google. Tisková stránka je `/recenze/qr`. Formulář, QR stránka,
+obsah recenzí a jejich odesílání nejsou součástí veřejné analytiky. Rozsah
+stávající VCode analytiky se nerozšiřuje.
+
+Formulář nesbírá e-mail, telefon, rezervaci, zdravotní údaje ani fotografii.
+Odeslání vyžaduje krátkodobou podepsanou výzvu, přesný veřejný origin a omezení
+četnosti v databázi. Nezavádí externí CAPTCHA, notifikace ani dalšího
+zpracovatele. Evidence recenzí, souhlasů a moderace se bez schválené politiky
+automaticky nemaže; krátkodobé technické limity mají vlastní expiraci.
+Architektonické a bezpečnostní hranice určuje ADR 0029.
