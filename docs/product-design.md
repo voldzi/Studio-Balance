@@ -528,6 +528,45 @@ neobnoví bez ověření serverem. Uložení nebo odhlášení koncept odstraní
 vypnuté úložiště prohlížeče neblokuje práci. Oznámení v rozvrhu (všem) se
 spravuje v Přehledu; Novinky se zobrazí přihlášeným klientům.
 
+## Zrušit jeden termín (CD-071)
+
+V Rozvrhu je před týdenním seznamem výrazná karta **Zrušit jeden termín**.
+Krátký text vysvětluje, že jde o jedinou konkrétní lekci a ostatní termíny
+zůstanou. Správce vybere **Datum lekce** v místním čase `Europe/Prague`;
+nabídka filtruje již načtené termíny administrace a ukáže lekce daného dne
+včetně času a instruktora. Při výběru data nevzniká samostatné načítání;
+počáteční načítání či jeho chybu řeší rodičovská administrace. Zrušit lze
+pouze budoucí naplánovaný termín. Prázdný den má vlastní vysvětlení a možnost
+vybrat jiné datum. Starší nebo již zrušené termíny se nesmějí tvářit jako
+dostupné ke zrušení.
+
+Po výběru se přímo v kartě otevře potvrzovací formulář: výrazný název lekce,
+přesné datum, čas od–do, instruktor a počet aktuálně načtených rezervací.
+Stejný formulář otevře tlačítko **Zrušit** u termínu v týdenním seznamu.
+Dopad je popsán před tlačítkem: nové rezervace se zablokují, stávající se
+zruší bez poplatku a klienti dostanou zprávu v účtu; další termíny zůstanou
+zachované. Není zde příslib e-mailu. Povinné pole **Důvod zrušení pro klienty**
+vyžaduje 3–1000 znaků a vysvětluje, že tento text uvidí klienti. Povinný
+checkbox používá text „Chci zrušit pouze tento termín a jeho rezervace bez
+poplatku.“ Akce **Potvrdit zrušení tohoto termínu** je odlišena od
+**Ponechat termín**. Systémový browser prompt se nepoužívá.
+
+Před odesláním se údaje znovu načtou. Pokud se změnil termín, instruktor nebo
+počet rezervací, aktualizovaný přehled vyžaduje nové potvrzení; neplatná volba
+se neodešle. Text neslibuje atomickou shodu počtu s konečným dopadem.
+Odesílání brání dvojkliku, úspěch uvádí konkrétní zrušenou lekci a datum,
+po úspěchu lze ihned vybrat další termín a chyba zachová napsaný důvod.
+Vypršení přihlášení nabízí bezpečný návrat do administrace. Kontrolní
+načítání před potvrzením, změna výběru a potvrzení jsou použitelné klávesnicí,
+mají viditelný fokus a čitelná stavová oznámení; ověřit také 360 px.
+
+Kontextová nápověda stručně oddělí **Rezervace** (seznam na nejbližších
+14 dní) a **Rozvrh** (vypsané termíny průběžně do tří kalendářních měsíců).
+Zrušený termín automatické doplňování rozvrhu znovu neotevře. Karta není
+hromadnou změnou ani vypnutím pravidelné řady. Zjednodušení samoobsluhy
+má být obecně srozumitelné pro správce studia; současná změna nezavádí
+správu více organizací.
+
 ## Rezervace doprovodu (CD-062)
 
 Výchozí je jedno místo. Volba „Rezervovat pro sebe a jeden doprovod“ zobrazí

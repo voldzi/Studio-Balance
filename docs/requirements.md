@@ -188,8 +188,29 @@ nastavení a auditní log.
 
 Hromadná změna rozvrhu umožní administrátorce v určeném budoucím období
 pozastavit vybraný typ lekce nebo přesunout jeho týdenní řadu na jiný den a
-čas. Před uložením potvrzuje dopad; server zachová rezervace při přesunu,
-zruší je bez poplatku při pozastavení, ověří kolize a vše zapíše do auditu.
+čas. Před uložením potvrzuje dopad; server zachová rezervace při přesunu
+nebo samotném pozastavení nových rezervací. Zrušení lekce zruší rezervace
+bez poplatku. Server ověří kolize a vše zapíše do auditu.
+
+Podle CD-071 má Rozvrh výraznou kartu **Zrušit jeden termín**. Výběr místního
+data v `Europe/Prague` filtruje již načtené termíny administrace a umožní
+zvolit pouze jeden budoucí naplánovaný termín daného dne. Vložené potvrzení
+ukáže název, datum, čas, instruktora, načtený počet rezervací a dopad;
+vyžaduje **Důvod zrušení pro klienty** o 3–1000 znacích, potvrzovací checkbox
+a akci **Potvrdit zrušení tohoto termínu**. **Ponechat termín** nic nemění.
+Stejný formulář používá Zrušit v řádku týdenního seznamu. Zrušení jednoho
+termínu nemění pravidelný plán ani další termíny, nevytvoří storno poplatek,
+předá zprávu dotčeným klientům v účtu a generátor zrušený termín neobnoví.
+
+Před odesláním se shrnutí znovu načte: změněné údaje vyžadují novou kontrolu
+a potvrzení, zrušený, minulý nebo nenalezený termín nelze odeslat. Aktuální
+počet v náhledu není atomická garance konečného počtu rušených rezervací;
+souběh s novou rezervací řídí stávající transakční API. Formulář zachová důvod
+po chybě a rozlišuje prázdný den, chybu, kontrolní načítání před potvrzením
+a úspěch. Po úspěchu lze ihned zvolit další termín. Počáteční načítání a jeho
+chybu řeší rodičovská administrace, nikoli nový požadavek při výběru data.
+Nápověda vysvětlí, že Rezervace nabízejí nejbližších 14 dní, zatímco Rozvrh
+zpřístupňuje již vypsané termíny do průběžného tříměsíčního horizontu.
 
 Správa ceny celé lekce nejprve ukáže dopad, pak atomicky nastaví cenu všech
 pravidelných časů a budoucích termínů typu. Existující potvrzené rezervace

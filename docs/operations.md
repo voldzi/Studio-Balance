@@ -789,6 +789,33 @@ ověří zprávy klientům, připomínky a audit `weekly_schedule_rule.updated`.
 Po změně dne se ověří nový den v admin rozvrhu i po dalším běhu workeru;
 kolize nebo přeplnění vracejí chybu bez dílčího zápisu.
 
+### Zrušení jedné lekce předem (CD-071)
+
+Provozovatelka otevře **Rozvrh → Zrušit jeden termín**, vybere **Datum lekce**
+a konkrétní lekci z nabídky daného dne. Zkontroluje název, přesné datum a čas,
+instruktora a počet rezervací. Vyplní **Důvod zrušení pro klienty**, zaškrtne
+potvrzení jediného termínu a zvolí **Potvrdit zrušení tohoto termínu**.
+**Ponechat termín** zavře formulář bez změny. Po úspěchu lze ihned vybrat další
+termín. Stejný postup se otevře také tlačítkem **Zrušit** v týdenním
+seznamu. Pro lekci za několik týdnů použít datum v Rozvrhu; seznam v sekci
+Rezervace nabízí pouze nejbližších 14 dní. Pokud termín ještě nebyl vypsán,
+nemá se kvůli jednorázové výjimce rušit celá pravidelná řada.
+
+Jde o jediný termín: ostatní časy a pravidelný plán zůstávají. Nové rezervace
+se zablokují a stávající se zruší bez storno poplatku. Klienti s rezervací
+obdrží zprávu ve svém účtu. E-mail se tímto postupem neslibuje. Automatický
+generátor zrušený termín sám neobnoví; případné obnovení je samostatná
+výslovná akce a neobnovuje původní zrušené rezervace.
+
+Výběr data filtruje termíny již načtené v administraci; kontrolní načtení
+ze serveru proběhne až před zrušením. Pokud se změnily údaje, formulář
+vyžádá novou kontrolu.
+Při chybě se zachová napsaný důvod a úspěch se nezobrazí. Provozní ověření
+po skutečném zrušení zahrnuje stav termínu, nemožnost nové rezervace,
+`session.cancelled` v auditu a zprávy dotčených účtů. Aktuální počet v náhledu
+není serverovým tokenem dopadu; konečný souběh s novou rezervací řídí původní
+transakční API. Nasazení této pomůcky samo žádnou lekci neruší.
+
 Jednorázová migrace `0025_balance_flow_bookings_and_barre_capacity.sql` podle
 CD-059 sníží cenu aktivních budoucích rezervací Balance Flow na 160 Kč bez
 jejich zrušení a nastaví kapacitu obou pravidelných časů Barre i budoucích

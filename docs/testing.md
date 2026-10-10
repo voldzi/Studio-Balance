@@ -550,3 +550,38 @@ produkční nebo fyzické PWA akceptaci:
   runtime/SRI, DNT/GPC, offline discard a obě session-cookie exclusions.
   Runtime test běží proti izolovanému přijímači bez skutečného analytického
   zápisu. Centrální příjem a souhrn se potvrzují samostatně ve VCode.
+
+## CD-071: zrušení jednoho konkrétního termínu
+
+- Karta Zrušit jeden termín je snadno dohledatelná v Rozvrhu. Výběr data
+  najde lekci i za hranicí 14denního seznamu Rezervací, pokud již existuje
+  v průběžném tříměsíčním horizontu. Místní datum a čas se správně zobrazují
+  v `Europe/Prague`, včetně dne změny letního času.
+- Výběr data filtruje již načtené termíny administrace bez samostatného GET
+  pro vybraný den. Počáteční loading/error řeší rodičovská administrace.
+  Výběr se omezuje na jeden budoucí naplánovaný termín. Prázdný den a změna
+  data nezanechají vybraný termín z jiného dne. Zrušený, minulý či nenalezený
+  termín se nesmí odeslat.
+- Karta i Zrušit v týdenním řádku otevřou stejný vložený formulář se jménem,
+  přesným datem/časem, instruktorem, aktuálním počtem rezervací a dopadem.
+  Browser prompt se nepoužívá. Pole Důvod zrušení pro klienty po oříznutí
+  mezer vyžaduje 3–1000 znaků; bez potvrzovacího checkboxu se neodesílá.
+  Potvrdit zrušení tohoto termínu odesílá, Ponechat termín nic nemění,
+  neplatný důvod se neodesílá a chyba důvod zachová.
+- Před potvrzením se znovu načtou aktuální údaje. Změna jména, času,
+  instruktora, stavu nebo počtu rezervací vyžádá novou kontrolu; první
+  potvrzení nepošle zrušení změněného shrnutí. Dvojklik nesmí vytvořit druhý
+  požadavek. Chybová odpověď a 401 nesmějí ukázat úspěch.
+- Úspěch označuje konkrétní termín a aktualizuje seznamy; přímo v kartě lze
+  následně vybrat další termín bez reloadu. Nápověda rozlišuje
+  jednotlivé zrušení, pozastavení nových rezervací a celou pravidelnou řadu.
+  Sdělení slibuje zprávu v klientském účtu, nikoli e-mail.
+- Zachovat stávající API autorizační/validační a transakční testy zrušení:
+  rezervace mají `cancelled_by_studio` bez nového poplatku, zprávu v účtu
+  a audit; další termíny/pravidla se nemění. Generátor zrušený termín
+  nepřidá znovu. Souběh mezi kontrolním načtením a POST se řídí existující
+  transakcí; neprohlašovat náhled za nový atomický serverový kontrakt.
+- Responzivita 360 px a desktop, dotykové cíle, ovládání pouze klávesnicí,
+  fokus po otevření a návratu, popisky polí, stavová oznámení a čitelnost
+  chyby. Ověření v produkci provést bez zrušení skutečné lekce; mutační
+  scénáře pouze na izolovaných testovacích datech.

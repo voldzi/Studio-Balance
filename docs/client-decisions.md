@@ -428,3 +428,33 @@ veřejné cesty, DNT/GPC, zahazování offline událostí a zákaz sběru v
 přihlášených/privátních částech. Kliknutí není registrace ani konverze.
 Kontrakt, sdílený runtime a jeho kontrolní součet se koordinují s VCode;
 bez potvrzené podpory příjemce se neprohlašuje funkční centrální měření.
+
+## CD-071 — Srozumitelné zrušení jednoho termínu (2026-10-10)
+
+Zadavatel schválil výraznou akci **Zrušit jeden termín** v administraci
+v Rozvrhu, aby provozovatelka samostatně vyřešila nepřítomnost instruktora
+nebo jinou výjimku i několik týdnů dopředu. Správce vybere konkrétní místní
+datum, lekci v daný den a jediný budoucí naplánovaný termín. Výběr dne
+filtruje termíny již načtené v administraci. Před zrušením
+uvidí název, přesné datum a čas, instruktora, aktuálně načtený počet rezervací
+a vysvětlení dopadu. Vyplní **Důvod zrušení pro klienty** o 3–1000 znacích,
+zaškrtne potvrzení jediného termínu a zvolí **Potvrdit zrušení tohoto termínu**.
+Akce **Ponechat termín** ukončí formulář bez změny.
+Stejný vložený potvrzovací formulář se použije u akce Zrušit v týdenním seznamu;
+systémový dialog prohlížeče nenahrazuje tento přehled.
+
+Zrušení se týká pouze jednoho termínu, zachová ostatní časy a pravidelný plán,
+zablokuje nové rezervace a zruší stávající rezervace bez storno poplatku.
+Klienti s rušenou rezervací dostanou zprávu ve svém účtu; rozhraní neslibuje
+odeslání e-mailu. Generátor zrušený termín sám znovu neotevře. Jednoduchá
+nápověda vysvětlí rozdíl mezi seznamem v Rezervacích na nejbližších 14 dní
+a Rozvrhem s termíny průběžně vytvářenými do tří kalendářních měsíců.
+
+Před odesláním rozhraní znovu načte a ověří vybraný termín a jeho shrnutí.
+Pokud se mezitím změnil, správce musí zkontrolovat aktualizovaný náhled
+a potvrdit znovu; již zrušený, minulý nebo nenalezený termín se neodesílá.
+Po úspěchu lze bez opuštění karty vybrat další termín. Stávající
+transakční API určuje konečný dopad případné rezervace vzniklé mezi tímto
+načtením a zrušením. Nevzniká nový endpoint ani příslib atomické shody počtu
+rezervací s náhledem. Tento požadavek zjednodušuje současnou aplikaci;
+nezavádí multi-tenant platformu ani nezrušuje žádný skutečný termín při nasazení.

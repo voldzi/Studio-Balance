@@ -820,3 +820,33 @@ dialog.pwa-install-modal::backdrop { background: transparent; }
   .admin-report-table tr { break-inside: avoid; }
   .admin-report-summaries article { break-inside: avoid; }
 }
+
+
+/* One-off schedule cancellation: a task card with a separate confirmation. */
+.admin-single-cancel { scroll-margin-top: 1rem; }
+.admin-single-cancel > p { max-width: 70ch; }
+.admin-cancel-steps { display: flex; flex-wrap: wrap; gap: .5rem 2rem; padding-left: 1.4rem; color: var(--color-text-secondary); }
+.admin-cancel-options { list-style: none; padding: 0; margin: 0; }
+.admin-cancel-options li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--color-border); }
+.admin-cancel-options li div { display: grid; gap: .3rem; min-width: 0; }
+.admin-cancel-options li span { color: var(--color-text-secondary); }
+.admin-cancel-options button, .admin-single-cancel .admin-row-actions button { min-height: 44px; padding: .65rem .85rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: #fff; color: var(--color-text-primary); cursor: pointer; }
+.admin-cancel-confirmation { border-top: 1px solid var(--color-border); padding-top: 1rem; }
+.admin-cancel-confirmation h3 { margin: 0; font-size: 1.4rem; }
+.admin-cancel-confirmation dl { margin: 0; display: grid; gap: .7rem; }
+.admin-cancel-confirmation dl div { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: .5rem; }
+.admin-cancel-confirmation dt { color: var(--color-text-secondary); }
+.admin-cancel-confirmation dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.admin-single-cancel .admin-row-actions { flex-wrap: wrap; }
+.admin-single-cancel .admin-row-actions .button { background: #825020; color: #fffaf4; border-color: #825020; }
+.admin-single-cancel .admin-row-actions .button:hover { background: #694017; }
+.admin-cancel-error { margin-top: 1rem; padding: 1rem; border: 1px solid #c59789; border-radius: var(--radius-sm); background: #f3e3de; color: #78382c; }
+@media (max-width: 600px) {
+  .admin-cancel-options li { align-items: stretch; flex-direction: column; }
+  .admin-cancel-confirmation dl div { grid-template-columns: 1fr; gap: .15rem; }
+  .admin-single-cancel .admin-row-actions { flex-direction: column; }
+}
+
+.admin-single-cancel .admin-check { display: flex; align-items: center; gap: .7rem; min-height: 44px; }
+.admin-single-cancel .admin-check input { width: 1.25rem; min-height: 1.25rem; flex-shrink: 0; }
+.admin-single-cancel button:disabled { cursor: not-allowed; opacity: .6; }
