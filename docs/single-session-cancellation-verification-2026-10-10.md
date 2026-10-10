@@ -39,9 +39,28 @@ databázové transakce.
 
 ## Stav a návaznost
 
-Změna není v této fázi nasazená. Žádná skutečná lekce ani rezervace nebyla
-zrušena a klientům nebyly poslány zprávy. Po případném nasazení ověřit
-Rozvrh v přihlášené administraci bez dokončení skutečného storna.
+Změna byla 10. 10. 2026 nasazena do produkce jako revize
+`3e6691c0967e5470842a9199f10777e80394ba0a`. Předchozí obnovitelná verze
+je `27b6e11`; návrat: `pnpm rollback:production -- 27b6e11`.
+
+- Všechny tři služby jsou healthy; kontrola přesné revize, API readiness,
+  webu a úspěšného prvního běhu workeru prošla.
+- Trivy: 0 HIGH / 0 CRITICAL pro OS i knihovny všech tří obrazů.
+- Web: `sha256:0990cfbe0dd9392034d22ebda411b6c7786ba9d15005225790e6e62b860953c7`.
+- API: `sha256:cae00a927ddf71aaa4759afae04c13b2676ccbbb173b78a7aac8ae5a23877d6e`.
+- Worker: `sha256:c9a5f3825c776e048e87a1ee6f01fa4e755d648644a1d65bbd4d6d7751e5eeab`.
+- Veřejný web i rozvrh vrací 200; admin API bez přihlášení 401.
+- Živá přihlášená administrace: 6. 11. 2026 nabídlo Latino Ladies
+  17:30–18:30, Xavier Tihelka; potvrzení ukázalo 0 rezervací.
+  Nápověda byla otevřená, potvrzení bez souhlasu disabled. Použito pouze
+  „Ponechat termín“; žádná skutečná lekce ani rezervace nebyla zrušena.
+- Obnovení stránky zachovalo přihlášení. X5 UUID i kapacitní brány prošly.
+  Poslední mediální záloha je z 10. 10.; databázová obnova se neprováděla.
+- Retence po nasazení zachovává aktuální a dvě předchozí ověřené verze.
+- Opravena falešná chyba analytické release kontroly: `rg -q` předčasně
+  zavíral rouru a `pipefail` interpretoval SIGPIPE jako zakázané měření.
+  Kontrola čte celý vstup; schválené flags, SRI a soukromé hranice zůstávají.
+  Analytické testy 33 + 56 prošly.
 
 MCP kontext/reindex tohoto pracovního checkoutu skončil chybou. Čtení
 canonical indexu bylo dostupné; změny byly ověřené přímo v aktuálním
