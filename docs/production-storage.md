@@ -217,3 +217,15 @@ for installed hashes, exact source/image/archive checks and the before/after
 container identity comparison. Rollback of this maintenance-only update restores
 its private prior-script copy under the production and media locks; it does not
 roll back the running application or remove any release or image.
+
+Applied maintenance source: `6929754b405e04a5b60004d3c2e52c7480629e4f`;
+installed script SHA-256
+`954dd9b75cd9c8db8f83e2a80aeeb21519854d5c7822817154ae3927e2bf2e2c`.
+Receipt: `/srv/x5-production/archives/studio-balance/evidence/retention-audit-20261015T170034Z/receipt.json`.
+All 1,335 retained source files matched their Git blob identities and executable
+modes; all three compressed image exports passed gzip integrity and their
+manifest image IDs matched all nine protected Docker tags. The before/after
+comparison preserved the 108 inventoried containers, image IDs and start times.
+No release, image, backup or user data was deleted; attributable recovered
+internal-disk space is therefore zero. This file/image proof does not claim a
+full database restore or a production rollback drill.
