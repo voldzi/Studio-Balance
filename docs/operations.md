@@ -384,12 +384,13 @@ aplikačním issuerem Studio Balance.
 Vlastní login theme je verzovaný v
 `infra/keycloak/themes/studio-balance/`. Lokální Keycloak jej připojuje pouze
 pro čtení a importovaný realm používá češtinu jako výchozí jazyk. Produkční
-nasazení provádí interaktivní
-`scripts/deploy-production-keycloak-theme.sh`: heslo master administrátora si
-vyžádá bez echo a neukládá je, předchozí theme zazálohuje, restartuje pouze
-sdílený Keycloak kontejner, čeká na health, aktivuje theme jen v realm
-`studio-balance` a ověří veřejné načtení stylesheetu. Ostatní realmy ani jejich
-login theme nemění.
+publikace od CD-073 používá novou verzovanou složku v existujícím mountu,
+ověření kopie a změnu pouze `loginTheme` vyhrazeného realmu existujícím
+operations klientem. Původní vazba tématu se uloží na ověřené X5 pro rollback;
+sdílený Keycloak se nerestartuje. Postup je níže v části Obnova hesla a ochrana
+přihlášení. Staré `scripts/deploy-production-keycloak-theme.sh` a
+`infra/keycloak/install-studio-balance-theme.sh` jsou vyřazené: skončí kódem
+64 před čtením credentials nebo změnami a nesmí přepsat aktivní téma.
 
 Theme byl do produkčního realm `studio-balance` aktivován 5. 8. 2026 z revize
 `5c69ad4`. Veřejný login na `login.zeleznalady.cz` byl po nasazení ověřen ve
@@ -1140,3 +1141,52 @@ registrovaný e-mail. Nečíst odkaz z cizí schránky, nenastavovat dočasné h
 nemazat účet a nevytvářet rezervaci. Oddělit stav odesláno, doručeno a klient
 dokončil reset. Požadavek nepřidává přímé veřejné hledání účtů ani nový API
 endpoint; nezavádí analytiku přihlášení ani novou retenční politiku historie.
+
+### Ověřený produkční stav 15. 10. 2026
+
+Z revize `bb259099b2c3707f5429b862ca0538b2e5d44670` byla samostatně nasazena
+identity část, nikoli nové aplikační obrazy:
+
+- Realm `studio-balance`: dočasná ochrana po pěti chybných pokusech, prodleva
+  roste od 60 do nejvýše 900 sekund; trvalé blokování vypnuté. Ostatní hodnoty
+  realmu se porovnáním před/po nezměnily.
+- Aktivní `loginTheme=studio-balance-recovery-bb259099`; úplnost osmi souborů
+  a jejich SHA-256 ověřena před přepnutím. Česká nápověda byla ověřena na
+  skutečném veřejném loginu. Bez ověřeného SMTP se odkaz pro reset nezobrazuje.
+- Snapshoty v soukromém adresáři X5
+  `/srv/x5-production/archives/studio-balance/identity-recovery/`:
+  `policy-before-20261015T164550Z.json` a `theme-before-20261015T164720Z.json`.
+  Změny proběhly pod `/srv/studio-balance/.production-operation.lock`.
+  Sdílený kontejner se během těchto změn nerestartoval; jeho předchozí
+  start byl `2026-10-15T16:34:23.814643196Z`.
+- DMZ: bezpečné identity logování, `no-referrer` a omezení POST na
+  `login-actions` jsou aktivní. Transakční záloha obou konfigurací je
+  `/var/backups/studiobalance-nginx/20261015T164518.661475Z-082d9ce7fda0/`.
+  Opakovaný dry-run neplánuje změnu; tři neškodné kontrolní požadavky
+  (400/404/301) potvrdily bezpečné hlavičky i nepřítomnost query a citlivých
+  hlaviček v pěti sledovaných logách. Analytics include zůstal byte-exact.
+- Instalovaný `/usr/local/sbin/studiobalance-install-nginx` byl po záloze
+  atomicky aktualizován na SHA-256
+  `de8d07d3ae1bf2f6abce0de990c91b9317e7f876a1b9cdbde50d75e739b6cca6`,
+  aby další publikace tyto kontroly zachovala. Plný instalátor se nespouštěl,
+  sudoers se neměnil. Ověřené zdroje DMZ helperů jsou v podadresáři
+  `reviewed-tools` uvedené root-owned zálohy.
+
+`resetPasswordAllowed=false` a SMTP stále chybí. Obnova konkrétní klientky
+nebyla odeslána ani dokončena; účet, heslo a rezervace nebyly měněny.
+Aktivace čeká na schváleného odesílatele a bezpečně uloženou SMTP konfiguraci,
+ověřené doručení a test celého resetu. Aplikační web/API/worker nadále běží
+na `082d9ce7fda001c85deb0479a1b1fe59dcd8fb69`; nový web s doplňkovou vstupní
+nápovědou čeká na alespoň 20 GiB volného místa na interním disku podle
+existujícího deployment guardu. Při závěrečné kontrole bylo přibližně 14 GiB.
+Guard se nesnižuje a neprovádí se plošný Docker úklid.
+
+Rollback identity provést pod stejným aplikačním zámkem po kontrole UUID X5:
+policy obnoví konfigurátor režimem `rollback --snapshot <policy-before>`
+a credentials pouze přes chráněný vstup. Téma vrátí úzce vymezený Admin API
+PUT pouze `loginTheme` na `previousLoginTheme` ze soukromého theme snapshotu,
+po ověření, že aktuální vazba odpovídá jeho `newLoginTheme`. Původní složka
+`studio-balance` zůstala zachovaná. DMZ rollback obnoví obě přesné kopie
+ze zálohy se stejnými metadaty, provede `nginx -t`, reload a readiness;
+samostatně se případně vrátí zálohovaný instalátor. Žádný z těchto rollbacků
+nemění účty, hesla, OTP, rezervace nebo aplikační databázi.
