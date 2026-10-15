@@ -1194,19 +1194,34 @@ a `3e6691c0967e5470842a9199f10777e80394ba0a`; ukončené vydání `27b6e11`
 včetně tří již nepoužívaných tagů odstranila podle schválené politiky.
 
 Uživatel schválil odesílatele `podpora@zeleznalady.cz` obdobně jako u Moje porce.
-Připraven je oddělený SMTP formulář přímo pro realm Studio Balance:
-`smtp.mail.me.com:587`, STARTTLS a autentizace, jméno odesílatele Studio Balance.
-Apple vyžaduje heslo pro aplikaci; jeho zadání a uložení dokončí uživatel přímo
-v Keycloaku. Nepoužívá se export přístupového hesla mezi aplikacemi nebo do
-lokálního souboru. Po skutečně doručeném testu do vlastní schránky lze použít
-`apply-configured-recovery` ze servisní revize `12307a8` a soukromý snapshot,
-aniž by konfigurátor SMTP měnil nebo zapisoval jeho secret do snapshotu.
+SMTP je nyní uložené přímo v realmu Studio Balance: `smtp.mail.me.com:587`,
+STARTTLS a autentizace, jméno odesílatele Studio Balance. Heslo pro aplikaci
+zadal a uložil uživatel přímo v Keycloaku; nebylo exportováno. Uživatel
+potvrdil skutečné doručení prvního testovacího e-mailu. Závěrečná kontrola
+opravila From na schválené `podpora@zeleznalady.cz`, následný SMTP test
+potvrdil přijetí zprávy a konfigurace byla uložena. Doručení tohoto druhého
+testu není samostatně potvrzené příjemcem.
 
-Při závěrečné kontrole webového deploymentu SMTP ještě nebylo uložené,
-`resetPasswordAllowed=false`. Obnova klientky nebyla odeslána ani dokončena;
-účet, heslo a rezervace nebyly měněny. Aktivace a jedna žádost o reset počkají
-na uživatelovo doplnění SMTP a potvrzení skutečného doručení testu. Kompletní
-password-only reset včetně zachování admin OTP prošel v izolovaném Keycloaku
+Obnova hesla byla aktivována 15. 10. 2026 v 17:39:41 UTC režimem
+`apply-configured-recovery` ze servisní revize `12307a8`, pod aplikačním
+zámkem a po kontrole X5. Aktivní je `resetPasswordAllowed=true`, flow
+`studio-balance-password-recovery`, platnost odkazu 900 sekund a vynucené
+nové přihlášení po resetu. Flow neobsahuje reset OTP; administrátorské MFA
+zůstává zachované. Porovnání před/po potvrdilo nezměněné SMTP a ostatní
+nastavení realmu; sdílený Keycloak nebyl restartován. Soukromá evidence:
+`/srv/x5-production/archives/studio-balance/identity-recovery/recovery-before-20261015T173941Z.json`
+a `activation-20261015T173941Z.json` ve stejném adresáři. Snapshot neobsahuje
+SMTP secret.
+
+Na skutečném veřejném loginu je viditelný odkaz „Zapomenuté heslo?“ i
+nápověda „Nastavit nové heslo“. Pro dotčenou klientku byla přes tento formulář
+odeslána právě jedna žádost o obnovu; formulář zobrazil neutrální potvrzení
+odeslání pokynů. Doručení do její schránky ani následné nastavení hesla a
+přihlášení klientkou zatím nejsou ověřené. Heslo, OTP, účet ani rezervace
+nebyly ručně měněny. Příjemkyně musí otevřít odkaz do 15 minut a heslo si
+nastavit sama; při vypršení může požádat o nový odkaz. Případná dočasná
+blokace po chybných pokusech může vyžadovat až 15 minut bez dalších pokusů.
+Kompletní reset včetně zachování admin OTP prošel v izolovaném Keycloaku
 26.8.0; rozšířený konfigurátor má 25 úspěšných unit testů.
 
 Rollback identity provést pod stejným aplikačním zámkem po kontrole UUID X5:
