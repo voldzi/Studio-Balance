@@ -1178,14 +1178,36 @@ identity část, nikoli nové aplikační obrazy:
   sudoers se neměnil. Ověřené zdroje DMZ helperů jsou v podadresáři
   `reviewed-tools` uvedené root-owned zálohy.
 
-`resetPasswordAllowed=false` a SMTP stále chybí. Obnova konkrétní klientky
-nebyla odeslána ani dokončena; účet, heslo a rezervace nebyly měněny.
-Aktivace čeká na schváleného odesílatele a bezpečně uloženou SMTP konfiguraci,
-ověřené doručení a test celého resetu. Aplikační web/API/worker nadále běží
-na `082d9ce7fda001c85deb0479a1b1fe59dcd8fb69`; nový web s doplňkovou vstupní
-nápovědou čeká na alespoň 20 GiB volného místa na interním disku podle
-existujícího deployment guardu. Při závěrečné kontrole bylo přibližně 14 GiB.
-Guard se nesnižuje a neprovádí se plošný Docker úklid.
+První část rollout ponechala `resetPasswordAllowed=false` bez SMTP a původní
+aplikační verzi `082d9ce7fda001c85deb0479a1b1fe59dcd8fb69`. Nový web tehdy
+blokovala existující rezerva nejméně 20 GiB na interním disku; guard nebyl
+snížen a nebyl použit plošný Docker úklid.
+
+Po uživatelově potvrzení uvolnění disku (před sestavením asi 29 GiB) byl
+15. 10. 2026 dokončen standardní deployment `7a00e0a`. Prošly všechny tři
+image scany, migrátor i kontrola přesné produkční revize API/web/worker včetně
+čerstvé worker generation. Veřejné `/prihlaseni` vrací 200 a obsahuje novou
+nápovědu pro již registrované klienty. Scan evidence:
+`/srv/x5-production/archives/studio-balance/image-scans/7a00e0a/20261015T172605Z-GPocLcJe/`.
+Řádná retence ponechala `7a00e0a`, `082d9ce7fda001c85deb0479a1b1fe59dcd8fb69`
+a `3e6691c0967e5470842a9199f10777e80394ba0a`; ukončené vydání `27b6e11`
+včetně tří již nepoužívaných tagů odstranila podle schválené politiky.
+
+Uživatel schválil odesílatele `podpora@zeleznalady.cz` obdobně jako u Moje porce.
+Připraven je oddělený SMTP formulář přímo pro realm Studio Balance:
+`smtp.mail.me.com:587`, STARTTLS a autentizace, jméno odesílatele Studio Balance.
+Apple vyžaduje heslo pro aplikaci; jeho zadání a uložení dokončí uživatel přímo
+v Keycloaku. Nepoužívá se export přístupového hesla mezi aplikacemi nebo do
+lokálního souboru. Po skutečně doručeném testu do vlastní schránky lze použít
+`apply-configured-recovery` ze servisní revize `12307a8` a soukromý snapshot,
+aniž by konfigurátor SMTP měnil nebo zapisoval jeho secret do snapshotu.
+
+Při závěrečné kontrole webového deploymentu SMTP ještě nebylo uložené,
+`resetPasswordAllowed=false`. Obnova klientky nebyla odeslána ani dokončena;
+účet, heslo a rezervace nebyly měněny. Aktivace a jedna žádost o reset počkají
+na uživatelovo doplnění SMTP a potvrzení skutečného doručení testu. Kompletní
+password-only reset včetně zachování admin OTP prošel v izolovaném Keycloaku
+26.8.0; rozšířený konfigurátor má 25 úspěšných unit testů.
 
 Rollback identity provést pod stejným aplikačním zámkem po kontrole UUID X5:
 policy obnoví konfigurátor režimem `rollback --snapshot <policy-before>`
