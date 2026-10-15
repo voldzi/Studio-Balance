@@ -43,9 +43,9 @@ remote() {
   ssh docker.home.cz "docker exec keycloak /opt/keycloak/bin/kcadm.sh${quoted} --config '$config_path' -r '$realm'"
 }
 
-# SMTP is intentionally not configured. Do not display registration or reset flows
-# that would promise an e-mail the studio cannot send.
-remote update "realms/$realm" -s verifyEmail=false -s resetPasswordAllowed=false
+# Registration stays simple. Password recovery is configured and verified
+# separately by configure-keycloak-recovery.py; never undo it on a later run.
+remote update "realms/$realm" -s verifyEmail=false
 
 # The application owns the explicit "remember this device" choice. Keycloak's
 # own checkbox is disabled so users do not see two competing retention controls.
@@ -234,7 +234,7 @@ node -e '
   const realm=JSON.parse(process.argv[1]);
   const webExecutions=JSON.parse(process.argv[2]);
   const adminExecutions=JSON.parse(process.argv[3]);
-  if (realm.verifyEmail!==false || realm.resetPasswordAllowed!==false) throw new Error("Simple client registration is not active.");
+  if (realm.verifyEmail!==false) throw new Error("Simple client registration is not active.");
   const expectedSessions={rememberMe:false,ssoSessionIdleTimeout:2592000,ssoSessionMaxLifespan:7776000,clientSessionIdleTimeout:2592000,clientSessionMaxLifespan:7776000};
   for (const [name,value] of Object.entries(expectedSessions)) if (realm[name]!==value) throw new Error(`Unexpected realm session setting: ${name}`);
   for (const provider of ["auth-username-password-form","conditional-user-configured","auth-otp-form"]) {
@@ -286,7 +286,7 @@ remote get "clients/$admin_client_id" | node -e '
   }
 ' "$admin_flow_id"
 
-echo "Configured: client registration without e-mail verification; password reset hidden until SMTP is available."
+echo "Configured: client registration without e-mail verification; existing password recovery policy preserved."
 echo "Configured: Keycloak's own Remember me checkbox is hidden; SSO/client sessions are 30 days idle / 90 days maximum for secure server-side refresh."
 echo "Configured: stale VERIFY_EMAIL actions removed while other account actions were preserved."
 echo "Configured: studiobalance-web uses Keycloak's standard browser flow; accounts without OTP use a password, administrators with OTP complete both factors once."

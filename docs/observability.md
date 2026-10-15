@@ -317,3 +317,15 @@ zůstávají v neveřejném návrhu; neduplikují se do logu ani veřejných met
 Počet čekajících zobrazuje admin API, není klientskou ani VCode statistikou.
 Nevytváří se nový analytický endpoint nebo vendor; formule, nové cesty a QR
 jsou mimo veřejný tracker. Chybějící log není důkaz úspěšně přijaté recenze.
+
+## Diagnostika obnovy přístupu
+
+CD-073 nepřidává sběr klientských formulářů, reset tokenů ani nové veřejné
+analytické události. Dedicated DMZ login access log používá pouze čas,
+metodu, URI bez query, status, délku a request ID. Neobsahuje Referer,
+cookie, authorization, IP ani user agent. Raw Nginx identity error log je
+vypuštěný, protože neumí redigovat token v request URI; backendové události
+a sanitized access failures zůstávají dostupné. Odeslání SMTP, doručení
+a dokončení obnovy klientem se evidují odděleně. Dosavadní chráněné auth
+logy se při změně nemažou a nová retence historických záznamů se tímto
+rozhodnutím nezavádí.

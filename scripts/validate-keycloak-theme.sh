@@ -18,6 +18,7 @@ require_file messages/messages_en.properties
 require_file resources/css/studio-balance-login.css
 require_file resources/img/brand-logo.jpg
 require_file resources/img/studio-hero.jpg
+require_file footer.ftl
 
 grep -q '^parent=keycloak.v2$' "$theme/theme.properties" || failures=$((failures + 1))
 grep -q '^locales=cs,en$' "$theme/theme.properties" || failures=$((failures + 1))
@@ -33,10 +34,19 @@ cmp -s "$theme/resources/img/studio-hero.jpg" "$root/apps/web/public/images/stud
   echo "FAIL: Keycloak hero differs from the approved preview photograph." >&2
   failures=$((failures + 1))
 }
-if find "$theme" -type f \( -name '*.ftl' -o -name '*.js' \) -print -quit | grep -q .; then
-  echo "FAIL: Theme must not override Keycloak templates or add JavaScript." >&2
+if find "$theme" -type f \( \( -name '*.ftl' ! -path "$theme/footer.ftl" \) -o -name '*.js' \) -print -quit | grep -q .; then
+  echo "FAIL: Theme may only extend Keycloak's footer hook; authentication templates and JavaScript must stay inherited." >&2
   failures=$((failures + 1))
 fi
+if grep -Eiq '<(form|input|script|iframe)|on(click|submit|load)=|\?no_esc' "$theme/footer.ftl"; then
+  echo "FAIL: Login help must not add authentication controls, scripts or unescaped output." >&2
+  failures=$((failures + 1))
+fi
+grep -q 'realm.resetPasswordAllowed' "$theme/footer.ftl" || failures=$((failures + 1))
+for locale in cs en; do
+  grep -q '^studioLoginHelpTitle=' "$theme/messages/messages_$locale.properties" || failures=$((failures + 1))
+  grep -q '^emailSendErrorMessage=' "$theme/messages/messages_$locale.properties" || failures=$((failures + 1))
+done
 if grep -Eq "url\\([\"']?https?://" "$theme/resources/css/studio-balance-login.css"; then
   echo "FAIL: Theme must not load external resources." >&2
   failures=$((failures + 1))

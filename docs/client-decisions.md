@@ -489,3 +489,32 @@ Odeslání vyžaduje krátkodobou podepsanou výzvu, přesný veřejný origin a
 zpracovatele. Evidence recenzí, souhlasů a moderace se bez schválené politiky
 automaticky nemaže; krátkodobé technické limity mají vlastní expiraci.
 Architektonické a bezpečnostní hranice určuje ADR 0029.
+
+## CD-073 — Obnova přístupu a ochrana přihlášení (2026-10-15)
+
+Vlastník schválil realizaci a produkční nasazení obnovy hesla, jednoduché
+nápovědy u přihlášení a ochrany proti hádání hesel. Toto rozhodnutí doplňuje
+CD-032: jednoduchá registrace bez povinného ověření e-mailu zůstává, obnova
+se smí zapnout až s bezpečně nastaveným odesílatelem a ověřeným doručením.
+Zapnutí obnovy neaktivuje rozesílání starého rezervačního outboxu.
+
+Obnova mění pouze heslo existujícího účtu. Nemaže účet, profil, rezervace,
+historii ani TOTP; po obnově vyžaduje nové přihlášení. Administrátorské MFA
+zůstává povinné. Odpověď po žádosti je neutrální také pro neexistující účet.
+Jednorázový odkaz má omezenou platnost 15 minut a neposílá se do chatu,
+analytiky ani provozních logů. Obnovu konkrétní klientky lze vyvolat pouze
+odesláním na její registrovaný e-mail, nikoli předáním dočasného hesla.
+
+Ochrana používá dočasné blokování po pěti neúspěšných pokusech, základní
+čekání 60 sekund, maximum 15 minut a vynulování počítadla po 30 minutách.
+Trvalé blokování není součástí této změny. Nastavení je omezené na realm
+Studio Balance a nesmí restartovat sdílenou přihlašovací službu.
+
+Nasazení, odeslání zprávy, její doručení a dokončené obnovení klientkou jsou
+samostatné výsledky; bez příslušného důkazu se neprohlašují za hotové.
+
+Omezení četnosti na dedicated login hostu se týká pouze POST formulářů
+`/realms/studio-balance/login-actions/`: průměr 10 za minutu na IP, krátká
+špička 20 požadavků navíc. GET, zdroje tématu, token refresh a ostatní realmy
+se neomezují tímto pravidlem. Překročení vrací srozumitelnou chybu 429
+a `Retry-After: 60`; chrání také obnovu před zneužitím k rozesílání zpráv.

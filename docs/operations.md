@@ -284,6 +284,10 @@ interním logu, ale nesmí vypsat hodnotu secretu.
 
 ## Externí závislosti
 
+Obnova hesla v Keycloaku má samostatnou SMTP konfiguraci podle ADR 0031.
+`EMAIL_FROM` a `EMAIL_PROVIDER_API_KEY` v tabulce výše jsou určeny pro dosud
+neaktivované rezervační notifikace; jejich přítomnost nezajišťuje reset hesla.
+
 - PostgreSQL jako transakční zdroj pravdy;
 - S3-kompatibilní úložiště produkčních binárních médií s odděleným tenantem;
 - Keycloak/OIDC s realm `studio-balance`, oddělenými web/admin policies,
@@ -418,16 +422,17 @@ heslo, OTP, automatický přechod z profilu i zákaz klientského účtu bez rol
 ### Jednoduchá registrace a povinné OTP administrace
 
 `scripts/configure-production-keycloak-auth.sh` bezpečně nastaví produkční
-realm `studio-balance` bez e-mailového ověřování klienta a bez odkazu na reset
-hesla, dokud studio nemá nakonfigurovaný SMTP sender. `studiobalance-web`
+realm `studio-balance` bez e-mailového ověřování klienta. Již nastavenou
+obnovu hesla zachová; její samostatná aktivace vyžaduje ověřené SMTP podle
+ADR 0031 a postupu níže. `studiobalance-web`
 použije standardní Keycloak browser flow: běžný účet bez OTP zadá heslo, účet
 administrátora s nakonfigurovaným OTP dokončí také ověřovací kód.
 `studiobalance-admin` si ponechá vlastní flow s povinným heslem a TOTP jako
 záložní vstup.
 
 Skript se spouští z lokálního Macu a interaktivně si vyžádá pouze master
-Keycloak jméno a heslo. Po úspěchu ověří, že e-mailové ověřování i reset hesla
-jsou vypnuté, odstraní z existujících účtů pouze starou required action
+Keycloak jméno a heslo. Po úspěchu ověří, že e-mailové ověřování
+je vypnuté, odstraní z existujících účtů pouze starou required action
 `VERIFY_EMAIL` (ostatní akce včetně `UPDATE_PASSWORD` a `CONFIGURE_TOTP`
 zachová) a ověří, že jsou standardní webový i povinný administrátorský flow
 navázané na správné klienty. Současně zapne a kontroluje předávání realm rolí
@@ -1074,3 +1079,64 @@ Nové tabulky se ponechají, nerozběhne se down migrace ani smazání návrhů.
 Starší aplikace jejich obsah nepublikuje; již schválené reference zůstávají
 běžným veřejným obsahem a studio je může samostatně skrýt. Diskové a X5
 hranice ani retence ostatních dat se tímto řezem nemění.
+
+## Obnova hesla a ochrana přihlášení (CD-073 / ADR 0031)
+
+Konfigurátor `scripts/configure-keycloak-recovery.py` spravuje pouze realm
+`studio-balance`, dočasné blokování a samostatný password-only reset flow.
+Používá existující operations klient s `manage-realm`; nezískává `manage-users`,
+nečte hesla ani neprovádí změnu zákaznického účtu. Credentials se načtou
+v paměti existujícího API procesu a předají přes `--auth-stdin`, případně ze
+samostatného souboru 0600. Nikdy se nevypisují ani neukládají do lokální `.env`.
+Admin API na `login.studio-balance.cz` zůstává z internetu zakázané.
+Konfigurace používá existující schválený TLS správcovský vstup sdíleného
+Keycloaku; jeho discovery musí potvrdit issuer `login.studio-balance.cz`.
+HTTP je dovoleno s `--allow-loopback` pouze pro skutečně lokální test či
+zabezpečený lokální tunel; nevystavuje se nový port ani správcovské API.
+Produkční Keycloak aktuálně publikuje port pouze na své interní síťové
+adrese, nikoli na loopbacku hostitele.
+
+Režimy: `check` je čtení, `apply-policy` zapne pouze dočasnou ochranu,
+`apply-recovery` navíc ověřenou obnovu a `rollback` obnoví soukromý snapshot.
+Každá změna vyžaduje nový snapshot 0600 v adresáři 0700 na ověřeném X5,
+například v `/srv/x5-production/archives/studio-balance/identity-recovery/`.
+Před zápisem vždy spustit `check-production-storage.sh`; při nedostupném X5
+se nevytváří náhradní kopie na interním disku. Snapshot obsahuje pouze měněné
+hodnoty; při existujícím SMTP je nutný úplný původní secret, maskované heslo
+z Admin API není použitelný rollback. Konfigurátor neobchází toto omezení.
+
+SMTP mapa je samostatný soubor 0600: `host`, `port`, `from`, `fromDisplayName`,
+`ssl` nebo `starttls`, `auth`, `user`, `password` a volitelné timeouty. Veřejné
+SMTP vyžaduje autentizaci a TLS. Nešifrovaný privátní relay smí použít jen
+výslovně schválený `--approved-private-relay`; nejde o automatický fallback.
+`apply-recovery` vyžaduje také `--smtp-delivery-verified`: nejprve doručit
+testovací zprávu do kontrolované schránky a ověřit celé obnovení testovacího
+účtu. Neutrální obrazovka o odeslání ani SMTP akceptace neprokazuje přijetí
+ve schránce. Poskytovatel a odesílatel musí být schválení, cizí tenant klíč
+se nepřebírá. Reset nesmí spustit zpracování starého `notification_outbox`.
+
+Password-only flow má tři REQUIRED kroky a `force-login=true`; reset OTP
+není přítomný. Odkaz platí 900 sekund. Admin se po obnově musí znovu
+přihlásit heslem a svým existujícím TOTP. Předlohu tématu publikovat do nové
+verzované složky v existujícím mountu `/opt/keycloak/themes`, ověřit soubory
+a změnit pouze `loginTheme` tohoto realmu. Předchozí jméno tématu uložit
+soukromě pro rollback. Staré téma se nemaže a sdílený Keycloak se nerestartuje.
+
+Před aktivací obnovy spustit samostatný DMZ privacy gate: kopie
+`harden-studiobalance.py`, `harden-studiobalance-recovery.py` a testů do
+soukromého pracovního adresáře, izolovaný `test-recovery-privacy-runtime.py`,
+pak nejprve dry-run a až poté `--apply --expected-version <live-sha>`.
+Nástroj zachovává ostatní vhosty, analytics include a TLS, zálohuje obě
+varianty konfigurace a při chybě syntaxe/readiness vrátí původní soubory.
+Ověřit `smoke-recovery-privacy.py` s neškodným kontrolním řetězcem.
+Dedicated identity access log obsahuje pouze čas, metodu, URI bez query,
+status, délku a request ID. Raw identity error log je úmyslně vypuštěný,
+protože i kritické chyby Nginxu mohou obsahovat celý reset odkaz; chyby
+zůstávají dohledatelné přes bezpečný access status a chráněný Keycloak log.
+`no-referrer` chrání také dotazy načítání zdrojů tématu.
+
+Obnovení klienta: po schválení vyvolat jednu standardní žádost na jeho
+registrovaný e-mail. Nečíst odkaz z cizí schránky, nenastavovat dočasné heslo,
+nemazat účet a nevytvářet rezervaci. Oddělit stav odesláno, doručeno a klient
+dokončil reset. Požadavek nepřidává přímé veřejné hledání účtů ani nový API
+endpoint; nezavádí analytiku přihlášení ani novou retenční politiku historie.

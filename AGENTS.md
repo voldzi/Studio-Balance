@@ -78,8 +78,10 @@ before encoding one interpretation in code.
   Expo/React Native workspace, app-store release, or mobile push provider.
 - Identity uses the dedicated Keycloak `studio-balance` realm with separate
   web/admin OIDC policies, Authorization Code + PKCE, server-side HTTP-only
-  sessions, simple client registration without e-mail verification while SMTP
-  is unavailable, and mandatory admin MFA. See ADR 0004. Registration and booking
+  sessions, simple client registration without mandatory e-mail verification,
+  and mandatory admin MFA. Password-only recovery requires verified SMTP and
+  preserves enrolled OTP; temporary guessing protection is realm-scoped. See
+  ADR 0004 and ADR 0031. Registration and booking
   remain paused until an administrator opens the studio (CD-047 / ADR 0013).
 - Production application workloads run as Docker containers on
   `docker.home.cz`. Operational configuration and retained releases use

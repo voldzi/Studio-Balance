@@ -19,6 +19,8 @@ implementovaná změna se nevydává za nasazenou bez samostatné akceptace.
 
 - veřejný responzivní web s lekcemi, rozvrhem, ceníkem, galerií a kontaktem;
 - vlastní účet klienta a rezervace bez online plateb;
+- nápověda při přihlášení, dočasná ochrana hesel a bezpečná obnova hesla
+  po ověření odesílání e-mailů (CD-073 / ADR 0031);
 - interně řízená kapacita bez veřejného počtu míst a bez čekací listiny;
 - automatické vyhodnocení storna na hranici 24 hodin v `Europe/Prague`;
 - responzivní klientský účet použitelný od mobilního telefonu po desktop;

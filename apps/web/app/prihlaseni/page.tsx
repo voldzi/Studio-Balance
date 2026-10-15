@@ -32,6 +32,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <button className="button" type="submit">Pokračovat k přihlášení</button>
         </form>
         <p className="auth-help">Bez zaškrtnutí zůstane přihlášení jen do zavření prohlížeče.</p>
+        <aside className="auth-help auth-login-help" aria-labelledby="login-help-title">
+          <h2 id="login-help-title">Už jste si vytvořili účet?</h2>
+          <p>Použijte stejný e-mail jako při registraci. Pokud heslo neznáte, pokračujte na další stránku a postupujte podle nápovědy pro obnovení přístupu. Nový účet není potřeba.</p>
+          <p>Pokud se přihlášení opakovaně nedaří nebo zpráva pro obnovu hesla nedorazí, obraťte se na studio. Heslo ani ověřovací kódy nikomu neposílejte.</p>
+        </aside>
       <RegistrationNotice />
       </section>
     </main>

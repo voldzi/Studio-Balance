@@ -71,7 +71,7 @@ SEO a schválenou cestu fotografie typu lekce.
 | ID | Priorita | Požadavek |
 | --- | --- | --- |
 | IDN-001 | P0 | registrace jménem, příjmením, e-mailem, telefonem a bezpečným přihlašovacím prostředkem |
-| IDN-002 | P0 | přihlášení e-mailem, odhlášení, změna hesla a bezpečná relace; reset hesla se zpřístupní po zprovoznění SMTP |
+| IDN-002 | P0 | přihlášení e-mailem, odhlášení, změna hesla a bezpečná relace; obnova hesla přes ověřené SMTP a jednorázový odkaz do 15 minut zachovává účet i OTP a vyžaduje nové přihlášení; bez ověřeného SMTP se nenabízí (CD-073 / ADR 0031) |
 | IDN-003 | P0 | po přihlášení během rezervace návrat na původně vybraný termín |
 | IDN-004 | P0 | verze podmínek a čas přijetí jsou evidovány; marketingový souhlas je oddělený a nepředvyplněný |
 | IDN-005 | P0 | klient vidí a mění jen vlastní profil a rezervace; administrátor může ze stejného MFA ověřeného profilu přejít přímo do správy |

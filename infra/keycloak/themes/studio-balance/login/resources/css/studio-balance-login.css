@@ -278,7 +278,7 @@ label.pf-v5-c-check,
 .pf-v5-c-check__label {
   display: flex;
   align-items: center;
-  min-height: 44px;
+  min-height: 48px;
 }
 
 .pf-v5-c-check__input,
@@ -312,6 +312,32 @@ a {
   padding-top: 20px;
   border-top: 1px solid var(--sb-line);
   text-align: center;
+}
+
+.studio-login-help {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--sb-line);
+  color: var(--sb-muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.studio-login-help h2 {
+  margin: 0 0 10px;
+  color: var(--sb-ink);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.studio-login-help p {
+  margin: 0 0 12px;
+}
+
+.studio-login-help-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
 }
 
 .pf-v5-c-alert {

@@ -529,3 +529,31 @@ mazání bez schválené politiky; 2hodinová retence se vztahuje pouze na techn
 počítadlo. Nezavádí se externí CAPTCHA, nový vendor, e-mail ani push.
 `/recenze/napsat`, `/recenze/qr` a jakákoli pole/události formuláře zůstávají
 mimo dosavadní přesný allowlist VCode analytiky.
+
+## Bezpečná obnova hesla a dočasné blokování (CD-073)
+
+Password-only flow podle ADR 0031 nesmí obsahovat `reset-otp`. E-mailový
+krok `force-login=true` ukončí obnovu bez přihlášené relace, a proto nemůže
+nahradit povinný administrátorský druhý faktor. Jednorázový odkaz má 15 minut.
+Neutrální výsledek neprozrazuje existenci účtu ani úspěch doručení.
+
+Reset se zapíná až po ověření odesílatele a bezpečného SMTP; klient se nikdy
+nevyzývá k zaslání hesla či OTP podpoře. Klíče se nepřenášejí do prohlížeče
+a operations přístup se nerozšiřuje o správu zákazníků. Dočasné blokování
+používá 5 pokusů, 60 sekund, strop 900 sekund, reset 1800 sekund a vypnuté
+trvalé i sekundární blokování. Samotná veřejná chybová zpráva nerozlišuje
+chybné údaje od ochranné prodlevy. Parametry se ověřují čtením i skutečným
+přihlášením pouze syntetických účtů v izolovaném prostředí.
+
+Reset token, query, Referer, cookies a formuláře nesmí vstoupit do DMZ
+přístupových záznamů. Dedicated login host má bezpečný formát a `no-referrer`;
+raw Nginx identity error log je vypnutý, protože neumí redigovat request URI.
+Bezpečný status/request ID a chráněné Keycloak události zůstávají. Ověřuje se
+také chyba upstreamu a HTTP redirect. Toto se týká pouze identity hostu,
+nikoli plošného vypnutí logů jiných aplikací.
+
+Omezení četnosti na dedicated login hostu se týká pouze POST formulářů
+`/realms/studio-balance/login-actions/`: průměr 10 za minutu na IP, krátká
+špička 20 požadavků navíc. GET, zdroje tématu, token refresh a ostatní realmy
+se neomezují tímto pravidlem. Překročení vrací srozumitelnou chybu 429
+a `Retry-After: 60`; chrání také obnovu před zneužitím k rozesílání zpráv.

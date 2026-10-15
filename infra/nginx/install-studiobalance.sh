@@ -166,6 +166,26 @@ EOF
 
 append_keycloak_proxy() {
   cat >>"$temporary" <<EOF
+    access_log /var/log/nginx/studiobalance-identity.access.log studiobalance_identity_safe;
+    # Raw Nginx errors can contain one-time recovery URLs. Keep sanitized
+    # status/latency here and authentication errors in protected Keycloak logs.
+    error_log /dev/null crit;
+    proxy_hide_header Referrer-Policy;
+    add_header Referrer-Policy "no-referrer" always;
+    limit_req zone=studiobalance_identity_posts burst=20 nodelay;
+    limit_req_status 429;
+    limit_req_dry_run off;
+    limit_req_log_level notice;
+    error_page 429 = @studiobalance_identity_rate_limit;
+    location @studiobalance_identity_rate_limit {
+        default_type text/html;
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy no-referrer always;
+        add_header Retry-After 60 always;
+        add_header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" always;
+        return 429 '<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chvilku prosím počkejte | Studio Balance</title><body><main><h1>Chvilku prosím počkejte</h1><p>Během krátké chvíle proběhlo více pokusů o přihlášení nebo obnovení hesla. Z bezpečnostních důvodů počkejte alespoň minutu. Potom se vraťte na předchozí stránku a zkuste to znovu.</p><p>Pokud si heslo nepamatujete, použijte možnost Zapomenuté heslo. Samotné čekání vaše heslo nezmění.</p><p><a href="https://studio-balance.cz/prihlaseni">Zpět na přihlášení</a></p></main></body></html>';
+    }
     client_max_body_size 20m;
     proxy_connect_timeout 60s;
     proxy_send_timeout 60s;
@@ -206,8 +226,20 @@ append_keycloak_proxy() {
 EOF
 }
 
+append_identity_log_format() {
+  cat >>"$temporary" <<'EOF'
+log_format studiobalance_identity_safe escape=json '{"timestamp":"$time_iso8601","method":"$request_method","uri":"$uri","status":$status,"duration":$request_time,"requestId":"$request_id"}';
+map "$request_method:$uri" $studiobalance_identity_post_key {
+    default "";
+    ~^POST:/realms/studio-balance/login-actions/ $binary_remote_addr;
+}
+limit_req_zone $studiobalance_identity_post_key zone=studiobalance_identity_posts:1m rate=10r/m;
+EOF
+}
+
 render_http_config() {
   : >"$temporary"
+  append_identity_log_format
   cat >>"$temporary" <<EOF
 server {
     listen 80;
@@ -228,11 +260,21 @@ EOF
 
 render_tls_config() {
   : >"$temporary"
+  append_identity_log_format
   cat >>"$temporary" <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name $primary_domain $www_domain $login_domain;
+    server_name $primary_domain $www_domain;
+    return 301 https://\$host\$request_uri;
+}
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $login_domain;
+    access_log /var/log/nginx/studiobalance-identity.access.log studiobalance_identity_safe;
+    error_log /dev/null crit;
+    add_header Referrer-Policy "no-referrer" always;
     return 301 https://\$host\$request_uri;
 }
 server {
@@ -270,7 +312,6 @@ server {
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 EOF
   append_keycloak_proxy
   echo '}' >>"$temporary"

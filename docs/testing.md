@@ -629,3 +629,31 @@ pokud nebyl proveden.
   Původní klientské jméno, text a hodnocení zůstanou při skrytí beze změny.
 - Validační délky nového formuláře počítají znaky Unicode konzistentně
   s databází; krátký text z několika emoji vrátí 400, nikoli systémovou chybu.
+
+## Obnova hesla a ochrana přihlášení (ADR 0031)
+
+- `python3 scripts/test-keycloak-recovery.py`: scope realmu, povolené změny,
+  SMTP/TLS, chybějící ověření doručení, soukromé soubory a snapshot, absence
+  secretů v diagnostice, force-login, odmítnutí změněného flow a rollback.
+- Skutečný izolovaný Keycloak 26.8.0 a testovací SMTP: stejná obecná odpověď
+  pro existující/neexistující účet, doručený odkaz, nové heslo funguje/staré
+  selže, použitý/prošlý odkaz selže, admin TOTP zůstane a heslo samotné nestačí.
+- Syntetický účet: pět neúspěšných pokusů vyvolá dočasnou ochranu, čekání a
+  obnova fungují; testy nikdy nezkoušejí hesla skutečných klientů.
+- `python3 infra/nginx/test-recovery-privacy.py` a izolovaný skutečný Nginx
+  `test-recovery-privacy-runtime.py`: query/Referer/cookie/auth nejsou v logu
+  ani při upstream chybě, změny jiných serverů se neprovedou, druhý běh je
+  idempotentní. Produkční `smoke-recovery-privacy.py` používá neškodný řetězec.
+- Téma a vstupní stránka: CS/EN, mobil360px/desktop, keyboard, nepřekrývající
+  se nápověda a funkční podmíněný odkaz. Žádná veřejná analytika v auth toku.
+- Nasazení zaznamená zvlášť revizi webu, jméno/verzi identity tématu, stav
+  SMTP/policy a výsledek doručení. Nedokončený reset klienta se nepovažuje
+  za ověřené obnovení přístupu. Produkční tokeny se neukládají do důkazů.
+
+Skutečný identity test běží příkazem `python3 scripts/test-keycloak-recovery-runtime.py`
+proti výhradně dočasnému Keycloak 26.8.0 na `127.0.0.1:18188` a testovací
+schránce Mailpit na `127.0.0.1:18255`. Vyžaduje pouze syntetické
+`KEYCLOAK_RECOVERY_TEST_ADMIN_PASSWORD` a `KEYCLOAK_RECOVERY_TEST_SMTP_HOST`
+(privátní adresa testovacího SMTP v oddělené Docker síti). Realm
+`studio-balance` musí na této instanci před spuštěním chybět; test jej po
+ověření odstraní. Nesmí se použít produkční server ani jeho credentials.

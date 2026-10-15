@@ -701,3 +701,19 @@ vytisknout tento list; klient ve studiu použije vlastní telefon. Stejný
 formulář použije doma. Nevyžaduje instalaci nebo sdílené přihlášení. Obě nové
 stránky jsou noindex a nic neodesílají do veřejné analytiky; lokální QR není
 obrázek získaný od externí sledovací služby.
+
+### Pomoc s přihlášením a obnovení přístupu (CD-073)
+
+Na vstupu i na přihlašovacím formuláři je krátká pomoc pro již registrovaného
+klienta: stejný e-mail, obnova hesla a kontaktování studia při potížích.
+Nový účet se nenabízí jako řešení zapomenutého hesla. Odkaz **Obnovit heslo**
+je dostupný pouze při skutečně povolené obnově; jinak nápověda odkáže na
+studio. Žádný text neslibuje dostupné e-maily jen podle vykreslené stránky.
+
+Obnova vysvětlí kontrolu schránky a spamu, omezenou platnost a případné nové
+vyžádání odkazu. Potvrzení zůstává stejné pro známý i neznámý e-mail.
+Po nastavení hesla následuje nové přihlášení; administrátor použije svůj
+nezměněný Authenticator. Uživatel vidí, že heslo ani kódy nemá nikomu posílat.
+Nápověda nenahrazuje formuláře Keycloaku, má čitelný nadpis, viditelný fokus
+a dotykové cíle alespoň 48 px. Ověřuje se CS/EN, 360 px i desktop, včetně
+chyb, vypnuté obnovy a prošlého odkazu.
