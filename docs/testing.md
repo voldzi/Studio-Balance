@@ -630,6 +630,14 @@ pokud nebyl proveden.
 - Validační délky nového formuláře počítají znaky Unicode konzistentně
   s databází; krátký text z několika emoji vrátí 400, nikoli systémovou chybu.
 
+## Retence produkčních vydání
+
+Samostatná provozní kontrola `python3 scripts/test-production-storage.py`
+ověřuje také minimálně tři odlišné návratové generace, přítomnost zdrojů a
+migrací, shodu a zdraví všech produkčních kontejnerů, ochranu obrazů zastavených
+i cizích kontejnerů, rozpracovaný deployment a odmítnutí změněného image tagu.
+Testy používají dočasné soubory a falešný Docker inventář; nemění produkci.
+
 ## Obnova hesla a ochrana přihlášení (ADR 0031)
 
 - `python3 scripts/test-keycloak-recovery.py`: scope realmu, povolené změny,

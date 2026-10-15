@@ -65,6 +65,64 @@ def verify_retained_backups(backups, retained):
 def run(*args):
     return subprocess.check_output(args, text=True).strip()
 
+def protected_releases(root, ledger, containers):
+    """Prove current + two rollback generations before considering any deletion."""
+    versions = ledger.get('versions') if isinstance(ledger, dict) else None
+    if not isinstance(versions, list) or len(versions) < 3 or any(not isinstance(v, str) or not SHA.fullmatch(v) for v in versions):
+        raise RuntimeError('At least three valid verified releases are required; no cleanup')
+    verified = versions[:3]
+    if any(a.startswith(b) or b.startswith(a) for i, a in enumerate(verified) for b in verified[i+1:]):
+        raise RuntimeError('Verified rollback releases are duplicate or ambiguous; no cleanup')
+    if list(root.glob('.deploying-*')):
+        raise RuntimeError('Pending deployment requires review; no cleanup')
+    live = []
+    for service in ['api', 'web', 'worker']:
+        name = f'studio-balance-production-{service}-1'
+        matches = [item for item in containers if item.get('Name', '').removeprefix('/') == name]
+        if len(matches) != 1:
+            raise RuntimeError('Production container inventory is incomplete; no cleanup')
+        item = matches[0]
+        match = re.fullmatch(r'studiobalance/' + service + r':([0-9a-f]{7,40})', item.get('Config', {}).get('Image', ''))
+        if not match or item.get('State', {}).get('Status') != 'running' or item.get('State', {}).get('Health', {}).get('Status') != 'healthy':
+            raise RuntimeError('Production revision is not healthy and unambiguous; no cleanup')
+        live.append(match[1])
+    if len(set(live)) != 1 or live[0] not in verified:
+        raise RuntimeError('Production and verified release ledger disagree; no cleanup')
+    keep = set(verified)
+    used = {item['Image'] for item in containers}
+    for item in containers:
+        ref = item.get('Config', {}).get('Image', '')
+        if ref.startswith('studiobalance/'):
+            match = re.fullmatch(r'studiobalance/(api|web|worker):([0-9a-f]{7,40})', ref)
+            if not match:
+                raise RuntimeError('Unrecognized Studio Balance container reference; no cleanup')
+            keep.add(match[2])
+    # Sources, Compose and migrations are needed for an actual rollback.
+    # Presence checks supplement the readiness ledger; they do not claim a DB restore drill.
+    for version in verified:
+        source = root / 'releases' / version
+        if source.is_symlink() or not source.is_dir():
+            raise RuntimeError('Verified rollback source is missing or unsafe; no cleanup')
+        for relative in ['docker-compose.production.yml', 'infra/scripts/rollback-production.sh']:
+            path = source / relative
+            if any(p.is_symlink() for p in [path, *path.parents] if p != root and root in p.parents) or not path.is_file() or not path.stat().st_size:
+                raise RuntimeError('Verified rollback configuration is missing or unsafe; no cleanup')
+        migrations = source / 'infra/postgres/migrations'
+        if any(p.is_symlink() for p in [migrations, *migrations.parents] if p != root and root in p.parents) or not migrations.is_dir():
+            raise RuntimeError('Verified rollback migrations are missing or unsafe; no cleanup')
+        files = list(migrations.glob('*.sql'))
+        if not files or any(p.is_symlink() or not p.is_file() or not p.stat().st_size for p in files):
+            raise RuntimeError('Verified rollback migration set is incomplete; no cleanup')
+    for version in keep:
+        for service in ['api', 'web', 'worker']:
+            image = json.loads(run('docker', 'image', 'inspect', f'studiobalance/{service}:{version}'))
+            if len(image) != 1 or not re.fullmatch(r'sha256:[0-9a-f]{64}', image[0].get('Id', '')):
+                raise RuntimeError('Protected image identity is unavailable; no cleanup')
+            for item in containers:
+                if item.get('Config', {}).get('Image') == f'studiobalance/{service}:{version}' and item['Image'] != image[0]['Id']:
+                    raise RuntimeError('Container image tag was moved; no cleanup')
+    return keep, used
+
 def maintain_scan_cache(root, x5, apply=False):
     """Only the approved owned cache, idle under its own lock; reports survive."""
     cache = x5 / 'cache/studio-balance/trivy'
@@ -104,24 +162,9 @@ def main():
             print('Busy: no cleanup performed')
             return
     ledger = json.loads((ROOT / 'verified-releases.json').read_text())
-    active = run('docker', 'inspect', '-f', '{{.Config.Image}}', 'studio-balance-production-web-1').split(':')[-1]
-    keep = {active, *ledger['versions'][:3]}
-    keep.update(p.name.removeprefix('.deploying-') for p in ROOT.glob('.deploying-*'))
     ids = run('docker', 'ps', '-aq').splitlines()
-    used = set()
-    if ids:
-        containers = json.loads(run('docker', 'inspect', *ids))
-        used = {item['Image'] for item in containers}
-        for item in containers:
-            ref = item['Config']['Image']
-            if ref.startswith('studiobalance/'):
-                keep.add(ref.split(':')[-1])
-    # Retained revisions must have all three locally restorable images.
-    for version in keep:
-        if not SHA.fullmatch(version):
-            raise RuntimeError('Invalid protected version')
-        for service in ['api', 'web', 'worker']:
-            run('docker', 'image', 'inspect', f'studiobalance/{service}:{version}')
+    containers = json.loads(run('docker', 'inspect', *ids)) if ids else []
+    keep, used = protected_releases(ROOT, ledger, containers)
     removals = []
     for directory in [ROOT / 'releases', X5 / 'archives/studio-balance/releases']:
         if directory.is_dir():

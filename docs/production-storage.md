@@ -101,6 +101,16 @@ SHA release/artifact paths and studiobalance/{api,web,worker}:<sha> tags without
 No user history/audit/config-history deletion. Failed/incomplete media snapshots
 are preserved for operator review.
 
+The release guard also requires at least three distinct unambiguous verified
+generations, a consistent healthy production API/web/worker revision in that
+set, and each generation's retained source, production Compose, rollback script
+and nonempty SQL migration files. Missing sources, migration symlinks, moved
+image tags or missing protected images refuse all cleanup. Both running and
+stopped containers protect their exact image IDs; recognized Studio Balance
+references additionally protect their revision. Any pending `.deploying-*`
+marker defers cleanup until its deployment is reviewed. Historical entries after
+the first three ledger versions are history, not extra rollback slots.
+
 The worker readiness marker is private atomic JSON under
 `/tmp/studio-balance-worker-ready.json`, in a 4 MiB container tmpfs. It is removed
 at startup and created only after successful generation with the schedule lock.
@@ -182,3 +192,28 @@ Legacy /home/voldzi/deployments/studio-balance is now only a symlink to the guar
 on X5. Successful migration tools/receipts are classified as completed work and
 expire after 14 days under idle locks. Runtime web/API are unchanged application
 images; this is an operational scripts/Compose change, not a new application build.
+
+## Retention recheck — 2026-10-15
+
+Daily retention remains enabled at 05:20 (server timezone). Read-only inventory
+found exactly three production generations and nine `studiobalance/{api,web,worker}`
+image tags: current `082d9ce7fda001c85deb0479a1b1fe59dcd8fb69`, rollback
+`3e6691c0967e5470842a9199f10777e80394ba0a` and rollback `27b6e11`.
+No Studio Balance preview container or additional preview image was present on
+docker.home.cz; the development preview remains outside this host's cleanup.
+The scoped dry run selected zero release paths and zero image tags for removal.
+There is no safe additional app-specific image deletion to reclaim root space.
+
+The operational root allocated about 33 MiB. Own X5 allocations were about
+426 MiB archives, 1.37 GiB cache and 424 KiB staging. The Trivy cache was below
+its existing 2 GiB/14-day threshold, so it was retained. Docker's shared image
+store remains on the internal filesystem; no builder or Docker storage root
+was changed. Host-wide free-space changes are not attributed to this check.
+
+The maintenance script was strengthened with the release guard above, without
+changing the cron schedule, backup policy, user data or running containers.
+Use the private X5 `archives/studio-balance/evidence/retention-audit-*` receipt
+for installed hashes, exact source/image/archive checks and the before/after
+container identity comparison. Rollback of this maintenance-only update restores
+its private prior-script copy under the production and media locks; it does not
+roll back the running application or remove any release or image.
