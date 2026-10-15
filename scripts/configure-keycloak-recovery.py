@@ -234,23 +234,37 @@ def save_snapshot(path, realm, fields, previous_smtp=None):
 
 
 def apply(client, mode, snapshot, smtp=None, previous_smtp=None):
-    if mode not in ("apply-policy", "apply-recovery"):
+    if mode not in ("apply-policy", "apply-recovery", "apply-configured-recovery"):
         raise ConfigurationError("Unsupported scoped configuration mode.")
     if mode == "apply-recovery" and (not isinstance(smtp, dict) or not smtp.get("host")):
         raise ConfigurationError("Recovery requires validated SMTP settings.")
     before = client.admin("GET")
     if before.get("realm") != REALM:
         raise ConfigurationError("Unexpected realm representation.")
+    configured = mode == "apply-configured-recovery"
+    if configured:
+        existing = before.get("smtpServer") or {}
+        if not isinstance(existing.get("password"), str) or not existing["password"]:
+            raise ConfigurationError("Configured authenticated SMTP credentials are missing.")
+        # Keycloak may redact this secret. Validate only connection policy and
+        # require independent delivery evidence at the CLI; never export or PUT
+        # SMTP settings in this mode, including during rollback.
+        policy = {key: value for key, value in existing.items() if key in SMTP_KEYS}
+        policy["password"] = "existing-credential-not-exported"
+        validate_smtp(policy)
     patch = copy.deepcopy(POLICY)
-    if mode == "apply-recovery":
+    recovery_requested = mode in ("apply-recovery", "apply-configured-recovery")
+    if recovery_requested:
         if before.get("verifyEmail") is not False:
             raise ConfigurationError("Registration verification policy differs; resolve it before recovery activation.")
         override = (before.get("attributes") or {}).get(RESET_TTL_OVERRIDE)
         if override not in (None, "900", 900):
             raise ConfigurationError("A separate reset-token lifetime override conflicts; review it before activation.")
-        patch.update({"resetPasswordAllowed": True, "resetCredentialsFlow": FLOW_ALIAS, "smtpServer": smtp, "actionTokenGeneratedByUserLifespan": 900})
+        patch.update({"resetPasswordAllowed": True, "resetCredentialsFlow": FLOW_ALIAS, "actionTokenGeneratedByUserLifespan": 900})
+        if not configured:
+            patch["smtpServer"] = smtp
     save_snapshot(snapshot, before, tuple(patch), previous_smtp)
-    if mode == "apply-recovery":
+    if recovery_requested:
         ensure_flow(client)
     client.admin("PUT", data=patch)
     after = client.admin("GET")
@@ -262,7 +276,9 @@ def apply(client, mode, snapshot, smtp=None, previous_smtp=None):
             continue
         if after.get(field) != expected:
             raise ConfigurationError(f"Keycloak did not preserve the expected {field} value. Use the saved rollback snapshot.")
-    if mode == "apply-recovery":
+    if configured and after.get("smtpServer") != before.get("smtpServer"):
+        raise ConfigurationError("Configured SMTP changed concurrently; review the saved scoped rollback snapshot.")
+    if recovery_requested:
         verify_flow(client)
         if not after.get("smtpServer", {}).get("host"):
             raise ConfigurationError("Keycloak did not retain SMTP settings. Use the saved rollback snapshot.")
@@ -283,7 +299,7 @@ def rollback(client, snapshot):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("check", "apply-policy", "apply-recovery", "rollback"))
+    parser.add_argument("mode", choices=("check", "apply-policy", "apply-recovery", "apply-configured-recovery", "rollback"))
     auth = parser.add_mutually_exclusive_group(required=True)
     auth.add_argument("--auth-file", help="0600 JSON: server_url, client_id, client_secret")
     auth.add_argument("--auth-stdin", action="store_true", help="Read bounded credentials JSON directly from process memory through stdin")
@@ -299,6 +315,8 @@ def main(argv=None):
             raise ConfigurationError("Every mutation requires a private rollback snapshot path.")
         smtp = None
         previous_smtp = None
+        if args.mode == "apply-configured-recovery" and (not args.smtp_delivery_verified or args.smtp_file or args.previous_smtp_file):
+            raise ConfigurationError("Configured recovery requires independently verified delivery and does not import SMTP files.")
         if args.mode == "apply-recovery":
             if not args.smtp_file or not args.smtp_delivery_verified:
                 raise ConfigurationError("Recovery activation requires SMTP configuration and independently verified delivery.")

@@ -1098,13 +1098,19 @@ Produkční Keycloak aktuálně publikuje port pouze na své interní síťové
 adrese, nikoli na loopbacku hostitele.
 
 Režimy: `check` je čtení, `apply-policy` zapne pouze dočasnou ochranu,
-`apply-recovery` navíc ověřenou obnovu a `rollback` obnoví soukromý snapshot.
+`apply-recovery` navíc ověřenou obnovu s importem SMTP a `rollback` obnoví
+soukromý snapshot. `apply-configured-recovery --smtp-delivery-verified` použije
+SMTP, které správce již bezpečně zadal a otestoval přímo v Keycloaku. Tento
+režim ověří autentizované TLS, SMTP nepřepisuje ani neexportuje jeho heslo;
+SMTP není součástí jeho snapshotu ani rollbacku. Odmítá SMTP vstupní soubory.
 Každá změna vyžaduje nový snapshot 0600 v adresáři 0700 na ověřeném X5,
 například v `/srv/x5-production/archives/studio-balance/identity-recovery/`.
 Před zápisem vždy spustit `check-production-storage.sh`; při nedostupném X5
 se nevytváří náhradní kopie na interním disku. Snapshot obsahuje pouze měněné
 hodnoty; při existujícím SMTP je nutný úplný původní secret, maskované heslo
 z Admin API není použitelný rollback. Konfigurátor neobchází toto omezení.
+Tato potřeba původního SMTP secretu se týká pouze režimu, který SMTP mění;
+aktivace nad již nastaveným SMTP ponechává jeho nezměněnou konfiguraci na místě.
 
 SMTP mapa je samostatný soubor 0600: `host`, `port`, `from`, `fromDisplayName`,
 `ssl` nebo `starttls`, `auth`, `user`, `password` a volitelné timeouty. Veřejné

@@ -149,6 +149,34 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(len(self.client.executions), 3)
         recovery.verify_flow(self.client)
 
+    def test_configured_recovery_preserves_smtp_and_excludes_its_secret_from_snapshot_and_rollback(self):
+        self.client.realm['smtpServer'] = dict(self.smtp, password='**********')
+        before = copy.deepcopy(self.client.realm['smtpServer'])
+        snapshot = self.root / 'configured.json'
+        recovery.apply(self.client, 'apply-configured-recovery', snapshot)
+        self.assertTrue(self.client.realm['resetPasswordAllowed'])
+        self.assertEqual(self.client.realm['smtpServer'], before)
+        self.assertNotIn('smtpServer', recovery.private_json(snapshot)['fields'])
+        for method, suffix, data in self.client.operations:
+            if method == 'PUT' and suffix == '': self.assertNotIn('smtpServer', data)
+        recovery.rollback(self.client, snapshot)
+        self.assertFalse(self.client.realm['resetPasswordAllowed'])
+        self.assertEqual(self.client.realm['smtpServer'], before)
+
+    def test_configured_recovery_refuses_absent_or_insecure_smtp_without_mutation(self):
+        for settings in ({}, dict(self.smtp, starttls='false'), dict(self.smtp, password='')):
+            self.client.realm['smtpServer'] = settings
+            self.client.operations.clear()
+            with self.assertRaises(recovery.ConfigurationError):
+                recovery.apply(self.client, 'apply-configured-recovery', self.root / 'refused.json')
+            self.assertTrue(all(method == 'GET' for method, _, _ in self.client.operations))
+
+    def test_configured_recovery_cli_requires_delivery_before_authentication(self):
+        with mock.patch.object(recovery, 'Keycloak') as client, contextlib.redirect_stderr(io.StringIO()):
+            result = recovery.main(['apply-configured-recovery', '--auth-stdin', '--snapshot', str(self.root / 'unused.json')])
+        self.assertEqual(result, 1)
+        client.assert_not_called()
+
     def test_required_execution_updates_preserve_real_keycloak_order_metadata(self):
         recovery.ensure_flow(self.client)
         updates = [payload for method, path, payload in self.client.operations if method == "PUT" and path.endswith("/executions")]
