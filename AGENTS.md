@@ -10,34 +10,33 @@ and consistent with the real studio while keeping booking rules unambiguous.
 ## Working Style
 
 - Prefer retrieval-first work over broad repository scanning.
-- Chroma MCP is the primary retrieval and indexing interface. Start with its
-  `list_repositories`, then use MCP `search_code`, `search_docs`, or
-  `search_all` before reading many files; use MCP `get_file_context` after
-  choosing a useful hit and MCP `reindex_repo` after meaningful changes.
-- Chroma MCP tools may be exposed through the dynamic tool catalog instead of
-  the initial top-level tool list. Before declaring MCP unavailable, discover
-  the callable `mcp__chroma_dev__*` tools and call `list_repositories`.
-- Use the CLI only as a fallback after an actual MCP discovery or tool call
-  proves unavailable, or when this repository is missing from
-  `list_repositories` / rejected as `repository root is not managed`. Run the
-  fallback from this repository directory:
-  `"/Users/voldzi/Developer/18 2026/chromadb/tools/chroma-dev.sh" search-all "<query>" --root . --limit 5`
-- A missing MCP managed root is an MCP allowlist issue, not evidence that
-  Chroma or this repository's index is unavailable. The CLI can query the
-  index independently of that allowlist. Read the selected files directly
-  when MCP `get_file_context` cannot access this root.
-- If the CLI reports `Operation not permitted` while connecting to the local
-  service, use the normal tool approval mechanism to retry the same scoped
-  command outside the network-restricted sandbox. Do not treat a sandbox
-  denial as a stopped service or restart shared Chroma to work around it.
-- If Chroma reports `Error finding id`, treat the repository index as stale or
-  inconsistent: verify `/readyz`, then run an isolated forced `reindex_repo`
-  for this repository and confirm both search and `get_file_context` afterward.
-- If retrieval is unavailable or insufficient, inspect files directly and say
-  which access path failed once. Do not let retrieval block delivery.
-- Reindex after meaningful repository changes with the available Chroma MCP
-  tool or, from this repository directory,
+- **VCode Recall MCP is the primary retrieval and indexing interface.**
+  Discover the callable `mcp__vcode_recall__*` tools in the dynamic tool catalog
+  when they are not present in the initial list. Start with `list_repositories`,
+  then use `search_code`, `search_docs`, or `search_all`; read selected hits with
+  `get_file_context`. Use the exact managed root returned by the service.
+- This workstation uses the installed `/Applications/VCode Recall.app` and its
+  native service. Docker is not required for current retrieval. Do not restart,
+  recreate, or rebuild the retired Chroma Docker backend to repair MCP access.
+- Use the CLI only after actual MCP discovery/call failure, a missing managed
+  root, or insufficient retrieval. From this repository, the compatibility
+  wrapper routes supported commands to the installed VCode Recall service:
+  `"/Users/voldzi/Developer/18 2026/chromadb/tools/chroma-dev.sh" search-all "<query>" --root . --limit 5`.
+- A missing managed root is an access/allowlist issue, not proof that the
+  service or index is unavailable. Read selected files directly when needed;
+  do not broaden the allowlist or change shared service configuration.
+- For sandbox network denials, retry the same scoped operation through the
+  normal approval mechanism. A transport closure requires reconnecting the
+  native MCP client or using the CLI; it alone does not justify reindexing.
+- For `Error finding id`, verify native service readiness, then use an isolated
+  forced `reindex_repo` only for this managed repository and verify search and
+  `get_file_context` afterward. Do not rebuild shared storage.
+- If retrieval fails or is insufficient, state the failed path once and
+  inspect selected files directly. Retrieval must not block delivery.
+- After meaningful changes, incrementally index the changed managed repository
+  with VCode Recall MCP `reindex_repo`, or the compatibility wrapper:
   `"/Users/voldzi/Developer/18 2026/chromadb/tools/chroma-dev.sh" reindex --root .`.
+  Do not index a different dirty checkout as a substitute for the changed one.
 
 ## Source of Truth and Precedence
 

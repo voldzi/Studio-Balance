@@ -229,3 +229,31 @@ comparison preserved the 108 inventoried containers, image IDs and start times.
 No release, image, backup or user data was deleted; attributable recovered
 internal-disk space is therefore zero. This file/image proof does not claim a
 full database restore or a production rollback drill.
+
+
+## Storage recheck — 2026-10-18
+
+The expected X5 UUID `2f93f595-b61b-4eea-9054-7afa9b275b5b` was mounted
+read-write as a separate ext4 filesystem. The installed storage guard passed.
+Root had approximately 22 GiB free (92% used); X5 had approximately 55 GiB free
+(78% used). These are a point-in-time capacity check, not SSD wear measurements.
+
+Studio Balance already stores archives (427 MiB), rebuildable scanner cache
+(about 1.6 GiB), backups (2.6 MiB), and staging (424 KiB) under its dedicated
+X5 directories. Its internal operational root is only 34 MiB, primarily the
+three protected current/rollback source versions. The scoped retention dry run
+selected no paths or image tags. No additional files were moved or deleted;
+attributable internal space reclaimed is zero.
+
+All three production containers remained healthy with zero restarts and zero
+reported writable-layer growth. Live web image cache uses bounded 128 MiB tmpfs;
+worker temporary readiness files use bounded 4 MiB tmpfs. Docker log configuration
+is inherited `json-file` with no per-container size limits. Log sizes could not
+be read with the SSH user's permissions; no Docker internal files were changed.
+A future scoped application release should consider explicit log rotation after
+checking observability retention needs. Shared Docker data-root, builders,
+other products and persistent database state remain outside this change.
+
+No runtime/configuration or retention change was needed. Existing X5 missing-disk
+fail-closed guards and backup/restore procedures remain in force; no new restore
+drill or independent Proxmox backup verification was performed in this recheck.
