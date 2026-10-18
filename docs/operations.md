@@ -1244,3 +1244,23 @@ worker generation a analytics gate. Zachovat omezené logování i X5 guards.
 Rollback aplikace ponechá novou tabulku i již provedená odhlášení; rezervace ani
 finanční historii automaticky neobnovovat. Produkční ověření formuláře provést
 bez zrušení skutečné rezervace, není-li konkrétní zrušení výslovně autorizované.
+
+Produkční revize `54216e8` byla nasazena 18. 10. 2026 standardním
+nasazovacím postupem. Všechny tři image scans prošly; soukromá evidence je
+`/srv/x5-production/archives/studio-balance/image-scans/54216e8/20261018T110319Z-XUN4g4OC`.
+Ověření přesných obrazů API/web/worker, readiness a první generace rozvrhu workeru
+prošlo. Všechny kontejnery zůstaly healthy a zachovaly log limit 10 MiB × 3
+s kompresí. Checksum migrace 0033 v produkci odpovídá zdroji
+`d59feb580fad81efa0a88fd7621bfcdef3c14f44d9d2712a42937d19e4e87ecd`;
+aplikační role má SELECT/INSERT nové receipt tabulky. Dříve zrušené termíny
+Latino Ladies 6. 11. a 18. 12. zůstaly zrušené.
+
+Veřejné stránky a sessions API vracejí 200. Obě nové admin akce bez přihlášení
+vracejí 401 s ErrorResponse (error.code/message/requestId). Skutečná rezervace
+při ověřování nebyla zrušena. Přihlášené produkční UI zatím není ověřené:
+prohlížeč zůstal na přihlašovací stránce. Skutečný komponent formuláře prošel
+na syntetických datech při šířce 360 px bez vodorovného přetékání, včetně
+klávesnice, doprovodu, povinného důvodu prominutí, invalidace náhledu a potvrzení.
+Kompletní aplikační sada měla 525 úspěšných testů; po přidání dvou regresí
+prošla cílená sada 18 databázových testů (527 různých aplikačních testů celkem).
+Lint, typecheck, build, repo/contract/analytics gates a skeleton prošly.
