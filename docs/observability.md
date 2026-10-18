@@ -31,6 +31,22 @@ Pravidla:
 - klientská chyba může zobrazit request ID pro podporu;
 - audit log není náhradou aplikačního logu a naopak.
 
+## Omezené produkční logy kontejnerů
+
+Produkční web, API, worker i jednorázový migrátor používají Docker `json-file`
+s `max-size=10m`, `max-file=3`, `compress=true`. Limit platí pro každý kontejner
+samostatně (přibližně 30 MiB, plus režie); nejde o časovou retenci ani omezení
+objemu zápisů. Starší diagnostické soubory Docker automaticky odstraní.
+`docker logs` zůstává dostupné. Databázová auditní evidence, uživatelská data
+a identity/DMZ logy mají samostatná pravidla a tato změna je nemaže.
+
+Stejná politika je v produkčním Compose i sdíleném `storage-compose.yml`, který
+používá nasazení, rollback a servisní změny médií/registrací. Nové nastavení
+vyžaduje znovuvytvoření kontejneru; samotný restart ho neaktivuje. Nepřepisovat
+historické releasy ani globální Docker daemon. Před přechodem existující logy
+uchovat přes `docker logs --timestamps` v soukromém komprimovaném archivu na
+ověřeném X5; archiv nezaměňovat za úplnou právní nebo auditní evidenci.
+
 ## Metriky
 
 ### API a infrastruktura

@@ -257,3 +257,29 @@ other products and persistent database state remain outside this change.
 No runtime/configuration or retention change was needed. Existing X5 missing-disk
 fail-closed guards and backup/restore procedures remain in force; no new restore
 drill or independent Proxmox backup verification was performed in this recheck.
+
+
+## Bounded application logs — 2026-10-18
+
+Production Compose and the shared runtime overlay now specify `json-file`,
+`max-size=10m`, `max-file=3`, `compress=true` for web/API/worker/migrate.
+The three continuous services have a combined approximate 90 MiB ceiling
+before compression (plus Docker overhead); the migrator has its own 30 MiB.
+This bounds retained diagnostic storage, not cumulative SSD writes. Existing
+RAM caches remain unchanged. Database audit and identity/DMZ logs are unaffected.
+
+Before activation, capture existing container logs to a private gzip archive
+under `/srv/x5-production/archives/studio-balance/container-logs/<timestamp>/`.
+Hold the application operation lock; validate the X5 guard and merged Compose
+configuration, then recreate only web/API/worker with the same image IDs and
+without dependencies, builds or pulls. Check health, exact version, worker
+startup generation and public routes. The activation receipt must record
+previous/new logging configuration and preservation of other containers.
+
+Rollback: under the same lock and X5 guard, restore the private prior
+`storage-compose.yml` and service helper copies, then recreate the affected
+services from the retained current release with the same images and verify
+health. Do not truncate or manually manipulate Docker internal files. Future
+normal deployments and rollbacks retain bounded logs through the shared overlay;
+service media/registration helpers also include it. Archived diagnostic logs have
+no newly introduced automatic deletion policy.

@@ -17,7 +17,7 @@ chmod 600 "$backup_file"
 cd "$task_root"
 python3 "$task_root/provision-registration-control.py" --production
 export APP_VERSION="$version"
-compose=(docker compose --env-file "$task_root/.env.production" -f "$release/docker-compose.production.yml")
+compose=(docker compose --env-file "$task_root/.env.production" -f "$release/docker-compose.production.yml" -f "$task_root/storage-compose.yml")
 rollback() {
   cp -p "$backup_file" "$task_root/.env.production"
   "${compose[@]}" up -d --no-deps --no-build api

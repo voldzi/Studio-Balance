@@ -1,5 +1,19 @@
 # Applied by both deployment and rollback, including retained older revisions.
+x-bounded-logs: &bounded-logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
 services:
+  api:
+    logging: *bounded-logs
+  worker:
+    logging: *bounded-logs
+  migrate:
+    logging: *bounded-logs
   web:
+    logging: *bounded-logs
     tmpfs:
       - /app/apps/web/.next/cache:size=128m,uid=1000,gid=1000,mode=0700

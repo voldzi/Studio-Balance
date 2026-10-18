@@ -31,7 +31,7 @@ with open(temporary, 'w') as out:
 os.replace(temporary, target)
 PY
 export APP_VERSION="$version"
-compose=(docker compose --env-file "$task_root/.env.production" -f "$task_root/releases/$version/docker-compose.production.yml")
+compose=(docker compose --env-file "$task_root/.env.production" -f "$task_root/releases/$version/docker-compose.production.yml" -f "$task_root/storage-compose.yml")
 rollback() {
   cp -p "$backup_file" "$task_root/.env.production"
   "${compose[@]}" up -d --no-deps --no-build api

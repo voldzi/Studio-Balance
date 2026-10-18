@@ -1,13 +1,22 @@
 name: studio-balance-production
 
+x-bounded-logs: &bounded-logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
 x-runtime-defaults: &runtime-defaults
   init: true
+  logging: *bounded-logs
   restart: unless-stopped
   security_opt:
     - no-new-privileges:true
 
 services:
   migrate:
+    logging: *bounded-logs
     image: studiobalance/api:${APP_VERSION:?application version is required}
     build:
       context: .
