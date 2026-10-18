@@ -567,3 +567,24 @@ přijímá také `AdminReviewVisibilityPatch` s povinnými `published`, `feature
 vrací 400; její stávající plný `AdminReviewInput` se nemění. QR není nový REST endpoint,
 je to statický odkaz na `/recenze/napsat` a tisková stránka `/recenze/qr`.
 Žádný návrh se neposílá do VCode analytiky ani externích recenzních služeb.
+
+
+## Odhlášení klienta správcem (CD-074 / ADR 0032)
+
+- `POST /api/v1/admin/bookings/{id}/cancellation-preview`: `{scope:"one"|"both",
+  feePolicy:"standard"|"waive",reason,waiverReason?}`; waive vyžaduje waiverReason.
+  Vrací 200: sessionId, className, startAt, hasOtherParticipant, items (id, name,
+  participantKind, mode, feeCents, payableCents), totalFeeCents, releasedPlaces,
+  previewToken. Částky jsou v haléřích, za každé místo zvlášť.
+- `POST /api/v1/admin/bookings/{id}/cancel`: stejná data + previewToken (64 hex)
+  a idempotencyKey (UUID). Vrací 200: cancelledBookings, releasedPlaces,
+  totalFeeCents. Opakování stejného actor/key/payload vrací původní výsledek.
+
+Obě operace vyžadují aktuální MFA admin session. Neautorizovaný přístup 401/403,
+neplatné tělo 400, neexistující rezervace 404, změněný náhled/stav/klíč 409.
+ErrorResponse obsahuje code, message a requestId. Apply neakceptuje klientskou
+částku, status nebo identitu vlastníka. Scope both vybírá pouze aktivní dvojici
+stejného vlastníka a stejné lekce. Po začátku nebo při existujícím finančním
+záznamu se operace odmítne. Účet obdrží interní oznámení, žádné externí rozesílání
+se touto změnou neaktivuje. Při síťové chybě lze opakovat přesně stejný apply
+se stejným klíčem; při 409 načíst nový náhled a znovu potvrdit.

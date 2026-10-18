@@ -1233,3 +1233,14 @@ po ověření, že aktuální vazba odpovídá jeho `newLoginTheme`. Původní s
 ze zálohy se stejnými metadaty, provede `nginx -t`, reload a readiness;
 samostatně se případně vrátí zálohovaný instalátor. Žádný z těchto rollbacků
 nemění účty, hesla, OTP, rezervace nebo aplikační databázi.
+
+
+## Odhlášení klienta správcem — nasazení CD-074
+
+Migration 0033 přidává pouze admin_booking_cancellation_receipts; existující
+rezervace ani poplatky nemění. Ověřit default grants migrátora pro aplikační roli.
+Nasadit API/web společně standardní cestou včetně image scans, přesné revize,
+worker generation a analytics gate. Zachovat omezené logování i X5 guards.
+Rollback aplikace ponechá novou tabulku i již provedená odhlášení; rezervace ani
+finanční historii automaticky neobnovovat. Produkční ověření formuláře provést
+bez zrušení skutečné rezervace, není-li konkrétní zrušení výslovně autorizované.

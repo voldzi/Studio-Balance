@@ -903,3 +903,8 @@ dialog.pwa-install-modal::backdrop { background: transparent; }
   .admin-review-submissions .admin-row-actions { align-items: stretch; flex-direction: column; }
   .admin-submission-list > li, .admin-review-decision { padding: .85rem; }
 }
+
+.admin-booking-cancellation { flex-basis: 100%; min-width: 0; }
+.admin-booking-cancellation li { display: block; overflow-wrap: anywhere; }
+.admin-booking-cancellation .admin-check { display: flex; align-items: flex-start; gap: .7rem; min-height: 44px; }
+.admin-booking-cancellation .admin-check input { flex-shrink: 0; width: 1.3rem; min-height: 1.3rem; margin-top: .1rem; }

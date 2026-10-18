@@ -4,6 +4,8 @@
 !.env.example
 .venv/
 .chroma-state/
+.chroma-state-native-v1/
+.chroma-state-native-bge-m3-v1/
 node_modules/
 .pnpm-store/
 .next/

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 
 import { AdminRoleGuard, type AdminRequest } from "./admin-role.guard.js";
@@ -49,6 +49,14 @@ const scheduleChangeSchema = z.object({
   priceCents: z.number().int().min(0).max(1_000_000).optional(), bookingLeadDays: z.number().int().min(1).max(93).optional(),
   reopenCancelled: z.boolean(), updateBookedPrices: z.boolean(), reason: z.string().trim().min(3).max(1000)
 }).strict();
+
+const bookingCancellationSchema = z.object({scope:z.enum(["one","both"]),feePolicy:z.enum(["standard","waive"]),
+  reason:z.string().trim().min(3).max(1000),waiverReason:z.string().trim().min(3).max(1000).optional()}).strict();
+function cancellationInput(body: unknown) {
+  const data=parse(bookingCancellationSchema,body);
+  if (data.feePolicy === "waive" && !data.waiverReason) throw validation();
+  return data;
+}
 
 @Controller("api/v1/admin")
 @UseGuards(AdminRoleGuard)
@@ -111,6 +119,16 @@ export class AdminController {
   @Get("bookings") bookings(@Query() query: unknown) {
     const { sessionId, ...page } = parseBookingPage(bookingPageSchema.extend({ sessionId: uuid.optional() }).strict(), query);
     return this.admin.listBookings(sessionId, page);
+  }
+  @HttpCode(200)
+  @Post("bookings/:id/cancellation-preview") bookingCancellationPreview(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
+    return this.admin.previewBookingCancellation(parseId(id), cancellationInput(body), context(request));
+  }
+  @HttpCode(200)
+  @Post("bookings/:id/cancel") cancelBooking(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
+    const data=parse(bookingCancellationSchema.extend({previewToken:z.string().regex(/^[a-f0-9]{64}$/),idempotencyKey:z.string().uuid()}).strict(),body);
+    if (data.feePolicy === "waive" && !data.waiverReason) throw validation();
+    return this.admin.cancelBooking(parseId(id), data, context(request));
   }
   @Post("bookings/:id/attendance") attendance(@Req() request: AdminRequest, @Param("id") id: string, @Body() body: unknown) {
     const data = parse(z.object({ status: z.enum(["attended", "no_show"]), reason: z.string().trim().min(3).max(1000) }).strict(), body);

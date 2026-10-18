@@ -345,3 +345,12 @@ a sanitized access failures zůstávají dostupné. Odeslání SMTP, doručení
 a dokončení obnovy klientem se evidují odděleně. Dosavadní chráněné auth
 logy se při změně nemažou a nová retence historických záznamů se tímto
 rozhodnutím nezavádí.
+
+
+## Odhlášení správcem
+
+`booking.cancelled_by_admin` v application_audit nese správce, booking, requestId,
+scope, reason, waiverReason, mode, feePolicy a feeCents. Jde o neveřejný databázový
+audit, ne událost veřejné analytiky. Důvody a jména se nepřidávají do provozních
+logů. Síťovou chybu korelovat requestId a stavem rezervace; replay receipt potvrzuje
+commit bez druhého účtování. Neukládat cookie ani token náhledu do chatu/logů.

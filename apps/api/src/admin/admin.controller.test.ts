@@ -27,11 +27,13 @@ describe("admin authorization", () => {
   const applyClassPrice = vi.fn(async () => ({ className: "Barre", weeklyRulesChanged: 2, sessionsChanged: 3, activeBookings: 1, bookedPricesChanged: 0, blockedBookings: 0, previewToken: "a".repeat(64) }));
   const previewWeeklyRuleEdit = vi.fn(async () => ({ className: "Barre", futureSessions: 3, bookedSessions: 1, activeBookings: 1, manualSessions: 0, previewToken: "b".repeat(64) }));
   const applyWeeklyRuleEdit = vi.fn(async () => ({ id: "71ff7570-dabb-488b-bb6e-43e36ddc602e", futureSessions: 3, activeBookings: 1 }));
+  const previewBookingCancellation=vi.fn(async()=>({previewToken:"d".repeat(64),items:[],totalFeeCents:0}));
+  const cancelBooking=vi.fn(async()=>({cancelledBookings:1,releasedPlaces:1,totalFeeCents:0}));
   const changeScheduleBatch = vi.fn(async () => ({ changedSessions: 1, notifiedBookings: 0 }));
   afterEach(async () => { await app?.close(); });
 
   async function createApplication() {
-    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { listBookings, dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateSessionCapacity, previewScheduleChange, applyScheduleChange, updateWeeklyRule, previewWeeklyRuleEdit, applyWeeklyRuleEdit, changeScheduleBatch, previewClassPrice, applyClassPrice } }] }).compile();
+    const module = await Test.createTestingModule({ controllers: [AdminController], providers: [AdminRoleGuard, { provide: OpaqueSessionService, useValue: opaqueSessionServiceTestDouble }, { provide: RuntimeConfigService, useValue: { value: config } }, { provide: AdminService, useValue: { previewBookingCancellation,cancelBooking,listBookings, dashboard: async () => ({ activeBookings: 2, clients: 1, today: [], nextWeek: [], metrics: { reservationsThisWeek: 0, attendedThisMonth: 0, noShowsThisMonth: 0, lateCancellationsThisMonth: 0, attendanceRate90Days: null, estimatedAttendedValueThisMonthCents: 0 }, classPopularity: [], weeklyAttendance: [] }), updateSession, updateSessionCapacity, previewScheduleChange, applyScheduleChange, updateWeeklyRule, previewWeeklyRuleEdit, applyWeeklyRuleEdit, changeScheduleBatch, previewClassPrice, applyClassPrice } }] }).compile();
     const created = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: false }), { logger: false });
     configureHttp(created, config); await created.init(); await created.getHttpAdapter().getInstance().ready(); app = created; return created;
   }
@@ -170,6 +172,28 @@ describe("admin authorization", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ items: [], nextCursor: null });
     expect(listBookings).toHaveBeenCalledWith(sessionId, { limit: 100, from: "2026-10-25", through: "2026-10-25" });
+  });
+  it("protects both administrative cancellation operations with role and MFA",async()=>{
+    const current=await createApplication();
+    for(const action of ["cancel","cancellation-preview"]){
+      for(const [auth,status] of [[undefined,401],[await cookie(["client"]),403],[await cookie(["admin"],"sb_admin_session",false),403]] as const){
+        const response=await current.inject({method:"POST",url:`/api/v1/admin/bookings/71ff7570-dabb-488b-bb6e-43e36ddc602e/${action}`,headers:auth?{cookie:auth}:{},payload:{}});
+        expect(response.statusCode).toBe(status);
+      }
+    }
+  });
+  it("validates scope, preview, reasons and replay key and rejects client-supplied fee amounts",async()=>{
+    const current=await createApplication();const headers={cookie:await cookie(["admin"])};
+    const url="/api/v1/admin/bookings/71ff7570-dabb-488b-bb6e-43e36ddc602e";
+    const body={scope:"one",feePolicy:"standard",reason:"Na žádost klienta."};
+    for(const payload of [{...body,feeCents:0},{...body,scope:"all"},{...body,feePolicy:"waive"},{...body,reason:""}]){
+      expect((await current.inject({method:"POST",url:url+"/cancellation-preview",headers,payload})).statusCode).toBe(400);
+    }
+    expect((await current.inject({method:"POST",url:url+"/cancellation-preview",headers,payload:body})).statusCode).toBe(200);
+    expect((await current.inject({method:"POST",url:url+"/cancel",headers,payload:body})).statusCode).toBe(400);
+    const payload={...body,previewToken:"d".repeat(64),idempotencyKey:"71ff7570-dabb-488b-bb6e-43e36ddc602e"};
+    const result=await current.inject({method:"POST",url:url+"/cancel",headers,payload});
+    expect(result.statusCode).toBe(200);expect(result.json()).toEqual({cancelledBookings:1,releasedPlaces:1,totalFeeCents:0});
   });
 
 });

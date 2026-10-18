@@ -665,3 +665,25 @@ schránce Mailpit na `127.0.0.1:18255`. Vyžaduje pouze syntetické
 (privátní adresa testovacího SMTP v oddělené Docker síti). Realm
 `studio-balance` musí na této instanci před spuštěním chybět; test jej po
 ověření odstraní. Nesmí se použít produkční server ani jeho credentials.
+
+
+## Administrative cancellation release gate (CD-074)
+
+Isolated PostgreSQL scenarios cover self/companion/both scope, another owner,
+exact DST spring/fall 24h instants, free-change window, late snapshots/waivers,
+old financial records, stale price/cutoff previews, simultaneous admins/retries,
+changed replay payload, started/cancelled lessons, MFA/role defense, notice/outbox
+atomicity, capacity release and concurrent new booking. HTTP tests cover auth,
+strict body validation and receipt status; UI checks cover future-only action,
+preview/fee/scope confirmation, keyboard and 360px layout, errors and safe retry.
+Production smoke must not cancel an unapproved customer's real reservation.
+
+Validation for CD-074: full local run passed 525 application tests (API 258,
+web 255, domain 7, worker 5), typecheck, lint, build, repository/contract/analytics
+gates. Added final transaction-rollback and old-retry/replacement-reservation
+regressions are checked separately. UI harness uses the actual component with
+synthetic API responses; verified one/both seats, waiver reason, explicit unchecked
+confirmation, keyboard apply and success at 360px without horizontal overflow.
+An initial 512MiB test PostgreSQL tmpfs filled during repeated migration suites;
+verification was rerun successfully in a clean task-owned 2GiB tmpfs database.
+No production data was used.

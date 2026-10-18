@@ -717,3 +717,26 @@ nezměněný Authenticator. Uživatel vidí, že heslo ani kódy nemá nikomu po
 Nápověda nenahrazuje formuláře Keycloaku, má čitelný nadpis, viditelný fokus
 a dotykové cíle alespoň 48 px. Ověřuje se CS/EN, 360 px i desktop, včetně
 chyb, vypnuté obnovy a prošlého odkazu.
+
+
+## Odhlásit klienta (CD-074)
+
+V přehledu přihlášených je u budoucí rezervace tlačítko **Odhlásit klienta**.
+Vložený formulář po otevření přesune fokus na nadpis a načte serverový náhled.
+Výchozí rozsah **Pouze tuto osobu** je bezpečný pro samostatné místo i doprovod;
+aktivní dvojice nabízí **Klienta i jeho doprovod (obě místa)**. Povinný důvod
+má upravitelnou výchozí hodnotu „Odhlášení na žádost klienta.“ Změna rozsahu,
+důvodu nebo fee volby zneplatní potvrzení a vyžádá nový náhled.
+
+Náhled zřetelně ukáže osoby, lekci, termín, režim a částku za osobu i celkem.
+Prominutí není výchozí: checkbox vyžádá vlastní důvod. Finální checkbox potvrzuje
+osoby a finanční dopad, teprve potom je dostupné **Potvrdit odhlášení**.
+**Ponechat rezervaci** zavře formulář bez změny. Loading blokuje dvojklik;
+401 nabídne přihlášení, 409 nový náhled, nejistý síťový výsledek zachová klíč
+pro bezpečné opakování. Úspěch oznámí uvolnění místa a obnoví roster/počty.
+Minulé, docházkou vyhodnocené a zrušené rezervace akci nenabízejí.
+
+Jednoduchá nápověda: Rezervace → vybrat lekci → u klienta Odhlásit klienta →
+zkontrolovat osoby a poplatek → potvrdit. Nový klient se může přihlásit jen
+během stále otevřeného rezervačního okna. Formulář funguje od 360 px a klávesnicí;
+obsah oznámení ani důvod nesmějí vstoupit do veřejné analytiky.

@@ -1240,6 +1240,200 @@
         }
       }
     },
+    "/api/v1/admin/bookings/{id}/cancellation-preview": {
+      "post": {
+        "operationId": "previewAdminBookingCancellation",
+        "summary": "Preview cancellation of selected client seats",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminBookingCancellationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cancellation preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBookingCancellationPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA administrator required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State or preview conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bookings/{id}/cancel": {
+      "post": {
+        "operationId": "cancelAdminBooking",
+        "summary": "Cancel selected client seats with explicit fees and durable retry receipt",
+        "tags": [
+          "Administration"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminBookingCancellationApply"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Seats released, or exact idempotent replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBookingCancellationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "MFA administrator required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State or preview conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/bookings/{id}/attendance": {"post":{"summary":"Record attendance or no-show","operationId":"adminRecordAttendance","tags":["Administration"],"security":[{"adminSession":[]}],"parameters":[{"$ref":"#/components/parameters/ResourceId"}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminAttendanceRequest"}}}},"responses":{"200":{"description":"Attendance recorded.","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminAttendanceResult"}}}},"400":{"$ref":"#/components/responses/Error"},"404":{"$ref":"#/components/responses/Error"},"401":{"$ref":"#/components/responses/Error"},"403":{"$ref":"#/components/responses/Error"},"409":{"$ref":"#/components/responses/Error"}},"description":"Only after the lesson starts. Cancelled bookings cannot be revived. Same status is idempotent. Corrections preserve settled or waived fees and the original fee amount."}}
   },
   "components": {
@@ -1813,6 +2007,202 @@
           "companionResponsibilityAccepted": [
             "companionName"
           ]
+        }
+      },
+      "AdminBookingCancellationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope",
+          "feePolicy",
+          "reason"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "one",
+              "both"
+            ]
+          },
+          "feePolicy": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "waive"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000
+          },
+          "waiverReason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000
+          }
+        },
+        "description": "waive requires waiverReason. Only future scheduled reserved bookings; an existing financial record blocks cancellation."
+      },
+      "AdminBookingCancellationPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sessionId",
+          "className",
+          "startAt",
+          "hasOtherParticipant",
+          "items",
+          "totalFeeCents",
+          "releasedPlaces",
+          "previewToken"
+        ],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "className": {
+            "type": "string"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasOtherParticipant": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "name",
+                "participantKind",
+                "mode",
+                "feeCents",
+                "payableCents"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "participantKind": {
+                  "type": "string",
+                  "enum": [
+                    "self",
+                    "companion"
+                  ]
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "on_time",
+                    "late",
+                    "free_change_window"
+                  ]
+                },
+                "feeCents": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "payableCents": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "totalFeeCents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "releasedPlaces": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2
+          },
+          "previewToken": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "AdminBookingCancellationApply": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scope",
+          "feePolicy",
+          "reason",
+          "previewToken",
+          "idempotencyKey"
+        ],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "one",
+              "both"
+            ]
+          },
+          "feePolicy": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "waive"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000
+          },
+          "waiverReason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000
+          },
+          "previewToken": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AdminBookingCancellationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cancelledBookings",
+          "releasedPlaces",
+          "totalFeeCents"
+        ],
+        "properties": {
+          "cancelledBookings": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "releasedPlaces": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalFeeCents": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       },
       "AdminBooking": {

@@ -1,3 +1,4 @@
+import { previewAdminCancellation, applyAdminCancellation, type AdminCancellationInput, type AdminCancellationApply } from "./booking-cancellation.js";
 import { applyAttendanceWithClient } from "./attendance-mutation.js";
 import { bookingPage, type BookingPageQuery } from "../booking/booking-list-page.js";
 import { scheduleChange, type ScheduleChangeInput } from "./schedule-change.js";
@@ -67,6 +68,9 @@ type WeeklyAttendanceRow = { attended: number; week_start: string };
 @Injectable()
 export class AdminService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+
+  previewBookingCancellation(id: string, data: AdminCancellationInput, context: MutationContext) { return previewAdminCancellation(this.database,id,data,context); }
+  cancelBooking(id: string, data: AdminCancellationApply, context: MutationContext) { return applyAdminCancellation(this.database,id,data,context); }
 
   async dashboard() {
     const [sessions, bookings, clients, metrics, classPopularity, weeklyAttendance] = await Promise.all([

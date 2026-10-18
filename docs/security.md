@@ -557,3 +557,15 @@ Omezení četnosti na dedicated login hostu se týká pouze POST formulářů
 špička 20 požadavků navíc. GET, zdroje tématu, token refresh a ostatní realmy
 se neomezují tímto pravidlem. Překročení vrací srozumitelnou chybu 429
 a `Retry-After: 60`; chrání také obnovu před zneužitím k rozesílání zpráv.
+
+
+## Administrative seat cancellation (CD-074)
+
+Preview/apply require MFA administrator cookies and existing same-origin proxy
+protections. Service also checks roles/MFA. No client subject/cookie delegation.
+Server derives owner and amounts, validates both-seat scope and state fingerprint,
+serializes retries with an actor/key transaction lock and persists receipts in
+migration 0033. Separate client idempotency and identity remain unchanged. Existing
+fees, started lessons and confirmed instructor records fail closed. Reasons are
+bounded strings rendered as text; never public analytics or structured log fields.
+Waiver needs an explicit additional reason and is audited without deleting fees.

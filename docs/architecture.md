@@ -378,3 +378,11 @@ QR je lokální statický asset s přímým odkazem na stejný formulář, nikol
 provider, účet, identifikátor místa nebo analytický kanál. Nové stránky jsou
 noindex a nevstupují do VCode analytiky. Recenze zůstávají textem v PostgreSQL;
 S3, booking, Keycloak a workerové fronty se tímto řezem nepropojují.
+
+
+## Administrative cancellation receipts (ADR 0032)
+
+`admin_booking_cancellation_receipts` separates actor-scoped administrative replay
+responses from client booking receipts. Preview/apply in the common API share
+PostgreSQL transactions with seats, fee snapshots, audit, notices and pending
+outbox invalidation. No queue/provider change or schema destructive migration.

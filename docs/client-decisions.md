@@ -518,3 +518,31 @@ Omezení četnosti na dedicated login hostu se týká pouze POST formulářů
 špička 20 požadavků navíc. GET, zdroje tématu, token refresh a ostatní realmy
 se neomezují tímto pravidlem. Překročení vrací srozumitelnou chybu 429
 a `Retry-After: 60`; chrání také obnovu před zneužitím k rozesílání zpráv.
+
+
+## CD-074 — Odhlášení klienta správcem (2026-10-18)
+
+Vlastník schválil realizaci, otestování a produkční nasazení odhlášení jedné
+konkrétní rezervace správcem na žádost klienta. U budoucí rezervace v seznamu
+účastníků je akce **Odhlásit klienta**. Výchozí rozsah je pouze vybraná osoba;
+při aktivním klientovi a doprovodu lze výslovně zvolit obě místa stejného
+vlastníka ve stejném termínu. Jiné rezervace se nezmění.
+
+Před potvrzením server zobrazí vybrané osoby, lekci, datum/čas, storno režim,
+částku a počet uvolněných míst. Platí přesná uložená hranice 24 hodin a také
+případné platné okno bezplatného odmítnutí změny. Pozdní storno standardně
+vytvoří poplatek ve výši snapshotu ceny za každou osobu. Správce může poplatek
+výslovně prominout s dalším povinným důvodem; uchová se fee ve stavu waived.
+Nahradí-li místo jiný klient, nepromíjí to původní poplatek automaticky.
+
+Odhlášení vyžaduje důvod, náhled a výslovné potvrzení. Historie se nemaže,
+místo se transakčně uvolní, neaktuální čekající připomínky se zneplatní a
+klient dostane oznámení v účtu. Nové rezervace nadále podléhají původnímu
+rezervačnímu oknu, kapacitě a dostupnosti. Nezavádí se čekací listina ani
+upozornění ostatním zájemcům. Po začátku lekce patří změny do docházky.
+
+MFA a administrátorské oprávnění jsou povinné. Nová operace nepředstírá
+přihlášení klienta. Opakování stejného požadavku vrátí uložený výsledek bez
+druhého poplatku nebo oznámení. Změněný náhled se odmítne a musí se potvrdit
+znovu. Dokončené/již zrušené rezervace, potvrzené výkazy a existující finanční
+záznamy se nepřepisují. Architekturu určuje ADR 0032.

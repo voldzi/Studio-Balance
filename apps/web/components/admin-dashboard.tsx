@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminBookingCancellation } from "./admin-booking-cancellation";
+
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
@@ -293,7 +295,7 @@ export function AdminDashboard({ email }: { email: string }) {
     {tab === "news" && <><AdminHeading eyebrow="Klientská aplikace" title="Novinky ze studia" copy="Vytvořte krátké, skutečné sdělení. Publikovaná novinka se objeví klientkám v jejich účtu." /><div className="admin-two-columns"><DataCard title={editingNews ? `Upravit: ${editingNews.title}` : "Nová novinka"}><NewsForm busy={busy} item={editingNews} key={editingNews?.id ?? "new"} nextSortOrder={news.length * 10 + 10} onCancel={() => setEditingNews(null)} onSubmit={saveNews} /></DataCard><DataCard title={`${news.length} novinek`}><ul className="admin-simple-list">{news.length ? news.map((item) => <li key={item.id}><div><strong>{item.title}</strong><span>{item.summary}</span><span>{item.published ? item.featured ? "Publikováno a zvýrazněno" : "Publikováno" : "Koncept / skryto"}</span></div><button onClick={() => setEditingNews(item)} type="button">Upravit</button></li>) : <Empty text="Zatím není vložená žádná novinka." />}</ul></DataCard></div></>}
     {tab === "clients" && <><AdminHeading eyebrow="Klientská evidence" title="Klienti" copy="Kontaktní údaje a přehled rezervací, bez platebních údajů." /><DataCard title={`${clients.length} klientů`}><div className="admin-table-wrap"><table><thead><tr><th>Klient</th><th>E-mail</th><th>Telefon</th><th>Rezervace</th><th>Ověření</th></tr></thead><tbody>{clients.map((item) => <tr key={item.id}><td>{[item.firstName,item.lastName].filter(Boolean).join(" ") || "Nedoplněno"}</td><td>{item.email}</td><td>{item.phone ?? "—"}</td><td>{item.bookingCount}</td><td>{item.emailVerified ? "Ověřeno" : "Neověřeno"}</td></tr>)}</tbody></table></div></DataCard></>}
     {tab === "instructor-records" && <InstructorRecords instructors={instructors} onAuthRequired={requireAdminAuth} onSaved={completionSaved} />}
-    {tab === "bookings" && <BookingsPanel rosterRevision={attendanceRevision} instructors={instructors} onAuthRequired={requireAdminAuth} onCompletionSaved={completionSaved} bookingDates={bookingDates} bookings={bookings} busy={busy} loading={bookingsLoading} loadingMore={bookingsLoadingMore} nextCursor={bookingsCursor} onDates={applyBookingDates} onLoadMore={() => void loadMoreBookings()} onAttendance={attendance} onBack={() => { setSelectedSession(null); setShowAllBookings(false); setBookings([]); setTab(rosterOrigin); }} onSelect={openRoster} onShowAll={() => { setBookings([]); setSelectedSession(null); setShowAllBookings(true); }} selectedSession={selectedSession ? sessions.find((item) => item.id === selectedSession.id) ?? selectedSession : null} sessions={sessions} showAll={showAllBookings} />}
+    {tab === "bookings" && <BookingsPanel onCancellationSaved={async()=>{ setMessage("Klient byl odhlášen a místo uvolněno."); await load(); setBookingsRefresh(v=>v+1); }} rosterRevision={attendanceRevision} instructors={instructors} onAuthRequired={requireAdminAuth} onCompletionSaved={completionSaved} bookingDates={bookingDates} bookings={bookings} busy={busy} loading={bookingsLoading} loadingMore={bookingsLoadingMore} nextCursor={bookingsCursor} onDates={applyBookingDates} onLoadMore={() => void loadMoreBookings()} onAttendance={attendance} onBack={() => { setSelectedSession(null); setShowAllBookings(false); setBookings([]); setTab(rosterOrigin); }} onSelect={openRoster} onShowAll={() => { setBookings([]); setSelectedSession(null); setShowAllBookings(true); }} selectedSession={selectedSession ? sessions.find((item) => item.id === selectedSession.id) ?? selectedSession : null} sessions={sessions} showAll={showAllBookings} />}
 
   </>}</section></main>;
 }
@@ -410,11 +412,12 @@ function adminBookingsPath(sessionId: string | undefined, dates: { from: string;
   return `/api/v1/admin/bookings?${query}`;
 }
 
-export function BookingsPanel({ bookingDates, bookings, busy, loading, loadingMore, nextCursor, onAttendance, onBack, onDates, onLoadMore, onSelect, onShowAll, selectedSession, sessions, showAll, instructors, onAuthRequired, onCompletionSaved, rosterRevision }: {
+export function BookingsPanel({ onCancellationSaved, bookingDates, bookings, busy, loading, loadingMore, nextCursor, onAttendance, onBack, onDates, onLoadMore, onSelect, onShowAll, selectedSession, sessions, showAll, instructors, onAuthRequired, onCompletionSaved, rosterRevision }: {
   rosterRevision?: number;
   instructors?: Instructor[]; onAuthRequired?: () => void; onCompletionSaved?: () => void;
   bookingDates: { from: string; through: string }; loadingMore: boolean; nextCursor: string | null;
   onDates: (dates: { from: string; through: string }) => void; onLoadMore: () => void;
+  onCancellationSaved: () => Promise<void>;
   bookings: Booking[]; busy: boolean; loading: boolean; onAttendance: (booking: Booking, status: "attended" | "no_show") => Promise<void>;
   onBack: () => void; onSelect: (session: Session) => void; onShowAll: () => void; selectedSession: Session | null; sessions: Session[]; showAll: boolean;
 }) {
@@ -431,8 +434,8 @@ export function BookingsPanel({ bookingDates, bookings, busy, loading, loadingMo
         onDates({ from: String(data.get("from") ?? ""), through: String(data.get("through") ?? "") });
       }}><label>Datum lekce od<input defaultValue={bookingDates.from} name="from" type="date" /></label><label>Datum lekce do<input defaultValue={bookingDates.through} min={bookingDates.from || undefined} name="through" type="date" /></label><div className="admin-row-actions"><button className="button button-small" disabled={loading || loadingMore} type="submit">Použít období</button>{(bookingDates.from || bookingDates.through) && <button disabled={loading || loadingMore} onClick={() => onDates({ from: "", through: "" })} type="button">Všechna období</button>}</div></form>}
       {loading ? <p role="status">Načítám přihlášené…</p> : <>
-        <BookingRosterList bookings={current} busy={busy} onAttendance={onAttendance} showSession={!selectedSession} />
-        {cancelled.length > 0 && <details className="admin-roster-cancelled"><summary>Zrušené rezervace ({cancelled.length})</summary><BookingRosterList bookings={cancelled} busy={busy} onAttendance={onAttendance} showSession={!selectedSession} /></details>}
+        <BookingRosterList onCancelled={onCancellationSaved} onAuthRequired={onAuthRequired!} bookings={current} busy={busy} onAttendance={onAttendance} showSession={!selectedSession} />
+        {cancelled.length > 0 && <details className="admin-roster-cancelled"><summary>Zrušené rezervace ({cancelled.length})</summary><BookingRosterList onCancelled={onCancellationSaved} onAuthRequired={onAuthRequired!} bookings={cancelled} busy={busy} onAttendance={onAttendance} showSession={!selectedSession} /></details>}
         {nextCursor && <button className="button button-secondary" disabled={busy || loadingMore} onClick={onLoadMore} type="button">{loadingMore ? "Načítám další rezervace…" : "Načíst další rezervace"}</button>}
       </>}
     </DataCard>}
@@ -440,9 +443,10 @@ export function BookingsPanel({ bookingDates, bookings, busy, loading, loadingMo
   </>;
 }
 
-function BookingRosterList({ bookings, busy, onAttendance, showSession }: { bookings: Booking[]; busy: boolean; onAttendance: (booking: Booking, status: "attended" | "no_show") => Promise<void>; showSession: boolean }) {
+function BookingRosterList({ bookings, busy, onAttendance, showSession, onCancelled, onAuthRequired }: { onCancelled:()=>Promise<void>; onAuthRequired:()=>void; bookings: Booking[]; busy: boolean; onAttendance: (booking: Booking, status: "attended" | "no_show") => Promise<void>; showSession: boolean }) {
+  const [cancelling,setCancelling]=useState<string|null>(null);
   if (!bookings.length) return <Empty text={showSession ? "Zatím zde nejsou žádné aktivní rezervace." : "Na tento termín zatím není nikdo přihlášený."} />;
-  return <ul className="admin-attendee-list">{bookings.map((item) => <li key={item.id}><div><strong>{item.participant?.kind === "companion" ? item.participant.name : [item.user.firstName,item.user.lastName].filter(Boolean).join(" ") || item.user.email}</strong>{item.participant?.kind === "companion" && <span>Doprovod · rezervoval/a {[item.user.firstName,item.user.lastName].filter(Boolean).join(" ") || item.user.email}</span>}{showSession && <span>{item.session.className} · {formatStudioDate(item.session.startAt,{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"})}</span>}<span>{item.user.phone ?? item.user.email}</span></div><span>{bookingLabels[item.status] ?? item.status}</span>{["reserved", "attended", "no_show"].includes(item.status) && <div className="admin-row-actions">{item.status !== "attended" && <button disabled={busy || new Date(item.session.startAt).getTime() > Date.now()} onClick={() => void onAttendance(item,"attended")} type="button">Účast</button>}{item.status !== "no_show" && <button disabled={busy || new Date(item.session.startAt).getTime() > Date.now()} onClick={() => void onAttendance(item,"no_show")} type="button">Neúčast</button>}</div>}</li>)}</ul>;
+  return <ul className="admin-attendee-list">{bookings.map((item) => <li key={item.id}><div><strong>{item.participant?.kind === "companion" ? item.participant.name : [item.user.firstName,item.user.lastName].filter(Boolean).join(" ") || item.user.email}</strong>{item.participant?.kind === "companion" && <span>Doprovod · rezervoval/a {[item.user.firstName,item.user.lastName].filter(Boolean).join(" ") || item.user.email}</span>}{showSession && <span>{item.session.className} · {formatStudioDate(item.session.startAt,{day:"numeric",month:"numeric",year:"numeric",hour:"2-digit",minute:"2-digit"})}</span>}<span>{item.user.phone ?? item.user.email}</span></div><span>{bookingLabels[item.status] ?? item.status}</span>{item.status==="reserved" && new Date(item.session.startAt).getTime()>Date.now() && <button type="button" disabled={busy} onClick={()=>setCancelling(item.id)}>Odhlásit klienta</button>}{cancelling===item.id&&<AdminBookingCancellation bookingId={item.id} onClose={()=>setCancelling(null)} onSaved={onCancelled} onAuthRequired={onAuthRequired}/>}{["reserved", "attended", "no_show"].includes(item.status) && <div className="admin-row-actions">{item.status !== "attended" && <button disabled={busy || new Date(item.session.startAt).getTime() > Date.now()} onClick={() => void onAttendance(item,"attended")} type="button">Účast</button>}{item.status !== "no_show" && <button disabled={busy || new Date(item.session.startAt).getTime() > Date.now()} onClick={() => void onAttendance(item,"no_show")} type="button">Neúčast</button>}</div>}</li>)}</ul>;
 }
 
 function studioDateTimeInput(value: string) {

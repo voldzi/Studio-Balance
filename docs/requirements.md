@@ -430,3 +430,12 @@ po chybě zachová vstup jen v aktuální paměti stránky, nevytváří trvalou
 osobních údajů. QR tisk je odkaz na týž formulář pro vlastní telefon klienta,
 ne společný účet studia. Nové cesty `/recenze/napsat` a `/recenze/qr` ani
 formulářové interakce nevstupují do veřejné analytiky.
+
+
+## Odhlášení správcem — CD-074
+
+Admin s MFA může před začátkem naplánované lekce odhlásit rezervovanou osobu
+nebo výslovně obě aktivní místa téhož vlastníka. Náhled, důvod, potvrzení dopadu,
+přesná 24h hranice/free-change window, snapshot ceny a výslovné prominutí fee
+jsou povinné. Místo se uvolní transakčně; historie, audit a účetní stav zůstanou.
+Replay nesmí vytvořit druhý fee/notifikaci. Rezervační okna se neprodlužují.

@@ -1079,6 +1079,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/bookings/{id}/cancellation-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview cancellation of selected client seats */
+        post: operations["previewAdminBookingCancellation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/bookings/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel selected client seats with explicit fees and durable retry receipt */
+        post: operations["cancelAdminBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/bookings/{id}/attendance": {
         parameters: {
             query?: never;
@@ -1538,6 +1572,53 @@ export interface components {
              * @constant
              */
             companionResponsibilityAccepted?: true;
+        };
+        /** @description waive requires waiverReason. Only future scheduled reserved bookings; an existing financial record blocks cancellation. */
+        AdminBookingCancellationInput: {
+            /** @enum {string} */
+            scope: "one" | "both";
+            /** @enum {string} */
+            feePolicy: "standard" | "waive";
+            reason: string;
+            waiverReason?: string;
+        };
+        AdminBookingCancellationPreview: {
+            /** Format: uuid */
+            sessionId: string;
+            className: string;
+            /** Format: date-time */
+            startAt: string;
+            hasOtherParticipant: boolean;
+            items: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** @enum {string} */
+                participantKind: "self" | "companion";
+                /** @enum {string} */
+                mode: "on_time" | "late" | "free_change_window";
+                feeCents: number;
+                payableCents: number;
+            }[];
+            totalFeeCents: number;
+            releasedPlaces: number;
+            previewToken: string;
+        };
+        AdminBookingCancellationApply: {
+            /** @enum {string} */
+            scope: "one" | "both";
+            /** @enum {string} */
+            feePolicy: "standard" | "waive";
+            reason: string;
+            waiverReason?: string;
+            previewToken: string;
+            /** Format: uuid */
+            idempotencyKey: string;
+        };
+        AdminBookingCancellationResult: {
+            cancelledBookings: number;
+            releasedPlaces: number;
+            totalFeeCents: number;
         };
         AdminBooking: {
             /** Format: uuid */
@@ -4081,6 +4162,148 @@ export interface operations {
             400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
+        };
+    };
+    previewAdminBookingCancellation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBookingCancellationInput"];
+            };
+        };
+        responses: {
+            /** @description Cancellation preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBookingCancellationPreview"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Sign in required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description MFA administrator required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description State or preview conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancelAdminBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBookingCancellationApply"];
+            };
+        };
+        responses: {
+            /** @description Seats released, or exact idempotent replay */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBookingCancellationResult"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Sign in required */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description MFA administrator required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description State or preview conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     adminRecordAttendance: {
