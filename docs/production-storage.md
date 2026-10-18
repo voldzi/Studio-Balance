@@ -283,3 +283,25 @@ health. Do not truncate or manually manipulate Docker internal files. Future
 normal deployments and rollbacks retain bounded logs through the shared overlay;
 service media/registration helpers also include it. Archived diagnostic logs have
 no newly introduced automatic deletion policy.
+
+
+Activation completed on 2026-10-18 with maintenance source `5483615`, retaining
+application image revision `7a00e0a`. Exact Docker inspect configuration matched
+`Type=json-file`, `Config={max-size:10m,max-file:3,compress:true}` for all three
+running services. Readiness/revision verification included fresh worker schedule
+generation; public `/`, `/prihlaseni`, `/admin/prihlaseni`, and `/api/v1/sessions`
+returned HTTP 200. Image IDs and all other containers' IDs/start times were
+unchanged. No migrator was started and no schema migration was performed;
+its next invocation receives the same limit through the overlay.
+
+Private success receipt:
+`/srv/x5-production/archives/studio-balance/container-logs/20261018T073622Z/receipt.json`.
+Original pre-change logs remain in sibling `20261018T073518Z` (about 1.4 MiB);
+the successful retry has about 40 KiB of logs/configuration/evidence. Gzip
+integrity was checked. The initial attempt restored prior configuration because
+the verifier incorrectly compared Compose `driver/options` with Docker inspect
+`Type/Config`; the corrected verifier accepted the exact same intended policy.
+This exercised configuration rollback without touching application data.
+Source helper and approved configuration remain in X5 staging
+`.log-rotation-5483615.vko89Phc` for review; the deployed shared overlay and
+three updated service helpers are under `/srv/studio-balance`.
