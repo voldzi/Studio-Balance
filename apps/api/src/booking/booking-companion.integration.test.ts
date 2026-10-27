@@ -331,7 +331,7 @@ describe.skipIf(!databaseUrl)("companion reservations (isolated local PostgreSQL
 
   it("keeps Prague date filters inclusive across the 25-hour autumn day", async () => {
     const receipt = await bookings.create(input());
-    await client.query("UPDATE class_sessions SET start_at='2026-10-24T22:00:00Z',end_at='2026-10-24T23:00:00Z' WHERE id=$1",[sessionId]);
+    await client.query("UPDATE class_sessions SET start_at='2026-10-24T22:00:00Z',end_at='2026-10-24T23:00:00Z',booking_opens_at='2026-09-24T22:00:00Z',booking_closes_at='2026-10-24T21:30:00Z' WHERE id=$1",[sessionId]);
     for (const time of ["2026-10-25T22:59:59Z","2026-10-25T23:00:00Z"]) {
       const termId = (await client.query<{ id: string }>(`INSERT INTO class_sessions
         (class_type_id,instructor_id,start_at,end_at,location_name,location_address,price_cents,capacity,booking_opens_at,booking_closes_at)

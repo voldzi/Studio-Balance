@@ -83,7 +83,7 @@ describe.skipIf(!databaseUrl)("administrator cancellation (isolated local Postgr
   }
   async function fees() {return (await client.query("SELECT booking_id,amount_cents,status FROM cancellation_fees ORDER BY booking_id")).rows;}
   async function timing(start:string,now:string) {
-    await client.query("UPDATE class_sessions SET start_at=$2,end_at=$2::timestamptz+interval '1 hour' WHERE id=$1",[sessionId,start]);
+    await client.query("UPDATE class_sessions SET start_at=$2,end_at=$2::timestamptz+interval '1 hour',booking_opens_at=$2::timestamptz-interval '30 days',booking_closes_at=$2::timestamptz-interval '30 minutes' WHERE id=$1",[sessionId,start]);
     await client.query("UPDATE bookings SET cancellation_cutoff_at=$2::timestamptz-interval '24 hours' WHERE session_id=$1",[sessionId,start]);
     vi.useFakeTimers({toFake:["Date"]});vi.setSystemTime(new Date(now));
   }

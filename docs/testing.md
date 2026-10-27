@@ -687,3 +687,12 @@ confirmation, keyboard apply and success at 360px without horizontal overflow.
 An initial 512MiB test PostgreSQL tmpfs filled during repeated migration suites;
 verification was rerun successfully in a clean task-owned 2GiB tmpfs database.
 No production data was used.
+
+## Regrese závislostí 2026-10-27
+
+Po bezpečnostní aktualizaci Next/Fastify/Zod/fast-uri/Vitest/Vite prošlo
+`pnpm check` a všech 527 aplikačních testů s izolovaným lokálním PostgreSQL.
+Při změně data testovací lekce musí přípravky současně přesunout
+booking_opens_at a booking_closes_at; jinak po uplynutí pevného DST data
+poruší databázové constraints dříve, než ověří zamýšlenou časovou hranici.
+Produkční constraint ani storno pravidlo se kvůli testům neuvolňuje.

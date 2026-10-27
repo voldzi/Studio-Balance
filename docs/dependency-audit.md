@@ -160,3 +160,54 @@ Před nasazením byla po souhlasu uživatele odstraněna nepoužívaná Docker b
 cache (celkem přibližně 2,9 GB); obrazy, kontejnery a datové svazky zůstaly zachované.
 Origin HTML nově vrací private/no-store. Běžná veřejná domovská URL ještě
 vrací starou CDN kopii ze 4. září; je nutné vyčistit cache ve WEDOS administraci.
+
+## Kontrola 2026-10-27
+
+Audit přesné produkční revize `54216e8` (pracovní základ `77b60a5`)
+našel 21 záznamů registru: 2 critical, 3 high, 10 moderate a 6 low.
+Počty zahrnují opakované advisory pro obě hlavní verze fast-uri; nejsou
+počtem prokázaných zneužitelných vstupů aplikace ani důkazem incidentu.
+
+Cílená oprava zachovává stejné hlavní verze a produktové chování:
+
+| Závislost | Původně | Opraveno |
+| --- | --- | --- |
+| Next.js a jeho ESLint plugin | 16.3.8 | 16.4.1 |
+| Fastify (přímá i NestJS větev) | 5.12.5 | 5.12.6 |
+| Zod | 4.5.4 | 4.6.6 |
+| fast-uri, nepřímá větev 3 | 3.1.8 | 3.1.9 |
+| fast-uri, nepřímá větev 4 | 4.2.1 | 4.2.3 |
+| Vitest a @vitest/mocker | 5.0.0 | 5.0.3 |
+| Vite pod Vitestem | 8.2.2 | 8.2.4 |
+
+Fast-uri a Vite jsou omezeny přesnými rozsahovými overrides v workspace;
+lockfile zachycuje všechny opravené transitivní větve. Nejsou přidána žádná
+nová audit ignores, registry bypass ani změny stáří povolených release.
+`pnpm audit --json` po instalaci vrací 0 info/low/moderate/high/critical,
+pro produkční i vývojové závislosti dohromady. SHA-256 ověření stávajícího
+lokálního braces patche a jeho regresní testy zůstávají zachované.
+Advisory braces bylo 23. 10. staženo jako prakticky nezneužitelné; tato oprava
+neprovádí vedlejší odstranění dříve ověřené ochrany vývojového nástroje.
+
+Primární evidence vydavatelů:
+- https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw
+- https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr
+- https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r
+- https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+- https://github.com/advisories/GHSA-wjr9-j795-jxcr
+- https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+
+Nález Next.js image optimizeru má podle vydavatele podmínku glibc;
+produkce používá Alpine/musl. Cache Components RCE vyžaduje konkrétní
+`use cache` návratové hodnoty. Aktualizace odstraňuje postiženou verzi bez
+spoléhání na tyto okolnosti a zahrnuje také App Router DoS opravu.
+Úspěšný audit nezaručuje nepřítomnost dosud neznámých zranitelností.
+
+Ověření opravy: `pnpm check` prošlo (lint, typecheck, 527 aplikačních testů
+včetně PostgreSQL integrací, produkční build, validace repozitáře, kontraktů,
+Keycloak tématu a analytics). Dva DST testovací přípravky nyní spolu s datem
+lekce přesouvají i rezervační okno; odstraněna závislost na aktuálním datu
+bez změny produkčních pravidel. Samostatná audit gate prošla bez výjimek.
+Nasazení vyžaduje alespoň 20 GiB na hlavním disku; při přípravě bylo pouze
+přibližně 15 GiB. Produkční verze se nesmí prohlásit za opravenou před
+úspěšným nasazením, skeny výsledných obrazů a ověřením přesné revize.

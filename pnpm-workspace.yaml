@@ -13,9 +13,13 @@ patchedDependencies:
   'braces@3.0.3': patches/braces@3.0.3.patch
 
 overrides:
-  fastify: 5.12.5
+  fastify: 5.12.6
   find-my-way: 9.9.0
   # PostCSS still pins an affected nanoid 3 patch; remove after upstream updates.
   'nanoid@>=3.0.0 <3.3.18': 3.3.18
   # Upstream tool dependencies still pin affected patch versions.
   'source-map-js@>=1.0.0 <1.2.2': 1.2.2
+  # Security fixes for indirect URI parsers and the test development server.
+  'fast-uri@>=3.0.0 <3.1.9': 3.1.9
+  'fast-uri@>=4.0.0 <4.2.3': 4.2.3
+  'vite@>=8.2.0 <8.2.4': 8.2.4

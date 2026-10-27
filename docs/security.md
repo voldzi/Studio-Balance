@@ -569,3 +569,8 @@ migration 0033. Separate client idempotency and identity remain unchanged. Exist
 fees, started lessons and confirmed instructor records fail closed. Reasons are
 bounded strings rendered as text; never public analytics or structured log fields.
 Waiver needs an explicit additional reason and is audited without deleting fees.
+
+Kontrola knihoven 27. 10. 2026 a opravené transitivní větve jsou evidované
+v [dependency-audit.md](dependency-audit.md). Aktualizace nemění MFA, cookies,
+CSRF, síťové hranice ani cenová/storno pravidla. Před nasazením se ověřuje
+lockfile audit, aplikační testy a všechny tři výsledné produkční obrazy.
