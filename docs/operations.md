@@ -1278,3 +1278,15 @@ vyžádat úspěšné scans všech tří obrazů a přesné runtime/readiness ov
 Sdílené cache, cizí aplikace ani volumes nebyly mazány. X5 je připojené,
 volných bylo přibližně 38 GiB. Dočasná testovací databáze neobsahovala
 produkční data a po testech se odstraňuje.
+
+### Schválená kapacitní politika 2026-10-27
+
+Vlastník výslovně schválil limity 15/10 GiB: před sestavením vyžaduje
+`scripts/check-deployment-disk.py build` nejméně 15 GiB na /. Po sestavení
+a všech image scans, ještě před `compose up`, vyžaduje fáze `activate`
+nejméně 10 GiB. Neúspěšné měření i nedostatečná kapacita nasazení zastaví;
+před aktivací zůstává běžící verze nedotčená. Schválení nahrazuje původní
+pevnou hranici 20 GiB pro budoucí nasazení. Rezerva paměti 2 GiB, X5 UUID,
+rezerva X5 5 GiB, skeny, operation locks a rollback zůstávají zachované.
+Snížení rezervy zvyšuje riziko souběžného růstu ostatních služeb; nejde
+o oprávnění čistit sdílené cache, volumes nebo cizí aplikace.

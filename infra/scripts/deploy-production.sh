@@ -36,13 +36,9 @@ for variable in DATABASE_URL DATABASE_URL_MIGRATOR PUBLIC_APP_URL OIDC_ISSUER_UR
   fi
 done
 
-available_disk_kb="$(df --output=avail -k / | tail -n 1 | tr -d ' ')"
 available_memory_kb="$(awk '/MemAvailable:/ { print $2 }' /proc/meminfo)"
 
-if (( available_disk_kb < 20 * 1024 * 1024 )); then
-  echo "Deployment refused: less than 20 GiB is available on /." >&2
-  exit 1
-fi
+python3 "$root/scripts/check-deployment-disk.py" build
 
 if (( available_memory_kb < 2 * 1024 * 1024 )); then
   echo "Deployment refused: less than 2 GiB of memory is available." >&2
@@ -108,6 +104,8 @@ fi
 # Do not replace a healthy revision with unscanned image contents. The scanner
 # records and verifies the exact three image IDs before any container change.
 bash "$root/scripts/scan-production-images.sh" "$version"
+# Recheck after build/scan, before touching the healthy running revision.
+python3 "$root/scripts/check-deployment-disk.py" activate
 if ! "${compose[@]}" up -d "${up_args[@]}"; then
   rollback_previous || true
   exit 1

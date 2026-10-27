@@ -211,3 +211,8 @@ bez změny produkčních pravidel. Samostatná audit gate prošla bez výjimek.
 Nasazení vyžaduje alespoň 20 GiB na hlavním disku; při přípravě bylo pouze
 přibližně 15 GiB. Produkční verze se nesmí prohlásit za opravenou před
 úspěšným nasazením, skeny výsledných obrazů a ověřením přesné revize.
+
+Kapacitní blokace byla následně vyřešena výslovným souhlasem vlastníka
+s politikou 15 GiB před sestavením / 10 GiB před aktivací. Nová kontrola
+je verzovaná se zdroji a má hraniční testy i ověření selhání měření;
+neobchází image scans ani neodstraňuje obnovitelné předchozí verze.

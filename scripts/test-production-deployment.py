@@ -20,6 +20,29 @@ def module(name, file):
 
 verify = module('verify', 'verify-production-revision.py')
 publish = module('publish', 'publish-production-tools.py')
+disk = module('disk', 'check-deployment-disk.py')
+
+
+class DiskReserveTests(unittest.TestCase):
+    def test_exact_boundaries_and_unknown_phase(self):
+        for stage, gib in (("build", 15), ("activate", 10)):
+            disk.require_space(stage, gib * 1024 ** 3)
+            with self.assertRaises(RuntimeError):
+                disk.require_space(stage, gib * 1024 ** 3 - 1)
+        with self.assertRaises(ValueError):
+            disk.require_space("skip", 100 * 1024 ** 3)
+
+    def test_unreadable_filesystem_fails_closed(self):
+        from unittest.mock import patch
+        with patch.object(disk.shutil, "disk_usage", side_effect=OSError("unavailable")):
+            with self.assertRaises(OSError):
+                disk.main("build")
+
+    def test_activation_check_precedes_container_mutation(self):
+        script = (Path(__file__).resolve().parents[1] / "infra/scripts/deploy-production.sh").read_text()
+        self.assertLess(script.index('check-deployment-disk.py" build'), script.index('"${compose[@]}" build'))
+        self.assertLess(script.index('scan-production-images.sh" "$version"'), script.index('check-deployment-disk.py" activate'))
+        self.assertLess(script.index('check-deployment-disk.py" activate'), script.index('"${compose[@]}" up -d'))
 
 
 class RevisionTests(unittest.TestCase):
