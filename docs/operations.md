@@ -1264,3 +1264,17 @@ klávesnice, doprovodu, povinného důvodu prominutí, invalidace náhledu a pot
 Kompletní aplikační sada měla 525 úspěšných testů; po přidání dvou regresí
 prošla cílená sada 18 databázových testů (527 různých aplikačních testů celkem).
 Lint, typecheck, build, repo/contract/analytics gates a skeleton prošly.
+
+## Bezpečnostní aktualizace 2026-10-27 — čeká na kapacitu
+
+Oprava `ff76322` aktualizuje zranitelné knihovny dle dependency-audit.md.
+Audit registru je bez nálezů, kompletní `pnpm check` s lokálním PostgreSQL
+prošel (527 aplikačních testů). Standardní produkční nasazení tohoto SHA
+27. 10. odmítla kapacitní brána: na / bylo přibližně 15 GiB místo potřebných
+20 GiB. Nebyla obejita ani změněna; produkční API/web/worker zůstávají na
+zdravé revizi `54216e8`. Kandidátní obrazy a jejich scans dosud nebyly vytvořeny.
+Po uvolnění alespoň 20 GiB znovu spustit `pnpm deploy:production -- ff76322`,
+vyžádat úspěšné scans všech tří obrazů a přesné runtime/readiness ověření.
+Sdílené cache, cizí aplikace ani volumes nebyly mazány. X5 je připojené,
+volných bylo přibližně 38 GiB. Dočasná testovací databáze neobsahovala
+produkční data a po testech se odstraňuje.
