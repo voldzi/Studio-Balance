@@ -216,3 +216,9 @@ Kapacitní blokace byla následně vyřešena výslovným souhlasem vlastníka
 s politikou 15 GiB před sestavením / 10 GiB před aktivací. Nová kontrola
 je verzovaná se zdroji a má hraniční testy i ověření selhání měření;
 neobchází image scans ani neodstraňuje obnovitelné předchozí verze.
+
+Produkční dokončení: revize `296dd71` nasazena 27. 10. 2026. Všechny tři
+obrazy prošly povinným scanem s nulou high/critical. Přesná runtime revize,
+readiness i worker byly ověřeny, veřejné stránky odpovídají a admin akce
+bez přihlášení jsou odmítnuté. Podrobná evidence, retence a podmínka rollbacku
+jsou v operations.md v části „Dokončení nasazení 2026-10-27“.

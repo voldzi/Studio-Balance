@@ -1290,3 +1290,31 @@ pevnou hranici 20 GiB pro budoucí nasazení. Rezerva paměti 2 GiB, X5 UUID,
 rezerva X5 5 GiB, skeny, operation locks a rollback zůstávají zachované.
 Snížení rezervy zvyšuje riziko souběžného růstu ostatních služeb; nejde
 o oprávnění čistit sdílené cache, volumes nebo cizí aplikace.
+
+### Dokončení nasazení 2026-10-27
+
+Produkční bezpečnostní release `296dd71` je aktivní. Přesná revize API/web/worker,
+readiness a první úspěšná generace rozvrhu workeru byly ověřeny standardním
+verifikátorem. Přímo v kontejnerech jsou Next 16.4.1, Fastify 5.12.6 a Zod 4.6.6.
+Scans všech tří kandidátních obrazů prošly (0 high / 0 critical), evidence:
+`/srv/x5-production/archives/studio-balance/image-scans/296dd71/20261027T112329Z-SZ0U3JSf/verified.json`.
+Opakovaná audit gate uzamčených npm závislostí prošla bez nálezů a bez výjimek.
+Lokální `pnpm check` měl 527 úspěšných aplikačních testů; po změně diskové
+politiky prošlo všech 11 deployment testů, syntaxe shellu a skeleton.
+
+Veřejné `/`, `/rozvrh`, `/lekce`, `/prihlaseni`, `/admin/prihlaseni` a
+`/api/v1/sessions` vracejí 200. Obě admin cancellation akce bez přihlášení
+vracejí 401 AUTHENTICATION_REQUIRED s requestId. Přihlášený zákaznický či
+administrátorský průchod nebyl při této knihovní aktualizaci zkoušen a žádné
+skutečné rezervace ani uživatelské přístupy nebyly měněny.
+
+První návratový status deploy příkazu byl 1 až kvůli závěrečnému retention kroku:
+pozůstalá značka `.deploying-ff76322` patřila předchozímu pokusu odmítnutému
+na původní diskové hranici. Po kontrole zdravé nové revize a vyloučení
+souběžného nasazení byla odstraněna pod aplikačním operation lockem.
+Následný `manage-production-storage.py --apply` prošel. Chráněné obnovitelné
+verze jsou `296dd71`, `54216e8`, `7a00e0a`; cizí obrazy a volumes nedotčeny.
+Výsledná volná kapacita je přibližně 14 GiB na / a 33 GiB na X5.
+Všechny tři služby zachovaly json-file log limit 10 MiB × 3 s kompresí.
+Rollback se provádí standardním guarded rollback nástrojem na `54216e8`;
+ten však obsahuje původní zranitelné závislosti, takže jen při provozní nutnosti.
