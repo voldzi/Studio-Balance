@@ -740,3 +740,12 @@ Jednoduchá nápověda: Rezervace → vybrat lekci → u klienta Odhlásit klien
 zkontrolovat osoby a poplatek → potvrdit. Nový klient se může přihlásit jen
 během stále otevřeného rezervačního okna. Formulář funguje od 360 px a klávesnicí;
 obsah oznámení ani důvod nesmějí vstoupit do veřejné analytiky.
+
+### Fotky studia
+
+Administrace nabízí výběr více souborů i viditelnou plochu pro přetažení.
+Chyby se ukazují po souborech; opakování neposílá už úspěšně nahrané fotky.
+Každá položka má popis, přepínač zobrazení a přesun nahoru/dolů i úchyt pro
+přetažení. Dvě nezávislé volby pokrývají úvod a O studiu. Náhled telefonu
+a počítače ukazuje orientační ořez a pořadí. Jedno potvrzení zveřejní změny;
+neuložený výběr zůstává při přechodu do jiné sekce téže otevřené administrace.

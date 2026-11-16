@@ -439,3 +439,10 @@ nebo výslovně obě aktivní místa téhož vlastníka. Náhled, důvod, potvrz
 přesná 24h hranice/free-change window, snapshot ceny a výslovné prominutí fee
 jsou povinné. Místo se uvolní transakčně; historie, audit a účetní stav zůstanou.
 Replay nesmí vytvořit druhý fee/notifikaci. Rezervační okna se neprodlužují.
+
+### Fotky studia (CD-075)
+
+Správce nahrává JPG/PNG/WebP po dávkách výběrem či přetažením (8 MiB na
+soubor, 40 ve výběru) a doplní krátký popis. Vybere titulní plochy, mění
+pořadí či viditelnost galerie a před zveřejněním zobrazí náhled.
+Veřejný obsah se mění až při atomickém zveřejnění a bez nového nasazení.

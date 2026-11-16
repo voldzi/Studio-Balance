@@ -24,7 +24,12 @@ export class AdminMediaController {
     return this.saveImage(request, body, "studio");
   }
 
-  private async saveImage(request: AdminRequest, body: unknown, namespace: "transformations" | "studio") {
+  @Post("studio-website-image")
+  async uploadStudioWebsiteImage(@Req() request: AdminRequest, @Body() body: unknown) {
+    return this.saveImage(request, body, "studio-website");
+  }
+
+  private async saveImage(request: AdminRequest, body: unknown, namespace: "transformations" | "studio" | "studio-website") {
     if (!Buffer.isBuffer(body)) throw invalidImage();
     const image = await this.storage.prepareImage(body);
     const id = randomUUID();
@@ -64,7 +69,7 @@ export class MediaController {
     if (!uuid.safeParse(id).success) throw notFound();
     const result = await this.database.query<{ storage_key: string }>(`
       SELECT ma.storage_key FROM media_assets ma
-      WHERE ma.id=$1 AND (EXISTS (
+      WHERE ma.id=$1 AND ((ma.storage_key NOT LIKE 'studio-website/%' AND (EXISTS (
         SELECT 1 FROM client_transformations t
         WHERE t.published=true AND t.consent_confirmed=true
           AND (t.before_asset_id=ma.id OR t.after_asset_id=ma.id)
@@ -74,7 +79,11 @@ export class MediaController {
         SELECT 1 FROM studio_team t WHERE t.published=true AND t.photo_asset_id=ma.id
       ) OR EXISTS (
         SELECT 1 FROM class_types c WHERE c.active=true AND c.hero_image_path='/api/v1/media/' || ma.id::text
-      ))
+      ))) OR (ma.storage_key LIKE 'studio-website/%' AND (EXISTS (
+        SELECT 1 FROM studio_website_photos p WHERE p.asset_id=ma.id AND p.visible
+      ) OR EXISTS (
+        SELECT 1 FROM studio_website_photo_settings s WHERE s.home_asset_id=ma.id OR s.about_asset_id=ma.id
+      ))))
     `, [id]);
     const asset = result.rows[0];
     if (!asset) throw notFound();

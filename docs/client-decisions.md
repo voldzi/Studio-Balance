@@ -546,3 +546,11 @@ přihlášení klienta. Opakování stejného požadavku vrátí uložený výsl
 druhého poplatku nebo oznámení. Změněný náhled se odmítne a musí se potvrdit
 znovu. Dokončené/již zrušené rezervace, potvrzené výkazy a existující finanční
 záznamy se nepřepisují. Architekturu určuje ADR 0032.
+
+## CD-075 — Fotky studia v administraci (2026-11-16)
+
+Správkyně může nahrát více fotografií výběrem i přetažením, nastavit úvodní
+fotku, fotku O studiu a pořadí i viditelnost galerie. Změny se veřejně
+projeví až po zveřejnění. Pořadí se mění tažením nebo šipkami. Nahrané
+fotografie musí být schválené pro veřejné použití; rozložení, logo ani
+rezervace se nemění. Viz [ADR 0033](adr/0033-studio-website-photos.md).

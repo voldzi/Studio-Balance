@@ -696,3 +696,10 @@ Při změně data testovací lekce musí přípravky současně přesunout
 booking_opens_at a booking_closes_at; jinak po uplynutí pevného DST data
 poruší databázové constraints dříve, než ověří zamýšlenou časovou hranici.
 Produkční constraint ani storno pravidlo se kvůli testům neuvolňuje.
+
+### Fotky studia
+
+PostgreSQL integrační test pokrývá ochranu editace (MFA), skryté a nezveřejněné
+objekty, oddělení typů médií, pořadí, titulní výběr, souběžnou publikaci a
+audit. Na klientovi zkontrolovat hromadný výběr, drop souborů, přesun tažením
+a klávesnicí, náhled, chybný soubor a zakázané zveřejnění bez popisu.

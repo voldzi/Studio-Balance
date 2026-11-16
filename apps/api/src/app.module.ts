@@ -1,3 +1,4 @@
+import { StudioPhotosController, AdminStudioPhotosController } from "./content/studio-photos.controller.js";
 import { StudioStatusController, AdminStudioStatusController } from "./studio/studio-status.controller.js";
 import { StudioStatusService, RegistrationControl } from "./studio/studio-status.service.js";
 import { TeamController, AdminTeamController } from "./content/team.controller.js";
@@ -33,7 +34,7 @@ import { AdminNewsController, NewsController } from "./content/news.controller.j
 import { NewsService } from "./content/news.service.js";
 
 @Module({
-  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, SystemController, ScheduleController, ReviewsController, ReviewSubmissionsController, AdminReviewSubmissionsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, InstructorRecordsController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
+  controllers: [StudioStatusController, AdminStudioStatusController, TeamController, AdminTeamController, StudioPhotosController, AdminStudioPhotosController, SystemController, ScheduleController, ReviewsController, ReviewSubmissionsController, AdminReviewSubmissionsController, TransformationsController, NewsController, MediaController, MeController, BookingController, AdminController, InstructorRecordsController, AdminReviewsController, AdminTransformationsController, AdminNewsController, AdminMediaController, InternalSessionController],
   providers: [StudioStatusService, RegistrationControl, RuntimeConfigService, DatabaseService, OpaqueSessionService, InternalSessionGuard, SessionAuthGuard, AdminRoleGuard, ScheduleService, ReviewsService, ReviewSubmissionsService, TransformationsService, NewsService, MediaStorageService, AccountService, BookingService, AdminService, InstructorRecordsService]
 })
 export class AppModule {}

@@ -7,6 +7,8 @@ import { describe, expect, it, vi } from "vitest";
 import HomePage from "../app/page";
 import { CreatorCredits, SiteFooter } from "./site-footer";
 
+vi.mock("../lib/read-studio-website-photos", () => ({ readStudioWebsitePhotos: async () => null }));
+
 vi.mock("./public-analytics-link", () => ({
   PublicAnalyticsLink: ({ analyticsEvent, ...props }: ComponentProps<"a"> & { analyticsEvent: string }) => <a {...props} data-analytics-event={analyticsEvent} />,
 }));
@@ -18,8 +20,8 @@ const creators = [
 ];
 
 describe("SiteFooter creator credit", () => {
-  it("also renders the shared credits on the homepage while preserving its studio logo and contact order", () => {
-    const page: ReactElement<{ children: ReactNode }> = HomePage();
+  it("also renders the shared credits on the homepage while preserving its studio logo and contact order", async () => {
+    const page: ReactElement<{ children: ReactNode }> = await HomePage();
     // Render the actual homepage footer without unrelated sections that need the Next router.
     const homepageFooter = Children.toArray(page.props.children).find((child) => isValidElement(child) && child.type === "footer");
     expect(homepageFooter).toBeDefined();

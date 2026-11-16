@@ -354,3 +354,8 @@ scope, reason, waiverReason, mode, feePolicy a feeCents. Jde o neveřejný datab
 audit, ne událost veřejné analytiky. Důvody a jména se nepřidávají do provozních
 logů. Síťovou chybu korelovat requestId a stavem rezervace; replay receipt potvrzuje
 commit bez druhého účtování. Neukládat cookie ani token náhledu do chatu/logů.
+
+Publikace fotografií studia zapíše `studio_photos.published` s aktérem a
+requestId ve stejné transakci jako obsah. Upload používá `media.uploaded`.
+Při konfliktu revizí sledovat odpověď 409, při nedostupném S3 chyby zápisu;
+veřejné čtení neodesílá identifikátory fotek do analytiky.

@@ -574,3 +574,11 @@ Kontrola knihoven 27. 10. 2026 a opravené transitivní větve jsou evidované
 v [dependency-audit.md](dependency-audit.md). Aktualizace nemění MFA, cookies,
 CSRF, síťové hranice ani cenová/storno pravidla. Před nasazením se ověřuje
 lockfile audit, aplikační testy a všechny tři výsledné produkční obrazy.
+
+### Fotky studia
+
+Nahrávky vyžadují stávající admin MFA a ochranu zápisu. Používá se
+normalizace obrázků bez metadat a stávající limit velikosti/rozměrů.
+Samostatná předpona objektů je přístupná veřejným media endpointem pouze
+při aktivní vazbě na titulní plochu nebo viditelné místo v galerii.
+Neukládáme názvy klientských souborů jako veřejná metadata.

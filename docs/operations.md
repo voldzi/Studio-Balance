@@ -1318,3 +1318,13 @@ Výsledná volná kapacita je přibližně 14 GiB na / a 33 GiB na X5.
 Všechny tři služby zachovaly json-file log limit 10 MiB × 3 s kompresí.
 Rollback se provádí standardním guarded rollback nástrojem na `54216e8`;
 ten však obsahuje původní zranitelné závislosti, takže jen při provozní nutnosti.
+
+### Fotky studia
+
+Migrace 0034 je aditivní. Před nasazením zůstávají zachovány standardní
+readiness, kapacitní a bezpečnostní kontroly. Upload sdílí vyhrazený bucket
+a zálohu médií; veřejné čtení používá stejný proxy a chráněné assety nesmí
+být uloženy ve veřejné cache. Pro obnovení výchozí hlavní fotky zvolit
+„Ponechat výchozí fotografii“. Odebrání z výběru neprovádí smazání z S3.
+Předchozí aplikace může běžet s ponechanou aditivní migrací; veřejný web
+bude při rollbacku zobrazovat původní fotografický obsah.

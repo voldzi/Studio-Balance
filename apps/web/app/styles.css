@@ -908,3 +908,42 @@ dialog.pwa-install-modal::backdrop { background: transparent; }
 .admin-booking-cancellation li { display: block; overflow-wrap: anywhere; }
 .admin-booking-cancellation .admin-check { display: flex; align-items: flex-start; gap: .7rem; min-height: 44px; }
 .admin-booking-cancellation .admin-check input { flex-shrink: 0; width: 1.3rem; min-height: 1.3rem; margin-top: .1rem; }
+
+.website-photos-editor { display: grid; gap: 1rem; }
+.website-photos-editor h2, .website-photos-editor p { margin: 0; }
+.website-photo-drop, .website-photo-placements, .website-photo-preview {
+  min-width: 0; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+}
+.website-photo-drop { display: grid; gap: .55rem; border-style: dashed; }
+.website-photo-drop label, .website-photo-placements label, .website-photo-entry > label { display: grid; gap: .3rem; }
+.website-photo-drop input, .website-photo-entry input:not([type=checkbox]), .website-photo-placements select { max-width: 100%; min-height: 44px; }
+.website-photo-placements { display: flex; gap: 1rem; flex-wrap: wrap; }
+.website-photo-placements label { flex: 1 1 14rem; min-width: 0; }
+.website-photo-order { list-style: none; display: grid; gap: .65rem; padding: 0; margin: 0; }
+.website-photo-order > li { display: grid; grid-template-columns: minmax(64px, 116px) minmax(0, 1fr); gap: .75rem; padding: .7rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.website-photo-drop.is-dragging, .website-photo-order .is-dragging { outline: 2px solid currentColor; outline-offset: 2px; }
+.website-photo-thumb .studio-photo { aspect-ratio: 1; min-height: 0; }
+.website-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.website-photo-entry { display: grid; align-content: center; gap: .5rem; min-width: 0; }
+.website-photo-actions, .website-photo-publish { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.website-photo-actions button, .website-photo-publish button, .website-photo-preview summary { min-height: 44px; min-width: 44px; }
+.website-photo-handle { cursor: grab; touch-action: none; user-select: none; display: grid; min-height: 44px; min-width: 44px; place-items: center; font-size: 1.5rem; }
+.website-photo-preview summary { cursor: pointer; font-weight: 600; padding-block: .6rem; }
+.website-photo-preview-frame { margin: .7rem auto 0; display: grid; gap: .55rem; }
+.website-photo-preview-frame.mobile { max-width: 360px; }
+.website-photo-cover { position: relative; height: clamp(10rem, 25vw, 19rem); overflow: hidden; border-radius: var(--radius-md); }
+.website-photo-preview-frame.mobile .website-photo-cover { height: 17rem; }
+.website-photo-cover .studio-photo, .website-photo-cover img { height: 100%; width: 100%; }
+.website-photo-cover img { object-fit: cover; }
+.website-photo-cover.home img { object-position: 50% 52%; }
+.website-photo-preview-frame.mobile .website-photo-cover.home img { object-position: 58% 50%; }
+.website-photo-cover-copy { position: absolute; inset: 0; display: grid; align-items: end; padding: 1rem; color: white; background: linear-gradient(transparent 35%, rgb(24 14 9 / .78)); font-size: clamp(1.2rem, 4vw, 2rem); }
+.website-photo-preview-gallery { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; }
+.website-photo-preview-frame.mobile .website-photo-preview-gallery { grid-template-columns: 1fr; }
+.website-photo-preview-gallery .studio-photo { height: 10rem; }
+.website-photo-preview-gallery img { width: 100%; height: 100%; object-fit: cover; }
+.website-photo-publish p { flex-basis: 100%; }
+
+.website-photo-actions label { display: inline-flex; align-items: center; gap: .35rem; min-height: 44px; }
+.website-photo-actions input[type=checkbox] { width: auto; min-height: 0; margin: 0; }

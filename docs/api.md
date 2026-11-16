@@ -588,3 +588,15 @@ stejného vlastníka a stejné lekce. Po začátku nebo při existujícím finan
 záznamu se operace odmítne. Účet obdrží interní oznámení, žádné externí rozesílání
 se touto změnou neaktivuje. Při síťové chybě lze opakovat přesně stejný apply
 se stejným klíčem; při 409 načíst nový náhled a znovu potvrdit.
+
+### Fotografie veřejného webu
+
+- `GET /api/v1/content/studio-photos` bez přihlášení vrací pouze úvodní fotografii,
+  fotografii pro O studiu a viditelnou galerii v uloženém pořadí. Pole
+  `configured` rozliší výchozí galerii od záměrně prázdné.
+- `GET /api/v1/admin/content/studio-photos` vrací správci také skryté položky
+  a revizi. `PUT` atomicky zveřejní celý výběr a pořadí (nejvýše 40 položek).
+  Zastaralá revize vrací 409; cizí či nesprávný typ média vrací 400.
+- `POST /api/v1/admin/media/studio-website-image` přijímá po jednom JPG/PNG/WebP
+  do 8 MiB. Nahrání samo fotografii nezveřejní; soukromý náhled používá
+  existující admin media route. Produkční soubory zůstávají v izolovaném S3.

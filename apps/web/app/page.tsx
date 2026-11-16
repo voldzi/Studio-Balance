@@ -1,3 +1,5 @@
+import { WebsiteCoverPhoto } from "../components/website-cover-photo";
+import { readStudioWebsitePhotos } from "../lib/read-studio-website-photos";
 import { ScheduleCallToAction } from "../components/studio-status";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,22 +17,17 @@ import { homeMetadata, studioStructuredData } from "../lib/seo";
 
 export const metadata: Metadata = homeMetadata;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const photos = await readStudioWebsitePhotos();
   return (
     <>
       <StructuredData data={studioStructuredData()} />
       <SiteHeader />
       <main>
         <section className="hero" aria-labelledby="hero-title">
-          <Image
-            alt="Interiér Studia Balance s podložkami a cvičebními pomůckami"
-            className="hero-image"
-            fill
-            loading="eager"
-            priority
-            sizes="(max-width: 760px) 100vw, 1180px"
-            src="/images/studio-balance/studio-hero.jpg"
-          />
+          <WebsiteCoverPhoto className="hero-image" photo={photos?.home} fallback={{
+            src: "/images/studio-balance/studio-hero.jpg", alt: "Interiér Studia Balance s podložkami a cvičebními pomůckami"
+          }} />
           <div className="hero-overlay" />
           <div className="hero-copy">
             <p className="eyebrow eyebrow-light">Move · Flow · Balance</p>
