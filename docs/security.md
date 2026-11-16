@@ -582,3 +582,10 @@ normalizace obrázků bez metadat a stávající limit velikosti/rozměrů.
 Samostatná předpona objektů je přístupná veřejným media endpointem pouze
 při aktivní vazbě na titulní plochu nebo viditelné místo v galerii.
 Neukládáme názvy klientských souborů jako veřejná metadata.
+
+### Publikace vzhledu webu
+
+CD-076 zachovává administrátorskou relaci s MFA. Povolené palety a identifikátory
+sekcí se ověřují na serveru bez možnosti vložit CSS či HTML. Zveřejnit lze jen
+normalizované obrázky ve stávajícím prostoru Studio Balance. Privátní rozpracované
+soubory zůstávají mimo veřejné odpovědi a cache.

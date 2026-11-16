@@ -49,3 +49,6 @@ export function cancellationMode(input: {
   if (input.freeCancellationUntil && input.now <= input.freeCancellationUntil) return "free_change_window";
   return input.now <= input.cutoffAt ? "on_time" : "late";
 }
+
+export const websitePalettes = ["original", "sage", "rose", "clay"] as const;
+export const homepageSections = ["studio", "lessons", "flow", "transformations", "reviews", "massage"] as const;

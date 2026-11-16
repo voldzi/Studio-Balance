@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type DragEvent, type PointerEvent } from "react";
+import { websitePalettes } from "@studiobalance/domain";
 import { ApiError, apiRequest } from "../lib/api-types";
 import {
-  moveWebsitePhoto, websitePhotoBytes, websitePhotoLimit, websitePhotoMime,
-  type AdminWebsitePhotos, type WebsitePhotoInput
+  moveWebsiteItem, moveWebsitePhoto, sectionLabels, websitePhotoBytes, websitePhotoLimit, websitePhotoMime,
+  type AdminWebsitePhotos, type WebsitePhotoInput, type WebsiteAppearance, type WebsiteSection
 } from "../lib/studio-website-photos";
 import { StudioPhoto } from "./studio-photo";
+
+const paletteLabels: Record<WebsiteAppearance["palette"], string> = {
+  original: "Původní", sage: "Šalvějová", rose: "Pudrová růžová", clay: "Terakotová"
+};
+const defaultLogo = { src: "/images/studio-balance/brand-logo.jpg", alt: "Studio Balance", width: 154, height: 92 };
 
 const endpoint = "/api/v1/admin/content/studio-photos";
 type UploadError = { file: File; message: string; retry: boolean };
@@ -41,13 +47,20 @@ async function prepareUpload(file: File): Promise<FormData> {
   } finally { bitmap.close(); }
 }
 
-export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: boolean; onAuthRequired: () => void }) {
+async function uploadImage(file: File) {
+  return apiRequest<UploadResult>("/api/v1/admin/media/studio-website-image", {
+    method: "POST", body: await prepareUpload(file), signal: AbortSignal.timeout(45_000)
+  });
+}
+
+export function StudioWebsiteAppearanceEditor({ active, onAuthRequired }: { active: boolean; onAuthRequired: () => void }) {
   const [draft, setDraft] = useState<AdminWebsitePhotos>();
   const [saved, setSaved] = useState<AdminWebsitePhotos>();
   const [loading, setLoading] = useState(false);
   const loaded = useRef(false);
   const operation = useRef(false);
   const dragging = useRef<{ source: string; pointer: number } | null>(null);
+  const [draggedSection, setDraggedSection] = useState<WebsiteSection>();
   const [dragOver, setDragOver] = useState<string>();
   const [dropping, setDropping] = useState(false);
   const [progress, setProgress] = useState("");
@@ -73,7 +86,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
       setConflict(false);
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) onAuthRequired();
-      setError("Fotky se nepodařilo načíst. Zkuste to znovu.");
+      setError("Vzhled webu se nepodařilo načíst. Zkuste to znovu.");
     } finally {
       operation.current = false;
       setLoading(false);
@@ -93,6 +106,33 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
     window.addEventListener("beforeunload", preventLoss);
     return () => window.removeEventListener("beforeunload", preventLoss);
   }, [dirty, busy]);
+
+  function setAppearance(patch: Partial<WebsiteAppearance>) {
+    setDraft((state) => state && ({ ...state, appearance: { ...state.appearance, ...patch } }));
+  }
+
+  async function uploadLogo(file: File) {
+    if (operation.current) return;
+    if (!websitePhotoMime.includes(file.type) || file.size === 0 || file.size > websitePhotoBytes) {
+      setError("Vyberte platné logo ve formátu JPG, PNG nebo WebP do 8 MB.");
+      return;
+    }
+    operation.current = true;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    setProgress("Nahrávám logo…");
+    try {
+      const asset = await uploadImage(file);
+      setDraft((state) => state && ({ ...state, appearance: { ...state.appearance, logoId: asset.id },
+        logo: { src: `/api/v1/admin/media/${asset.id}`, width: asset.width, height: asset.height, alt: "Studio Balance" }
+      }));
+      setMessage("Logo je připravené k náhledu.");
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.status === 401) onAuthRequired();
+      setError(cause instanceof Error ? cause.message : "Logo se nepodařilo nahrát.");
+    } finally { operation.current = false; setBusy(false); setProgress(""); }
+  }
 
   async function upload(files: File[]) {
     if (!draft || loading || busy || operation.current || !files.length) return;
@@ -115,9 +155,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
         }
         if (authLost) { rejected.push({ file, message: "Přihlaste se a zkuste znovu.", retry: true }); continue; }
         try {
-          const photo = await apiRequest<UploadResult>("/api/v1/admin/media/studio-website-image", {
-            method: "POST", body: await prepareUpload(file), signal: AbortSignal.timeout(45_000)
-          });
+          const photo = await uploadImage(file);
           const alt = "";
           setDraft((state) => state && ({
             ...state, entries: [...state.entries, { assetId: photo.id, alt, visible: true,
@@ -142,7 +180,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
   async function publish() {
     if (!draft || busy || conflict || operation.current) return;
     const payload: WebsitePhotoInput = {
-      revision: draft.revision, homeId: draft.homeId, aboutId: draft.aboutId,
+      revision: draft.revision, homeId: draft.homeId, aboutId: draft.aboutId, appearance: draft.appearance,
       entries: draft.entries.map(({ assetId, alt, visible }) => ({ assetId, alt: alt.trim(), visible }))
     };
     operation.current = true;
@@ -153,7 +191,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
       const current = await apiRequest<AdminWebsitePhotos>(endpoint, { method: "POST", body: JSON.stringify(payload) });
       setDraft(current);
       setSaved(current);
-      setMessage("Fotky byly zveřejněny. Web nyní zobrazuje uložený výběr.");
+      setMessage("Vzhled byl zveřejněn. Web nyní zobrazuje uložený výběr.");
     } catch (cause) {
       if (cause instanceof ApiError) {
         if (cause.status === 401) onAuthRequired();
@@ -169,6 +207,12 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
     const entries = moveWebsitePhoto(state.entries, source, target);
     return entries === state.entries ? state : { ...state, entries };
   });
+  const moveSection = (id: WebsiteSection, to: number) => {
+    if (operation.current || !draft) return;
+    const sectionOrder = draft.appearance.sectionOrder;
+    const next = moveWebsiteItem(sectionOrder, sectionOrder.indexOf(id), to);
+    if (next !== sectionOrder) setAppearance({ sectionOrder: next });
+  };
   function dropFiles(event: DragEvent) {
     event.preventDefault();
     setDropping(false);
@@ -189,14 +233,53 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
   }
 
   return <section aria-labelledby="studio-photos-title" className="website-photos-editor">
-    <div className="admin-heading"><p className="eyebrow">Obsah webu</p><h1 id="studio-photos-title">Fotky studia</h1>
-      <p>Nahrajte fotografie, vyberte úvod a O studiu, potom seřaďte galerii a zveřejněte ji.</p></div>
-    {loading && <p role="status">Načítám fotky…</p>}
+    <div className="admin-heading"><p className="eyebrow">Obsah webu</p><h1 id="studio-photos-title">Vzhled webu</h1>
+      <p>Vyberte logo, barvy, pořadí sekcí a fotografie. Náhled se mění hned, veřejný web až po zveřejnění.</p></div>
+    {loading && <p role="status">Načítám vzhled webu…</p>}
     {error && <p role="alert" className="admin-message">{error}</p>}
     {message && <p role="status" className="admin-message">{message}</p>}
-    {!draft && !loading && <button type="button" onClick={() => void load()}>Načíst fotky</button>}
+    {!draft && !loading && <button type="button" onClick={() => void load()}>Načíst vzhled</button>}
     {draft && <>
-      {draft.revision === 0 && <p className="admin-message">Web zatím používá původní fotky. První zveřejnění nahradí původní galerii vaším výběrem. Bez výběru úvodní fotky nebo fotky pro O studiu na nich zůstane výchozí obrázek.</p>}
+      <fieldset className="website-photo-placements website-brand-controls" disabled={busy || loading}>
+        <legend>Logo a barvy</legend>
+        <div className="website-logo-preview"><StudioPhoto image={draft.logo ?? defaultLogo} /></div>
+        <label>Nahrát logo <input type="file" accept={websitePhotoMime.join(",")} onChange={(event) => {
+          const file = event.currentTarget.files?.[0];
+          event.currentTarget.value = "";
+          if (file) void uploadLogo(file);
+        }} /><small>Pro průhledné pozadí použijte PNG nebo WebP.</small></label>
+        <label>Barevná paleta
+          <select value={draft.appearance.palette} onChange={(event) => setAppearance({ palette: event.currentTarget.value as WebsiteAppearance["palette"] })}>
+            {websitePalettes.map((id) => <option key={id} value={id}>{paletteLabels[id]}</option>)}
+          </select>
+        </label>
+        {draft.logo && <button type="button" onClick={() => setDraft((state) => state && ({
+          ...state, logo: null, appearance: { ...state.appearance, logoId: null }
+        }))}>Obnovit původní logo</button>}
+      </fieldset>
+      <fieldset className="website-photo-placements website-section-controls" disabled={busy || loading}>
+        <legend>Pořadí na úvodní stránce</legend>
+        <p>Přesuňte sekci šipkami nebo ji přetáhněte za úchyt. Hlavní fotka s nadpisem je vždy nahoře.</p>
+        <ol className="website-section-order">
+          {draft.appearance.sectionOrder.map((id, index) => <li key={id} onDragOver={(event) => {
+            if (draggedSection && !busy) event.preventDefault();
+          }} onDrop={(event) => {
+            if (!draggedSection) return;
+            event.preventDefault();
+            moveSection(draggedSection, index);
+            setDraggedSection(undefined);
+          }}>
+            <span>{sectionLabels[id]}</span>
+            <span className="website-photo-handle" title="Přetáhnout sekci" aria-hidden="true" draggable={!busy && !loading}
+              onDragStart={(event) => { event.dataTransfer.setData("text/plain", id); event.dataTransfer.effectAllowed = "move"; setDraggedSection(id); }}
+              onDragEnd={() => setDraggedSection(undefined)}>⠿</span>
+            <button type="button" aria-label={`Posunout ${sectionLabels[id]} nahoru`} disabled={index === 0} onClick={() => moveSection(id, index - 1)}>↑</button>
+            <button type="button" aria-label={`Posunout ${sectionLabels[id]} dolů`} disabled={index === draft.appearance.sectionOrder.length - 1} onClick={() => moveSection(id, index + 1)}>↓</button>
+          </li>)}
+        </ol>
+      </fieldset>
+      <h2>Fotky studia</h2>
+      {!draft.configured && <p className="admin-message">Web zatím používá původní galerii. Jakmile zveřejníte vlastní fotografie, galerie zobrazí váš výběr.</p>}
       <div className={`website-photo-drop${dropping ? " is-dragging" : ""}`}
         onDragOver={(event) => { if (event.dataTransfer.types.includes("Files")) { event.preventDefault(); setDropping(true); } }}
         onDragLeave={() => setDropping(false)} onDrop={dropFiles}>
@@ -214,14 +297,20 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
       </div>}
       <fieldset disabled={busy || loading} className="website-photo-placements">
         <legend>Hlavní fotografie</legend>
-        {([{ key: "homeId", label: "Úvodní stránka" }, { key: "aboutId", label: "O studiu" }] as const).map(({ key, label }) =>
-          <label key={key}>{label}
-            <select value={draft[key] ?? ""} onChange={(event) => { const value = event.currentTarget.value || null; setDraft((state) => state && ({ ...state, [key]: value })); }}>
+        {([{ key: "homeId", label: "Úvodní fotka" }, { key: "aboutId", label: "Stránka O studiu" },
+          { key: "storyId", label: "Představení studia na úvodu" }, { key: "flowId", label: "Sekce Balance Flow na úvodu" }] as const).map(({ key, label }) => {
+          const topLevel = key === "homeId" || key === "aboutId";
+          return <label key={key}>{label}
+            <select value={(topLevel ? draft[key] : draft.appearance[key]) ?? ""} onChange={(event) => {
+              const value = event.currentTarget.value || null;
+              if (topLevel) setDraft((state) => state && ({ ...state, [key]: value }));
+              else setAppearance({ [key]: value });
+            }}>
               <option value="">Ponechat výchozí fotografii</option>
               {draft.entries.map((entry, index) => <option key={entry.assetId} value={entry.assetId}>{index + 1}. {entry.alt.trim() || "Fotografie bez popisu"}</option>)}
             </select>
-          </label>
-        )}
+          </label>;
+        })}
       </fieldset>
       <h2>Pořadí galerie</h2>
       <p>Přetáhněte fotku za úchyt nebo ji posuňte šipkami. Skrytí fotografie v galerii nemění její použití na úvodu nebo v O studiu.</p>
@@ -259,6 +348,9 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
               }} /> Zobrazit v galerii</label>
               <button type="button" disabled={busy || loading} onClick={() => setDraft((state) => state && ({
                 ...state, homeId: state.homeId === entry.assetId ? null : state.homeId, aboutId: state.aboutId === entry.assetId ? null : state.aboutId,
+              appearance: { ...state.appearance,
+                storyId: state.appearance.storyId === entry.assetId ? null : state.appearance.storyId,
+                flowId: state.appearance.flowId === entry.assetId ? null : state.appearance.flowId },
                 entries: state.entries.filter((photo) => photo.assetId !== entry.assetId)
               }))}>Odebrat z výběru</button>
             </div>
@@ -271,23 +363,39 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
           <button type="button" aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>Telefon</button>
           <button type="button" aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>Počítač</button>
         </div>
-        <div className={`website-photo-preview-frame ${device}`}>
+        <p>Ukázka loga, barev, fotek a pořadí. Karty lekcí a další obsah jsou v náhledu zkrácené.</p>
+        <div className={`website-photo-preview-frame website-appearance-preview ${device}`} data-studio-palette={draft.appearance.palette}>
+          <div className="website-preview-header">
+            <div className="website-logo-preview"><StudioPhoto image={draft.logo ?? defaultLogo} /></div>
+            <span className="button button-small">Prohlédnout rozvrh</span>
+          </div>
           <p><strong>Úvodní stránka</strong></p>
           <div className="website-photo-cover home"><StudioPhoto image={selected(draft.homeId)?.image ?? { src:"/images/studio-balance/studio-hero.jpg", alt:"Výchozí úvodní fotografie", width:1180, height:620 }} />
             <div className="website-photo-cover-copy" aria-hidden="true">Najdi si svůj balanc.</div>
           </div>
+          <ol className="website-preview-sections" aria-label="Sekce úvodní stránky v navrženém pořadí">
+            {draft.appearance.sectionOrder.map((id) => <li key={id}>
+              <strong>{sectionLabels[id]}</strong>
+              {id === "studio" && <div className="website-photo-cover"><StudioPhoto image={selected(draft.appearance.storyId)?.image ?? {
+                src: "/images/studio-balance/studio-detail.jpg", alt: "Teplý interiér Studia Balance", width: 1180, height: 620
+              }} /></div>}
+              {id === "flow" && <div className="website-photo-cover"><StudioPhoto image={selected(draft.appearance.flowId)?.image ?? {
+                src: "/images/studio-balance/studio-hero.jpg", alt: "Klidný prostor Studia Balance", width: 1180, height: 620
+              }} /></div>}
+            </li>)}
+          </ol>
           <p><strong>O studiu</strong></p>
           <div className="website-photo-cover"><StudioPhoto image={selected(draft.aboutId)?.image ?? { src:"/images/studio-balance/studio-gallery.jpeg", alt:"Výchozí fotografie O studiu", width:1180, height:620 }} /></div>
           <p><strong>Galerie</strong></p>
           <div className="website-photo-preview-gallery">{draft.entries.filter((entry) => entry.visible).map((entry) => <StudioPhoto key={entry.assetId} image={{ ...entry.image, alt: entry.alt }} />)}</div>
-          {!draft.entries.some((entry) => entry.visible) && <p>Galerie bude bez fotografií.</p>}
+          {!draft.entries.some((entry) => entry.visible) && <p>{!draft.configured && !draft.entries.length ? "Zobrazí se původní galerie." : "Galerie bude bez fotografií."}</p>}
         </div>
       </details>
       <div className="website-photo-publish">
         {dirty && draft.entries.some((entry) => Array.from(entry.alt.trim()).length < 2) && <p>Než fotky zveřejníte, doplňte ke každé krátký popis.</p>}
-        <button className="button" type="button" disabled={!dirty || busy || loading || conflict || draft.entries.some((entry) => Array.from(entry.alt.trim()).length < 2)} onClick={() => void publish()}>Zveřejnit fotky</button>
-        {dirty && !conflict && <button type="button" disabled={busy || loading} onClick={() => { if (window.confirm("Zahodit rozepsané změny fotek?")) { setDraft(saved); setError(""); setMessage(""); setFailures([]); } }}>Zahodit změny</button>}
-        {conflict && <button type="button" disabled={busy || loading} onClick={() => { if (window.confirm("Načíst uložené fotky a zahodit tento neuložený výběr?")) void load(); }}>Načíst aktuální stav</button>}
+        <button className="button" type="button" disabled={!dirty || busy || loading || conflict || draft.entries.some((entry) => Array.from(entry.alt.trim()).length < 2)} onClick={() => void publish()}>Zveřejnit vzhled webu</button>
+        {dirty && !conflict && <button type="button" disabled={busy || loading} onClick={() => { if (window.confirm("Zahodit rozepsané změny vzhledu?")) { setDraft(saved); setError(""); setMessage(""); setFailures([]); } }}>Zahodit změny</button>}
+        {conflict && <button type="button" disabled={busy || loading} onClick={() => { if (window.confirm("Načíst zveřejněný vzhled a zahodit rozepsané změny?")) void load(); }}>Načíst aktuální stav</button>}
       </div>
     </>}
   </section>;

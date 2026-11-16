@@ -7,6 +7,8 @@ import { PublicAnalytics } from "../components/public-analytics";
 import { adminIdentityCookies, identityCookies } from "../lib/identity";
 
 import { StudioStatusProvider } from "../components/studio-status";
+import { StudioBrandProvider } from "../components/studio-brand";
+import { readStudioWebsitePhotos } from "../lib/read-studio-website-photos";
 import { PwaRegister } from "../components/pwa-register";
 import { publicAppUrl } from "../lib/seo";
 import "./styles.css";
@@ -50,10 +52,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
   const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const appearance = (await readStudioWebsitePhotos())?.appearance;
   const analyticsEligible = !cookieStore.has(identityCookies.session) && !cookieStore.has(adminIdentityCookies.session);
   return (
     <html lang="cs">
-      <body><StudioStatusProvider><PwaRegister /><PublicAnalytics eligible={analyticsEligible} nonce={nonce} />{children}{analyticsEligible && <PublicAnalyticsNotice />}</StudioStatusProvider></body>
+      <body data-studio-palette={appearance?.palette}><StudioBrandProvider logo={appearance?.logo ?? null}><StudioStatusProvider><PwaRegister /><PublicAnalytics eligible={analyticsEligible} nonce={nonce} />{children}{analyticsEligible && <PublicAnalyticsNotice />}</StudioStatusProvider></StudioBrandProvider></body>
     </html>
   );
 }

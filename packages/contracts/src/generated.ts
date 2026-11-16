@@ -11,7 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read only published studio photos */
+        /** Read published website appearance and photos */
         get: operations["getStudioPhotos"];
         put?: never;
         post?: never;
@@ -28,7 +28,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Read studio photo selections and ordered entries */
+        /** Read website appearance, photo selections and ordered entries */
         get: operations["adminGetStudioPhotos"];
         put?: never;
         /** Publish studio photos atomically with revision checking */
@@ -1189,11 +1189,28 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        StudioAppearanceInput: {
+            /** @enum {string} */
+            palette: "original" | "sage" | "rose" | "clay";
+            sectionOrder: ("studio" | "lessons" | "flow" | "transformations" | "reviews" | "massage")[];
+            logoId: string | null;
+            storyId: string | null;
+            flowId: string | null;
+        };
+        StudioAppearancePublic: {
+            /** @enum {string} */
+            palette: "original" | "sage" | "rose" | "clay";
+            sectionOrder: ("studio" | "lessons" | "flow" | "transformations" | "reviews" | "massage")[];
+            logo: components["schemas"]["StudioImage"] | null;
+            story: components["schemas"]["StudioImage"] | null;
+            flow: components["schemas"]["StudioImage"] | null;
+        };
         StudioPhotosPublic: {
             configured: boolean;
             home: components["schemas"]["StudioImage"] | null;
             about: components["schemas"]["StudioImage"] | null;
             gallery: components["schemas"]["StudioImage"][];
+            appearance: components["schemas"]["StudioAppearancePublic"];
         };
         StudioPhotoEntryInput: {
             /** Format: uuid */
@@ -1213,12 +1230,16 @@ export interface components {
             homeId: string | null;
             aboutId: string | null;
             entries: components["schemas"]["StudioPhotoEntryInput"][];
+            appearance?: components["schemas"]["StudioAppearanceInput"];
         };
         StudioPhotosAdmin: {
             revision: number;
             homeId: string | null;
             aboutId: string | null;
             entries: components["schemas"]["StudioPhotoEntry"][];
+            appearance: components["schemas"]["StudioAppearanceInput"];
+            configured: boolean;
+            logo: components["schemas"]["StudioImage"] | null;
         };
         ReviewSubmissionChallenge: {
             token: string;

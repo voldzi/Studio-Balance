@@ -554,3 +554,11 @@ fotku, fotku O studiu a pořadí i viditelnost galerie. Změny se veřejně
 projeví až po zveřejnění. Pořadí se mění tažením nebo šipkami. Nahrané
 fotografie musí být schválené pro veřejné použití; rozložení, logo ani
 rezervace se nemění. Viz [ADR 0033](adr/0033-studio-website-photos.md).
+
+## CD-076 — Vzhled webu v administraci (2026-11-16)
+
+Sekce **Vzhled webu** navazuje na CD-075. Správkyně může nahrát schválené
+logo, zvolit jednu z připravených barevných palet, přesunout sekce na úvodní
+stránce a měnit fotky včetně galerie. Náhled je soukromý a předchází
+společnému zveřejnění. Hlavní úvod, hlavička a patička mají pevné místo.
+Správa veřejného obsahu nevyžaduje nové nasazení. Viz [ADR 0034](adr/0034-studio-website-appearance.md).

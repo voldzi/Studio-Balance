@@ -1,7 +1,9 @@
 import { WebsiteCoverPhoto } from "../components/website-cover-photo";
 import { readStudioWebsitePhotos } from "../lib/read-studio-website-photos";
 import { ScheduleCallToAction } from "../components/studio-status";
-import Image from "next/image";
+import { Fragment } from "react";
+import { homepageSections } from "@studiobalance/domain";
+import { StudioBrandLogo } from "../components/studio-brand";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -19,6 +21,53 @@ export const metadata: Metadata = homeMetadata;
 
 export default async function HomePage() {
   const photos = await readStudioWebsitePhotos();
+  const appearance = photos?.appearance;
+  const sections = {
+    studio: <section className="story" id="studio" aria-labelledby="studio-title">
+      <div className="story-copy">
+        <p className="eyebrow">Studio Balance</p>
+        <h2 id="studio-title">Místo, kde se spojuje pohyb, síla a klid.</h2>
+        <p>
+          Studio Balance je prostor, kde pečujeme o tělo i mysl. V jemné atmosféře,
+          s osobním přístupem a důrazem na kvalitu pohybu.
+        </p>
+        <Link className="text-link" href="/o-studiu">Více o studiu</Link>
+      </div>
+      <div className="story-image-wrap">
+        <WebsiteCoverPhoto className="story-image" photo={appearance?.story} fallback={{
+          src: "/images/studio-balance/studio-detail.jpg", alt: "Teplý interiér Studia Balance"
+        }} sizes="(max-width: 760px) 100vw, 55vw" priority={false} />
+      </div>
+    </section>,
+
+    lessons: <section className="lesson-section" id="lekce" aria-labelledby="lessons-title">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Lekce</p>
+          <h2 id="lessons-title">Vyberte si svůj pohyb</h2>
+        </div>
+        <Link className="text-link" href="/lekce">Všechny lekce</Link>
+      </div>
+      <LessonCatalog compact />
+    </section>,
+
+    flow: <section className="flow-banner" aria-labelledby="flow-title">
+      <WebsiteCoverPhoto className="flow-image" photo={appearance?.flow} fallback={{
+        src: "/images/studio-balance/studio-hero.jpg", alt: "Klidný prostor Studia Balance"
+      }} sizes="1180px" priority={false} />
+      <div className="flow-overlay" />
+      <div className="flow-copy">
+        <p className="eyebrow eyebrow-light">Balance Flow Method</p>
+        <h2 id="flow-title">Plynulost, stabilita a rovnováha.</h2>
+        <p>Autorská metoda pro vědomý pohyb bez tlaku na výkon.</p>
+        <Link className="button button-ghost" href="/balance-flow">Poznat Balance Flow</Link>
+      </div>
+    </section>,
+
+    transformations: <TransformationsShowcase homepage />,
+    reviews: <ReviewsShowcase homepage />,
+    massage: <MassagePartnerSection />
+  };
   return (
     <>
       <StructuredData data={studioStructuredData()} />
@@ -39,64 +88,12 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-
-        <section className="story" id="studio" aria-labelledby="studio-title">
-          <div className="story-copy">
-            <p className="eyebrow">Studio Balance</p>
-            <h2 id="studio-title">Místo, kde se spojuje pohyb, síla a klid.</h2>
-            <p>
-              Studio Balance je prostor, kde pečujeme o tělo i mysl. V jemné atmosféře,
-              s osobním přístupem a důrazem na kvalitu pohybu.
-            </p>
-            <Link className="text-link" href="/o-studiu">Více o studiu</Link>
-          </div>
-          <div className="story-image-wrap">
-            <Image
-              alt="Teplý interiér Studia Balance"
-              className="story-image"
-              fill
-              sizes="(max-width: 760px) 100vw, 55vw"
-              src="/images/studio-balance/studio-detail.jpg"
-            />
-          </div>
-        </section>
-
-        <section className="lesson-section" id="lekce" aria-labelledby="lessons-title">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Lekce</p>
-              <h2 id="lessons-title">Vyberte si svůj pohyb</h2>
-            </div>
-            <Link className="text-link" href="/lekce">Všechny lekce</Link>
-          </div>
-          <LessonCatalog compact />
-        </section>
-
-        <section className="flow-banner" aria-labelledby="flow-title">
-          <Image
-            alt="Klidný prostor Studia Balance"
-            className="flow-image"
-            fill
-            sizes="1180px"
-            src="/images/studio-balance/studio-hero.jpg"
-          />
-          <div className="flow-overlay" />
-          <div className="flow-copy">
-            <p className="eyebrow eyebrow-light">Balance Flow Method</p>
-            <h2 id="flow-title">Plynulost, stabilita a rovnováha.</h2>
-            <p>Autorská metoda pro vědomý pohyb bez tlaku na výkon.</p>
-            <Link className="button button-ghost" href="/balance-flow">Poznat Balance Flow</Link>
-          </div>
-        </section>
-
-        <TransformationsShowcase homepage />
-        <ReviewsShowcase homepage />
-        <MassagePartnerSection />
+        {(appearance?.sectionOrder ?? homepageSections).map((id) => <Fragment key={id}>{sections[id]}</Fragment>)}
       </main>
 
       <footer id="kontakt" className="site-footer">
         <div className="footer-brand">
-          <Image alt="Studio Balance" height={92} src="/images/studio-balance/brand-logo.jpg" width={154} />
+          <StudioBrandLogo />
           <p>Najdi si svůj balanc.</p>
         </div>
         <div>

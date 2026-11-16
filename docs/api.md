@@ -589,13 +589,16 @@ záznamu se operace odmítne. Účet obdrží interní oznámení, žádné exte
 se touto změnou neaktivuje. Při síťové chybě lze opakovat přesně stejný apply
 se stejným klíčem; při 409 načíst nový náhled a znovu potvrdit.
 
-### Fotografie veřejného webu
+### Vzhled a fotografie veřejného webu
 
-- `GET /api/v1/content/studio-photos` bez přihlášení vrací pouze úvodní fotografii,
+- `GET /api/v1/content/studio-photos` bez přihlášení vrací zveřejněný vzhled, úvodní fotografii,
   fotografii pro O studiu a viditelnou galerii v uloženém pořadí. Pole
   `configured` rozliší výchozí galerii od záměrně prázdné.
 - `GET /api/v1/admin/content/studio-photos` vrací správci také skryté položky
-  a revizi. `POST` na stejné cestě atomicky zveřejní celý výběr a pořadí (nejvýše 40 položek).
+  a revizi. `POST` na stejné cestě atomicky zveřejní celý výběr (nejvýše 40 fotek)
+  a volitelné `appearance`: povolenou paletu, permutaci šesti sekcí, logo a fotky
+  pro představení studia a Balance Flow. Když starší klient pole vynechá,
+  nastavení zůstává zachované s výjimkou umístění odebraných fotografií.
   Zastaralá revize vrací 409; cizí či nesprávný typ média vrací 400.
 - `POST /api/v1/admin/media/studio-website-image` přijímá po jednom JPG/PNG/WebP
   v jednosouborovém formuláři `multipart/form-data`, pole `file` do 850 KiB. Editor přijímá zdroj do 8 MiB a větší fotky před přenosem zmenší. Nahrání samo fotografii nezveřejní; soukromý náhled používá

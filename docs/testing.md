@@ -703,3 +703,8 @@ PostgreSQL integrační test pokrývá ochranu editace (MFA), skryté a nezveře
 objekty, oddělení typů médií, pořadí, titulní výběr, souběžnou publikaci a
 audit. Na klientovi zkontrolovat hromadný výběr, drop souborů, přesun tažením
 a klávesnicí, náhled, chybný soubor a zakázané zveřejnění bez popisu.
+
+Pro CD-076 integračně ověřit souběh revizí, neplatnou paletu a neúplné nebo
+duplicitní pořadí, omezení na schválený mediální prostor a soukromí konceptu
+loga. Změna pouze vzhledu má zachovat původní galerii. Ověřit skutečné pořadí
+sekcí a výměnu fotek ve veřejném výstupu i ovládání náhledu na 360 px.

@@ -83,7 +83,7 @@ export class MediaController {
       ))) OR (ma.storage_key LIKE 'studio-website/%' AND (EXISTS (
         SELECT 1 FROM studio_website_photos p WHERE p.asset_id=ma.id AND p.visible
       ) OR EXISTS (
-        SELECT 1 FROM studio_website_photo_settings s WHERE s.home_asset_id=ma.id OR s.about_asset_id=ma.id
+        SELECT 1 FROM studio_website_photo_settings s WHERE ma.id IN (s.home_asset_id, s.about_asset_id, s.logo_asset_id, s.story_asset_id, s.flow_asset_id)
       ))))
     `, [id]);
     const asset = result.rows[0];

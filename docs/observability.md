@@ -359,3 +359,6 @@ Publikace fotografií studia zapíše `studio_photos.published` s aktérem a
 requestId ve stejné transakci jako obsah. Upload používá `media.uploaded`.
 Při konfliktu revizí sledovat odpověď 409, při nedostupném S3 chyby zápisu;
 veřejné čtení neodesílá identifikátory fotek do analytiky.
+
+Publikace vzhledu a fotek podle CD-076 používá existující auditní událost
+`studio_photos.published` s identitou správce a identifikátorem požadavku.

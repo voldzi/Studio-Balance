@@ -749,3 +749,10 @@ Každá položka má popis, přepínač zobrazení a přesun nahoru/dolů i úch
 přetažení. Dvě nezávislé volby pokrývají úvod a O studiu. Náhled telefonu
 a počítače ukazuje orientační ořez a pořadí. Jedno potvrzení zveřejní změny;
 neuložený výběr zůstává při přechodu do jiné sekce téže otevřené administrace.
+
+### Vzhled webu
+
+Podle CD-076 jsou fotky pod položkou **Vzhled webu** spolu s logem, paletou a
+pořadím sekcí. Hlavní titulek s fotografií je vždy první. Posuny sekcí i
+fotek mají tlačítka se čitelným názvem, výběr fotografie popsaný podle místa.
+Náhled v užší či širší šířce ukazuje změny před společným zveřejněním.

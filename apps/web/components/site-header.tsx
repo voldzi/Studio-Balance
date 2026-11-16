@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StudioBrandLogo } from "./studio-brand";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
@@ -46,13 +46,7 @@ export function SiteHeader({ inverse = false }: { inverse?: boolean }) {
   return (
     <><StudioAnnouncement /><header className={`site-header${inverse ? " site-header-inverse" : ""}`}>
       <Link className="brand-image" href="/" aria-label="Studio Balance – domovská stránka">
-        <Image
-          alt="Studio Balance"
-          height={72}
-          priority
-          src="/images/studio-balance/brand-logo.jpg"
-          width={120}
-        />
+        <StudioBrandLogo header />
       </Link>
       <nav aria-label="Hlavní navigace">
         <Link href="/o-studiu">O studiu</Link>

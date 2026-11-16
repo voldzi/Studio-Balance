@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
+import { homepageSections } from "@studiobalance/domain";
 import multipart from "@fastify/multipart";
 import { Test } from "@nestjs/testing";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -23,7 +24,7 @@ const adminPath = "/api/v1/admin/content/studio-photos";
 const publicPath = "/api/v1/content/studio-photos";
 const uploadPath = "/api/v1/admin/media/studio-website-image";
 
-it.skipIf(!databaseUrl)("publishes ordered website photos atomically and protects draft/hidden media with real Postgres", async () => {
+it.skipIf(!databaseUrl)("publishes website appearance and ordered photos atomically and protects draft/hidden media with real Postgres", async () => {
   const url = new URL(databaseUrl!);
   if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) throw new Error("Local database only");
   const schema = `studio_website_${randomUUID().replaceAll("-","")}`;
@@ -79,7 +80,11 @@ it.skipIf(!databaseUrl)("publishes ordered website photos atomically and protect
     const inject = app.inject.bind(app);
     expect((await inject({ method:"GET",url:adminPath })).statusCode).toBe(401);
     expect((await inject({ method:"POST",url:adminPath,headers:await cookie(["admin"],["pwd"]),payload:{} })).statusCode).toBe(403);
-    expect((await inject({ method:"GET",url:publicPath })).json()).toEqual({ configured:false, home:null, about:null, gallery:[] });
+    const defaults = { palette: "original", sectionOrder: [...homepageSections], logoId: null, storyId: null, flowId: null };
+    expect((await inject({ method:"GET",url:publicPath })).json()).toEqual({
+      configured:false, home:null, about:null, gallery:[],
+      appearance:{ palette:"original", sectionOrder:homepageSections, logo:null, story:null, flow:null }
+    });
     const uploadRequest = (body: Buffer, field = "file", headers = auth) => inject({
       method:"POST",url:uploadPath,headers:{...headers,"content-type":"multipart/form-data; boundary=studio-test"},
       payload:Buffer.concat([Buffer.from(`--studio-test\r\nContent-Disposition: form-data; name="${field}"; filename="photo.webp"\r\nContent-Type: image/webp\r\n\r\n`),
@@ -93,16 +98,40 @@ it.skipIf(!databaseUrl)("publishes ordered website photos atomically and protect
       expect(response.statusCode).toBe(201);
       return response.json().id as string;
     };
-    const [a,b,c] = [await upload(),await upload(),await upload()];
-    expect((await inject({ method:"GET",url:`/api/v1/media/${a}` })).statusCode).toBe(404);
-    expect((await inject({ method:"GET",url:`/api/v1/admin/media/${a}`,headers:auth })).statusCode).toBe(200);
+    const [a,b,c,logo] = [await upload(),await upload(),await upload(),await upload()];
+    const asset = (id: string) => `/api/v1/media/${id}`;
+    for (const id of [a, logo]) {
+      expect((await inject({ method:"GET",url:asset(id) })).statusCode).toBe(404);
+      expect((await inject({ method:"GET",url:`/api/v1/admin/media/${id}`,headers:auth })).statusCode).toBe(200);
+    }
     const put = (payload: object) => inject({ method:"POST", url:adminPath, headers:auth, payload });
     const entries = [{assetId:b,alt:"Druhý sál",visible:true},{assetId:a,alt:"První sál",visible:true},{assetId:c,alt:"Skrytá fotka",visible:false}];
     const wrong = randomUUID();
     await setup.query("INSERT INTO media_assets(id,storage_key,content_type,width,height,size_bytes,created_by) VALUES ($1,$2,'image/webp',100,50,4,'test')",[wrong,`studio/${wrong}.webp`]);
     expect((await put({revision:0,homeId:wrong,aboutId:null,entries:[{assetId:wrong,alt:"Portrét",visible:true}]})).statusCode).toBe(400);
     expect((await put({revision:0,homeId:a,aboutId:null,entries:[entries[0],entries[0]]})).statusCode).toBe(400);
-    const payload = {revision:0,homeId:a,aboutId:b,entries};
+
+    const sectionOrder = [...homepageSections].reverse();
+    const designOnly = { revision:0, homeId:null, aboutId:null, entries:[],
+      appearance:{ ...defaults, palette:"sage", sectionOrder, logoId:logo }
+    };
+    for (const invalid of [
+      { palette:"<script>" }, { sectionOrder:sectionOrder.map(() => "lessons") },
+      { sectionOrder:sectionOrder.slice(1) }, { logoId:wrong }, { flowId:c }
+    ]) {
+      expect((await put({...designOnly, appearance:{...designOnly.appearance, ...invalid}})).statusCode).toBe(400);
+    }
+    expect((await inject({method:"GET",url:asset(logo)})).statusCode).toBe(404);
+    expect((await put(designOnly)).statusCode).toBe(200);
+    expect((await inject({method:"GET",url:publicPath})).json()).toMatchObject({
+      configured:false, gallery:[], appearance:{palette:"sage", sectionOrder, logo:{src:asset(logo)}}
+    });
+    expect((await inject({method:"GET",url:asset(logo)})).statusCode).toBe(200);
+    expect((await inject({method:"GET",url:adminPath,headers:auth})).json()).toMatchObject({
+      appearance:{logoId:logo}, logo:{src:`/api/v1/admin/media/${logo}`}
+    });
+
+    const payload = {revision:1,homeId:a,aboutId:b,entries};
     const outcomes = await Promise.all([put(payload),put({...payload,homeId:b})]);
     expect(outcomes.map((r) => r.statusCode).sort()).toEqual([200,409]);
     const live = await inject({method:"GET",url:publicPath});
@@ -111,11 +140,22 @@ it.skipIf(!databaseUrl)("publishes ordered website photos atomically and protect
     expect(live.body).not.toContain(c);
     expect((await inject({method:"GET",url:`/api/v1/media/${c}`})).statusCode).toBe(404);
     expect((await inject({method:"GET",url:`/api/v1/media/${a}`})).statusCode).toBe(200);
-    expect((await put({revision:1,homeId:c,aboutId:null,entries:entries.map((entry)=>({...entry,visible:false}))})).statusCode).toBe(200);
+    expect(live.json().appearance).toMatchObject({ palette:"sage", sectionOrder, logo:{src:asset(logo)} });
+    expect((await put({revision:2,homeId:c,aboutId:null,entries:entries.map((entry)=>({...entry,visible:false})),
+      appearance:{...defaults, storyId:a, flowId:b}
+    })).statusCode).toBe(200);
     expect((await inject({method:"GET",url:publicPath})).json()).toMatchObject({configured:true,home:{src:`/api/v1/media/${c}`},about:null,gallery:[]});
-    expect((await inject({method:"GET",url:`/api/v1/media/${a}`})).statusCode).toBe(404);
+    expect((await inject({method:"GET",url:publicPath})).json().appearance).toMatchObject({
+      palette:"original", sectionOrder:homepageSections, logo:null, story:{src:asset(a)}, flow:{src:asset(b)}
+    });
+    expect((await inject({method:"GET",url:asset(logo)})).statusCode).toBe(404);
+    expect((await inject({method:"GET",url:asset(a)})).statusCode).toBe(200);
+    expect((await inject({method:"GET",url:asset(b)})).statusCode).toBe(200);
     expect((await inject({method:"GET",url:`/api/v1/media/${c}`})).statusCode).toBe(200);
-    expect((await setup.query("SELECT count(*)::int AS count FROM application_audit WHERE action='studio_photos.published'")).rows[0]?.count).toBe(2);
+    expect((await put({revision:3,homeId:null,aboutId:null,entries:[],appearance:defaults})).statusCode).toBe(200);
+    expect((await inject({method:"GET",url:publicPath})).json()).toMatchObject({configured:true,gallery:[]});
+    expect((await inject({method:"GET",url:asset(a)})).statusCode).toBe(404);
+    expect((await setup.query("SELECT count(*)::int AS count FROM application_audit WHERE action='studio_photos.published'")).rows[0]?.count).toBe(4);
     const spec = JSON.parse(await readFile(new URL("../../../../openapi/openapi.json",import.meta.url),"utf8"));
     expect(Object.keys(live.json()).sort()).toEqual(spec.components.schemas.StudioPhotosPublic.required.sort());
     expect(spec.paths[uploadPath].post.security).toEqual([{adminSession:[]}]);

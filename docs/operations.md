@@ -1349,3 +1349,9 @@ nebylo součástí ověření. Veřejný web zobrazuje dosavadní fotky.
 Pro návrat před zavedení editoru použít standardní rollback na chráněnou
 revizi `296dd71`. Revize `017d925` má omezení nahrávání na veřejné bráně
 uvedené výše.
+
+### Vzhled webu
+
+Aditivní migrace 0035 rozšiřuje společnou revizi vzhledu a fotek. Pro návrat na
+`2f9a460` ponechte migraci i zveřejněná média. Předchozí verze zobrazuje dřívější
+šablonu. V editoru lze výchozí barevnou paletu a logo obnovit přímo, bez nasazení.

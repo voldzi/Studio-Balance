@@ -446,3 +446,10 @@ Správce nahrává JPG/PNG/WebP po dávkách výběrem či přetažením (8 MiB 
 soubor, 40 ve výběru) a doplní krátký popis. Vybere titulní plochy, mění
 pořadí či viditelnost galerie a před zveřejněním zobrazí náhled.
 Veřejný obsah se mění až při atomickém zveřejnění a bez nového nasazení.
+
+### Vzhled veřejného webu
+
+CD-076 umožňuje správci měnit logo a připravené palety, řadit sekce úvodu a
+spravovat fotky včetně galerie. Změny se projeví společným zveřejněním po
+soukromém náhledu. Publikace samotného loga, barev či pořadí zachová výchozí
+galerii, pokud dosud nebyly publikovány vlastní fotky.
