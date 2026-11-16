@@ -1355,3 +1355,18 @@ uvedené výše.
 Aditivní migrace 0035 rozšiřuje společnou revizi vzhledu a fotek. Pro návrat na
 `2f9a460` ponechte migraci i zveřejněná média. Předchozí verze zobrazuje dřívější
 šablonu. V editoru lze výchozí barevnou paletu a logo obnovit přímo, bez nasazení.
+
+Dne 16. 11. 2026 byla nasazena revize `2e41726`. Migrace 0035 proběhla,
+web, API a worker byly ověřeny ve stejné revizi. Bezpečnostní skeny všech
+obrazů prošly; výsledky jsou v
+`/srv/x5-production/archives/studio-balance/image-scans/2e41726/20261116T114125Z-5kaivBbL`.
+Lokálně prošlo `pnpm check` (529 aplikačních testů) i zkušební zveřejnění
+a ověření výsledné úvodní stránky, přetažení sekcí a šířky 360 px.
+Veřejný web a API po nasazení zachovaly původní logo, paletu, pořadí a fotky.
+Správa a mediální upload bez administrační relace vrátily 401. Přihlášené
+zveřejnění bylo vyzkoušeno pouze lokálně s testovacími daty.
+
+Verze `2f9a460` je chráněný návratový bod. Pokud správce po nasazení
+zveřejní pouze vzhled a galerie přitom zůstane výchozí, starší verze může
+galerii vyhodnotit jako publikovanou prázdnou, protože ji odvozuje od revize.
+Při pozdějším návratu nejprve ověřte aktuální stav galerie.
