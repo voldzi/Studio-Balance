@@ -1334,3 +1334,18 @@ přímý obrazový Content-Type. Zveřejnění proto používá POST JSON a nahr
 standardní jednosouborový multipart do 850 KiB. Prohlížeč před odesláním
 zmenší větší fotografie (zdrojový soubor do 8 MiB). Sharp nadále ověřuje
 skutečný formát a rozměry. Pravidla brány ani obecný JSON limit se nemění.
+
+Dne 16. 11. 2026 byla na webu, API a workeru ověřena produkční revize
+`2f9a460`. Všechny tři obrazy prošly bezpečnostním skenem; jeho výsledky
+jsou v `/srv/x5-production/archives/studio-balance/image-scans/2f9a460/20261116T084719Z-GHOFGbEy`.
+Lokálně prošlo `pnpm check` (529 aplikačních testů) a práce s editorem
+v prohlížeči včetně přetažení, náhledu a zveřejnění s testovacími daty.
+Produkce vrátila 200 pro úvod, O studiu, galerii a přihlášení do administrace.
+Všechny tři operace administrace prošly veřejnou bránou a bez přihlášení
+vrátily 401 s identifikátorem požadavku. API ověřilo spojení s vyhrazeným
+úložištěm. Přihlášené nahrání ani zveřejnění reálných fotek v produkci
+nebylo součástí ověření. Veřejný web zobrazuje dosavadní fotky.
+
+Pro návrat před zavedení editoru použít standardní rollback na chráněnou
+revizi `296dd71`. Revize `017d925` má omezení nahrávání na veřejné bráně
+uvedené výše.
