@@ -30,9 +30,9 @@ export interface paths {
         };
         /** Read studio photo selections and ordered entries */
         get: operations["adminGetStudioPhotos"];
+        put?: never;
         /** Publish studio photos atomically with revision checking */
-        put: operations["adminPublishStudioPhotos"];
-        post?: never;
+        post: operations["adminPublishStudioPhotos"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2348,9 +2348,13 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "image/jpeg": string;
-                "image/png": string;
-                "image/webp": string;
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description One JPEG/PNG/WebP, at most 850 KiB after resizing in the editor.
+                     */
+                    file: string;
+                };
             };
         };
         responses: {

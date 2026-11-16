@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, HttpException, HttpStatus, Inject, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Header, HttpException, HttpStatus, Inject, HttpCode, Post, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 import { AdminRoleGuard, type AdminRequest } from "../admin/admin-role.guard.js";
 import { DatabaseService } from "../database/database.service.js";
@@ -50,7 +50,8 @@ export class AdminStudioPhotosController {
     return (await this.database.query<Settings>(snapshot, ["/api/v1/admin/media/"])).rows[0]!;
   }
 
-  @Put()
+  @Post()
+  @HttpCode(200)
   @Header("Cache-Control", "private, no-store")
   async publish(@Req() request: AdminRequest, @Body() body: unknown) {
     const parsed = schema.safeParse(body);

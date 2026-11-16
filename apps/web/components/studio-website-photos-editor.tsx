@@ -12,6 +12,35 @@ const endpoint = "/api/v1/admin/content/studio-photos";
 type UploadError = { file: File; message: string; retry: boolean };
 type UploadResult = { id: string; width: number; height: number };
 
+const transportLimit = 850 * 1024;
+async function prepareUpload(file: File): Promise<FormData> {
+  const form = new FormData();
+  if (file.size <= transportLimit) {
+    const suffix = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
+    form.append("file", file, `studio-photo.${suffix}`);
+    return form;
+  }
+  const bitmap = await createImageBitmap(file);
+  try {
+    if (bitmap.width * bitmap.height > 40_000_000) throw new Error("Fotografie má příliš velké rozměry.");
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Prohlížeč nedokáže fotku zmenšit. Vyberte menší soubor.");
+    for (const [longSide, quality] of [[2000, .88], [1600, .8], [1200, .72], [800, .65]] as const) {
+      const scale = Math.min(1, longSide / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+      if (blob && blob.size <= transportLimit && websitePhotoMime.includes(blob.type)) {
+        form.append("file", blob, "studio-photo.webp");
+        return form;
+      }
+    }
+    throw new Error("Fotku se nepodařilo dostatečně zmenšit. Vyberte menší soubor.");
+  } finally { bitmap.close(); }
+}
+
 export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: boolean; onAuthRequired: () => void }) {
   const [draft, setDraft] = useState<AdminWebsitePhotos>();
   const [saved, setSaved] = useState<AdminWebsitePhotos>();
@@ -87,7 +116,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
         if (authLost) { rejected.push({ file, message: "Přihlaste se a zkuste znovu.", retry: true }); continue; }
         try {
           const photo = await apiRequest<UploadResult>("/api/v1/admin/media/studio-website-image", {
-            method: "POST", headers: { "content-type": file.type }, body: file, signal: AbortSignal.timeout(45_000)
+            method: "POST", body: await prepareUpload(file), signal: AbortSignal.timeout(45_000)
           });
           const alt = "";
           setDraft((state) => state && ({
@@ -97,7 +126,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
           added++;
         } catch (cause) {
           if (cause instanceof ApiError && cause.status === 401) { authLost = true; onAuthRequired(); }
-          rejected.push({ file, message: cause instanceof ApiError ? cause.message : "Nahrávání selhalo.", retry: true });
+          rejected.push({ file, message: cause instanceof Error ? cause.message : "Nahrávání selhalo.", retry: true });
         }
       }
       setFailures((previous) => [...previous.filter(({file}) => !files.includes(file)), ...rejected].slice(0, websitePhotoLimit));
@@ -121,7 +150,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
     setError("");
     setMessage("");
     try {
-      const current = await apiRequest<AdminWebsitePhotos>(endpoint, { method: "PUT", body: JSON.stringify(payload) });
+      const current = await apiRequest<AdminWebsitePhotos>(endpoint, { method: "POST", body: JSON.stringify(payload) });
       setDraft(current);
       setSaved(current);
       setMessage("Fotky byly zveřejněny. Web nyní zobrazuje uložený výběr.");
@@ -174,7 +203,7 @@ export function StudioWebsitePhotosEditor({ active, onAuthRequired }: { active: 
         <strong>Přetáhněte sem fotky z počítače</strong>
         <label>nebo vyberte soubory <input type="file" multiple accept={websitePhotoMime.join(",")} disabled={busy || loading || draft.entries.length >= websitePhotoLimit}
           onChange={(event) => { const files = Array.from(event.currentTarget.files ?? []); event.currentTarget.value = ""; void upload(files); }} /></label>
-        <small>JPG, PNG nebo WebP, každá do 8 MB. Celkem {draft.entries.length} z {websitePhotoLimit} fotek.</small>
+        <small>JPG, PNG nebo WebP, každá do 8 MB. Větší fotky se automaticky zmenší. Celkem {draft.entries.length} z {websitePhotoLimit} fotek.</small>
       </div>
       {progress && <p role="status">{progress}</p>}
       {failures.length > 0 && <div className="admin-message"><strong>Některé fotky se nenahrály</strong>

@@ -113,7 +113,7 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<Response>(path: string, init?: RequestInit): Promise<Response> {
-  const response = await fetch(path, { ...init, cache: "no-store", headers: { "content-type": "application/json", ...init?.headers } });
+  const response = await fetch(path, { ...init, cache: "no-store", headers: { ...(init?.body instanceof FormData ? {} : { "content-type": "application/json" }), ...init?.headers } });
   if (!response.ok) {
     const body = (await response.json().catch(() => undefined)) as { error?: { code?: string; message?: string } } | undefined;
     throw new ApiError(body?.error?.code ?? "REQUEST_FAILED", body?.error?.message ?? "Požadavek se nepodařilo dokončit.", response.status);

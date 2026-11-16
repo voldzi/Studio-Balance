@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { AdminRoleGuard, type AdminRequest } from "../admin/admin-role.guard.js";
 import { DatabaseService } from "../database/database.service.js";
+import { readWebsitePhoto } from "./website-photo-upload.js";
 import { MediaStorageService } from "./media-storage.service.js";
 
 const uuid = z.string().uuid();
@@ -25,8 +26,8 @@ export class AdminMediaController {
   }
 
   @Post("studio-website-image")
-  async uploadStudioWebsiteImage(@Req() request: AdminRequest, @Body() body: unknown) {
-    return this.saveImage(request, body, "studio-website");
+  async uploadStudioWebsiteImage(@Req() request: AdminRequest) {
+    return this.saveImage(request, await readWebsitePhoto(request), "studio-website");
   }
 
   private async saveImage(request: AdminRequest, body: unknown, namespace: "transformations" | "studio" | "studio-website") {

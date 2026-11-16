@@ -595,8 +595,8 @@ se stejným klíčem; při 409 načíst nový náhled a znovu potvrdit.
   fotografii pro O studiu a viditelnou galerii v uloženém pořadí. Pole
   `configured` rozliší výchozí galerii od záměrně prázdné.
 - `GET /api/v1/admin/content/studio-photos` vrací správci také skryté položky
-  a revizi. `PUT` atomicky zveřejní celý výběr a pořadí (nejvýše 40 položek).
+  a revizi. `POST` na stejné cestě atomicky zveřejní celý výběr a pořadí (nejvýše 40 položek).
   Zastaralá revize vrací 409; cizí či nesprávný typ média vrací 400.
 - `POST /api/v1/admin/media/studio-website-image` přijímá po jednom JPG/PNG/WebP
-  do 8 MiB. Nahrání samo fotografii nezveřejní; soukromý náhled používá
+  v jednosouborovém formuláři `multipart/form-data`, pole `file` do 850 KiB. Editor přijímá zdroj do 8 MiB a větší fotky před přenosem zmenší. Nahrání samo fotografii nezveřejní; soukromý náhled používá
   existující admin media route. Produkční soubory zůstávají v izolovaném S3.

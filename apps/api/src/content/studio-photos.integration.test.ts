@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { randomUUID } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
+import multipart from "@fastify/multipart";
 import { Test } from "@nestjs/testing";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 import { SignJWT } from "jose";
@@ -63,7 +64,7 @@ it.skipIf(!databaseUrl)("publishes ordered website photos atomically and protect
         } }]
     }).compile();
     const adapter = new FastifyAdapter({logger:false});
-    adapter.getInstance().addContentTypeParser("image/webp", {parseAs:"buffer"}, (_req, body, done) => done(null, body));
+    void adapter.getInstance().register(multipart);
     app = module.createNestApplication<NestFastifyApplication>(adapter, {logger:false});
     configureHttp(app, config);
     await app.init();
@@ -77,17 +78,25 @@ it.skipIf(!databaseUrl)("publishes ordered website photos atomically and protect
     const auth = await cookie(["admin"],["pwd","otp"]);
     const inject = app.inject.bind(app);
     expect((await inject({ method:"GET",url:adminPath })).statusCode).toBe(401);
-    expect((await inject({ method:"PUT",url:adminPath,headers:await cookie(["admin"],["pwd"]),payload:{} })).statusCode).toBe(403);
+    expect((await inject({ method:"POST",url:adminPath,headers:await cookie(["admin"],["pwd"]),payload:{} })).statusCode).toBe(403);
     expect((await inject({ method:"GET",url:publicPath })).json()).toEqual({ configured:false, home:null, about:null, gallery:[] });
+    const uploadRequest = (body: Buffer, field = "file", headers = auth) => inject({
+      method:"POST",url:uploadPath,headers:{...headers,"content-type":"multipart/form-data; boundary=studio-test"},
+      payload:Buffer.concat([Buffer.from(`--studio-test\r\nContent-Disposition: form-data; name="${field}"; filename="photo.webp"\r\nContent-Type: image/webp\r\n\r\n`),
+        body, Buffer.from("\r\n--studio-test--\r\n")])
+    });
+    expect((await uploadRequest(Buffer.from("webp"),"other")).statusCode).toBe(400);
+    expect((await uploadRequest(Buffer.alloc(850*1024+1,1))).statusCode).toBe(413);
+    expect((await uploadRequest(Buffer.alloc(850*1024,1))).statusCode).toBe(201);
     const upload = async () => {
-      const response = await inject({ method:"POST",url:uploadPath,headers:{...auth,"content-type":"image/webp"},payload:Buffer.from("webp") });
+      const response = await uploadRequest(Buffer.from("webp"));
       expect(response.statusCode).toBe(201);
       return response.json().id as string;
     };
     const [a,b,c] = [await upload(),await upload(),await upload()];
     expect((await inject({ method:"GET",url:`/api/v1/media/${a}` })).statusCode).toBe(404);
     expect((await inject({ method:"GET",url:`/api/v1/admin/media/${a}`,headers:auth })).statusCode).toBe(200);
-    const put = (payload: object) => inject({ method:"PUT", url:adminPath, headers:auth, payload });
+    const put = (payload: object) => inject({ method:"POST", url:adminPath, headers:auth, payload });
     const entries = [{assetId:b,alt:"Druhý sál",visible:true},{assetId:a,alt:"První sál",visible:true},{assetId:c,alt:"Skrytá fotka",visible:false}];
     const wrong = randomUUID();
     await setup.query("INSERT INTO media_assets(id,storage_key,content_type,width,height,size_bytes,created_by) VALUES ($1,$2,'image/webp',100,50,4,'test')",[wrong,`studio/${wrong}.webp`]);

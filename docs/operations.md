@@ -1328,3 +1328,9 @@ být uloženy ve veřejné cache. Pro obnovení výchozí hlavní fotky zvolit
 „Ponechat výchozí fotografii“. Odebrání z výběru neprovádí smazání z S3.
 Předchozí aplikace může běžet s ponechanou aditivní migrací; veřejný web
 bude při rollbacku zobrazovat původní fotografický obsah.
+
+Při produkčním ověření první revize 017d925 odmítala veřejná brána PUT a
+přímý obrazový Content-Type. Zveřejnění proto používá POST JSON a nahrání
+standardní jednosouborový multipart do 850 KiB. Prohlížeč před odesláním
+zmenší větší fotografie (zdrojový soubor do 8 MiB). Sharp nadále ověřuje
+skutečný formát a rozměry. Pravidla brány ani obecný JSON limit se nemění.

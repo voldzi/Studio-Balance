@@ -1,5 +1,6 @@
 import "reflect-metadata";
 
+import multipart from "@fastify/multipart";
 import { NestFactory } from "@nestjs/core";
 import { FastifyAdapter, type NestFastifyApplication } from "@nestjs/platform-fastify";
 
@@ -16,6 +17,7 @@ async function bootstrap(): Promise<void> {
     genReqId: generateRequestId,
     logger: false
   });
+  void adapter.getInstance().register(multipart);
   for (const contentType of ["image/jpeg", "image/png", "image/webp"]) {
     adapter.getInstance().addContentTypeParser(contentType, { parseAs: "buffer", bodyLimit: 8 * 1024 * 1024 }, (_request, body, done) => done(null, body));
   }
